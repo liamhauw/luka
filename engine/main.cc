@@ -6,13 +6,5 @@
   Engine entry.
 */
 
-class TestClass {
-  public:
-   static void GetApp() {
-    const int kConst = 1;
-   }
-};
 
-int main() {
-  return 0;
-}
+int main() { return 0; }
