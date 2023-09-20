@@ -6,5 +6,11 @@
   Engine entry.
 */
 
+#include <memory>
 
-int main() { return 0; }
+#include "engine.h"
+
+int main() {
+  luka::Engine::Run();
+  return 0;
+}

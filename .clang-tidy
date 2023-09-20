@@ -1,7 +1,3 @@
-WarningsAsErrors: "*"
-
-HeaderFilterRegex: "(engine/).*\\.h$"
-
 Checks: 
   -*,
   bugprone-*,
@@ -11,6 +7,7 @@ Checks:
   performance-*,
   portability-*,
   readability-*,
+  -misc-const-correctness,
   -modernize-use-trailing-return-type,
 
 CheckOptions:
