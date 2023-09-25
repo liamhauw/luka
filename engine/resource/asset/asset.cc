@@ -8,4 +8,8 @@
 
 #include "resource/asset/asset.h"
 
-namespace luka {}  // namespace luka
+namespace luka {
+
+void Asset::Tick() {}
+
+}  // namespace luka

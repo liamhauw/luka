@@ -10,6 +10,9 @@
 
 namespace luka {
 
-class Asset {};
+class Asset {
+ public:
+  void Tick();
+};
 
 }

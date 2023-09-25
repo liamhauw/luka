@@ -10,6 +10,9 @@
 
 namespace luka {
 
-class Physics {};
+class Physics {
+ public:
+  void Tick();
+};
 
 }  // namespace luka

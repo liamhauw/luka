@@ -10,6 +10,9 @@
 
 namespace luka {
 
-class UI {};
+class UI {
+ public:
+  void Tick();
+};
 
 }  // namespace luka

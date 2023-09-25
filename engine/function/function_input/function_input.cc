@@ -3,16 +3,13 @@
 
   Copyright (C) 2023 Liam Hauw.
 
-  Config header file.
+  Function input source file.
 */
 
-#pragma once
+#include "function/function_input/function_input.h"
 
 namespace luka {
 
-class Config {
- public:
-  void Tick();
-};
+void FunctionInput::Tick() {}
 
 }  // namespace luka

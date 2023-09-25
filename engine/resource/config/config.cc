@@ -8,4 +8,8 @@
 
 #include "resource/config/config.h"
 
-namespace luka {}
+namespace luka {
+
+void Config::Tick() {}
+
+}  // namespace luka

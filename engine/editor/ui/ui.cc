@@ -8,4 +8,8 @@
 
 #include "editor/ui/ui.h"
 
-namespace luka {}  // namespace luka
+namespace luka {
+
+void UI::Tick() {}
+
+}  // namespace luka

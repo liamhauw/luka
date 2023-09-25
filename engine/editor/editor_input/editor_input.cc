@@ -6,7 +6,7 @@
   Editor input source file.
 */
 
-#include "editor/input/editor_input.h"
+#include "editor/editor_input/editor_input.h"
 
 namespace luka {
 

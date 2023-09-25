@@ -3,16 +3,13 @@
 
   Copyright (C) 2023 Liam Hauw.
 
-  Input header file.
+  Context source file.
 */
 
-#pragma once
+#include "context.h"
 
 namespace luka {
 
-class Input {
- public:
-  void Tick();
-};
+Context gContext;
 
 }  // namespace luka

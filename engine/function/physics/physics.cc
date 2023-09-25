@@ -6,6 +6,10 @@
   Physics source file.
 */
 
-#include "function/physical/physical.h"
+#include "function/physics/physics.h"
 
-namespace luka {}  // namespace luka
+namespace luka {
+
+void Physics::Tick() {}
+
+}  // namespace luka

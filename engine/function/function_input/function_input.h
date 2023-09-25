@@ -3,13 +3,16 @@
 
   Copyright (C) 2023 Liam Hauw.
 
-  Input source file.
+  Function input header file.
 */
 
-#include "function/input/input.h"
+#pragma once
 
 namespace luka {
 
-void Input::Tick() {}
+class FunctionInput {
+ public:
+  void Tick();
+};
 
 }  // namespace luka
