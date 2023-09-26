@@ -7,6 +7,7 @@ set(HEADER_FILES
   function/function_input/function_input.h
   function/physics/physics.h
   function/rendering/rendering.h
+  function/time/time.h
   function/window/window.h
   function/world/world.h
   editor/editor_input/editor_input.h
@@ -22,6 +23,7 @@ set(SOURCE_FILES
   function/function_input/function_input.cc
   function/physics/physics.cc
   function/rendering/rendering.cc
+  function/time/time.cc
   function/window/window.cc
   function/world/world.cc
   editor/editor_input/editor_input.cc
@@ -36,3 +38,4 @@ add_executable(${PROJECT_NAME})
 target_sources(${PROJECT_NAME} PRIVATE ${SOURCE_FILES})
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
+target_link_libraries(${PROJECT_NAME} PRIVATE luka_third_party)

@@ -15,6 +15,7 @@ namespace luka {
 void Engine::Run() {
   gContext.config = std::make_shared<Config>();
   gContext.asset = std::make_shared<Asset>();
+  gContext.time = std::make_shared<Time>();
   gContext.physics = std::make_shared<Physics>();
   gContext.world = std::make_shared<World>();
   gContext.window = std::make_shared<Window>();
@@ -24,14 +25,13 @@ void Engine::Run() {
   gContext.scene = std::make_shared<Scene>();
   gContext.ui = std::make_shared<UI>();
 
-  while (true) {
+  while (!gContext.window->WindowShouldClose()) {
     gContext.config->Tick();
     gContext.asset->Tick();
+    gContext.time->Tick();
     gContext.physics->Tick();
     gContext.world->Tick();
-    if (!gContext.window->Tick()) {
-      break;
-    }
+    gContext.window->Tick();
     gContext.function_input->Tick();
     gContext.rendering->Tick();
     gContext.editor_input->Tick();

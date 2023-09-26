@@ -16,6 +16,7 @@
 #include "function/function_input/function_input.h"
 #include "function/physics/physics.h"
 #include "function/rendering/rendering.h"
+#include "function/time/time.h"
 #include "function/window/window.h"
 #include "function/world/world.h"
 #include "resource/asset/asset.h"
@@ -26,6 +27,7 @@ namespace luka {
 struct Context {
   std::shared_ptr<Config> config;
   std::shared_ptr<Asset> asset;
+  std::shared_ptr<Time> time;
   std::shared_ptr<Physics> physics;
   std::shared_ptr<World> world;
   std::shared_ptr<Window> window;
