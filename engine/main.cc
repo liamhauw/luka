@@ -8,9 +8,15 @@
 
 #include <memory>
 
+#include "core/log.h"
 #include "engine.h"
 
 int main() {
-  luka::Engine::Run();
+  try {
+    luka::Engine::Run();
+  } catch (const std::exception& e) {
+    LOGE("std::exception: {}", e.what());
+    return -1;
+  }
   return 0;
 }

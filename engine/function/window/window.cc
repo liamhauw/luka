@@ -9,6 +9,7 @@
 #include "function/window/window.h"
 
 #include "context.h"
+#include "core/log.h"
 
 namespace luka {
 
@@ -16,13 +17,18 @@ Window::Window(const WindowCreateInfo& window_create_info)
     : width_{window_create_info.width},
       height_{window_create_info.height},
       title_{window_create_info.title} {
-  glfwInit();
+  if (!static_cast<bool>(glfwInit())) {
+    THROW("Fail to init glfw.");
+  }
 
   glfwSetErrorCallback(ErrorCallback);
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
   glfw_window_ =
       glfwCreateWindow(width_, height_, title_.c_str(), nullptr, nullptr);
+  if (!static_cast<bool>(glfw_window_)) {
+    THROW("Fail to create glfw window.");
+  }
 
   glfwSetWindowUserPointer(glfw_window_, this);
   glfwSetWindowCloseCallback(glfw_window_, WindowCloseCallback);
@@ -51,11 +57,7 @@ void Window::Tick() {
   glfwPollEvents();
 }
 
-
-
-bool Window::GetFocusMode() const {
-  return focus_mode_;
-}
+bool Window::GetFocusMode() const { return focus_mode_; }
 
 void Window::SetFocusMode(bool mode) {
   focus_mode_ = mode;
@@ -121,7 +123,9 @@ void Window::RegisterOnDropFunc(const OnDropFunc& func) {
   on_drop_func_.push_back(func);
 }
 
-void Window::ErrorCallback(int error, const char* description) {}
+void Window::ErrorCallback(int error, const char* description) {
+  LOGE("glfw error: {} {}", error, description);
+}
 void Window::WindowCloseCallback(GLFWwindow* glfw_window) {
   if (auto* window{
           reinterpret_cast<Window*>(glfwGetWindowUserPointer(glfw_window))}) {

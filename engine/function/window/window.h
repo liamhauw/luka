@@ -18,14 +18,10 @@
 
 namespace luka {
 
-const int kDefaultWidth{1280};
-const int kDefaultHeight{720};
-const std::string kDefaultTitle{"luka"};
-
 struct WindowCreateInfo {
-  int width{kDefaultWidth};
-  int height{kDefaultHeight};
-  std::string title{kDefaultTitle};
+  int width{1280};
+  int height{720};
+  std::string title{"luka"};
 };
 
 class Window {

@@ -12,8 +12,12 @@ set(GLFW_BUILD_DOCS OFF)
 set(GLFW_INSTALL OFF)
 add_subdirectory(glfw)
 
+# spdlog
+add_subdirectory(spdlog)
+
 add_library(${PROJECT_NAME} INTERFACE)
 target_link_libraries(${PROJECT_NAME} INTERFACE
   Vulkan::Vulkan
   glfw
+  spdlog_header_only
 )

@@ -8,11 +8,17 @@
 
 #include "engine.h"
 
+#include <chrono>
+#include <thread>
+
 #include "context.h"
 
 namespace luka {
 
 void Engine::Run() {
+  gContext.is_editor_mode = false;
+  gContext.control_command = 0xFFFFFFFF;
+
   gContext.config = std::make_shared<Config>();
   gContext.asset = std::make_shared<Asset>();
   gContext.time = std::make_shared<Time>();
@@ -37,6 +43,8 @@ void Engine::Run() {
     gContext.editor_input->Tick();
     gContext.scene->Tick();
     gContext.ui->Tick();
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
 }
 
