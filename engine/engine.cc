@@ -12,7 +12,7 @@
 #include <thread>
 
 #include "context.h"
-
+#include "core/log.h"
 namespace luka {
 
 void Engine::Run() {

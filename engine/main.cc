@@ -15,8 +15,10 @@ int main() {
   try {
     luka::Engine::Run();
   } catch (const std::exception& e) {
-    LOGE("std::exception: {}", e.what());
+    LOGE("{}", e.what());
     return -1;
+  } catch (...) {
+    LOGE("Unknown exception.")
   }
   return 0;
 }
