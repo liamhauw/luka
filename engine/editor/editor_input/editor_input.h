@@ -12,7 +12,11 @@ namespace luka {
 
 class EditorInput {
  public:
+  EditorInput();
+
   void Tick();
+
+  void OnKey(int key, int scancode, int action, int mod);
 };
 
 }  // namespace luka

@@ -9,7 +9,6 @@
 #include "function/function_input/function_input.h"
 
 #include "context.h"
-#include "core/log.h"
 
 namespace luka {
 
@@ -26,7 +25,7 @@ FunctionInput::FunctionInput() {
   });
 }
 
-void FunctionInput::Tick() { LOGI("function command = {}", function_command_); }
+void FunctionInput::Tick() {}
 
 void FunctionInput::OnKey(int key, int scancode, int action, int mod) {
   if (gContext.is_editor_mode) {
@@ -43,8 +42,7 @@ void FunctionInput::OnKey(int key, int scancode, int action, int mod) {
         break;
       case GLFW_KEY_E:
         gContext.is_editor_mode = true;
-      case GLFW_KEY_LEFT_ALT:
-        gContext.window->SetFocusMode(!gContext.window->GetFocusMode());
+        gContext.window->SetFocusMode(true);
         break;
       case GLFW_KEY_W:
         function_command_ |= static_cast<unsigned>(FunctionCommand::FORWARD);

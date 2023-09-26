@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.24)
 project(luka_engine)
 
 set(HEADER_FILES
+  core/log.h
   resource/asset/asset.h
   resource/config/config.h
   function/function_input/function_input.h
