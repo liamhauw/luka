@@ -7,8 +7,10 @@ Checks:
   performance-*,
   portability-*,
   readability-*,
+  -bugprone-easily-swappable-parameters,
   -misc-const-correctness,
   -modernize-use-trailing-return-type,
+  -readability-magic-numbers
 
 CheckOptions:
   - { key: readability-identifier-naming.AbstractClassCase,               value: CamelCase             }

@@ -27,7 +27,7 @@ FunctionInput::FunctionInput() {
 
 void FunctionInput::Tick() {}
 
-void FunctionInput::OnKey(int key, int scancode, int action, int mod) {
+void FunctionInput::OnKey(int key, int /*scancode*/, int action, int /*mod*/) {
   if (gContext.is_editor_mode) {
     return;
   }

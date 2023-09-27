@@ -10,6 +10,10 @@
 
 namespace luka {
 
+Asset::Asset() {
+  
+}
+
 void Asset::Tick() {}
 
 }  // namespace luka

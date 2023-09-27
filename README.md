@@ -1,6 +1,6 @@
 # Luka engine
 
-## Feature
+## Features
 - Asset
   - glTF scene format
 - Rendering

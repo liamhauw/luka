@@ -6,8 +6,6 @@
   Engine entry.
 */
 
-#include <memory>
-
 #include "core/log.h"
 #include "engine.h"
 

@@ -9,10 +9,10 @@
 #include "engine.h"
 
 #include <chrono>
+#include <memory>
 #include <thread>
 
 #include "context.h"
-#include "core/log.h"
 namespace luka {
 
 void Engine::Run() {

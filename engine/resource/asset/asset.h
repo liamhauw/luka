@@ -12,6 +12,8 @@ namespace luka {
 
 class Asset {
  public:
+  Asset();
+
   void Tick();
 };
 

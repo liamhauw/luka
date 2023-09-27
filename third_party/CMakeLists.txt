@@ -5,9 +5,6 @@ project(luka_third_party)
 find_package(Vulkan REQUIRED GLOBAL)
 
 # glfw
-set(BUILD_SHARED_LIBS OFF)
-set(GLFW_BUILD_EXAMPLES OFF)
-set(GLFW_BUILD_TESTS OFF)
 set(GLFW_BUILD_DOCS OFF)
 set(GLFW_INSTALL OFF)
 add_subdirectory(glfw)
@@ -15,9 +12,17 @@ add_subdirectory(glfw)
 # spdlog
 add_subdirectory(spdlog)
 
+# tinygltf
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+set(TINYGLTF_BUILD_LOADER_EXAMPLE OFF)
+set(TINYGLTF_HEADER_ONLY ON)
+set(TINYGLTF_INSTALL OFF)
+add_subdirectory(tinygltf)
+
 add_library(${PROJECT_NAME} INTERFACE)
 target_link_libraries(${PROJECT_NAME} INTERFACE
   Vulkan::Vulkan
   glfw
   spdlog_header_only
+  tinygltf
 )

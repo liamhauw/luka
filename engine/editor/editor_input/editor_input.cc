@@ -22,7 +22,7 @@ EditorInput::EditorInput() {
 
 void EditorInput::Tick() {}
 
-void EditorInput::OnKey(int key, int scancode, int action, int mod) {
+void EditorInput::OnKey(int key, int /*scancode*/, int action, int /*mod*/) {
   if (!gContext.is_editor_mode) {
     return;
   }
