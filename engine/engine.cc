@@ -16,9 +16,6 @@
 namespace luka {
 
 void Engine::Run() {
-  gContext.is_editor_mode = false;
-  gContext.control_command = 0xFFFFFFFF;
-
   gContext.config = std::make_shared<Config>();
   gContext.asset = std::make_shared<Asset>();
   gContext.time = std::make_shared<Time>();

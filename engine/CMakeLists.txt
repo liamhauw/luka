@@ -1,8 +1,16 @@
 cmake_minimum_required(VERSION 3.24)
 project(luka_engine)
 
+file(REMOVE_RECURSE "${CMAKE_CURRENT_SOURCE_DIR}/resource/config/generated")
+configure_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/resource/config/source_path.h.in"
+  "${CMAKE_CURRENT_SOURCE_DIR}/resource/config/generated/source_path.h"
+)
+
 set(HEADER_FILES
+  platform/common.h
   core/log.h
+  core/util.h
   resource/asset/asset.h
   resource/config/config.h
   function/function_input/function_input.h
@@ -19,7 +27,9 @@ set(HEADER_FILES
 )
 
 set(SOURCE_FILES
+  core/util.cc
   resource/asset/asset.cc
+  resource/config/generated/source_path.h
   resource/config/config.cc
   function/function_input/function_input.cc
   function/physics/physics.cc

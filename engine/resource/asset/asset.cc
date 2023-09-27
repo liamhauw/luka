@@ -7,10 +7,14 @@
 */
 
 #include "resource/asset/asset.h"
+#include "context.h"
+#include <filesystem>
 
 namespace luka {
 
 Asset::Asset() {
+  std::filesystem::path model_file_path{gContext.config->GetModelFilePath()};
+
   
 }
 

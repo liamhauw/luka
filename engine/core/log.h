@@ -11,13 +11,26 @@
 #include <spdlog/spdlog.h>
 
 #include <stdexcept>
+#include <string>
 
 namespace luka {
 
+class LukaException : public std::exception {
+ public:
+  LukaException() {}
+  LukaException(const std::string& message) : message_{message} {}
+
+  const char* what() const noexcept override { return message_.c_str(); }
+
+ private:
+  std::string message_;
+};
+
 #define LOGI(...) spdlog::info(__VA_ARGS__);
 #define LOGE(...) spdlog::error(__VA_ARGS__);
-#define THROW(e)                     \
-  LOGE("{}:{}", __FILE__, __LINE__); \
-  throw std::runtime_error { e }
+#define THROW(...)                    \
+  LOGE("{}:{} ", __FILE__, __LINE__); \
+  LOGE(__VA_ARGS__);                  \
+  throw LukaException {}
 
 }  // namespace luka

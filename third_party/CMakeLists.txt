@@ -19,10 +19,18 @@ set(TINYGLTF_HEADER_ONLY ON)
 set(TINYGLTF_INSTALL OFF)
 add_subdirectory(tinygltf)
 
+# json
+set(JSON_BuildTests OFF)
+set(JSON_GlobalUDLs OFF)
+set(JSON_ImplicitConversions OFF)
+set(JSON_Install OFF)
+add_subdirectory(json)
+
 add_library(${PROJECT_NAME} INTERFACE)
 target_link_libraries(${PROJECT_NAME} INTERFACE
   Vulkan::Vulkan
   glfw
-  spdlog_header_only
+  spdlog::spdlog_header_only
   tinygltf
+  nlohmann_json::nlohmann_json
 )

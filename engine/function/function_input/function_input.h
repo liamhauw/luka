@@ -31,6 +31,8 @@ class FunctionInput {
   void OnCursorPos(double xpos, double ypos);
 
  private:
+  unsigned control_command_{0xFFFFFFFF};
+
   unsigned function_command_{0};
 
   double cursor_last_xpos_{0.0};

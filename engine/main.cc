@@ -12,6 +12,8 @@
 int main() {
   try {
     luka::Engine::Run();
+  } catch (const luka::LukaException& e) {
+    return -1;
   } catch (const std::exception& e) {
     LOGE("{}", e.what());
     return -1;

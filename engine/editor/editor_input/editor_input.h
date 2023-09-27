@@ -16,7 +16,7 @@ class EditorInput {
 
   void Tick();
 
-  void OnKey(int key, int scancode, int action, int mod);
+  static void OnKey(int key, int scancode, int action, int mod);
 };
 
 }  // namespace luka

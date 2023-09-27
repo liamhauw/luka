@@ -33,7 +33,7 @@ void FunctionInput::OnKey(int key, int /*scancode*/, int action, int /*mod*/) {
   }
 
   function_command_ &=
-      (gContext.control_command ^ static_cast<unsigned>(FunctionCommand::JUMP));
+      (control_command_ ^ static_cast<unsigned>(FunctionCommand::JUMP));
 
   if (action == GLFW_PRESS) {
     switch (key) {
@@ -71,28 +71,28 @@ void FunctionInput::OnKey(int key, int /*scancode*/, int action, int /*mod*/) {
   } else if (action == GLFW_RELEASE) {
     switch (key) {
       case GLFW_KEY_W:
-        function_command_ &= (gContext.control_command ^
+        function_command_ &= (control_command_ ^
                               static_cast<unsigned>(FunctionCommand::FORWARD));
         break;
       case GLFW_KEY_S:
-        function_command_ &= (gContext.control_command ^
+        function_command_ &= (control_command_ ^
                               static_cast<unsigned>(FunctionCommand::BACKWARD));
         break;
       case GLFW_KEY_A:
-        function_command_ &= (gContext.control_command ^
-                              static_cast<unsigned>(FunctionCommand::LEFT));
+        function_command_ &=
+            (control_command_ ^ static_cast<unsigned>(FunctionCommand::LEFT));
         break;
       case GLFW_KEY_D:
-        function_command_ &= (gContext.control_command ^
-                              static_cast<unsigned>(FunctionCommand::RIGHT));
+        function_command_ &=
+            (control_command_ ^ static_cast<unsigned>(FunctionCommand::RIGHT));
         break;
       case GLFW_KEY_LEFT_CONTROL:
-        function_command_ &= (gContext.control_command ^
-                              static_cast<unsigned>(FunctionCommand::SQUAT));
+        function_command_ &=
+            (control_command_ ^ static_cast<unsigned>(FunctionCommand::SQUAT));
         break;
       case GLFW_KEY_LEFT_SHIFT:
-        function_command_ &= (gContext.control_command ^
-                              static_cast<unsigned>(FunctionCommand::SPRINT));
+        function_command_ &=
+            (control_command_ ^ static_cast<unsigned>(FunctionCommand::SPRINT));
         break;
       default:
         break;
