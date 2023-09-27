@@ -16,8 +16,8 @@ namespace luka {
 
 #define LOGI(...) spdlog::info(__VA_ARGS__);
 #define LOGE(...) spdlog::error(__VA_ARGS__);
-#define THROW(...)                   \
+#define THROW(e)                     \
   LOGE("{}:{}", __FILE__, __LINE__); \
-  throw std::runtime_error { __VA_ARGS__ }
+  throw std::runtime_error { e }
 
 }  // namespace luka
