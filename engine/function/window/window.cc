@@ -1,5 +1,5 @@
 /*
-  SPDX license identifier: MIT
+  SPDX license identifier: MIT.
 
   Copyright (C) 2023 Liam Hauw.
 
@@ -124,7 +124,7 @@ void Window::RegisterOnDropFunc(const OnDropFunc& func) {
 }
 
 void Window::ErrorCallback(int error, const char* description) {
-  LOGE("glfw error: {} {}", error, description);
+  LOGE("glfw error: [{} {}].", error, description);
 }
 void Window::WindowCloseCallback(GLFWwindow* glfw_window) {
   if (auto* window{

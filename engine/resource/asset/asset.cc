@@ -1,5 +1,5 @@
 /*
-  SPDX license identifier: MIT
+  SPDX license identifier: MIT.
 
   Copyright (C) 2023 Liam Hauw.
 
@@ -31,11 +31,11 @@ Asset::Asset() {
       loader.LoadASCIIFromFile(&model_, &err, &warn, model_file_path.string())};
 
   if (!warn.empty()) {
-    LOGW("tinygltf load warn: [{}]", warn);
+    LOGW("tinygltf load warn: [{}].", warn);
   }
 
   if (!err.empty()) {
-    LOGE("tinygltf load error: [{}]", err);
+    LOGE("tinygltf load error: [{}].", err);
   }
 
   if (!loader_ret) {
