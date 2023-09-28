@@ -12,6 +12,8 @@ namespace luka {
 
 class Rendering {
  public:
+  Rendering();
+
   void Tick();
 };
 

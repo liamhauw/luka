@@ -45,4 +45,8 @@ Asset::Asset() {
 
 void Asset::Tick() {}
 
+tinygltf::Model& Asset::GetModel() {
+  return model_;
+}
+
 }  // namespace luka

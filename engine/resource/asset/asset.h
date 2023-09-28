@@ -18,6 +18,8 @@ class Asset {
 
   void Tick();
 
+  tinygltf::Model& GetModel();
+
  private:
   tinygltf::Model model_;
 };

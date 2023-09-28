@@ -10,6 +10,10 @@
 
 namespace luka {
 
+Rendering::Rendering() {
+  
+}
+
 void Rendering::Tick() {}
 
 }  // namespace luka
