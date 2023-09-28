@@ -11,7 +11,7 @@
 namespace luka {
 
 Rendering::Rendering() {
-  
+  gpu_device_ = std::make_unique<Gpu>();
 }
 
 void Rendering::Tick() {}

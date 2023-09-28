@@ -8,6 +8,9 @@
 
 #pragma once
 
+#include <memory>
+#include "function/rendering/gpu.h"
+
 namespace luka {
 
 class Rendering {
@@ -15,6 +18,9 @@ class Rendering {
   Rendering();
 
   void Tick();
+
+ private:
+  std::unique_ptr<Gpu> gpu_device_;
 };
 
 }  // namespace luka
