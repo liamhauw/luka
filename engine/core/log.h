@@ -27,6 +27,7 @@ class LukaException : public std::exception {
 };
 
 #define LOGI(...) spdlog::info(__VA_ARGS__);
+#define LOGW(...) spdlog::warn(__VA_ARGS__);
 #define LOGE(...) spdlog::error(__VA_ARGS__);
 #define THROW(...)                    \
   LOGE("{}:{} ", __FILE__, __LINE__); \

@@ -9,9 +9,9 @@
 #include "resource/config/config.h"
 
 #include <fstream>
+#include <nlohmann/json.hpp>
 
 #include "core/log.h"
-#include "nlohmann/json.hpp"
 
 namespace luka {
 
@@ -22,7 +22,7 @@ Config::Config() {
   }
   nlohmann::json config_data{nlohmann::json::parse(config_file)};
 
-  std::string model_name = config_data["asset"]["model"].get<std::string>();
+  std::string model_name = ReplacePathSlash(config_data["asset"]["model"].get<std::string>());
 
   model_file_path_ = model_path_ / model_name;
 }

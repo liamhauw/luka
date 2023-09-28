@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include <tiny_gltf.h>
+
 namespace luka {
 
 class Asset {
@@ -15,6 +17,9 @@ class Asset {
   Asset();
 
   void Tick();
+
+ private:
+  tinygltf::Model model_;
 };
 
-}
+}  // namespace luka
