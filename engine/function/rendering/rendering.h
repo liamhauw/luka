@@ -19,8 +19,10 @@ class Rendering {
 
   void Tick();
 
+  void Terminate();
+
  private:
-  std::unique_ptr<Gpu> gpu_device_;
+  Gpu* gpu_device_;
 };
 
 }  // namespace luka

@@ -2,26 +2,54 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug",
+      "name": "Windows Debug",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/engine/luka_engine.exe",
+      "program": "${workspaceFolder}/build/engine/luka_engine",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],
+      "externalConsole": false,
       "preLaunchTask": "Pre Debug"
     },
     {
       "name": "Windows release",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/engine/luka_engine.exe",
+      "program": "${workspaceFolder}/build/engine/luka_engine",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],
+      "externalConsole": false,
       "preLaunchTask": "Pre Relase"
+    },
+    {
+      "name": "macOS Debug",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/engine/luka_engine",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "lldb",
+      "preLaunchTask": "Pre Debug"
+    },
+    {
+      "name": "macOS Release",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/engine/luka_engine",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "lldb",
+      "preLaunchTask": "Pre Release"
     }
   ]
 }
