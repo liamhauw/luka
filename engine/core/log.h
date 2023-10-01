@@ -15,10 +15,10 @@
 
 namespace luka {
 
-class LukaException : public std::exception {
+class Exception : public std::exception {
  public:
-  LukaException() {}
-  LukaException(const std::string& message) : message_{message} {}
+  Exception() {}
+  Exception(const std::string& message) : message_{message} {}
 
   const char* what() const noexcept override { return message_.c_str(); }
 
@@ -32,6 +32,6 @@ class LukaException : public std::exception {
 #define THROW(...)                    \
   LOGE("{}:{} ", __FILE__, __LINE__); \
   LOGE(__VA_ARGS__);                  \
-  throw LukaException {}
+  throw Exception {}
 
 }  // namespace luka
