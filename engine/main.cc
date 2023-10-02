@@ -18,7 +18,8 @@ int main() {
     LOGE("{}", e.what());
     return -1;
   } catch (...) {
-    LOGE("Unknown exception.")
+    LOGE("Unknown exception.");
+    return -1;
   }
   return 0;
 }

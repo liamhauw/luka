@@ -25,15 +25,14 @@
 namespace luka {
 
 struct Context {
-  bool is_editor_mode{false};
-
+  bool is_editor_mode;
   std::shared_ptr<Config> config;
   std::shared_ptr<Asset> asset;
   std::shared_ptr<Time> time;
-  std::shared_ptr<Physics> physics;
-  std::shared_ptr<World> world;
   std::shared_ptr<Window> window;
   std::shared_ptr<FunctionInput> function_input;
+  std::shared_ptr<Physics> physics;
+  std::shared_ptr<World> world;
   std::shared_ptr<Rendering> rendering;
   std::shared_ptr<EditorInput> editor_input;
   std::shared_ptr<Scene> scene;

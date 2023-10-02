@@ -9,6 +9,7 @@
 #pragma once
 
 #include <memory>
+
 #include "function/rendering/gpu.h"
 
 namespace luka {
@@ -22,7 +23,7 @@ class Rendering {
   void Terminate();
 
  private:
-  Gpu* gpu_device_;
+  std::unique_ptr<Gpu> gpu_device_;
 };
 
 }  // namespace luka

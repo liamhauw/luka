@@ -8,6 +8,7 @@ Checks:
   portability-*,
   readability-*,
   -bugprone-easily-swappable-parameters,
+  -bugprone-exception-escape,
   -misc-const-correctness,
   -modernize-use-trailing-return-type,
   -readability-magic-numbers

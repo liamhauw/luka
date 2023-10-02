@@ -11,13 +11,13 @@
 namespace luka {
 
 Rendering::Rendering() {
-  gpu_device_ = new Gpu{};
+  gpu_device_ = std::make_unique<Gpu>();
 }
 
 void Rendering::Tick() {}
 
 void Rendering::Terminate() {
-  delete gpu_device_;
+  gpu_device_.reset();
 }
 
 }  // namespace luka
