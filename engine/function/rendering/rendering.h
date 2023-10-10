@@ -14,6 +14,8 @@
 
 namespace luka {
 
+class Window;
+
 class Rendering {
  public:
   Rendering();
@@ -23,7 +25,8 @@ class Rendering {
   void Terminate();
 
  private:
-  std::unique_ptr<Gpu> gpu_device_;
+  std::shared_ptr<Window> window_;
+  std::unique_ptr<Gpu> gpu_;
 };
 
 }  // namespace luka

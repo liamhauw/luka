@@ -8,7 +8,11 @@
 
 #pragma once
 
+#include <memory>
+
 namespace luka {
+
+class Window;
 
 class EditorInput {
  public:
@@ -16,7 +20,10 @@ class EditorInput {
 
   void Tick();
 
-  static void OnKey(int key, int scancode, int action, int mod);
+  void OnKey(int key, int scancode, int action, int mod);
+
+ private:
+  std::shared_ptr<Window> window_;
 };
 
 }  // namespace luka

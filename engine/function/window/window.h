@@ -26,23 +26,12 @@ struct WindowCreateInfo {
 
 class Window {
  public:
-  explicit Window(const WindowCreateInfo& window_create_info = {});
-  ~Window();
-
-  void Tick();
-
-  bool GetFocusMode() const;
-  void SetFocusMode(bool mode);
-  bool WindowShouldClose() const;
-  void SetWindowShouldClose();
-
-  static std::vector<const char*> GetRequiredInstanceExtension();
-  void CreateWindowSurface(const vk::raii::Instance& instance,
-                           VkSurfaceKHR* surface);
-  void GetFramebufferSize(int* width, int* height);
+  friend class FunctionInput;
+  friend class EditorInput;
 
   using OnWindowCloseFunc = std::function<void()>;
   using OnWindowSizeFunc = std::function<void(int, int)>;
+  using OnWindowIconifyFunc = std::function<void(int)>;
   using OnKeyFunc = std::function<void(int, int, int, int)>;
   using OnCharFunc = std::function<void(unsigned)>;
   using OnCharModFunc = std::function<void(unsigned, int)>;
@@ -52,8 +41,14 @@ class Window {
   using OnScrollFunc = std::function<void(double, double)>;
   using OnDropFunc = std::function<void(int, const char**)>;
 
+  explicit Window(const WindowCreateInfo& window_create_info = {});
+  ~Window();
+
+  void Tick();
+
   void RegisterOnWindowCloseFunc(const OnWindowCloseFunc& func);
   void RegisterOnWindowSizeFunc(const OnWindowSizeFunc& func);
+  void RegisterOnWindowIconifyFunc(const OnWindowIconifyFunc& func);
   void RegisterOnKeyFunc(const OnKeyFunc& func);
   void RegisterOnCharFunc(const OnCharFunc& func);
   void RegisterOnCharModFunc(const OnCharModFunc& func);
@@ -63,11 +58,26 @@ class Window {
   void RegisterOnScrollFunc(const OnScrollFunc& func);
   void RegisterOnDropFunc(const OnDropFunc& func);
 
+  bool WindowShouldClose() const;
+  void SetWindowShouldClose();
+  bool GetResized() const;
+  void SetResized(bool resized);
+  bool GetIconified() const;
+  void SetIconified(bool iconified);
+  bool GetFocusMode() const;
+  void SetFocusMode(bool mode);
+
+  static std::vector<const char*> GetRequiredInstanceExtension();
+  void CreateWindowSurface(const vk::raii::Instance& instance,
+                           VkSurfaceKHR* surface);
+  void GetFramebufferSize(int* width, int* height);
+
  private:
   static void ErrorCallback(int error, const char* description);
   static void WindowCloseCallback(GLFWwindow* glfw_window);
   static void WindowSizeCallback(GLFWwindow* glfw_window, int width,
                                  int height);
+  static void WindowIconifyCallback(GLFWwindow* window, int iconified);
   static void KeyCallback(GLFWwindow* glfw_window, int key, int scancode,
                           int action, int mod);
   static void CharCallback(GLFWwindow* glfw_window, unsigned codepoint);
@@ -85,6 +95,7 @@ class Window {
 
   void OnWindowClose();
   void OnWindowSize(int width, int height);
+  void OnWindowIconify(int iconified);
   void OnKey(int key, int scancode, int action, int mod);
   void OnChar(unsigned codepoint);
   void OnCharMod(unsigned codepoint, int mod);
@@ -94,15 +105,9 @@ class Window {
   void OnScroll(double xoffset, double yoffset);
   void OnDrop(int count, const char** path);
 
-  int width_;
-  int height_;
-  std::string title_;
-  GLFWwindow* glfw_window_{nullptr};
-
-  bool focus_mode_{false};
-
   std::vector<OnWindowCloseFunc> on_window_close_func_;
   std::vector<OnWindowSizeFunc> on_window_size_func_;
+  std::vector<OnWindowIconifyFunc> on_window_iconify_func;
   std::vector<OnKeyFunc> on_key_func_;
   std::vector<OnCharFunc> on_char_func_;
   std::vector<OnCharModFunc> on_char_mod_func_;
@@ -111,6 +116,18 @@ class Window {
   std::vector<OnCursorEnterFunc> on_cursor_enter_func_;
   std::vector<OnScrollFunc> on_scroll_func_;
   std::vector<OnDropFunc> on_drop_func_;
+
+  int width_;
+  int height_;
+  std::string title_;
+  GLFWwindow* glfw_window_{nullptr};
+  bool resized_{false};
+  bool iconified_{false};
+  bool focus_mode_{false};
+  double cursor_last_xpos_{0.0};
+  double cursor_last_ypos_{0.0};
+  double cursor_delta_xpos_{0.0};
+  double cursor_delta_ypos_{0.0};
 };
 
 }  // namespace luka

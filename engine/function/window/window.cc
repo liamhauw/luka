@@ -33,6 +33,7 @@ Window::Window(const WindowCreateInfo& window_create_info)
   glfwSetWindowUserPointer(glfw_window_, this);
   glfwSetWindowCloseCallback(glfw_window_, WindowCloseCallback);
   glfwSetWindowSizeCallback(glfw_window_, WindowSizeCallback);
+  glfwSetWindowIconifyCallback(glfw_window_, WindowIconifyCallback);
   glfwSetKeyCallback(glfw_window_, KeyCallback);
   glfwSetCharCallback(glfw_window_, CharCallback);
   glfwSetCharModsCallback(glfw_window_, CharModCallback);
@@ -57,20 +58,38 @@ void Window::Tick() {
   glfwPollEvents();
 }
 
-bool Window::GetFocusMode() const { return focus_mode_; }
-
-void Window::SetFocusMode(bool mode) {
-  focus_mode_ = mode;
-  glfwSetInputMode(glfw_window_, GLFW_CURSOR,
-                   focus_mode_ ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
-}
-
 bool Window::WindowShouldClose() const {
   return static_cast<bool>(glfwWindowShouldClose(glfw_window_));
 }
 
 void Window::SetWindowShouldClose() {
   glfwSetWindowShouldClose(glfw_window_, GLFW_TRUE);
+}
+
+bool Window::GetResized() const {
+  return resized_;
+}
+
+void Window::SetResized(bool resized) {
+  resized_ = false;
+}
+
+bool Window::GetIconified() const {
+  return iconified_;
+}
+
+void Window::SetIconified(bool iconified) {
+  iconified_ = iconified;
+}
+
+bool Window::GetFocusMode() const {
+  return focus_mode_;
+}
+
+void Window::SetFocusMode(bool mode) {
+  focus_mode_ = mode;
+  glfwSetInputMode(glfw_window_, GLFW_CURSOR,
+                   focus_mode_ ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
 }
 
 std::vector<const char*> Window::GetRequiredInstanceExtension() {
@@ -97,6 +116,9 @@ void Window::RegisterOnWindowCloseFunc(const OnWindowCloseFunc& func) {
 }
 void Window::RegisterOnWindowSizeFunc(const OnWindowSizeFunc& func) {
   on_window_size_func_.push_back(func);
+}
+void Window::RegisterOnWindowIconifyFunc(const OnWindowIconifyFunc& func) {
+  on_window_iconify_func.push_back(func);
 }
 void Window::RegisterOnKeyFunc(const OnKeyFunc& func) {
   on_key_func_.push_back(func);
@@ -139,6 +161,12 @@ void Window::WindowSizeCallback(GLFWwindow* glfw_window, int width,
     window->OnWindowSize(width, height);
     window->width_ = width;
     window->height_ = height;
+  }
+}
+void Window::WindowIconifyCallback(GLFWwindow* glfw_window, int iconified) {
+  if (auto* window{
+          reinterpret_cast<Window*>(glfwGetWindowUserPointer(glfw_window))}) {
+    window->OnWindowIconify(iconified);
   }
 }
 void Window::KeyCallback(GLFWwindow* glfw_window, int key, int scancode,
@@ -204,6 +232,11 @@ void Window::OnWindowClose() {
 void Window::OnWindowSize(int width, int height) {
   for (auto& func : on_window_size_func_) {
     func(width, height);
+  }
+}
+void Window::OnWindowIconify(int iconified) {
+  for (auto& func : on_window_iconify_func) {
+    func(iconified);
   }
 }
 void Window::OnKey(int key, int scancode, int action, int mods) {

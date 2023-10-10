@@ -46,6 +46,9 @@ class Gpu {
   Gpu();
   ~Gpu();
 
+  void NewFrame();
+  void Resize();
+
  private:
   void MakeInstance();
   void MakeSurface();

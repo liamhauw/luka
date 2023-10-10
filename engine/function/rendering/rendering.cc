@@ -8,16 +8,24 @@
 
 #include "function/rendering/rendering.h"
 
+#include "context.h"
+
 namespace luka {
 
-Rendering::Rendering() {
-  gpu_device_ = std::make_unique<Gpu>();
+Rendering::Rendering() : window_{gContext.window} {
+  gpu_ = std::make_unique<Gpu>();
 }
 
-void Rendering::Tick() {}
-
-void Rendering::Terminate() {
-  gpu_device_.reset();
+void Rendering::Tick() {
+  if (!window_->GetIconified()) {
+    gpu_->NewFrame();
+  }
+  if (window_->GetResized()) {
+    gpu_->Resize();
+    window_->SetResized(false);
+  }
 }
+
+void Rendering::Terminate() { gpu_.reset(); }
 
 }  // namespace luka

@@ -30,6 +30,10 @@ Gpu::Gpu() {
 
 Gpu::~Gpu() { device_.waitIdle(); }
 
+void Gpu::NewFrame() {}
+
+void Gpu::Resize() {}
+
 void Gpu::MakeInstance() {
   vk::ApplicationInfo application_info{"luka", VK_MAKE_VERSION(1, 0, 0), "luka",
                                        VK_MAKE_VERSION(1, 0, 0),

@@ -12,9 +12,9 @@
 
 namespace luka {
 
-EditorInput::EditorInput() {
-  gContext.window->RegisterOnKeyFunc([this](auto&& ph1, auto&& ph2, auto&& ph3,
-                                            auto&& ph4) {
+EditorInput::EditorInput() : window_{gContext.window} {
+  window_->RegisterOnKeyFunc([this](auto&& ph1, auto&& ph2, auto&& ph3,
+                                    auto&& ph4) {
     OnKey(std::forward<decltype(ph1)>(ph1), std::forward<decltype(ph2)>(ph2),
           std::forward<decltype(ph3)>(ph3), std::forward<decltype(ph4)>(ph4));
   });
@@ -30,11 +30,11 @@ void EditorInput::OnKey(int key, int /*scancode*/, int action, int /*mod*/) {
   if (action == GLFW_PRESS) {
     switch (key) {
       case GLFW_KEY_ESCAPE:
-        gContext.window->SetWindowShouldClose();
+        window_->SetWindowShouldClose();
         break;
       case GLFW_KEY_F:
         gContext.is_editor_mode = false;
-        gContext.window->SetFocusMode(false);
+        window_->focus_mode_ = false;
         break;
       default:
         break;
