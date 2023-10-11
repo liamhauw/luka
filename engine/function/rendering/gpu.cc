@@ -659,7 +659,7 @@ void Gpu::BeginFrame() {
   clear_values[1].depthStencil = vk::ClearDepthStencilValue{1.0f, 0};
 
   vk::RenderPassBeginInfo render_pass_begin_info{
-      *render_pass_, *framebuffers_[current_frame_],
+      *render_pass_, *framebuffers_[image_index_],
       vk::Rect2D{vk::Offset2D{0, 0}, swapchain_data_.extent}, clear_values};
 
   current_command_buffer.beginRenderPass(render_pass_begin_info,
