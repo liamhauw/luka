@@ -9,6 +9,7 @@
 #pragma once
 
 #include <optional>
+#include <vector>
 #include <vulkan/vulkan_raii.hpp>
 
 namespace luka {
@@ -46,19 +47,26 @@ class Gpu {
   Gpu();
   ~Gpu();
 
-  void NewFrame();
-  void Resize();
-
- private:
-  void MakeInstance();
-  void MakeSurface();
+  void MakeInstance(
+      const std::vector<const char*>& window_required_instance_extensions);
+  void MakeSurface(VkSurfaceKHR surface);
   void MakePhysicalDevice();
   void MakeDevice();
-  void MakeSwapchain();
+  void MakeSwapchain(int height, int width);
   void MakeCommandObjects();
   void MakeSyncObjects();
   void MakeDepthImage();
+  void MakeRenderPass();
+  void MakeFramebuffer();
+  void MakePipeline();
 
+  void Resize(int width, int height);
+  void BeginFrame();
+  void EndFrame();
+
+  const vk::raii::Instance& GetInstance() const;
+
+ private:
   static VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(
       VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
       VkDebugUtilsMessageTypeFlagsEXT message_type,
@@ -71,7 +79,7 @@ class Gpu {
       const vk::MemoryRequirements& memory_requirements,
       vk::MemoryPropertyFlags memory_properties_flags);
 
-  const uint32_t frames_in_flight_{2};
+  const uint32_t kFramesInFlight{2};
   uint32_t current_frame_{0};
 
   vk::raii::Context context_;
@@ -104,8 +112,13 @@ class Gpu {
   std::vector<vk::raii::Semaphore> render_finished_semaphores_;
 
   SwapchainData swapchain_data_;
+  uint32_t image_index_;
 
   ImageData depth_image_data_;
+
+  vk::raii::RenderPass render_pass_{nullptr};
+
+  std::vector<vk::raii::Framebuffer> framebuffers_;
 };
 
 }  // namespace luka

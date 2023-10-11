@@ -13,10 +13,7 @@
 
 namespace luka {
 
-Window::Window(const WindowCreateInfo& window_create_info)
-    : width_{window_create_info.width},
-      height_{window_create_info.height},
-      title_{window_create_info.title} {
+Window::Window(const WindowCreateInfo& window_create_info) {
   if (!static_cast<bool>(glfwInit())) {
     THROW("Fail to init glfw.");
   }
@@ -25,15 +22,17 @@ Window::Window(const WindowCreateInfo& window_create_info)
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
   glfw_window_ =
-      glfwCreateWindow(width_, height_, title_.c_str(), nullptr, nullptr);
+      glfwCreateWindow(window_create_info.width, window_create_info.height,
+                       window_create_info.title.c_str(), nullptr, nullptr);
   if (!static_cast<bool>(glfw_window_)) {
     THROW("Fail to create glfw window.");
   }
 
   glfwSetWindowUserPointer(glfw_window_, this);
-  glfwSetWindowCloseCallback(glfw_window_, WindowCloseCallback);
   glfwSetWindowSizeCallback(glfw_window_, WindowSizeCallback);
+  glfwSetWindowCloseCallback(glfw_window_, WindowCloseCallback);
   glfwSetWindowIconifyCallback(glfw_window_, WindowIconifyCallback);
+  glfwSetFramebufferSizeCallback(glfw_window_, FramebufferSizeCallback);
   glfwSetKeyCallback(glfw_window_, KeyCallback);
   glfwSetCharCallback(glfw_window_, CharCallback);
   glfwSetCharModsCallback(glfw_window_, CharModCallback);
@@ -58,6 +57,14 @@ void Window::Tick() {
   glfwPollEvents();
 }
 
+bool Window::GetWindowResized() const { return window_resized_; }
+
+void Window::SetWindowResized(bool resized) { window_resized_ = false; }
+
+void Window::GetWindowSize(int* width, int* height) const {
+  glfwGetWindowSize(glfw_window_, width, height);
+}
+
 bool Window::WindowShouldClose() const {
   return static_cast<bool>(glfwWindowShouldClose(glfw_window_));
 }
@@ -66,25 +73,21 @@ void Window::SetWindowShouldClose() {
   glfwSetWindowShouldClose(glfw_window_, GLFW_TRUE);
 }
 
-bool Window::GetResized() const {
-  return resized_;
+bool Window::GetIconified() const { return window_iconified_; }
+
+void Window::SetIconified(bool iconified) { window_iconified_ = iconified; }
+
+bool Window::GetFramebufferResized() const { return framebuffer_resized_; }
+
+void Window::SetFramebufferResized(bool resized) {
+  framebuffer_resized_ = resized;
 }
 
-void Window::SetResized(bool resized) {
-  resized_ = false;
+void Window::GetFramebufferSize(int* width, int* height) const {
+  glfwGetFramebufferSize(glfw_window_, width, height);
 }
 
-bool Window::GetIconified() const {
-  return iconified_;
-}
-
-void Window::SetIconified(bool iconified) {
-  iconified_ = iconified;
-}
-
-bool Window::GetFocusMode() const {
-  return focus_mode_;
-}
+bool Window::GetFocusMode() const { return focus_mode_; }
 
 void Window::SetFocusMode(bool mode) {
   focus_mode_ = mode;
@@ -107,10 +110,6 @@ void Window::CreateWindowSurface(const vk::raii::Instance& instance,
                           nullptr, surface);
 }
 
-void Window::GetFramebufferSize(int* width, int* height) {
-  glfwGetFramebufferSize(glfw_window_, width, height);
-}
-
 void Window::RegisterOnWindowCloseFunc(const OnWindowCloseFunc& func) {
   on_window_close_func_.push_back(func);
 }
@@ -118,7 +117,10 @@ void Window::RegisterOnWindowSizeFunc(const OnWindowSizeFunc& func) {
   on_window_size_func_.push_back(func);
 }
 void Window::RegisterOnWindowIconifyFunc(const OnWindowIconifyFunc& func) {
-  on_window_iconify_func.push_back(func);
+  on_window_iconify_func_.push_back(func);
+}
+void Window::RegisterOnFramebufferSizeFunc(const OnFramebufferSizeFunc& func) {
+  on_framebuffer_size_func_.push_back(func);
 }
 void Window::RegisterOnKeyFunc(const OnKeyFunc& func) {
   on_key_func_.push_back(func);
@@ -145,8 +147,15 @@ void Window::RegisterOnDropFunc(const OnDropFunc& func) {
   on_drop_func_.push_back(func);
 }
 
-void Window::ErrorCallback(int error, const char* description) {
-  LOGE("glfw error: [{} {}].", error, description);
+void Window::ErrorCallback(int error_code, const char* description) {
+  LOGE("glfw error: [{} {}].", error_code, description);
+}
+void Window::WindowSizeCallback(GLFWwindow* glfw_window, int width,
+                                int height) {
+  if (auto* window{
+          reinterpret_cast<Window*>(glfwGetWindowUserPointer(glfw_window))}) {
+    window->OnWindowSize(width, height);
+  }
 }
 void Window::WindowCloseCallback(GLFWwindow* glfw_window) {
   if (auto* window{
@@ -154,19 +163,17 @@ void Window::WindowCloseCallback(GLFWwindow* glfw_window) {
     window->OnWindowClose();
   }
 }
-void Window::WindowSizeCallback(GLFWwindow* glfw_window, int width,
-                                int height) {
-  if (auto* window{
-          reinterpret_cast<Window*>(glfwGetWindowUserPointer(glfw_window))}) {
-    window->OnWindowSize(width, height);
-    window->width_ = width;
-    window->height_ = height;
-  }
-}
 void Window::WindowIconifyCallback(GLFWwindow* glfw_window, int iconified) {
   if (auto* window{
           reinterpret_cast<Window*>(glfwGetWindowUserPointer(glfw_window))}) {
     window->OnWindowIconify(iconified);
+  }
+}
+void Window::FramebufferSizeCallback(GLFWwindow* glfw_window, int width,
+                                     int height) {
+  if (auto* window{
+          reinterpret_cast<Window*>(glfwGetWindowUserPointer(glfw_window))}) {
+    window->OnFramebufferSize(width, height);
   }
 }
 void Window::KeyCallback(GLFWwindow* glfw_window, int key, int scancode,
@@ -183,17 +190,17 @@ void Window::CharCallback(GLFWwindow* glfw_window, unsigned codepoint) {
   }
 }
 void Window::CharModCallback(GLFWwindow* glfw_window, unsigned codepoint,
-                             int mod) {
+                             int mods) {
   if (auto* window{
           reinterpret_cast<Window*>(glfwGetWindowUserPointer(glfw_window))}) {
-    window->OnCharMod(codepoint, mod);
+    window->OnCharMod(codepoint, mods);
   }
 }
 void Window::MouseButtonCallback(GLFWwindow* glfw_window, int button,
-                                 int action, int mod) {
+                                 int action, int mods) {
   if (auto* window{
           reinterpret_cast<Window*>(glfwGetWindowUserPointer(glfw_window))}) {
-    window->OnMouseButton(button, action, mod);
+    window->OnMouseButton(button, action, mods);
   }
 }
 void Window::CursorPosCallback(GLFWwindow* glfw_window, double xpos,
@@ -216,14 +223,13 @@ void Window::ScrollCallback(GLFWwindow* glfw_window, double xoffset,
     window->OnScroll(xoffset, yoffset);
   }
 }
-void Window::DropCallback(GLFWwindow* glfw_window, int count,
+void Window::DropCallback(GLFWwindow* glfw_window, int path_count,
                           const char** paths) {
   if (auto* window{
           reinterpret_cast<Window*>(glfwGetWindowUserPointer(glfw_window))}) {
-    window->OnDrop(count, paths);
+    window->OnDrop(path_count, paths);
   }
 }
-
 void Window::OnWindowClose() {
   for (auto& func : on_window_close_func_) {
     func();
@@ -235,8 +241,13 @@ void Window::OnWindowSize(int width, int height) {
   }
 }
 void Window::OnWindowIconify(int iconified) {
-  for (auto& func : on_window_iconify_func) {
+  for (auto& func : on_window_iconify_func_) {
     func(iconified);
+  }
+}
+void Window::OnFramebufferSize(int width, int height) {
+  for (auto& func : on_framebuffer_size_func_) {
+    func(width, height);
   }
 }
 void Window::OnKey(int key, int scancode, int action, int mods) {
@@ -249,14 +260,14 @@ void Window::OnChar(unsigned codepoint) {
     func(codepoint);
   }
 }
-void Window::OnCharMod(unsigned codepoint, int mod) {
+void Window::OnCharMod(unsigned codepoint, int mods) {
   for (auto& func : on_char_mod_func_) {
-    func(codepoint, mod);
+    func(codepoint, mods);
   }
 }
-void Window::OnMouseButton(int button, int action, int mod) {
+void Window::OnMouseButton(int button, int action, int mods) {
   for (auto& func : on_mouse_button_func_) {
-    func(button, action, mod);
+    func(button, action, mods);
   }
 }
 void Window::OnCursorPos(double xpos, double ypos) {
@@ -274,9 +285,9 @@ void Window::OnScroll(double xoffset, double yoffset) {
     func(xoffset, yoffset);
   }
 }
-void Window::OnDrop(int count, const char** paths) {
+void Window::OnDrop(int path_count, const char** paths) {
   for (auto& func : on_drop_func_) {
-    func(count, paths);
+    func(path_count, paths);
   }
 }
 

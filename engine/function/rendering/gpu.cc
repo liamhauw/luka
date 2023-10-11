@@ -17,30 +17,16 @@
 
 namespace luka {
 
-Gpu::Gpu() {
-  MakeInstance();
-  MakeSurface();
-  MakePhysicalDevice();
-  MakeDevice();
-  MakeSwapchain();
-  MakeCommandObjects();
-  MakeSyncObjects();
-  MakeDepthImage();
-}
+Gpu::Gpu() {}
 
 Gpu::~Gpu() { device_.waitIdle(); }
 
-void Gpu::NewFrame() {}
-
-void Gpu::Resize() {}
-
-void Gpu::MakeInstance() {
+void Gpu::MakeInstance(
+    const std::vector<const char*>& window_required_instance_extensions) {
   vk::ApplicationInfo application_info{"luka", VK_MAKE_VERSION(1, 0, 0), "luka",
                                        VK_MAKE_VERSION(1, 0, 0),
                                        VK_API_VERSION_1_0};
 
-  std::vector<const char*> window_required_instance_extensions{
-      gContext.window->GetRequiredInstanceExtension()};
   required_instance_extensions_.insert(
       required_instance_extensions_.end(),
       window_required_instance_extensions.begin(),
@@ -147,10 +133,7 @@ void Gpu::MakeInstance() {
 #endif
 }
 
-void Gpu::MakeSurface() {
-  VkSurfaceKHR surface;
-  gContext.window->CreateWindowSurface(instance_, &surface);
-
+void Gpu::MakeSurface(VkSurfaceKHR surface) {
   surface_ = vk::raii::SurfaceKHR{instance_, surface};
 }
 
@@ -308,7 +291,7 @@ void Gpu::MakeDevice() {
       vk::raii::Queue{device_, queue_family_.present_index.value(), 0};
 }
 
-void Gpu::MakeSwapchain() {
+void Gpu::MakeSwapchain(int height, int width) {
   vk::SurfaceCapabilitiesKHR surface_capabilities{
       physical_device_.getSurfaceCapabilitiesKHR(*surface_)};
 
@@ -322,9 +305,6 @@ void Gpu::MakeSwapchain() {
   // Extent.
   if (surface_capabilities.currentExtent.width ==
       std::numeric_limits<uint32_t>::max()) {
-    int width, height;
-    gContext.window->GetFramebufferSize(&width, &height);
-
     swapchain_data_.extent.width = std::clamp(
         static_cast<uint32_t>(width), surface_capabilities.minImageExtent.width,
         surface_capabilities.maxImageExtent.width);
@@ -436,20 +416,20 @@ void Gpu::MakeCommandObjects() {
                              queue_family_.graphics_index.value()}};
 
   vk::CommandBufferAllocateInfo command_buffer_allocate_info{
-      *command_pool_, vk::CommandBufferLevel::ePrimary, frames_in_flight_};
+      *command_pool_, vk::CommandBufferLevel::ePrimary, kFramesInFlight};
   command_buffers_ = std::move(
       vk::raii::CommandBuffers{device_, command_buffer_allocate_info});
 }
 
 void Gpu::MakeSyncObjects() {
-  fences_.reserve(frames_in_flight_);
-  image_available_semaphores_.reserve(frames_in_flight_);
-  render_finished_semaphores_.reserve(frames_in_flight_);
+  fences_.reserve(kFramesInFlight);
+  image_available_semaphores_.reserve(kFramesInFlight);
+  render_finished_semaphores_.reserve(kFramesInFlight);
 
   vk::FenceCreateInfo fence_create_info{vk::FenceCreateFlagBits::eSignaled};
   vk::SemaphoreCreateInfo semaphore_create_info{};
 
-  for (uint32_t i{0}; i < frames_in_flight_; ++i) {
+  for (uint32_t i{0}; i < kFramesInFlight; ++i) {
     fences_.emplace_back(device_, fence_create_info);
     image_available_semaphores_.emplace_back(device_, semaphore_create_info);
     render_finished_semaphores_.emplace_back(device_, semaphore_create_info);
@@ -466,7 +446,7 @@ void Gpu::MakeDepthImage() {
       vk::Extent3D{swapchain_data_.extent, 1},
       1,
       1,
-      sample_count_,
+      vk::SampleCountFlagBits::e1,
       vk::ImageTiling::eOptimal,
       vk::ImageUsageFlagBits::eDepthStencilAttachment,
       vk::SharingMode::eExclusive,
@@ -489,6 +469,132 @@ void Gpu::MakeDepthImage() {
                               {},
                               {vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1}}};
 }
+
+void Gpu::MakeRenderPass() {
+  std::vector<vk::AttachmentDescription> attachment_descriptions;
+
+  attachment_descriptions.emplace_back(
+      vk::AttachmentDescriptionFlags{}, swapchain_data_.format,
+      vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eDontCare,
+      vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare,
+      vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined,
+      vk::ImageLayout::ePresentSrcKHR);
+
+  attachment_descriptions.emplace_back(
+      vk::AttachmentDescriptionFlags{}, depth_image_data_.format,
+      vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear,
+      vk::AttachmentStoreOp::eDontCare, vk::AttachmentLoadOp::eDontCare,
+      vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined,
+      vk::ImageLayout::eDepthStencilAttachmentOptimal);
+
+
+  vk::AttachmentReference color_attachment{
+      0, vk::ImageLayout::eColorAttachmentOptimal};
+  vk::AttachmentReference depth_attachment{
+      1, vk::ImageLayout::eDepthStencilAttachmentOptimal};
+
+  vk::SubpassDescription subpass_description{
+      {}, vk::PipelineBindPoint::eGraphics,
+      {}, color_attachment,
+      {}, &depth_attachment};
+
+  vk::SubpassDependency subpass_dependency{
+      VK_SUBPASS_EXTERNAL,
+      0,
+      vk::PipelineStageFlagBits::eColorAttachmentOutput |
+          vk::PipelineStageFlagBits::eEarlyFragmentTests,
+      vk::PipelineStageFlagBits::eColorAttachmentOutput |
+          vk::PipelineStageFlagBits::eEarlyFragmentTests,
+      {},
+      vk::AccessFlagBits::eColorAttachmentWrite |
+          vk::AccessFlagBits::eDepthStencilAttachmentWrite};
+
+  vk::RenderPassCreateInfo render_pass_create_info{
+      {}, attachment_descriptions, subpass_description, subpass_dependency};
+
+  render_pass_ = vk::raii::RenderPass{device_, render_pass_create_info};
+}
+
+void Gpu::MakeFramebuffer() {
+  std::vector<vk::ImageView> attachements(2);
+  attachements[1] = *(depth_image_data_.image_view);
+
+  vk::FramebufferCreateInfo framebuffer_create_info{
+      {},
+      *render_pass_,
+      static_cast<uint32_t>(attachements.size()),
+      attachements.data(),
+      swapchain_data_.extent.width,
+      swapchain_data_.extent.height,
+      1};
+
+  framebuffers_.reserve(swapchain_data_.image_views.size());
+  for (const auto& image_view : swapchain_data_.image_views) {
+    attachements[0] = *image_view;
+    framebuffers_.emplace_back(device_, framebuffer_create_info);
+  }
+}
+
+void Gpu::MakePipeline() {
+  
+}
+
+void Gpu::Resize(int width, int height) {}
+
+void Gpu::BeginFrame() {
+  if (device_.waitForFences(*(fences_[current_frame_]), VK_TRUE, UINT64_MAX) !=
+      vk::Result::eSuccess) {
+    THROW("Fail to wait for fences.");
+  }
+  device_.resetFences(*(fences_[current_frame_]));
+
+  vk::Result result;
+  std::tie(result, image_index_) = swapchain_data_.swapchain.acquireNextImage(
+      UINT64_MAX, *image_available_semaphores_[current_frame_], nullptr);
+  if (result != vk::Result::eSuccess) {
+    THROW("Fail to acqurie next image.");
+  }
+
+  auto& current_command_buffer{command_buffers_[current_frame_]};
+  current_command_buffer.reset({});
+  current_command_buffer.begin({});
+
+  std::array<vk::ClearValue, 2> clear_values;
+  clear_values[0].color = vk::ClearColorValue{0.0f, 0.0f, 0.0f, 1.0f};
+  clear_values[1].depthStencil = vk::ClearDepthStencilValue{1.0f, 0};
+
+  vk::RenderPassBeginInfo render_pass_begin_info{
+      *render_pass_, *framebuffers_[current_frame_],
+      vk::Rect2D{vk::Offset2D{0, 0}, swapchain_data_.extent}, clear_values};
+
+  current_command_buffer.beginRenderPass(render_pass_begin_info,
+                                         vk::SubpassContents::eInline);
+}
+
+void Gpu::EndFrame() {
+  auto& current_command_buffer{command_buffers_[current_frame_]};
+  current_command_buffer.endRenderPass();
+  current_command_buffer.end();
+  vk::PipelineStageFlags wait_stage{
+      vk::PipelineStageFlagBits::eColorAttachmentOutput};
+  vk::SubmitInfo submit_info{*(image_available_semaphores_[current_frame_]),
+                             wait_stage, *current_command_buffer,
+                             *(render_finished_semaphores_[current_frame_])};
+  graphics_queue_.submit(submit_info, *(fences_[current_frame_]));
+
+  vk::PresentInfoKHR presten_info_khr{
+      *(render_finished_semaphores_[current_frame_]),
+      *(swapchain_data_.swapchain), image_index_};
+
+  vk::Result result{present_queue_.presentKHR(presten_info_khr)};
+  if (result != vk::Result::eSuccess) {
+    THROW("Fail to present.");
+  }
+
+  current_frame_ = (current_frame_ + 1) % kFramesInFlight;
+}
+
+const vk::raii::Instance& Gpu::GetInstance() const { return instance_; }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL Gpu::DebugUtilsMessengerCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT message_severity_flag_bits,

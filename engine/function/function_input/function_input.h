@@ -33,6 +33,7 @@ class FunctionInput {
 
   void OnWindowSize(int width, int height);
   void OnWindowIconify(int iconified);
+  void OnFramebufferSize(int width, int height);
   void OnKey(int key, int scancode, int action, int mod);
   void OnCursorPos(double xpos, double ypos);
 

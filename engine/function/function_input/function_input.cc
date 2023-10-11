@@ -22,6 +22,11 @@ FunctionInput::FunctionInput() : window_{gContext.window} {
     OnWindowIconify(std::forward<decltype(ph1)>(ph1));
   });
 
+  window_->RegisterOnFramebufferSizeFunc([this](auto&& ph1, auto&& ph2) {
+    OnFramebufferSize(std::forward<decltype(ph1)>(ph1),
+                      std::forward<decltype(ph2)>(ph2));
+  });
+
   window_->RegisterOnKeyFunc([this](auto&& ph1, auto&& ph2, auto&& ph3,
                                     auto&& ph4) {
     OnKey(std::forward<decltype(ph1)>(ph1), std::forward<decltype(ph2)>(ph2),
@@ -37,22 +42,18 @@ FunctionInput::FunctionInput() : window_{gContext.window} {
 void FunctionInput::Tick() {}
 
 void FunctionInput::OnWindowSize(int width, int height) {
-  if (window_->width_ != width || window_->height_ != height) {
-    window_->resized_ = true;
-    window_->width_ = width;
-    window_->height_ = height;
-  }
+  window_->window_resized_ = true;
 }
 
 void FunctionInput::OnWindowIconify(int iconified) {
-  if (iconified == GLFW_TRUE) {
-    window_->iconified_ = true;
-  } else {
-    window_->iconified_ = false;
-  }
+  window_->window_iconified_ = iconified == GLFW_TRUE;
 }
 
-void FunctionInput::OnKey(int key, int /*scancode*/, int action, int /*mod*/) {
+void FunctionInput::OnFramebufferSize(int width, int height) {
+  window_->framebuffer_resized_ = true;
+}
+
+void FunctionInput::OnKey(int key, int /*scancode*/, int action, int /*mods*/) {
   if (gContext.is_editor_mode) {
     return;
   }
