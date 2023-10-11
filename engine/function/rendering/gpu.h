@@ -58,7 +58,8 @@ class Gpu {
   void MakeDepthImage();
   void MakeRenderPass();
   void MakeFramebuffer();
-  void MakePipeline();
+  void MakeGraphicsPipeline(const std::vector<char>& vectex_shader_buffer,
+    const std::vector<char>& fragment_shader_buffer);
 
   void Resize(int width, int height);
   void BeginFrame();
@@ -119,6 +120,10 @@ class Gpu {
   vk::raii::RenderPass render_pass_{nullptr};
 
   std::vector<vk::raii::Framebuffer> framebuffers_;
+
+  vk::raii::PipelineLayout pipeline_layout_{nullptr};
+  vk::raii::PipelineCache pipeline_cache_{nullptr};
+  vk::raii::Pipeline pipeline_{nullptr};
 };
 
 }  // namespace luka

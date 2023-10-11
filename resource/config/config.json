@@ -1,5 +1,9 @@
 {
   "asset": {
-    "model" : "box/Box.gltf"
+    "model": "box/Box.gltf",
+    "shader": {
+      "vertex": "shader.vert.spv",
+      "fragment": "shader.frag.spv"
+    }
   }
 }

@@ -41,7 +41,12 @@ Rendering::Rendering()
   gpu_->MakeRenderPass();
 
   gpu_->MakeFramebuffer();
+
+  gpu_->MakeGraphicsPipeline(gContext.asset->GetVertexShaderBuffer(),
+                             gContext.asset->GetFragmentShaderBuffer());
 }
+
+Rendering::~Rendering() { gpu_.reset(); }
 
 void Rendering::Tick() {
   if (window_->GetIconified()) {
@@ -59,12 +64,7 @@ void Rendering::Tick() {
 
   gpu_->BeginFrame();
 
-
-
   gpu_->EndFrame();
-
 }
-
-void Rendering::Terminate() { gpu_.reset(); }
 
 }  // namespace luka

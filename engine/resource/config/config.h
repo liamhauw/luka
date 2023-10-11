@@ -22,6 +22,8 @@ class Config {
   void Tick();
 
   std::filesystem::path GetModelFilePath();
+  std::filesystem::path GetVertexShaderFilePath();
+  std::filesystem::path GetFragmentShaderFilePath();
 
  private:
   std::filesystem::path source_path_{ReplacePathSlash(LUKA_SOURCE_PATH)};
@@ -29,9 +31,14 @@ class Config {
   std::filesystem::path config_path_{resource_path_ / "config"};
   std::filesystem::path asset_path_{resource_path_ / "asset"};
   std::filesystem::path model_path_{asset_path_ / "model"};
-
+  std::filesystem::path shader_path_{asset_path_ /
+                                     std::filesystem::path{"shader"} /
+                                     std::filesystem::path{"generated"}};
   std::filesystem::path config_file_path_{config_path_ / "config.json"};
+
   std::filesystem::path model_file_path_;
+  std::filesystem::path vertex_shader_file_path_;
+  std::filesystem::path fragment_shader_file_path_;
 };
 
 }  // namespace luka

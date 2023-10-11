@@ -19,10 +19,9 @@ class Window;
 class Rendering {
  public:
   Rendering();
+  ~Rendering();
 
   void Tick();
-
-  void Terminate();
 
  private:
   std::unique_ptr<Gpu> gpu_;

@@ -10,7 +10,7 @@
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],
-      "externalConsole": false,
+      "console": "internalConsole",
       "preLaunchTask": "Pre Debug"
     },
     {
@@ -22,7 +22,7 @@
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],
-      "externalConsole": false,
+      "console": "internalConsole",
       "preLaunchTask": "Pre Relase"
     },
     {
@@ -34,7 +34,6 @@
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],
-      "externalConsole": false,
       "MIMode": "lldb",
       "preLaunchTask": "Pre Debug"
     },
@@ -47,7 +46,6 @@
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],
-      "externalConsole": false,
       "MIMode": "lldb",
       "preLaunchTask": "Pre Release"
     }

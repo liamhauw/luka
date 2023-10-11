@@ -487,7 +487,6 @@ void Gpu::MakeRenderPass() {
       vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined,
       vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
-
   vk::AttachmentReference color_attachment{
       0, vk::ImageLayout::eColorAttachmentOptimal};
   vk::AttachmentReference depth_attachment{
@@ -522,8 +521,7 @@ void Gpu::MakeFramebuffer() {
   vk::FramebufferCreateInfo framebuffer_create_info{
       {},
       *render_pass_,
-      static_cast<uint32_t>(attachements.size()),
-      attachements.data(),
+      attachements,
       swapchain_data_.extent.width,
       swapchain_data_.extent.height,
       1};
@@ -535,8 +533,103 @@ void Gpu::MakeFramebuffer() {
   }
 }
 
-void Gpu::MakePipeline() {
-  
+void Gpu::MakeGraphicsPipeline(
+    const std::vector<char>& vectex_shader_buffer,
+    const std::vector<char>& fragment_shader_buffer) {
+  vk::ShaderModuleCreateInfo vertex_shader_module_create_info{
+      {},
+      vectex_shader_buffer.size(),
+      reinterpret_cast<const uint32_t*>(vectex_shader_buffer.data())};
+  vk::ShaderModuleCreateInfo fragment_shader_module_create_info{
+      {},
+      fragment_shader_buffer.size(),
+      reinterpret_cast<const uint32_t*>(fragment_shader_buffer.data())};
+
+  vk::raii::ShaderModule vertex_shader_module{device_,
+                                              vertex_shader_module_create_info};
+  vk::raii::ShaderModule fragment_shader_module{
+      device_, fragment_shader_module_create_info};
+
+  std::vector<vk::PipelineShaderStageCreateInfo> shader_stage_create_infos{
+      {{},
+       vk::ShaderStageFlagBits::eVertex,
+       *vertex_shader_module,
+       "main",
+       nullptr},
+      {{},
+       vk::ShaderStageFlagBits::eFragment,
+       *fragment_shader_module,
+       "main",
+       nullptr}};
+
+  vk::PipelineVertexInputStateCreateInfo vertex_input_state_create_info;
+
+  vk::PipelineInputAssemblyStateCreateInfo input_assembly_state_create_info{
+      {}, vk::PrimitiveTopology::eTriangleList, VK_FALSE};
+
+  vk::PipelineViewportStateCreateInfo viewport_state_create_info{
+      {}, 1, nullptr, 1, nullptr};
+
+  vk::PipelineRasterizationStateCreateInfo rasterization_state_create_info{
+      {},
+      VK_FALSE,
+      VK_FALSE,
+      vk::PolygonMode::eFill,
+      vk::CullModeFlagBits::eBack,
+      vk::FrontFace::eClockwise,
+      VK_FALSE,
+      0.0f,
+      0.0f,
+      0.0f,
+      1.0f};
+
+  vk::PipelineMultisampleStateCreateInfo multisample_state_create_info;
+
+  vk::PipelineDepthStencilStateCreateInfo depth_stencil_state_create_info{
+      {}, VK_TRUE, VK_TRUE, vk::CompareOp::eLess, VK_FALSE, VK_FALSE,
+  };
+
+  vk::ColorComponentFlags color_component_flags{
+      vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+      vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA};
+  vk::PipelineColorBlendAttachmentState color_blend_attachment_state{
+      VK_FALSE,          vk::BlendFactor::eZero, vk::BlendFactor::eZero,
+      vk::BlendOp::eAdd, vk::BlendFactor::eZero, vk::BlendFactor::eZero,
+      vk::BlendOp::eAdd, color_component_flags};
+
+  vk::PipelineColorBlendStateCreateInfo color_blend_state_create_info{
+      {},
+      VK_FALSE,
+      vk::LogicOp::eCopy,
+      color_blend_attachment_state,
+      {{0.0f, 0.0f, 0.0f, 0.0f}}};
+
+  std::array<vk::DynamicState, 2> dynamic_states{vk::DynamicState::eViewport,
+                                                 vk::DynamicState::eScissor};
+  vk::PipelineDynamicStateCreateInfo dynamic_state_create_info{{},
+                                                               dynamic_states};
+
+  pipeline_layout_ = vk::raii::PipelineLayout{device_, vk::PipelineLayoutCreateInfo{}};
+
+  vk::GraphicsPipelineCreateInfo graphics_pipeline_create_info{
+      {},
+      shader_stage_create_infos,
+      &vertex_input_state_create_info,
+      &input_assembly_state_create_info,
+      nullptr,
+      &viewport_state_create_info,
+      &rasterization_state_create_info,
+      &multisample_state_create_info,
+      &depth_stencil_state_create_info,
+      &color_blend_state_create_info,
+      &dynamic_state_create_info,
+      *pipeline_layout_,
+      *render_pass_};
+
+  pipeline_cache_ = vk::raii::PipelineCache{device_, {}};
+
+  pipeline_ = vk::raii::Pipeline{device_, pipeline_cache_,
+                                 graphics_pipeline_create_info};
 }
 
 void Gpu::Resize(int width, int height) {}
@@ -546,7 +639,7 @@ void Gpu::BeginFrame() {
       vk::Result::eSuccess) {
     THROW("Fail to wait for fences.");
   }
-  device_.resetFences(*(fences_[current_frame_]));
+ 
 
   vk::Result result;
   std::tie(result, image_index_) = swapchain_data_.swapchain.acquireNextImage(
@@ -554,6 +647,8 @@ void Gpu::BeginFrame() {
   if (result != vk::Result::eSuccess) {
     THROW("Fail to acqurie next image.");
   }
+
+  device_.resetFences(*(fences_[current_frame_]));
 
   auto& current_command_buffer{command_buffers_[current_frame_]};
   current_command_buffer.reset({});
@@ -569,6 +664,16 @@ void Gpu::BeginFrame() {
 
   current_command_buffer.beginRenderPass(render_pass_begin_info,
                                          vk::SubpassContents::eInline);
+
+  current_command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline_);
+
+  current_command_buffer.setViewport(
+      0, vk::Viewport{
+             0.0f, 0.0f, static_cast<float>(swapchain_data_.extent.width),
+             static_cast<float>(swapchain_data_.extent.height), 0.0f, 1.0f});
+  current_command_buffer.setScissor(
+      0, vk::Rect2D{vk::Offset2D{0, 0}, swapchain_data_.extent});
+  current_command_buffer.draw(3, 1, 0, 0);
 }
 
 void Gpu::EndFrame() {
@@ -672,5 +777,4 @@ vk::raii::DeviceMemory Gpu::AllocateDeviceMemory(
 
   return vk::raii::DeviceMemory{device, memory_allocate_info};
 }
-
 }  // namespace luka
