@@ -1,7 +1,7 @@
 {
   "configurations": [
     {
-      "name": "Windows",
+      "name": "Windows0",
       "includePath": [
         "${workspaceFolder}/**",
         "C:/Program Files/VulkanSDK/1.3.261.1/Include"
@@ -12,6 +12,19 @@
       "cStandard": "c17",
       "cppStandard": "c++20",
       "intelliSenseMode": "windows-msvc-x64"
+    },
+    {
+      "name": "Windows1",
+      "includePath": [
+        "${workspaceFolder}/**",
+        "D:/VulkanSDK/1.3.250.1/Include"
+      ],
+      "defines": [],
+      "windowsSdkVersion": "10.0.22621.0",
+      "compilerPath": "D:/LLVM/bin/clang.exe",
+      "cStandard": "c17",
+      "cppStandard": "c++20",
+      "intelliSenseMode": "windows-clang-x64"
     },
     {
       "name": "macOS",
