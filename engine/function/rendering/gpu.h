@@ -8,11 +8,14 @@
 
 #pragma once
 
+#include <memory>
 #include <optional>
 #include <vector>
 #include <vulkan/vulkan_raii.hpp>
 
 namespace luka {
+
+class Window;
 
 struct QueueFamliy {
   std::optional<uint32_t> graphics_index;
@@ -44,30 +47,28 @@ struct ImageData {
 
 class Gpu {
  public:
-  Gpu();
+  Gpu(std::shared_ptr<Window> window);
   ~Gpu();
 
-  void MakeInstance(
-      const std::vector<const char*>& window_required_instance_extensions);
-  void MakeSurface(VkSurfaceKHR surface);
-  void MakePhysicalDevice();
-  void MakeDevice();
-  void MakeSwapchain(int height, int width);
-  void MakeCommandObjects();
-  void MakeSyncObjects();
-  void MakeDepthImage();
-  void MakeRenderPass();
-  void MakeFramebuffer();
   void MakeGraphicsPipeline(const std::vector<char>& vectex_shader_buffer,
-    const std::vector<char>& fragment_shader_buffer);
+                            const std::vector<char>& fragment_shader_buffer);
 
-  void Resize(int width, int height);
+  void Resize();
   void BeginFrame();
   void EndFrame();
 
-  const vk::raii::Instance& GetInstance() const;
-
  private:
+  void MakeInstance();
+  void MakeSurface();
+  void MakePhysicalDevice();
+  void MakeDevice();
+  void MakeCommandObjects();
+  void MakeSyncObjects();
+  void MakeSwapchain();
+  void MakeDepthImage();
+  void MakeRenderPass();
+  void MakeFramebuffer();
+
   static VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(
       VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
       VkDebugUtilsMessageTypeFlagsEXT message_type,
@@ -79,6 +80,8 @@ class Gpu {
       const vk::raii::Device& device,
       const vk::MemoryRequirements& memory_requirements,
       vk::MemoryPropertyFlags memory_properties_flags);
+
+  std::shared_ptr<Window> window_;
 
   const uint32_t kFramesInFlight{2};
   uint32_t current_frame_{0};
@@ -96,7 +99,8 @@ class Gpu {
   vk::raii::PhysicalDevice physical_device_{nullptr};
   QueueFamliy queue_family_;
   std::vector<const char*> required_device_extensions_{
-      VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+      VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+      VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME};
   vk::SampleCountFlagBits sample_count_{vk::SampleCountFlagBits::e1};
   float max_anisotropy_{0.0f};
 
