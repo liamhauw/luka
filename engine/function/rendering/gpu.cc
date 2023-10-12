@@ -627,6 +627,7 @@ void Gpu::MakeSwapchain() {
     swapchain_create_info.pQueueFamilyIndices = queue_family_indices;
   }
 
+  swapchain_data_.swapchain.clear();
   swapchain_data_.swapchain =
       vk::raii::SwapchainKHR{device_, swapchain_create_info};
 
