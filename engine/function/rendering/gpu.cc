@@ -123,7 +123,8 @@ void Gpu::BeginFrame() {
       vk::PipelineBindPoint::eGraphics, *pipeline_layout_, 0,
       *(descriptor_sets_[current_frame_]), nullptr);
 
-  current_command_buffer.drawIndexed(static_cast<uint32_t>(indices_.size()), 1,
+  const auto& indices{asset_->GetObjModel().indices};
+  current_command_buffer.drawIndexed(static_cast<uint32_t>(indices.size()), 1,
                                      0, 0, 0);
 }
 
@@ -744,10 +745,9 @@ void Gpu::MakeFramebuffer() {
 }
 
 void Gpu::MakeVertexBuffer() {
-  asset_->LoadObjModel("resource/asset/model/viking_room.obj", vertices_,
-                       indices_);
+  const auto& vertices{asset_->GetObjModel().vertices};
 
-  VkDeviceSize buffer_size{sizeof(vertices_[0]) * vertices_.size()};
+  VkDeviceSize buffer_size{sizeof(vertices[0]) * vertices.size()};
 
   vk::raii::Buffer staging_buffer{
       device_, {{}, buffer_size, vk::BufferUsageFlagBits::eTransferSrc}};
@@ -756,7 +756,7 @@ void Gpu::MakeVertexBuffer() {
                            vk::MemoryPropertyFlagBits::eHostVisible |
                                vk::MemoryPropertyFlagBits::eHostCoherent)};
   staging_buffer.bindMemory(*staging_device_memory, 0);
-  CopyToDevice(staging_device_memory, vertices_.data(), buffer_size);
+  CopyToDevice(staging_device_memory, vertices.data(), buffer_size);
 
   vertex_buffer_data_.buffer =
       vk::raii::Buffer{device_,
@@ -774,7 +774,9 @@ void Gpu::MakeVertexBuffer() {
 }
 
 void Gpu::MakeIndexBuffer() {
-  VkDeviceSize buffer_size{sizeof(indices_[0]) * indices_.size()};
+  const auto& indices{asset_->GetObjModel().indices};
+
+  VkDeviceSize buffer_size{sizeof(indices[0]) * indices.size()};
 
   vk::raii::Buffer staging_buffer{
       device_, {{}, buffer_size, vk::BufferUsageFlagBits::eTransferSrc}};
@@ -783,7 +785,7 @@ void Gpu::MakeIndexBuffer() {
                            vk::MemoryPropertyFlagBits::eHostVisible |
                                vk::MemoryPropertyFlagBits::eHostCoherent)};
   staging_buffer.bindMemory(*staging_device_memory, 0);
-  CopyToDevice(staging_device_memory, indices_.data(), buffer_size);
+  CopyToDevice(staging_device_memory, indices.data(), buffer_size);
 
   index_buffer_data_.buffer =
       vk::raii::Buffer{device_,
@@ -826,15 +828,11 @@ void Gpu::MakeUniformBuffer() {
 }
 
 void Gpu::MakeTextureImage() {
-  // load texture
-  int tex_width, tex_height, tex_channels;
-  stbi_uc* piexls{
-      stbi_load(std::string{"resource/asset/texture/viking_room.png"}.c_str(),
-                &tex_width, &tex_height, &tex_channels, STBI_rgb_alpha)};
+  const auto& texture{asset_->GetTexture()};
+  const auto& tex_width{texture.width};
+  const auto& tex_height{texture.height};
+  const auto& tex_pixels{texture.piexls};
 
-  if (!piexls) {
-    throw std::runtime_error{"fail to load texture image"};
-  }
   mip_level_count_ = static_cast<uint32_t>(std::floor(
                          std::log2(std::max(tex_width, tex_height)))) +
                      1;
@@ -849,10 +847,11 @@ void Gpu::MakeTextureImage() {
                            vk::MemoryPropertyFlagBits::eHostVisible |
                                vk::MemoryPropertyFlagBits::eHostCoherent)};
   staging_buffer.bindMemory(*staging_device_memory, 0);
-  CopyToDevice(staging_device_memory, piexls, image_size);
-  stbi_image_free(piexls);
+  CopyToDevice(staging_device_memory, tex_pixels, image_size);
+  
+  asset_->FreeTexture();
 
-  // create texture image data
+  // Create texture image data.
   texture_image_data_.format = vk::Format::eR8G8B8A8Srgb;
   vk::ImageCreateInfo image_create_info{
       {},
@@ -876,7 +875,7 @@ void Gpu::MakeTextureImage() {
                            vk::MemoryPropertyFlagBits::eDeviceLocal);
   texture_image_data_.image.bindMemory(*(texture_image_data_.device_memory), 0);
 
-  // copy buffer to image
+  // Copy buffer to image.
   {
     vk::raii::CommandBuffer command_buffer{BeginSingleTimeCommand()};
     vk::ImageMemoryBarrier barrier{
@@ -913,13 +912,12 @@ void Gpu::MakeTextureImage() {
     EndSingleTimeCommand(command_buffer);
   }
 
-  // generate mipmaps
+  // Generate mipmaps.
   vk::FormatProperties format_properties{
       physical_device_.getFormatProperties(texture_image_data_.format)};
   if (!(format_properties.optimalTilingFeatures &
         vk::FormatFeatureFlagBits::eSampledImageFilterLinear)) {
-    throw std::runtime_error{
-        "texture image format does not support linear blitting"};
+    THROW("Texture image format does not support linear blitting");
   }
 
   {

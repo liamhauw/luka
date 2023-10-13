@@ -21,17 +21,22 @@
 namespace luka {
 
 Asset::Asset() {
-  LoadModel(gContext.config->GetModelFilePath().string(), model_);
+  LoadObjModel(gContext.config->GetModelFilePath().string(), obj_model_);
+
+  // LoadGltfModel(gContext.config->GetModelFilePath().string(), gltf_model_);
 
   LoadShader(gContext.config->GetVertexShaderFilePath().string(),
              vertext_shader_buffer_);
   LoadShader(gContext.config->GetFragmentShaderFilePath().string(),
              fragment_shader_buffer_);
+  LoadTexture(gContext.config->GetTextureFileFilePath().string(), texture_);
 }
 
 void Asset::Tick() {}
 
-const tinygltf::Model& Asset::GetModel() const { return model_; }
+const ObjModel& Asset::GetObjModel() const { return obj_model_; }
+
+const tinygltf::Model& Asset::GetGltfModel() const { return gltf_model_; }
 
 const std::vector<char>& Asset::GetVertexShaderBuffer() const {
   return vertext_shader_buffer_;
@@ -41,13 +46,19 @@ const std::vector<char>& Asset::GetFragmentShaderBuffer() const {
   return fragment_shader_buffer_;
 }
 
-void Asset::LoadModel(const std::string& model_file_name,
-                      tinygltf::Model& model) {
+const Texture& Asset::GetTexture() const { return texture_; }
+
+void Asset::FreeTexture() {
+  stbi_image_free(texture_.piexls);
+}
+
+void Asset::LoadGltfModel(const std::string& model_path,
+                          tinygltf::Model& gltf_model) {
   tinygltf::TinyGLTF tiny_gltf;
   std::string err;
   std::string warn;
   bool result{
-      tiny_gltf.LoadASCIIFromFile(&model_, &err, &warn, model_file_name)};
+      tiny_gltf.LoadASCIIFromFile(&gltf_model, &err, &warn, model_path)};
   if (!warn.empty()) {
     LOGW("tinygltf load warn: [{}].", warn);
   }
@@ -59,15 +70,23 @@ void Asset::LoadModel(const std::string& model_file_name,
   }
 }
 
-void Asset::LoadObjModel(const std::string& model,
-                         std::vector<Vertex>& vertices,
-                         std::vector<uint32_t>& indices) {
+void Asset::LoadObjModel(const std::string& model_path, ObjModel& obj_model) {
   tinyobj::attrib_t attrib;
   std::vector<tinyobj::shape_t> shapes;
   std::vector<tinyobj::material_t> materials;
   std::string warn, err;
 
-  tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, model.c_str());
+  bool result{tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err,
+                               model_path.c_str())};
+  if (!warn.empty()) {
+    LOGW("tinyobj load warn: [{}].", warn);
+  }
+  if (!err.empty()) {
+    LOGE("tinyobj load error: [{}].", err);
+  }
+  if (!result) {
+    THROW("Fail to load obj file.");
+  }
 
   std::unordered_map<Vertex, uint32_t> unique_vertices{};
 
@@ -86,20 +105,21 @@ void Asset::LoadObjModel(const std::string& model,
       vertex.color = {1.0f, 1.0f, 1.0f};
 
       if (unique_vertices.count(vertex) == 0) {
-        unique_vertices[vertex] = static_cast<uint32_t>(vertices.size());
-        vertices.push_back(vertex);
+        unique_vertices[vertex] =
+            static_cast<uint32_t>(obj_model.vertices.size());
+        obj_model.vertices.push_back(vertex);
       }
 
-      indices.push_back(unique_vertices[vertex]);
+      obj_model.indices.push_back(unique_vertices[vertex]);
     }
   }
 }
 
-void Asset::LoadShader(const std::string& shader_file_name,
+void Asset::LoadShader(const std::string& shader_path,
                        std::vector<char>& shader_buffer) {
-  std::ifstream shader_file(shader_file_name, std::ios::ate | std::ios::binary);
+  std::ifstream shader_file(shader_path, std::ios::ate | std::ios::binary);
   if (!shader_file) {
-    THROW("Fail to open {}", shader_file_name);
+    THROW("Fail to open {}", shader_path);
   }
 
   uint32_t file_size{static_cast<uint32_t>(shader_file.tellg())};
@@ -108,6 +128,15 @@ void Asset::LoadShader(const std::string& shader_file_name,
   shader_file.read(shader_buffer.data(), file_size);
 
   shader_file.close();
+}
+
+void Asset::LoadTexture(const std::string& texture_path, Texture& texture) {
+  texture.piexls =
+      stbi_load(texture_path.c_str(), &texture.width, &texture.height,
+                &texture.channels, STBI_rgb_alpha);
+  if (!texture.piexls) {
+    THROW("Fail to load texture image.");
+  }
 }
 
 }  // namespace luka

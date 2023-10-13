@@ -30,10 +30,22 @@ struct Vertex {
   }
 };
 
+struct ObjModel {
+  std::vector<Vertex> vertices;
+  std::vector<uint32_t> indices;
+};
+
 struct UniformBufferObject {
   alignas(16) glm::mat4 model;
   alignas(16) glm::mat4 view;
   alignas(16) glm::mat4 proj;
+};
+
+struct Texture {
+  int width;
+  int height;
+  int channels;
+  stbi_uc* piexls;
 };
 
 class Asset {
@@ -42,21 +54,26 @@ class Asset {
 
   void Tick();
 
-  const tinygltf::Model& GetModel() const;
+  const tinygltf::Model& GetGltfModel() const;
+  const ObjModel& GetObjModel() const;
   const std::vector<char>& GetVertexShaderBuffer() const;
   const std::vector<char>& GetFragmentShaderBuffer() const;
-  
-  void LoadObjModel(const std::string& model, std::vector<Vertex>& vertices,
-                    std::vector<uint32_t>& indices);
+  const Texture& GetTexture() const;
+  void FreeTexture();
 
  private:
-  void LoadModel(const std::string& model_file_name, tinygltf::Model& model);
-  void LoadShader(const std::string& shader_file_name,
+  void LoadGltfModel(const std::string& model_path,
+                     tinygltf::Model& gltf_model);
+  void LoadObjModel(const std::string& model_path, ObjModel& obj_model);
+  void LoadShader(const std::string& shader_path,
                   std::vector<char>& shader_buffer);
+  void LoadTexture(const std::string& texture_path, Texture& texture);
 
-  tinygltf::Model model_;
+  tinygltf::Model gltf_model_;
+  ObjModel obj_model_;
   std::vector<char> vertext_shader_buffer_;
   std::vector<char> fragment_shader_buffer_;
+  Texture texture_;
 };
 
 }  // namespace luka

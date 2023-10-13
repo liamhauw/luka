@@ -161,8 +161,6 @@ class Gpu {
 
   std::vector<vk::raii::Framebuffer> framebuffers_;
 
-  std::vector<Vertex> vertices_;
-  std::vector<uint32_t> indices_;
   BufferData vertex_buffer_data_;
   BufferData index_buffer_data_;
   std::vector<BufferData> uniform_buffer_datas_;

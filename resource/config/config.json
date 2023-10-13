@@ -1,9 +1,10 @@
 {
   "asset": {
-    "model": "box/Box.gltf",
+    "model": "viking_room.obj",
     "shader": {
       "vertex": "shader.vert.spv",
       "fragment": "shader.frag.spv"
-    }
+    },
+    "texture": "viking_room.png"
   }
 }
