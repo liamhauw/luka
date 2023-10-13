@@ -10,6 +10,7 @@ configure_file(
 set(HEADER_FILES
   platform/common.h
   core/log.h
+  core/math.h
   core/util.h
   resource/asset/asset.h
   resource/config/config.h

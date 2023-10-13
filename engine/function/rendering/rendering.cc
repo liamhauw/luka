@@ -15,8 +15,8 @@ namespace luka {
 Rendering::Rendering()
     : asset_{gContext.asset},
       window_{gContext.window},
-      gpu_{std::make_unique<Gpu>(window_)} {
-  gpu_->MakeGraphicsPipeline(asset_->GetVertexShaderBuffer(),
+      gpu_{std::make_unique<Gpu>(asset_, window_)} {
+  gpu_->MakePipeline(asset_->GetVertexShaderBuffer(),
                              asset_->GetFragmentShaderBuffer());
 }
 

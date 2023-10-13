@@ -9,127 +9,44 @@
 #include "function/rendering/gpu.h"
 
 #include <algorithm>
+#include <iterator>
+#include <memory>
+#include <numeric>
 #include <set>
+#include <utility>
 
 #include "context.h"
 #include "core/log.h"
 
 namespace luka {
 
-Gpu::Gpu(std::shared_ptr<Window> window) : window_{window} {
+Gpu::Gpu(std::shared_ptr<Asset> asset, std::shared_ptr<Window> window)
+    : asset_{asset}, window_{window} {
   MakeInstance();
   MakeSurface();
   MakePhysicalDevice();
   MakeDevice();
   MakeCommandObjects();
   MakeSyncObjects();
+
   MakeSwapchain();
+  MakeColorImage();
   MakeDepthImage();
   MakeRenderPass();
   MakeFramebuffer();
+
+  MakeVertexBuffer();
+  MakeIndexBuffer();
+  MakeUniformBuffer();
+  MakeTextureImage();
+  MakeTextureSampler();
+
+  MakeDescriptorSetLayout();
+  MakeDescriptorPool();
+  MakeDescriptorSet();
 }
 
 Gpu::~Gpu() { device_.waitIdle(); }
-
-void Gpu::MakeGraphicsPipeline(
-    const std::vector<char>& vectex_shader_buffer,
-    const std::vector<char>& fragment_shader_buffer) {
-  vk::ShaderModuleCreateInfo vertex_shader_module_create_info{
-      {},
-      vectex_shader_buffer.size(),
-      reinterpret_cast<const uint32_t*>(vectex_shader_buffer.data())};
-  vk::ShaderModuleCreateInfo fragment_shader_module_create_info{
-      {},
-      fragment_shader_buffer.size(),
-      reinterpret_cast<const uint32_t*>(fragment_shader_buffer.data())};
-
-  vk::raii::ShaderModule vertex_shader_module{device_,
-                                              vertex_shader_module_create_info};
-  vk::raii::ShaderModule fragment_shader_module{
-      device_, fragment_shader_module_create_info};
-
-  std::vector<vk::PipelineShaderStageCreateInfo> shader_stage_create_infos{
-      {{},
-       vk::ShaderStageFlagBits::eVertex,
-       *vertex_shader_module,
-       "main",
-       nullptr},
-      {{},
-       vk::ShaderStageFlagBits::eFragment,
-       *fragment_shader_module,
-       "main",
-       nullptr}};
-
-  vk::PipelineVertexInputStateCreateInfo vertex_input_state_create_info;
-
-  vk::PipelineInputAssemblyStateCreateInfo input_assembly_state_create_info{
-      {}, vk::PrimitiveTopology::eTriangleList, VK_FALSE};
-
-  vk::PipelineViewportStateCreateInfo viewport_state_create_info{
-      {}, 1, nullptr, 1, nullptr};
-
-  vk::PipelineRasterizationStateCreateInfo rasterization_state_create_info{
-      {},
-      VK_FALSE,
-      VK_FALSE,
-      vk::PolygonMode::eFill,
-      vk::CullModeFlagBits::eBack,
-      vk::FrontFace::eClockwise,
-      VK_FALSE,
-      0.0f,
-      0.0f,
-      0.0f,
-      1.0f};
-
-  vk::PipelineMultisampleStateCreateInfo multisample_state_create_info;
-
-  vk::PipelineDepthStencilStateCreateInfo depth_stencil_state_create_info{
-      {}, VK_TRUE, VK_TRUE, vk::CompareOp::eLess, VK_FALSE, VK_FALSE,
-  };
-
-  vk::ColorComponentFlags color_component_flags{
-      vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
-      vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA};
-  vk::PipelineColorBlendAttachmentState color_blend_attachment_state{
-      VK_FALSE,          vk::BlendFactor::eZero, vk::BlendFactor::eZero,
-      vk::BlendOp::eAdd, vk::BlendFactor::eZero, vk::BlendFactor::eZero,
-      vk::BlendOp::eAdd, color_component_flags};
-
-  vk::PipelineColorBlendStateCreateInfo color_blend_state_create_info{
-      {},
-      VK_FALSE,
-      vk::LogicOp::eCopy,
-      color_blend_attachment_state,
-      {{0.0f, 0.0f, 0.0f, 0.0f}}};
-
-  std::array<vk::DynamicState, 2> dynamic_states{vk::DynamicState::eViewport,
-                                                 vk::DynamicState::eScissor};
-  vk::PipelineDynamicStateCreateInfo dynamic_state_create_info{{},
-                                                               dynamic_states};
-
-  pipeline_layout_ =
-      vk::raii::PipelineLayout{device_, vk::PipelineLayoutCreateInfo{}};
-
-  vk::GraphicsPipelineCreateInfo graphics_pipeline_create_info{
-      {},
-      shader_stage_create_infos,
-      &vertex_input_state_create_info,
-      &input_assembly_state_create_info,
-      nullptr,
-      &viewport_state_create_info,
-      &rasterization_state_create_info,
-      &multisample_state_create_info,
-      &depth_stencil_state_create_info,
-      &color_blend_state_create_info,
-      &dynamic_state_create_info,
-      *pipeline_layout_,
-      *render_pass_};
-
-  pipeline_cache_ = vk::raii::PipelineCache{device_, {}};
-
-  pipeline_ = vk::raii::Pipeline{device_, pipeline_cache_,
-                                 graphics_pipeline_create_info};
-}
 
 void Gpu::Resize() {
   MakeSwapchain();
@@ -151,6 +68,27 @@ void Gpu::BeginFrame() {
   }
 
   device_.resetFences(*(fences_[current_frame_]));
+
+  static auto start_time{std::chrono::high_resolution_clock::now()};
+
+  auto current_time{std::chrono::high_resolution_clock::now()};
+  float time{std::chrono::duration<float, std::chrono::seconds::period>(
+                 current_time - start_time)
+                 .count()};
+
+  UniformBufferObject ubo{};
+  ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(10.0f),
+                          glm::vec3(0.0f, 0.0f, 1.0f));
+  ubo.view =
+      glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f),
+                  glm::vec3(0.0f, 0.0f, 1.0f));
+  ubo.proj =
+      glm::perspective(glm::radians(45.0f),
+                       static_cast<float>(swapchain_data_.extent.width) /
+                           static_cast<float>(swapchain_data_.extent.height),
+                       0.1f, 10.0f);
+  ubo.proj[1][1] *= -1;
+  memcpy(uniform_buffer_mapped_dates_[current_frame_], &ubo, sizeof(ubo));
 
   auto& current_command_buffer{command_buffers_[current_frame_]};
   current_command_buffer.reset({});
@@ -176,7 +114,17 @@ void Gpu::BeginFrame() {
              static_cast<float>(swapchain_data_.extent.height), 0.0f, 1.0f});
   current_command_buffer.setScissor(
       0, vk::Rect2D{vk::Offset2D{0, 0}, swapchain_data_.extent});
-  current_command_buffer.draw(3, 1, 0, 0);
+
+  current_command_buffer.bindVertexBuffers(0, *(vertex_buffer_data_.buffer),
+                                           {0});
+  current_command_buffer.bindIndexBuffer(*(index_buffer_data_.buffer), 0,
+                                         vk::IndexType::eUint32);
+  current_command_buffer.bindDescriptorSets(
+      vk::PipelineBindPoint::eGraphics, *pipeline_layout_, 0,
+      *(descriptor_sets_[current_frame_]), nullptr);
+
+  current_command_buffer.drawIndexed(static_cast<uint32_t>(indices_.size()), 1,
+                                     0, 0, 0);
 }
 
 void Gpu::EndFrame() {
@@ -393,8 +341,6 @@ void Gpu::MakePhysicalDevice() {
                 .get<vk::PhysicalDeviceDescriptorIndexingFeaturesEXT>()};
 
     bool has_features{static_cast<bool>(
-        physical_device_features.fragmentStoresAndAtomics &
-        physical_device_features.independentBlend &
         physical_device_features.samplerAnisotropy &
         descriptor_indexing_features.descriptorBindingPartiallyBound &
         descriptor_indexing_features.runtimeDescriptorArray)};
@@ -476,8 +422,6 @@ void Gpu::MakeDevice() {
   descriptor_indexing_features.runtimeDescriptorArray = VK_TRUE;
 
   vk::PhysicalDeviceFeatures physical_device_features;
-  physical_device_features.fragmentStoresAndAtomics = VK_TRUE;
-  physical_device_features.independentBlend = VK_TRUE;
   physical_device_features.samplerAnisotropy = VK_TRUE;
 
   vk::PhysicalDeviceFeatures2 physical_device_features2{
@@ -648,6 +592,42 @@ void Gpu::MakeSwapchain() {
   }
 }
 
+void Gpu::MakeColorImage() {
+  color_image_data_.format = swapchain_data_.format;
+
+  vk::ImageCreateInfo image_create_info{
+      {},
+      vk::ImageType::e2D,
+      swapchain_data_.format,
+      vk::Extent3D{swapchain_data_.extent, 1},
+      1,
+      1,
+      sample_count_,
+      vk::ImageTiling::eOptimal,
+      vk::ImageUsageFlagBits::eTransientAttachment |
+          vk::ImageUsageFlagBits::eColorAttachment,
+      vk::SharingMode::eExclusive,
+      {},
+      vk::ImageLayout::eUndefined};
+
+  color_image_data_.image = vk::raii::Image{device_, image_create_info};
+
+  color_image_data_.device_memory =
+      AllocateDeviceMemory(color_image_data_.image.getMemoryRequirements(),
+                           vk::MemoryPropertyFlagBits::eDeviceLocal);
+
+  color_image_data_.image.bindMemory(*(color_image_data_.device_memory), 0);
+
+  color_image_data_.image_view = vk::raii::ImageView{
+      device_,
+      vk::ImageViewCreateInfo{{},
+                              *(color_image_data_.image),
+                              vk::ImageViewType::e2D,
+                              color_image_data_.format,
+                              {},
+                              {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}}};
+}
+
 void Gpu::MakeDepthImage() {
   depth_image_data_.format = vk::Format::eD32Sfloat;
 
@@ -658,7 +638,7 @@ void Gpu::MakeDepthImage() {
       vk::Extent3D{swapchain_data_.extent, 1},
       1,
       1,
-      vk::SampleCountFlagBits::e1,
+      sample_count_,
       vk::ImageTiling::eOptimal,
       vk::ImageUsageFlagBits::eDepthStencilAttachment,
       vk::SharingMode::eExclusive,
@@ -667,8 +647,7 @@ void Gpu::MakeDepthImage() {
   depth_image_data_.image = vk::raii::Image{device_, image_create_info};
 
   depth_image_data_.device_memory =
-      AllocateDeviceMemory(physical_device_, device_,
-                           depth_image_data_.image.getMemoryRequirements(),
+      AllocateDeviceMemory(depth_image_data_.image.getMemoryRequirements(),
                            vk::MemoryPropertyFlagBits::eDeviceLocal);
 
   depth_image_data_.image.bindMemory(*(depth_image_data_.device_memory), 0);
@@ -681,40 +660,50 @@ void Gpu::MakeDepthImage() {
                               {},
                               {vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1}}};
 
-  vk::DebugUtilsObjectNameInfoEXT debug_utils_object_name_info{
-      vk::ObjectType::eImage,
-      reinterpret_cast<uint64_t>(
-          static_cast<VkImage>(*depth_image_data_.image)),
-      "Image name"};
-  device_.setDebugUtilsObjectNameEXT(debug_utils_object_name_info);
+  // vk::DebugUtilsObjectNameInfoEXT debug_utils_object_name_info{
+  //     vk::ObjectType::eImage,
+  //     reinterpret_cast<uint64_t>(
+  //         static_cast<VkImage>(*depth_image_data_.image)),
+  //     "Image name"};
+  // device_.setDebugUtilsObjectNameEXT(debug_utils_object_name_info);
 }
 
 void Gpu::MakeRenderPass() {
   std::vector<vk::AttachmentDescription> attachment_descriptions;
 
   attachment_descriptions.emplace_back(
+      vk::AttachmentDescriptionFlags{}, color_image_data_.format, sample_count_,
+      vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore,
+      vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare,
+      vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
+
+  attachment_descriptions.emplace_back(
+      vk::AttachmentDescriptionFlags{}, depth_image_data_.format, sample_count_,
+      vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eDontCare,
+      vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare,
+      vk::ImageLayout::eUndefined,
+      vk::ImageLayout::eDepthStencilAttachmentOptimal);
+
+  attachment_descriptions.emplace_back(
       vk::AttachmentDescriptionFlags{}, swapchain_data_.format,
-      vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear,
+      vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eDontCare,
       vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare,
       vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined,
       vk::ImageLayout::ePresentSrcKHR);
-
-  attachment_descriptions.emplace_back(
-      vk::AttachmentDescriptionFlags{}, depth_image_data_.format,
-      vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear,
-      vk::AttachmentStoreOp::eDontCare, vk::AttachmentLoadOp::eDontCare,
-      vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined,
-      vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
   vk::AttachmentReference color_attachment{
       0, vk::ImageLayout::eColorAttachmentOptimal};
   vk::AttachmentReference depth_attachment{
       1, vk::ImageLayout::eDepthStencilAttachmentOptimal};
+  vk::AttachmentReference resolve_attachment{
+      2, vk::ImageLayout::eColorAttachmentOptimal};
 
-  vk::SubpassDescription subpass_description{
-      {}, vk::PipelineBindPoint::eGraphics,
-      {}, color_attachment,
-      {}, &depth_attachment};
+  vk::SubpassDescription subpass_description{{},
+                                             vk::PipelineBindPoint::eGraphics,
+                                             {},
+                                             color_attachment,
+                                             resolve_attachment,
+                                             &depth_attachment};
 
   vk::SubpassDependency subpass_dependency{
       VK_SUBPASS_EXTERNAL,
@@ -734,7 +723,8 @@ void Gpu::MakeRenderPass() {
 }
 
 void Gpu::MakeFramebuffer() {
-  std::vector<vk::ImageView> attachements(2);
+  std::vector<vk::ImageView> attachements(3);
+  attachements[0] = *(color_image_data_.image_view);
   attachements[1] = *(depth_image_data_.image_view);
 
   vk::FramebufferCreateInfo framebuffer_create_info{
@@ -748,9 +738,503 @@ void Gpu::MakeFramebuffer() {
   framebuffers_.clear();
   framebuffers_.reserve(swapchain_data_.image_views.size());
   for (const auto& image_view : swapchain_data_.image_views) {
-    attachements[0] = *image_view;
+    attachements[2] = *image_view;
     framebuffers_.emplace_back(device_, framebuffer_create_info);
   }
+}
+
+void Gpu::MakeVertexBuffer() {
+  asset_->LoadObjModel("resource/asset/model/viking_room.obj", vertices_,
+                       indices_);
+
+  VkDeviceSize buffer_size{sizeof(vertices_[0]) * vertices_.size()};
+
+  vk::raii::Buffer staging_buffer{
+      device_, {{}, buffer_size, vk::BufferUsageFlagBits::eTransferSrc}};
+  vk::raii::DeviceMemory staging_device_memory{
+      AllocateDeviceMemory(staging_buffer.getMemoryRequirements(),
+                           vk::MemoryPropertyFlagBits::eHostVisible |
+                               vk::MemoryPropertyFlagBits::eHostCoherent)};
+  staging_buffer.bindMemory(*staging_device_memory, 0);
+  CopyToDevice(staging_device_memory, vertices_.data(), buffer_size);
+
+  vertex_buffer_data_.buffer =
+      vk::raii::Buffer{device_,
+                       {{},
+                        buffer_size,
+                        vk::BufferUsageFlagBits::eTransferDst |
+                            vk::BufferUsageFlagBits::eVertexBuffer}};
+  vertex_buffer_data_.device_memory = vk::raii::DeviceMemory{
+      AllocateDeviceMemory(vertex_buffer_data_.buffer.getMemoryRequirements(),
+                           vk::MemoryPropertyFlagBits::eDeviceLocal)};
+  vertex_buffer_data_.buffer.bindMemory(*(vertex_buffer_data_.device_memory),
+                                        0);
+
+  CopyBuffer(staging_buffer, vertex_buffer_data_.buffer, buffer_size);
+}
+
+void Gpu::MakeIndexBuffer() {
+  VkDeviceSize buffer_size{sizeof(indices_[0]) * indices_.size()};
+
+  vk::raii::Buffer staging_buffer{
+      device_, {{}, buffer_size, vk::BufferUsageFlagBits::eTransferSrc}};
+  vk::raii::DeviceMemory staging_device_memory{
+      AllocateDeviceMemory(staging_buffer.getMemoryRequirements(),
+                           vk::MemoryPropertyFlagBits::eHostVisible |
+                               vk::MemoryPropertyFlagBits::eHostCoherent)};
+  staging_buffer.bindMemory(*staging_device_memory, 0);
+  CopyToDevice(staging_device_memory, indices_.data(), buffer_size);
+
+  index_buffer_data_.buffer =
+      vk::raii::Buffer{device_,
+                       {{},
+                        buffer_size,
+                        vk::BufferUsageFlagBits::eTransferDst |
+                            vk::BufferUsageFlagBits::eIndexBuffer}};
+  index_buffer_data_.device_memory = vk::raii::DeviceMemory{
+      AllocateDeviceMemory(index_buffer_data_.buffer.getMemoryRequirements(),
+                           vk::MemoryPropertyFlagBits::eDeviceLocal)};
+  index_buffer_data_.buffer.bindMemory(*(index_buffer_data_.device_memory), 0);
+
+  CopyBuffer(staging_buffer, index_buffer_data_.buffer, buffer_size);
+}
+
+void Gpu::MakeUniformBuffer() {
+  VkDeviceSize buffer_size{sizeof(UniformBufferObject)};
+
+  uniform_buffer_datas_.resize(kFramesInFlight);
+  uniform_buffer_mapped_dates_.resize(kFramesInFlight);
+
+  vk::BufferCreateInfo buffer_create_info{
+      {}, buffer_size, vk::BufferUsageFlagBits::eUniformBuffer};
+
+  for (uint32_t i = 0; i < kFramesInFlight; ++i) {
+    uniform_buffer_datas_[i].buffer =
+        vk::raii::Buffer{device_, buffer_create_info};
+    uniform_buffer_datas_[i].device_memory =
+        vk::raii::DeviceMemory{AllocateDeviceMemory(
+            uniform_buffer_datas_[i].buffer.getMemoryRequirements(),
+            vk::MemoryPropertyFlagBits::eHostVisible |
+                vk::MemoryPropertyFlagBits::eHostCoherent)};
+
+    uniform_buffer_datas_[i].buffer.bindMemory(
+        *(uniform_buffer_datas_[i].device_memory), 0);
+
+    uniform_buffer_mapped_dates_[i] = static_cast<uint8_t*>(
+        uniform_buffer_datas_[i].device_memory.mapMemory(0, buffer_size));
+  }
+}
+
+void Gpu::MakeTextureImage() {
+  // load texture
+  int tex_width, tex_height, tex_channels;
+  stbi_uc* piexls{
+      stbi_load(std::string{"resource/asset/texture/viking_room.png"}.c_str(),
+                &tex_width, &tex_height, &tex_channels, STBI_rgb_alpha)};
+
+  if (!piexls) {
+    throw std::runtime_error{"fail to load texture image"};
+  }
+  mip_level_count_ = static_cast<uint32_t>(std::floor(
+                         std::log2(std::max(tex_width, tex_height)))) +
+                     1;
+  vk::DeviceSize image_size{
+      static_cast<vk::DeviceSize>(tex_width * tex_height * 4)};
+
+  // copy to staging buffer
+  vk::raii::Buffer staging_buffer{
+      device_, {{}, image_size, vk::BufferUsageFlagBits::eTransferSrc}};
+  vk::raii::DeviceMemory staging_device_memory{
+      AllocateDeviceMemory(staging_buffer.getMemoryRequirements(),
+                           vk::MemoryPropertyFlagBits::eHostVisible |
+                               vk::MemoryPropertyFlagBits::eHostCoherent)};
+  staging_buffer.bindMemory(*staging_device_memory, 0);
+  CopyToDevice(staging_device_memory, piexls, image_size);
+  stbi_image_free(piexls);
+
+  // create texture image data
+  texture_image_data_.format = vk::Format::eR8G8B8A8Srgb;
+  vk::ImageCreateInfo image_create_info{
+      {},
+      vk::ImageType::e2D,
+      texture_image_data_.format,
+      vk::Extent3D{static_cast<uint32_t>(tex_width),
+                   static_cast<uint32_t>(tex_height), 1},
+      mip_level_count_,
+      1,
+      vk::SampleCountFlagBits::e1,
+      vk::ImageTiling::eOptimal,
+      vk::ImageUsageFlagBits::eTransferSrc |
+          vk::ImageUsageFlagBits::eTransferDst |
+          vk::ImageUsageFlagBits::eSampled,
+      vk::SharingMode::eExclusive,
+      {},
+      vk::ImageLayout::eUndefined};
+  texture_image_data_.image = vk::raii::Image{device_, image_create_info};
+  texture_image_data_.device_memory =
+      AllocateDeviceMemory(texture_image_data_.image.getMemoryRequirements(),
+                           vk::MemoryPropertyFlagBits::eDeviceLocal);
+  texture_image_data_.image.bindMemory(*(texture_image_data_.device_memory), 0);
+
+  // copy buffer to image
+  {
+    vk::raii::CommandBuffer command_buffer{BeginSingleTimeCommand()};
+    vk::ImageMemoryBarrier barrier{
+        {},
+        vk::AccessFlagBits::eTransferWrite,
+        vk::ImageLayout::eUndefined,
+        vk::ImageLayout::eTransferDstOptimal,
+        VK_QUEUE_FAMILY_IGNORED,
+        VK_QUEUE_FAMILY_IGNORED,
+        *(texture_image_data_.image),
+        {vk::ImageAspectFlagBits::eColor, 0, mip_level_count_, 0, 1}};
+    command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe,
+                                   vk::PipelineStageFlagBits::eTransfer, {}, {},
+                                   {}, barrier);
+    EndSingleTimeCommand(command_buffer);
+  }
+
+  {
+    vk::raii::CommandBuffer command_buffer{BeginSingleTimeCommand()};
+
+    vk::BufferImageCopy buffer_image_copy{
+        {},
+        {},
+        {},
+        {vk::ImageAspectFlagBits::eColor, 0, 0, 1},
+        {0, 0, 0},
+        {static_cast<uint32_t>(tex_width), static_cast<uint32_t>(tex_height),
+         1}};
+
+    command_buffer.copyBufferToImage(
+        *staging_buffer, *(texture_image_data_.image),
+        vk::ImageLayout::eTransferDstOptimal, buffer_image_copy);
+
+    EndSingleTimeCommand(command_buffer);
+  }
+
+  // generate mipmaps
+  vk::FormatProperties format_properties{
+      physical_device_.getFormatProperties(texture_image_data_.format)};
+  if (!(format_properties.optimalTilingFeatures &
+        vk::FormatFeatureFlagBits::eSampledImageFilterLinear)) {
+    throw std::runtime_error{
+        "texture image format does not support linear blitting"};
+  }
+
+  {
+    vk::raii::CommandBuffer command_buffer{BeginSingleTimeCommand()};
+
+    vk::ImageMemoryBarrier barrier{
+        {},
+        vk::AccessFlagBits::eTransferWrite,
+        vk::ImageLayout::eUndefined,
+        vk::ImageLayout::eTransferDstOptimal,
+        VK_QUEUE_FAMILY_IGNORED,
+        VK_QUEUE_FAMILY_IGNORED,
+        *(texture_image_data_.image),
+        {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}};
+
+    int32_t mip_width{tex_width};
+    int32_t mip_height{tex_height};
+
+    for (uint32_t i = 1; i < mip_level_count_; ++i) {
+      barrier.subresourceRange.baseMipLevel = i - 1;
+      barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+      barrier.newLayout = vk::ImageLayout::eTransferSrcOptimal;
+      barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+      barrier.dstAccessMask = vk::AccessFlagBits::eTransferRead;
+
+      command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
+                                     vk::PipelineStageFlagBits::eTransfer, {},
+                                     nullptr, nullptr, barrier);
+
+      vk::ImageSubresourceLayers src_subresource{
+          vk::ImageAspectFlagBits::eColor, i - 1, 0, 1};
+      std::array<vk::Offset3D, 2> src_offsets{
+          vk::Offset3D{0, 0, 0}, vk::Offset3D{mip_width, mip_height, 1}};
+      vk::ImageSubresourceLayers dst_subresource{
+          vk::ImageAspectFlagBits::eColor, i, 0, 1};
+      std::array<vk::Offset3D, 2> dst_offsets{
+          vk::Offset3D{0, 0, 0},
+          vk::Offset3D{mip_width > 1 ? mip_width / 2 : 1,
+                       mip_height > 1 ? mip_height / 2 : 1, 1}};
+
+      vk::ImageBlit blit{src_subresource, src_offsets, dst_subresource,
+                         dst_offsets};
+
+      command_buffer.blitImage(
+          *(texture_image_data_.image), vk::ImageLayout::eTransferSrcOptimal,
+          *(texture_image_data_.image), vk::ImageLayout::eTransferDstOptimal,
+          blit, vk::Filter::eLinear);
+
+      barrier.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
+      barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+      barrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
+      barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+
+      command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
+                                     vk::PipelineStageFlagBits::eFragmentShader,
+                                     {}, nullptr, nullptr, barrier);
+
+      if (mip_width > 1) {
+        mip_width /= 2;
+      }
+      if (mip_height > 1) {
+        mip_height /= 2;
+      }
+    }
+
+    barrier.subresourceRange.baseMipLevel = mip_level_count_ - 1;
+    barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+    barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+    barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+    barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+
+    command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
+                                   vk::PipelineStageFlagBits::eFragmentShader,
+                                   {}, nullptr, nullptr, barrier);
+
+    EndSingleTimeCommand(command_buffer);
+  }
+
+  texture_image_data_.image_view = vk::raii::ImageView{
+      device_, vk::ImageViewCreateInfo{{},
+                                       *(texture_image_data_.image),
+                                       vk::ImageViewType::e2D,
+                                       texture_image_data_.format,
+                                       {},
+                                       {vk::ImageAspectFlagBits::eColor, 0,
+                                        mip_level_count_, 0, 1}}};
+}
+
+void Gpu::MakeTextureSampler() {
+  sampler_ = vk::raii::Sampler{
+      device_, vk::SamplerCreateInfo{{},
+                                     vk::Filter::eLinear,
+                                     vk::Filter::eLinear,
+                                     vk::SamplerMipmapMode::eLinear,
+                                     vk::SamplerAddressMode::eRepeat,
+                                     vk::SamplerAddressMode::eRepeat,
+                                     vk::SamplerAddressMode::eRepeat,
+                                     {},
+                                     VK_TRUE,
+                                     max_anisotropy_,
+                                     VK_FALSE,
+                                     vk::CompareOp::eAlways,
+                                     0.0f,
+                                     static_cast<float>(mip_level_count_),
+                                     vk::BorderColor::eIntOpaqueBlack,
+                                     VK_FALSE}};
+}
+
+void Gpu::MakeDescriptorSetLayout() {
+  std::vector<std::tuple<vk::DescriptorType, uint32_t, vk::ShaderStageFlags>>
+      bingding_data{{vk::DescriptorType::eUniformBuffer, 1,
+                     vk::ShaderStageFlagBits::eVertex},
+                    {vk::DescriptorType::eCombinedImageSampler, 1,
+                     vk::ShaderStageFlagBits::eFragment}};
+
+  std::vector<vk::DescriptorSetLayoutBinding> bindings(bingding_data.size());
+
+  for (uint32_t i = 0; i < bingding_data.size(); ++i) {
+    bindings[i] = vk::DescriptorSetLayoutBinding{
+        static_cast<uint32_t>(i), std::get<0>(bingding_data[i]),
+        std::get<1>(bingding_data[i]), std::get<2>(bingding_data[i])};
+  }
+
+  vk::DescriptorSetLayoutCreateInfo descriptor_set_layout_create_info{{},
+                                                                      bindings};
+
+  descriptor_set_layout_ =
+      vk::raii::DescriptorSetLayout{device_, descriptor_set_layout_create_info};
+}
+
+void Gpu::MakeDescriptorPool() {
+  std::vector<vk::DescriptorPoolSize> pool_sizes{
+      {vk::DescriptorType::eUniformBuffer,
+       static_cast<uint32_t>(kFramesInFlight)},
+      {vk::DescriptorType::eCombinedImageSampler,
+       static_cast<uint32_t>(kFramesInFlight)}};
+
+  uint32_t max_sets{std::accumulate(
+      pool_sizes.begin(), pool_sizes.end(), static_cast<uint32_t>(0),
+      [](uint32_t sum, const vk::DescriptorPoolSize& dps) {
+        return sum + dps.descriptorCount;
+      })};
+
+  vk::DescriptorPoolCreateInfo descriptor_pool_create_info{
+      vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, max_sets,
+      pool_sizes};
+  descriptor_pool_ =
+      vk::raii::DescriptorPool{device_, descriptor_pool_create_info};
+}
+
+void Gpu::MakeDescriptorSet() {
+  std::vector<vk::DescriptorSetLayout> descriptor_set_layouts(
+      kFramesInFlight, *descriptor_set_layout_);
+
+  descriptor_sets_ = std::move(vk::raii::DescriptorSets{
+      device_, {*descriptor_pool_, descriptor_set_layouts}});
+
+  for (uint32_t i = 0; i < kFramesInFlight; ++i) {
+    vk::DescriptorBufferInfo buffer_info{*(uniform_buffer_datas_[i].buffer), 0,
+                                         sizeof(UniformBufferObject)};
+
+    vk::DescriptorImageInfo image_info{*sampler_,
+                                       *(texture_image_data_.image_view),
+                                       vk::ImageLayout::eShaderReadOnlyOptimal};
+
+    std::array<vk::WriteDescriptorSet, 2> descriptir_writes{
+        vk::WriteDescriptorSet{
+            *(descriptor_sets_[i]),
+            0,
+            0,
+            1,
+            vk::DescriptorType::eUniformBuffer,
+            nullptr,
+            &buffer_info,
+        },
+        vk::WriteDescriptorSet{
+            *(descriptor_sets_[i]),
+            1,
+            0,
+            1,
+            vk::DescriptorType::eCombinedImageSampler,
+            &image_info,
+            nullptr,
+        }};
+
+    device_.updateDescriptorSets(descriptir_writes, nullptr);
+  }
+}
+
+void Gpu::MakePipeline(const std::vector<char>& vectex_shader_buffer,
+                       const std::vector<char>& fragment_shader_buffer) {
+  vk::ShaderModuleCreateInfo vertex_shader_module_create_info{
+      {},
+      vectex_shader_buffer.size(),
+      reinterpret_cast<const uint32_t*>(vectex_shader_buffer.data())};
+  vk::ShaderModuleCreateInfo fragment_shader_module_create_info{
+      {},
+      fragment_shader_buffer.size(),
+      reinterpret_cast<const uint32_t*>(fragment_shader_buffer.data())};
+
+  vk::raii::ShaderModule vertex_shader_module{device_,
+                                              vertex_shader_module_create_info};
+  vk::raii::ShaderModule fragment_shader_module{
+      device_, fragment_shader_module_create_info};
+
+  std::vector<vk::PipelineShaderStageCreateInfo> shader_stage_create_infos{
+      {{},
+       vk::ShaderStageFlagBits::eVertex,
+       *vertex_shader_module,
+       "main",
+       nullptr},
+      {{},
+       vk::ShaderStageFlagBits::eFragment,
+       *fragment_shader_module,
+       "main",
+       nullptr}};
+
+  vk::PipelineVertexInputStateCreateInfo vertex_input_state_create_info;
+
+  uint32_t vertex_stride{static_cast<uint32_t>(sizeof(Vertex))};
+
+  vk::VertexInputBindingDescription vertex_input_binding_description{
+      0, vertex_stride, vk::VertexInputRate::eVertex};
+
+  std::vector<vk::VertexInputAttributeDescription>
+      vertex_input_attribute_descriptions;
+
+  std::vector<std::pair<vk::Format, uint32_t>>
+      vertex_input_attribute_format_offset{
+          {vk::Format::eR32G32B32Sfloat, offsetof(Vertex, pos)},
+          {vk::Format::eR32G32B32Sfloat, offsetof(Vertex, color)},
+          {vk::Format::eR32G32Sfloat, offsetof(Vertex, tex_coord)},
+      };
+
+  vertex_input_attribute_descriptions.reserve(
+      vertex_input_attribute_format_offset.size());
+
+  for (uint32_t i = 0; i < vertex_input_attribute_format_offset.size(); i++) {
+    vertex_input_attribute_descriptions.emplace_back(
+        i, 0, vertex_input_attribute_format_offset[i].first,
+        vertex_input_attribute_format_offset[i].second);
+  }
+  vertex_input_state_create_info.setVertexBindingDescriptions(
+      vertex_input_binding_description);
+  vertex_input_state_create_info.setVertexAttributeDescriptions(
+      vertex_input_attribute_descriptions);
+
+  vk::PipelineInputAssemblyStateCreateInfo input_assembly_state_create_info{
+      {}, vk::PrimitiveTopology::eTriangleList, VK_FALSE};
+
+  vk::PipelineViewportStateCreateInfo viewport_state_create_info{
+      {}, 1, nullptr, 1, nullptr};
+
+  vk::PipelineRasterizationStateCreateInfo rasterization_state_create_info{
+      {},
+      VK_FALSE,
+      VK_FALSE,
+      vk::PolygonMode::eFill,
+      vk::CullModeFlagBits::eBack,
+      vk::FrontFace::eClockwise,
+      VK_FALSE,
+      0.0f,
+      0.0f,
+      0.0f,
+      1.0f};
+
+  vk::PipelineMultisampleStateCreateInfo multisample_state_create_info{
+      {}, sample_count_};
+
+  vk::PipelineDepthStencilStateCreateInfo depth_stencil_state_create_info{
+      {}, VK_TRUE, VK_TRUE, vk::CompareOp::eLess, VK_FALSE, VK_FALSE,
+  };
+
+  vk::ColorComponentFlags color_component_flags{
+      vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+      vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA};
+  vk::PipelineColorBlendAttachmentState color_blend_attachment_state{
+      VK_FALSE,          vk::BlendFactor::eZero, vk::BlendFactor::eZero,
+      vk::BlendOp::eAdd, vk::BlendFactor::eZero, vk::BlendFactor::eZero,
+      vk::BlendOp::eAdd, color_component_flags};
+
+  vk::PipelineColorBlendStateCreateInfo color_blend_state_create_info{
+      {},
+      VK_FALSE,
+      vk::LogicOp::eCopy,
+      color_blend_attachment_state,
+      {{0.0f, 0.0f, 0.0f, 0.0f}}};
+
+  std::array<vk::DynamicState, 2> dynamic_states{vk::DynamicState::eViewport,
+                                                 vk::DynamicState::eScissor};
+  vk::PipelineDynamicStateCreateInfo dynamic_state_create_info{{},
+                                                               dynamic_states};
+
+  pipeline_layout_ =
+      vk::raii::PipelineLayout{device_, {{}, *descriptor_set_layout_}};
+
+  vk::GraphicsPipelineCreateInfo graphics_pipeline_create_info{
+      {},
+      shader_stage_create_infos,
+      &vertex_input_state_create_info,
+      &input_assembly_state_create_info,
+      nullptr,
+      &viewport_state_create_info,
+      &rasterization_state_create_info,
+      &multisample_state_create_info,
+      &depth_stencil_state_create_info,
+      &color_blend_state_create_info,
+      &dynamic_state_create_info,
+      *pipeline_layout_,
+      *render_pass_};
+
+  pipeline_cache_ = vk::raii::PipelineCache{device_, {}};
+
+  pipeline_ = vk::raii::Pipeline{device_, pipeline_cache_,
+                                 graphics_pipeline_create_info};
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL Gpu::DebugUtilsMessengerCallback(
@@ -801,12 +1285,10 @@ VKAPI_ATTR VkBool32 VKAPI_CALL Gpu::DebugUtilsMessengerCallback(
 }
 
 vk::raii::DeviceMemory Gpu::AllocateDeviceMemory(
-    const vk::raii::PhysicalDevice& physical_device,
-    const vk::raii::Device& device,
     const vk::MemoryRequirements& memory_requirements,
     vk::MemoryPropertyFlags memory_properties_flags) {
   vk::PhysicalDeviceMemoryProperties memory_properties{
-      physical_device.getMemoryProperties()};
+      physical_device_.getMemoryProperties()};
 
   uint32_t memory_type_bits{memory_requirements.memoryTypeBits};
 
@@ -827,6 +1309,42 @@ vk::raii::DeviceMemory Gpu::AllocateDeviceMemory(
   vk::MemoryAllocateInfo memory_allocate_info{memory_requirements.size,
                                               type_index};
 
-  return vk::raii::DeviceMemory{device, memory_allocate_info};
+  return vk::raii::DeviceMemory{device_, memory_allocate_info};
 }
+
+void Gpu::CopyBuffer(const vk::raii::Buffer& src_buffer,
+                     const vk::raii::Buffer& dst_buffer, vk::DeviceSize size) {
+  vk::raii::CommandBuffer command_buffer{BeginSingleTimeCommand()};
+
+  vk::BufferCopy buffer_copy{0, 0, size};
+
+  command_buffer.copyBuffer(*src_buffer, *dst_buffer, buffer_copy);
+
+  EndSingleTimeCommand(command_buffer);
+}
+
+vk::raii::CommandBuffer Gpu::BeginSingleTimeCommand() {
+  vk::CommandBufferAllocateInfo command_buffer_allocate_info{
+      *command_pool_, vk::CommandBufferLevel::ePrimary, 1};
+
+  vk::raii::CommandBuffer command_buffer = std::move(
+      vk::raii::CommandBuffers{device_, command_buffer_allocate_info}.front());
+
+  vk::CommandBufferBeginInfo command_begin_info{
+      vk::CommandBufferUsageFlagBits::eOneTimeSubmit};
+
+  command_buffer.begin(command_begin_info);
+
+  return command_buffer;
+}
+
+void Gpu::EndSingleTimeCommand(const vk::raii::CommandBuffer& command_buffer) {
+  command_buffer.end();
+
+  vk::SubmitInfo submit_info{nullptr, nullptr, *command_buffer};
+  graphics_queue_.submit(submit_info, nullptr);
+
+  graphics_queue_.waitIdle();
+}
+
 }  // namespace luka
