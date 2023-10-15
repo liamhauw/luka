@@ -50,6 +50,7 @@ Gpu::~Gpu() { device_.waitIdle(); }
 
 void Gpu::Resize() {
   MakeSwapchain();
+  MakeColorImage();
   MakeDepthImage();
   MakeFramebuffer();
 }
