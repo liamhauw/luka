@@ -48,9 +48,7 @@ const std::vector<char>& Asset::GetFragmentShaderBuffer() const {
 
 const Texture& Asset::GetTexture() const { return texture_; }
 
-void Asset::FreeTexture() {
-  stbi_image_free(texture_.piexls);
-}
+void Asset::FreeTexture() { stbi_image_free(texture_.piexls); }
 
 void Asset::LoadGltfModel(const std::string& model_path,
                           tinygltf::Model& gltf_model) {

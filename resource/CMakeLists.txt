@@ -5,15 +5,18 @@ file(
   GLOB_RECURSE
   GLSL_SHADERS
   CONFIGURE_DEPENDS
+  "${CMAKE_CURRENT_SOURCE_DIR}/asset/shader/glsl/*.conf"
   "${CMAKE_CURRENT_SOURCE_DIR}/asset/shader/glsl/*.vert"
-  "${CMAKE_CURRENT_SOURCE_DIR}/asset/shader/glsl/*.frag"
-  "${CMAKE_CURRENT_SOURCE_DIR}/asset/shader/glsl/*.comp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/asset/shader/glsl/*.geom"
   "${CMAKE_CURRENT_SOURCE_DIR}/asset/shader/glsl/*.tesc"
   "${CMAKE_CURRENT_SOURCE_DIR}/asset/shader/glsl/*.tese"
+  "${CMAKE_CURRENT_SOURCE_DIR}/asset/shader/glsl/*.geom"
+  "${CMAKE_CURRENT_SOURCE_DIR}/asset/shader/glsl/*.frag"
+  "${CMAKE_CURRENT_SOURCE_DIR}/asset/shader/glsl/*.comp"
   "${CMAKE_CURRENT_SOURCE_DIR}/asset/shader/glsl/*.mesh"
   "${CMAKE_CURRENT_SOURCE_DIR}/asset/shader/glsl/*.task"
   "${CMAKE_CURRENT_SOURCE_DIR}/asset/shader/glsl/*.rgen"
+  "${CMAKE_CURRENT_SOURCE_DIR}/asset/shader/glsl/*.rint"
+  "${CMAKE_CURRENT_SOURCE_DIR}/asset/shader/glsl/*.rahit"
   "${CMAKE_CURRENT_SOURCE_DIR}/asset/shader/glsl/*.rchit"
   "${CMAKE_CURRENT_SOURCE_DIR}/asset/shader/glsl/*.rmiss"
   "${CMAKE_CURRENT_SOURCE_DIR}/asset/shader/glsl/*.rcall"
