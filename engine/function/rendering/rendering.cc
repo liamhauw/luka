@@ -12,15 +12,7 @@
 
 namespace luka {
 
-Rendering::Rendering()
-    : asset_{gContext.asset},
-      window_{gContext.window},
-      gpu_{std::make_unique<Gpu>(asset_, window_)} {
-  gpu_->MakePipeline(asset_->GetVertexShaderBuffer(),
-                             asset_->GetFragmentShaderBuffer());
-}
-
-Rendering::~Rendering() { gpu_.reset(); }
+Rendering::Rendering() : window_{gContext.window} {}
 
 void Rendering::Tick() {
   if (window_->GetIconified()) {
@@ -29,12 +21,7 @@ void Rendering::Tick() {
 
   if (window_->GetFramebufferResized()) {
     window_->SetFramebufferResized(false);
-    gpu_->Resize();
   }
-
-  gpu_->BeginFrame();
-
-  gpu_->EndFrame();
 }
 
 }  // namespace luka

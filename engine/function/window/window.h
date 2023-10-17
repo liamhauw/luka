@@ -8,10 +8,11 @@
 
 #pragma once
 
+#include <vulkan/vulkan.h>
+
 #include <functional>
 #include <string>
 #include <vector>
-#include <vulkan/vulkan_raii.hpp>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -61,7 +62,7 @@ class Window {
   void SetFocusMode(bool mode);
 
   static std::vector<const char*> GetRequiredInstanceExtension();
-  void CreateWindowSurface(const vk::raii::Instance& instance,
+  void CreateWindowSurface(VkInstance instance,
                            VkSurfaceKHR* surface);
 
   void RegisterOnWindowSizeFunc(const OnWindowSizeFunc& func);

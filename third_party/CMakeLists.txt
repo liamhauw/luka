@@ -30,18 +30,14 @@ set(TINYGLTF_BUILD_LOADER_EXAMPLE OFF)
 set(TINYGLTF_INSTALL OFF)
 add_subdirectory(tinygltf)
 
-# tinyobjloader
-add_subdirectory(tinyobjloader)
-
 add_library(${PROJECT_NAME} INTERFACE)
 target_link_libraries(${PROJECT_NAME} INTERFACE
   Vulkan::Vulkan
   glfw
-  glm
-  nlohmann_json
-  spdlog_header_only
+  glm::glm
+  nlohmann_json::nlohmann_json
+  spdlog::spdlog_header_only
   tinygltf
-  tinyobjloader
 )
 
 set(CMAKE_WARN_DEPRECATED TRUE CACHE BOOL "" FORCE)

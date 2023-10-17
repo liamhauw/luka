@@ -44,8 +44,6 @@ void Engine::Run() {
 
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
-
-  gContext.rendering->~Rendering();
 }
 
 }  // namespace luka
