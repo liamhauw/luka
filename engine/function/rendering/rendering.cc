@@ -12,7 +12,7 @@
 
 namespace luka {
 
-Rendering::Rendering() : window_{gContext.window} {}
+Rendering::Rendering() : window_{gContext.window}, instance_{window_} {}
 
 void Rendering::Tick() {
   if (window_->GetIconified()) {

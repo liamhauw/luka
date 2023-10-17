@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include <algorithm>
 #include <string>
 
 #include "platform/common.h"

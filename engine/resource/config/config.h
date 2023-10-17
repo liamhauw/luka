@@ -21,7 +21,6 @@ class Config {
 
   void Tick();
 
-  std::filesystem::path GetModelFilePath();
  private:
   std::filesystem::path source_path_{ReplacePathSlash(LUKA_SOURCE_PATH)};
   std::filesystem::path resource_path_{source_path_ / "resource"};

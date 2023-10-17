@@ -104,8 +104,10 @@ std::vector<const char*> Window::GetRequiredInstanceExtension() {
   return extension;
 }
 
-void Window::CreateWindowSurface(VkInstance instance, VkSurfaceKHR* surface) {
-  glfwCreateWindowSurface(instance, glfw_window_, nullptr, surface);
+void Window::CreateWindowSurface(vk::raii::Instance instance,
+                                 VkSurfaceKHR* surface) {
+  glfwCreateWindowSurface(static_cast<VkInstance>(*instance), glfw_window_,
+                          nullptr, surface);
 }
 
 void Window::RegisterOnWindowCloseFunc(const OnWindowCloseFunc& func) {
