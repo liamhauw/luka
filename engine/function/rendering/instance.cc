@@ -14,17 +14,13 @@
 
 namespace luka {
 
-Instance::Instance(std::shared_ptr<Window> window) : window_{window} {
+Instance::Instance(const std::vector<const char*>& required_instance_layers,
+                   const std::vector<const char*>& required_instance_extensions)
+    : required_instance_layers_{required_instance_layers},
+      required_instance_extensions_{required_instance_extensions} {
   vk::ApplicationInfo application_info{"luka", VK_MAKE_VERSION(1, 0, 0), "luka",
                                        VK_MAKE_VERSION(1, 0, 0),
                                        VK_API_VERSION_1_2};
-
-  std::vector<const char*> window_required_instance_extensions{
-      window_->GetRequiredInstanceExtension()};
-  required_instance_extensions_.insert(
-      required_instance_extensions_.end(),
-      window_required_instance_extensions.begin(),
-      window_required_instance_extensions.end());
 
 #ifdef __APPLE__
   required_instance_extensions_.push_back(
@@ -88,7 +84,7 @@ Instance::Instance(std::shared_ptr<Window> window) : window_{window} {
   }
 #endif
 
-  vk::InstanceCreateFlags flags;
+  vk::InstanceCreateFlags instance_create_flags;
 #ifdef __APPLE__
   flags |= vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR;
 #endif
@@ -103,7 +99,7 @@ Instance::Instance(std::shared_ptr<Window> window) : window_{window} {
       vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
       vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation};
 
-  vk::DebugUtilsMessengerCreateInfoEXT debug_utils_messenger_create_info{
+  vk::DebugUtilsMessengerCreateInfoEXT messenger_create_info{
       {},
       message_severity_flags,
       message_type_flags,
@@ -111,8 +107,9 @@ Instance::Instance(std::shared_ptr<Window> window) : window_{window} {
 
   vk::StructureChain<vk::InstanceCreateInfo,
                      vk::DebugUtilsMessengerCreateInfoEXT>
-      info_chain{{flags, &application_info, enabled_layers, enabled_extensions},
-                 debug_utils_messenger_create_info};
+      info_chain{{instance_create_flags, &application_info, enabled_layers,
+                  enabled_extensions},
+                 messenger_create_info};
 #else
   vk::StructureChain<vk::InstanceCreateInfo> info_chain{
       {flags, &application_info, enabled_layers, enabled_extensions}};

@@ -17,8 +17,8 @@ namespace luka {
 
 class Instance {
  public:
-  Instance(std::shared_ptr<Window> window);
-  ~Instance();
+  Instance(const std::vector<const char*>& required_instance_layers = {},
+           const std::vector<const char*>& required_instance_extensions = {});
 
  private:
   static VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(
@@ -26,8 +26,6 @@ class Instance {
       VkDebugUtilsMessageTypeFlagsEXT message_type,
       const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
       void* user_data);
-
-  std::shared_ptr<Window> window_;
 
   vk::raii::Context context_;
   std::vector<const char*> required_instance_layers_;

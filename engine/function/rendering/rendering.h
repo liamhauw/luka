@@ -23,9 +23,9 @@ class Rendering {
   void Tick();
 
  private:
-  Instance instance_;
-
   std::shared_ptr<Window> window_;
+
+  Instance instance_;
 };
 
 }  // namespace luka
