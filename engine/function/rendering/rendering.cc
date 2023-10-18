@@ -13,8 +13,9 @@
 namespace luka {
 
 Rendering::Rendering()
-    : window_{gContext.window},
-      instance_{{}, window_->GetRequiredInstanceExtension()} {}
+    : window_{gContext.window}, gpu_{std::make_unique<Gpu>(window_)} {}
+
+Rendering::~Rendering() { gpu_.reset(); }
 
 void Rendering::Tick() {
   if (window_->GetIconified()) {

@@ -10,7 +10,7 @@
 
 #include <memory>
 
-#include "function/rendering/instance.h"
+#include "function/rendering/gpu.h"
 
 namespace luka {
 
@@ -19,13 +19,14 @@ class Window;
 class Rendering {
  public:
   Rendering();
+  ~Rendering();
 
   void Tick();
 
  private:
   std::shared_ptr<Window> window_;
 
-  Instance instance_;
+  std::unique_ptr<Gpu> gpu_;
 };
 
 }  // namespace luka
