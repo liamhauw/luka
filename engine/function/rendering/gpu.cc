@@ -32,7 +32,7 @@ void Gpu::MakeInstance() {
 
   vk::ApplicationInfo application_info{"luka", VK_MAKE_VERSION(1, 0, 0), "luka",
                                        VK_MAKE_VERSION(1, 0, 0),
-                                       VK_API_VERSION_1_1};
+                                       VK_API_VERSION_1_2};
 
   std::vector<const char*> required_instance_layers;
   std::vector<const char*> required_instance_extensions;
@@ -204,60 +204,12 @@ void Gpu::MakePhysicalDevice() {
       }
     }
 
-    // Features.
-    auto physical_device_feature2{physical_device.getFeatures2<
-        vk::PhysicalDeviceFeatures2, vk::PhysicalDevice16BitStorageFeatures,
-        vk::PhysicalDeviceShaderFloat16Int8Features,
-        vk::PhysicalDeviceFragmentShadingRateFeaturesKHR,
-        vk::PhysicalDeviceShaderSubgroupExtendedTypesFeatures,
-        vk::PhysicalDeviceRobustness2FeaturesEXT>()};
-
-    const vk::PhysicalDeviceFeatures& physical_device_features{
-        physical_device_feature2.get<vk::PhysicalDeviceFeatures2>().features};
-
-    const vk::PhysicalDevice16BitStorageFeatures& bit16_storage{
-        physical_device_feature2.get<vk::PhysicalDevice16BitStorageFeatures>()};
-
-    const vk::PhysicalDeviceShaderFloat16Int8Features& shader_float16_int8{
-        physical_device_feature2
-            .get<vk::PhysicalDeviceShaderFloat16Int8Features>()};
-
-    const vk::PhysicalDeviceFragmentShadingRateFeaturesKHR&
-        fragment_shading_rate{
-            physical_device_feature2
-                .get<vk::PhysicalDeviceFragmentShadingRateFeaturesKHR>()};
-
-    const vk::PhysicalDeviceShaderSubgroupExtendedTypesFeatures&
-        shader_subgroup_extended_types{
-            physical_device_feature2
-                .get<vk::PhysicalDeviceShaderSubgroupExtendedTypesFeatures>()};
-
-    const vk::PhysicalDeviceRobustness2FeaturesEXT& robustness2{
-        physical_device_feature2
-            .get<vk::PhysicalDeviceRobustness2FeaturesEXT>()};
-
-    bool has_features{static_cast<bool>(
-        physical_device_features.independentBlend &
-        physical_device_features.fillModeNonSolid &
-        physical_device_features.wideLines &
-        physical_device_features.samplerAnisotropy &
-        physical_device_features.pipelineStatisticsQuery &
-        physical_device_features.vertexPipelineStoresAndAtomics &
-        physical_device_features.shaderImageGatherExtended &
-        bit16_storage.storageBuffer16BitAccess &
-        shader_float16_int8.shaderFloat16 &
-        fragment_shading_rate.pipelineFragmentShadingRate &
-        fragment_shading_rate.attachmentFragmentShadingRate &
-        fragment_shading_rate.primitiveFragmentShadingRate &
-        shader_subgroup_extended_types.shaderSubgroupExtendedTypes &
-        robustness2.nullDescriptor)};
-
     // Requirements not met.
-    if (!queue_family.IsComplete() || !has_extensions || !has_features) {
+    if (!queue_family.IsComplete() || !has_extensions) {
       continue;
     }
 
-    // Properties.
+    // The gpu with the highest score is selected.
     vk::PhysicalDeviceProperties physical_device_properties{
         physical_device.getProperties()};
     switch (physical_device_properties.deviceType) {
@@ -277,7 +229,6 @@ void Gpu::MakePhysicalDevice() {
         break;
     }
 
-    // The gpu with the highest score is selected.
     if (cur_score > max_score) {
       max_score = cur_score;
       physical_device_ = std::move(physical_device);
@@ -333,13 +284,6 @@ void Gpu::MakeDevice() {
     device_queue_create_infos.push_back(device_queue_create_info);
   }
 
-  auto physical_device_features2{physical_device_.getFeatures2<
-      vk::PhysicalDeviceFeatures2, vk::PhysicalDevice16BitStorageFeatures,
-      vk::PhysicalDeviceShaderFloat16Int8Features,
-      vk::PhysicalDeviceFragmentShadingRateFeaturesKHR,
-      vk::PhysicalDeviceShaderSubgroupExtendedTypesFeatures,
-      vk::PhysicalDeviceRobustness2FeaturesEXT>()};
-
   vk::PhysicalDeviceFeatures physical_device_features;
   physical_device_features.independentBlend = VK_TRUE;
   physical_device_features.fillModeNonSolid = VK_TRUE;
@@ -349,8 +293,30 @@ void Gpu::MakeDevice() {
   physical_device_features.vertexPipelineStoresAndAtomics = VK_TRUE;
   physical_device_features.shaderImageGatherExtended = VK_TRUE;
 
-  physical_device_features2.get<vk::PhysicalDeviceFeatures2>().features =
-      physical_device_features;
+  vk::PhysicalDeviceVulkan11Features physical_device_vulkan11_features;
+  physical_device_vulkan11_features.storageBuffer16BitAccess = VK_TRUE;
+
+  vk::PhysicalDeviceVulkan12Features physical_device_vulkan12_features;
+  physical_device_vulkan12_features.shaderFloat16 = VK_TRUE;
+  physical_device_vulkan12_features.shaderSubgroupExtendedTypes = VK_TRUE;
+
+  vk::PhysicalDeviceFragmentShadingRateFeaturesKHR fragment_shading_rate;
+  fragment_shading_rate.pipelineFragmentShadingRate = VK_TRUE;
+  fragment_shading_rate.primitiveFragmentShadingRate = VK_TRUE;
+  fragment_shading_rate.attachmentFragmentShadingRate = VK_TRUE;
+
+  vk::PhysicalDeviceRobustness2FeaturesEXT robustness2;
+  robustness2.nullDescriptor = VK_TRUE;
+
+  vk::StructureChain<vk::PhysicalDeviceFeatures2,
+                     vk::PhysicalDeviceVulkan11Features,
+                     vk::PhysicalDeviceVulkan12Features,
+                     vk::PhysicalDeviceFragmentShadingRateFeaturesKHR,
+                     vk::PhysicalDeviceRobustness2FeaturesEXT>
+      physical_device_features2{physical_device_features,
+                                physical_device_vulkan11_features,
+                                physical_device_vulkan12_features,
+                                fragment_shading_rate, robustness2};
 
   vk::DeviceCreateInfo device_create_info{{},      device_queue_create_infos,
                                           {},      enabled_extensions,
