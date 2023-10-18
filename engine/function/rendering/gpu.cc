@@ -189,8 +189,8 @@ void Gpu::MakePhysicalDevice() {
       }
     }
 
-    // Extension properties.
-    bool has_extension_properties{true};
+    // Extensions.
+    bool has_extensions{true};
     std::vector<vk::ExtensionProperties> extension_properties{
         physical_device.enumerateDeviceExtensionProperties()};
     for (const char* device_extension : required_device_extensions_) {
@@ -199,69 +199,83 @@ void Gpu::MakePhysicalDevice() {
                          return (strcmp(device_extension, ep.extensionName) ==
                                  0);
                        }) == extension_properties.end()) {
-        has_extension_properties = false;
+        has_extensions = false;
         break;
       }
     }
 
     // Features.
-    auto physical_device_feature2{
-        physical_device
-            .getFeatures2<vk::PhysicalDeviceFeatures2,
-                          vk::PhysicalDeviceDescriptorIndexingFeaturesEXT>()};
+    auto physical_device_feature2{physical_device.getFeatures2<
+        vk::PhysicalDeviceFeatures2, vk::PhysicalDevice16BitStorageFeatures,
+        vk::PhysicalDeviceShaderFloat16Int8Features,
+        vk::PhysicalDeviceFragmentShadingRateFeaturesKHR,
+        vk::PhysicalDeviceShaderSubgroupExtendedTypesFeatures,
+        vk::PhysicalDeviceRobustness2FeaturesEXT>()};
 
-    const vk::PhysicalDeviceFeatures& physical_device_features =
-        physical_device_feature2.get<vk::PhysicalDeviceFeatures2>().features;
-    const vk::PhysicalDeviceDescriptorIndexingFeaturesEXT&
-        descriptor_indexing_features{
+    const vk::PhysicalDeviceFeatures& physical_device_features{
+        physical_device_feature2.get<vk::PhysicalDeviceFeatures2>().features};
+
+    const vk::PhysicalDevice16BitStorageFeatures& bit16_storage{
+        physical_device_feature2.get<vk::PhysicalDevice16BitStorageFeatures>()};
+
+    const vk::PhysicalDeviceShaderFloat16Int8Features& shader_float16_int8{
+        physical_device_feature2
+            .get<vk::PhysicalDeviceShaderFloat16Int8Features>()};
+
+    const vk::PhysicalDeviceFragmentShadingRateFeaturesKHR&
+        fragment_shading_rate{
             physical_device_feature2
-                .get<vk::PhysicalDeviceDescriptorIndexingFeaturesEXT>()};
+                .get<vk::PhysicalDeviceFragmentShadingRateFeaturesKHR>()};
+
+    const vk::PhysicalDeviceShaderSubgroupExtendedTypesFeatures&
+        shader_subgroup_extended_types{
+            physical_device_feature2
+                .get<vk::PhysicalDeviceShaderSubgroupExtendedTypesFeatures>()};
+
+    const vk::PhysicalDeviceRobustness2FeaturesEXT& robustness2{
+        physical_device_feature2
+            .get<vk::PhysicalDeviceRobustness2FeaturesEXT>()};
 
     bool has_features{static_cast<bool>(
+        physical_device_features.independentBlend &
+        physical_device_features.fillModeNonSolid &
+        physical_device_features.wideLines &
         physical_device_features.samplerAnisotropy &
-        descriptor_indexing_features.descriptorBindingPartiallyBound &
-        descriptor_indexing_features.runtimeDescriptorArray)};
+        physical_device_features.pipelineStatisticsQuery &
+        physical_device_features.vertexPipelineStoresAndAtomics &
+        physical_device_features.shaderImageGatherExtended &
+        bit16_storage.storageBuffer16BitAccess &
+        shader_float16_int8.shaderFloat16 &
+        fragment_shading_rate.pipelineFragmentShadingRate &
+        fragment_shading_rate.attachmentFragmentShadingRate &
+        fragment_shading_rate.primitiveFragmentShadingRate &
+        shader_subgroup_extended_types.shaderSubgroupExtendedTypes &
+        robustness2.nullDescriptor)};
 
     // Requirements not met.
-    if (!queue_family.IsComplete() || !has_extension_properties ||
-        !has_features) {
+    if (!queue_family.IsComplete() || !has_extensions || !has_features) {
       continue;
     }
 
     // Properties.
-    auto physical_device_properties2{physical_device.getProperties2<
-        vk::PhysicalDeviceProperties2,
-        vk::PhysicalDeviceBlendOperationAdvancedPropertiesEXT>()};
-
-    const vk::PhysicalDeviceProperties& physical_device_properties{
-        physical_device_properties2.get<vk::PhysicalDeviceProperties2>()
-            .properties};
-
-    if (physical_device_properties.deviceType ==
-        vk::PhysicalDeviceType::eDiscreteGpu) {
-      cur_score += 100;
+    vk::PhysicalDeviceProperties physical_device_properties{
+        physical_device.getProperties()};
+    switch (physical_device_properties.deviceType) {
+      case vk::PhysicalDeviceType::eDiscreteGpu:
+        cur_score += 10000;
+        break;
+      case vk::PhysicalDeviceType::eIntegratedGpu:
+        cur_score += 1000;
+        break;
+      case vk::PhysicalDeviceType::eVirtualGpu:
+        cur_score += 100;
+        break;
+      case vk::PhysicalDeviceType::eCpu:
+        cur_score += 10;
+        break;
+      default:
+        break;
     }
-
-    vk::SampleCountFlags sample_count{
-        physical_device_properties.limits.framebufferColorSampleCounts &
-        physical_device_properties.limits.framebufferDepthSampleCounts};
-    if (sample_count & vk::SampleCountFlagBits::e64) {
-      sample_count_ = vk::SampleCountFlagBits::e64;
-    } else if (sample_count & vk::SampleCountFlagBits::e32) {
-      sample_count_ = vk::SampleCountFlagBits::e32;
-    } else if (sample_count & vk::SampleCountFlagBits::e16) {
-      sample_count_ = vk::SampleCountFlagBits::e16;
-    } else if (sample_count & vk::SampleCountFlagBits::e8) {
-      sample_count_ = vk::SampleCountFlagBits::e8;
-    } else if (sample_count & vk::SampleCountFlagBits::e4) {
-      sample_count_ = vk::SampleCountFlagBits::e4;
-    } else if (sample_count & vk::SampleCountFlagBits::e2) {
-      sample_count_ = vk::SampleCountFlagBits::e2;
-    } else {
-      sample_count_ = vk::SampleCountFlagBits::e1;
-    }
-
-    max_anisotropy_ = physical_device_properties.limits.maxSamplerAnisotropy;
 
     // The gpu with the highest score is selected.
     if (cur_score > max_score) {
@@ -274,6 +288,31 @@ void Gpu::MakePhysicalDevice() {
   if (!(*physical_device_)) {
     THROW("Fail to find physical device.");
   }
+
+  // Properties.
+  vk::PhysicalDeviceProperties physical_device_properties{
+      physical_device_.getProperties()};
+
+  vk::SampleCountFlags sample_count{
+      physical_device_properties.limits.framebufferColorSampleCounts &
+      physical_device_properties.limits.framebufferDepthSampleCounts};
+  if (sample_count & vk::SampleCountFlagBits::e64) {
+    sample_count_ = vk::SampleCountFlagBits::e64;
+  } else if (sample_count & vk::SampleCountFlagBits::e32) {
+    sample_count_ = vk::SampleCountFlagBits::e32;
+  } else if (sample_count & vk::SampleCountFlagBits::e16) {
+    sample_count_ = vk::SampleCountFlagBits::e16;
+  } else if (sample_count & vk::SampleCountFlagBits::e8) {
+    sample_count_ = vk::SampleCountFlagBits::e8;
+  } else if (sample_count & vk::SampleCountFlagBits::e4) {
+    sample_count_ = vk::SampleCountFlagBits::e4;
+  } else if (sample_count & vk::SampleCountFlagBits::e2) {
+    sample_count_ = vk::SampleCountFlagBits::e2;
+  } else {
+    sample_count_ = vk::SampleCountFlagBits::e1;
+  }
+
+  max_anisotropy_ = physical_device_properties.limits.maxSamplerAnisotropy;
 }
 
 void Gpu::MakeDevice() {
@@ -287,22 +326,31 @@ void Gpu::MakeDevice() {
                                           queue_family_.compute_index.value(),
                                           queue_family_.present_index.value()};
 
-  float queue_priority{1.0f};
+  float queue_priority{0.0f};
   for (uint32_t queue_family_index : queue_family_indexes) {
     vk::DeviceQueueCreateInfo device_queue_create_info{
         {}, queue_family_index, 1, &queue_priority};
     device_queue_create_infos.push_back(device_queue_create_info);
   }
 
-  vk::PhysicalDeviceDescriptorIndexingFeaturesEXT descriptor_indexing_features;
-  descriptor_indexing_features.descriptorBindingPartiallyBound = VK_TRUE;
-  descriptor_indexing_features.runtimeDescriptorArray = VK_TRUE;
+  auto physical_device_features2{physical_device_.getFeatures2<
+      vk::PhysicalDeviceFeatures2, vk::PhysicalDevice16BitStorageFeatures,
+      vk::PhysicalDeviceShaderFloat16Int8Features,
+      vk::PhysicalDeviceFragmentShadingRateFeaturesKHR,
+      vk::PhysicalDeviceShaderSubgroupExtendedTypesFeatures,
+      vk::PhysicalDeviceRobustness2FeaturesEXT>()};
 
   vk::PhysicalDeviceFeatures physical_device_features;
+  physical_device_features.independentBlend = VK_TRUE;
+  physical_device_features.fillModeNonSolid = VK_TRUE;
+  physical_device_features.wideLines = VK_TRUE;
   physical_device_features.samplerAnisotropy = VK_TRUE;
+  physical_device_features.pipelineStatisticsQuery = VK_TRUE;
+  physical_device_features.vertexPipelineStoresAndAtomics = VK_TRUE;
+  physical_device_features.shaderImageGatherExtended = VK_TRUE;
 
-  vk::PhysicalDeviceFeatures2 physical_device_features2{
-      physical_device_features, &descriptor_indexing_features};
+  physical_device_features2.get<vk::PhysicalDeviceFeatures2>().features =
+      physical_device_features;
 
   vk::DeviceCreateInfo device_create_info{{},      device_queue_create_infos,
                                           {},      enabled_extensions,

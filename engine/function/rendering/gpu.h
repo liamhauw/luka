@@ -55,13 +55,17 @@ class Gpu {
 
   vk::raii::SurfaceKHR surface_{nullptr};
 
-  vk::raii::PhysicalDevice physical_device_{nullptr};
   QueueFamliy queue_family_;
   std::vector<const char*> required_device_extensions_{
       VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-      VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME};
+      VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME,
+      VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
+      VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
+      VK_EXT_HDR_METADATA_EXTENSION_NAME,
+      VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME};
   vk::SampleCountFlagBits sample_count_{vk::SampleCountFlagBits::e1};
   float max_anisotropy_{0.0f};
+  vk::raii::PhysicalDevice physical_device_{nullptr};
 
   vk::raii::Device device_{nullptr};
   vk::raii::Queue graphics_queue_{nullptr};
