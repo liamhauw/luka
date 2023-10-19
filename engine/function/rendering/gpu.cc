@@ -16,15 +16,13 @@
 namespace luka {
 
 Gpu::Gpu(std::shared_ptr<Window> window) : window_{window} {
-  MakeInstance();
-  MakeSurface();
-  MakePhysicalDevice();
+  MakeBase();
   MakeDevice();
 }
 
 Gpu::~Gpu() { device_.waitIdle(); }
 
-void Gpu::MakeInstance() {
+void Gpu::MakeBase() {
   vk::InstanceCreateFlags flags;
 #ifdef __APPLE__
   flags |= vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR;
@@ -138,78 +136,17 @@ void Gpu::MakeInstance() {
   debug_utils_messenger_ = vk::raii::DebugUtilsMessengerEXT{
       instance_, info_chain.get<vk::DebugUtilsMessengerCreateInfoEXT>()};
 #endif
-}
 
-void Gpu::MakeSurface() {
   VkSurfaceKHR surface;
   window_->CreateWindowSurface(instance_, &surface);
   surface_ = vk::raii::SurfaceKHR{instance_, surface};
-}
 
-void Gpu::MakePhysicalDevice() {
   vk::raii::PhysicalDevices physical_devices{instance_};
 
   uint32_t max_score{0};
   for (auto& physical_device : physical_devices) {
     uint32_t cur_score{1};
 
-    // Queue famliy.
-    QueueFamliy queue_family;
-
-    std::vector<vk::QueueFamilyProperties> queue_family_properties{
-        physical_device.getQueueFamilyProperties()};
-    uint32_t i{0};
-    for (const auto& queue_famliy_propertie : queue_family_properties) {
-      if ((queue_famliy_propertie.queueFlags & vk::QueueFlagBits::eGraphics) &&
-          (queue_famliy_propertie.queueFlags & vk::QueueFlagBits::eCompute) &&
-          physical_device.getSurfaceSupportKHR(i, *surface_)) {
-        queue_family.graphics_index = i;
-        queue_family.compute_index = i;
-        queue_family.present_index = i;
-        break;
-      }
-      ++i;
-    }
-    if (!queue_family.IsComplete()) {
-      i = 0;
-      for (const auto& queue_famliy_propertie : queue_family_properties) {
-        if (queue_famliy_propertie.queueFlags & vk::QueueFlagBits::eGraphics) {
-          queue_family.graphics_index = i;
-        }
-        if (queue_famliy_propertie.queueFlags & vk::QueueFlagBits::eCompute) {
-          queue_family.compute_index = i;
-        }
-        if (physical_device.getSurfaceSupportKHR(i, *surface_)) {
-          queue_family.present_index = i;
-        }
-        if (queue_family.IsComplete()) {
-          break;
-        }
-        ++i;
-      }
-    }
-
-    // Extensions.
-    bool has_extensions{true};
-    std::vector<vk::ExtensionProperties> extension_properties{
-        physical_device.enumerateDeviceExtensionProperties()};
-    for (const char* device_extension : required_device_extensions_) {
-      if (std::find_if(extension_properties.begin(), extension_properties.end(),
-                       [device_extension](const vk::ExtensionProperties& ep) {
-                         return (strcmp(device_extension, ep.extensionName) ==
-                                 0);
-                       }) == extension_properties.end()) {
-        has_extensions = false;
-        break;
-      }
-    }
-
-    // Requirements not met.
-    if (!queue_family.IsComplete() || !has_extensions) {
-      continue;
-    }
-
-    // The gpu with the highest score is selected.
     vk::PhysicalDeviceProperties physical_device_properties{
         physical_device.getProperties()};
     switch (physical_device_properties.deviceType) {
@@ -232,21 +169,22 @@ void Gpu::MakePhysicalDevice() {
     if (cur_score > max_score) {
       max_score = cur_score;
       physical_device_ = std::move(physical_device);
-      queue_family_ = queue_family;
     }
   }
 
   if (!(*physical_device_)) {
     THROW("Fail to find physical device.");
   }
+}
 
+void Gpu::MakeDevice() {
   // Properties.
-  vk::PhysicalDeviceProperties physical_device_properties{
+  vk::PhysicalDeviceProperties physical_device_properties_{
       physical_device_.getProperties()};
 
   vk::SampleCountFlags sample_count{
-      physical_device_properties.limits.framebufferColorSampleCounts &
-      physical_device_properties.limits.framebufferDepthSampleCounts};
+      physical_device_properties_.limits.framebufferColorSampleCounts &
+      physical_device_properties_.limits.framebufferDepthSampleCounts};
   if (sample_count & vk::SampleCountFlagBits::e64) {
     sample_count_ = vk::SampleCountFlagBits::e64;
   } else if (sample_count & vk::SampleCountFlagBits::e32) {
@@ -263,14 +201,45 @@ void Gpu::MakePhysicalDevice() {
     sample_count_ = vk::SampleCountFlagBits::e1;
   }
 
-  max_anisotropy_ = physical_device_properties.limits.maxSamplerAnisotropy;
-}
+  max_anisotropy_ = physical_device_properties_.limits.maxSamplerAnisotropy;
 
-void Gpu::MakeDevice() {
-  std::vector<const char*> enabled_extensions{required_device_extensions_};
-#ifdef __APPLE__
-  enabled_extensions.push_back("VK_KHR_portability_subset");
-#endif
+  // Queue famliy.
+  std::vector<vk::QueueFamilyProperties> queue_family_properties{
+      physical_device_.getQueueFamilyProperties()};
+  uint32_t i{0};
+  for (const auto& queue_famliy_propertie : queue_family_properties) {
+    if ((queue_famliy_propertie.queueFlags & vk::QueueFlagBits::eGraphics) &&
+        (queue_famliy_propertie.queueFlags & vk::QueueFlagBits::eCompute) &&
+        physical_device_.getSurfaceSupportKHR(i, *surface_)) {
+      queue_family_.graphics_index = i;
+      queue_family_.compute_index = i;
+      queue_family_.present_index = i;
+      break;
+    }
+    ++i;
+  }
+  if (!queue_family_.IsComplete()) {
+    i = 0;
+    for (const auto& queue_famliy_propertie : queue_family_properties) {
+      if (queue_famliy_propertie.queueFlags & vk::QueueFlagBits::eGraphics) {
+        queue_family_.graphics_index = i;
+      }
+      if (queue_famliy_propertie.queueFlags & vk::QueueFlagBits::eCompute) {
+        queue_family_.compute_index = i;
+      }
+      if (physical_device_.getSurfaceSupportKHR(i, *surface_)) {
+        queue_family_.present_index = i;
+      }
+      if (queue_family_.IsComplete()) {
+        break;
+      }
+      ++i;
+    }
+  }
+
+  if (!queue_family_.IsComplete()) {
+    THROW("Fail to find queue family.");
+  }
 
   std::vector<vk::DeviceQueueCreateInfo> device_queue_create_infos;
   std::set<uint32_t> queue_family_indexes{queue_family_.graphics_index.value(),
@@ -284,6 +253,32 @@ void Gpu::MakeDevice() {
     device_queue_create_infos.push_back(device_queue_create_info);
   }
 
+  // Extensions.
+  std::vector<const char*> enabled_extensions;
+  std::vector<vk::ExtensionProperties> extension_properties{
+      physical_device_.enumerateDeviceExtensionProperties()};
+  for (auto& extension : device_extensions_) {
+    auto& extension_name{extension.first};
+    auto& extension_enable{extension.second};
+    if (!extension_enable) {
+      continue;
+    }
+    if (std::find_if(extension_properties.begin(), extension_properties.end(),
+                     [extension_name](const vk::ExtensionProperties& ep) {
+                       return (strcmp(extension_name, ep.extensionName) == 0);
+                     }) == extension_properties.end()) {
+      LOGI("Don't find {}, disable it.", extension_name);
+      extension_enable = false;
+      continue;
+    }
+    enabled_extensions.push_back(extension_name);
+  }
+
+#ifdef __APPLE__
+  enabled_extensions.push_back("VK_KHR_portability_subset");
+#endif
+
+  // Features.
   vk::PhysicalDeviceFeatures physical_device_features;
   physical_device_features.independentBlend = VK_TRUE;
   physical_device_features.fillModeNonSolid = VK_TRUE;
@@ -301,12 +296,16 @@ void Gpu::MakeDevice() {
   physical_device_vulkan12_features.shaderSubgroupExtendedTypes = VK_TRUE;
 
   vk::PhysicalDeviceFragmentShadingRateFeaturesKHR fragment_shading_rate;
-  fragment_shading_rate.pipelineFragmentShadingRate = VK_TRUE;
-  fragment_shading_rate.primitiveFragmentShadingRate = VK_TRUE;
-  fragment_shading_rate.attachmentFragmentShadingRate = VK_TRUE;
+  if (device_extensions_[VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME]) {
+    fragment_shading_rate.pipelineFragmentShadingRate = VK_TRUE;
+    fragment_shading_rate.primitiveFragmentShadingRate = VK_TRUE;
+    fragment_shading_rate.attachmentFragmentShadingRate = VK_TRUE;
+  }
 
   vk::PhysicalDeviceRobustness2FeaturesEXT robustness2;
-  robustness2.nullDescriptor = VK_TRUE;
+  if (device_extensions_[VK_EXT_ROBUSTNESS_2_EXTENSION_NAME]) {
+    robustness2.nullDescriptor = VK_TRUE;
+  }
 
   vk::StructureChain<vk::PhysicalDeviceFeatures2,
                      vk::PhysicalDeviceVulkan11Features,
@@ -318,12 +317,14 @@ void Gpu::MakeDevice() {
                                 physical_device_vulkan12_features,
                                 fragment_shading_rate, robustness2};
 
+  // Create device.
   vk::DeviceCreateInfo device_create_info{{},      device_queue_create_infos,
                                           {},      enabled_extensions,
                                           nullptr, &physical_device_features2};
 
   device_ = vk::raii::Device{physical_device_, device_create_info};
 
+  // Create queue.
   graphics_queue_ =
       vk::raii::Queue{device_, queue_family_.graphics_index.value(), 0};
   compute_queue_ =
