@@ -1,9 +1,6 @@
 /*
   SPDX license identifier: MIT
-
-  Copyright (c) 2023 Liam Hauw
-
-  Engine entry.
+  Copyright (C) 2023 Liam Hauw.
 */
 
 #include "core/log.h"

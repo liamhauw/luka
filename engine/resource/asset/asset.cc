@@ -1,11 +1,7 @@
 /*
   SPDX license identifier: MIT
-
-  Copyright (c) 2023 Liam Hauw
-
-  Asset source file.
+  Copyright (C) 2023 Liam Hauw.
 */
-
 #include "resource/asset/asset.h"
 
 namespace luka {

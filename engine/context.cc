@@ -1,11 +1,7 @@
 /*
   SPDX license identifier: MIT
-
-  Copyright (c) 2023 Liam Hauw
-
-  Context source file.
+  Copyright (C) 2023 Liam Hauw.
 */
-
 #include "context.h"
 
 namespace luka {

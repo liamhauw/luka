@@ -1,9 +1,6 @@
 /*
   SPDX license identifier: MIT
-
-  Copyright (c) 2023 Liam Hauw
-
-  Window source file.
+  Copyright (C) 2023 Liam Hauw.
 */
 
 #include "function/window/window.h"

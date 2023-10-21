@@ -1,9 +1,6 @@
 /*
   SPDX license identifier: MIT
-
-  Copyright (C) 2023 Liam Hauw
-
-  Instance header file.
+  Copyright (C) 2023 Liam Hauw.
 */
 
 #pragma once
@@ -64,6 +61,9 @@ class Gpu {
       const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
       void* user_data);
 
+  // Parameters.
+  const uint32_t kFramesInFlight{3};
+
   // Window.
   std::shared_ptr<Window> window_;
 
@@ -98,7 +98,6 @@ class Gpu {
   std::vector<vk::raii::Semaphore> render_finished_semaphores_;
 
   // Command objects.
-  uint32_t kFramesInFlight{3};
   std::vector<vk::raii::CommandPool> command_pools_;
   std::vector<vk::raii::CommandBuffers> command_buffers_;
 

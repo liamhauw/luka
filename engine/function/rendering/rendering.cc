@@ -1,11 +1,7 @@
 /*
   SPDX license identifier: MIT
-
-  Copyright (c) 2023 Liam Hauw
-
-  Rendering source file.
+  Copyright (C) 2023 Liam Hauw.
 */
-
 #include "function/rendering/rendering.h"
 
 #include "context.h"

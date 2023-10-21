@@ -1,9 +1,6 @@
 /*
   SPDX license identifier: MIT
-
-  Copyright (C) 2023 Liam Hauw
-
-  Instance source file.
+  Copyright (C) 2023 Liam Hauw.
 */
 
 #include "function/rendering/gpu.h"

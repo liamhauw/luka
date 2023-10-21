@@ -1,9 +1,6 @@
 /*
   SPDX license identifier: MIT
-
-  Copyright (c) 2023 Liam Hauw
-
-  Config source file.
+  Copyright (C) 2023 Liam Hauw.
 */
 
 #include "resource/config/config.h"

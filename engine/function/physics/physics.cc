@@ -1,9 +1,6 @@
 /*
   SPDX license identifier: MIT
-
-  Copyright (c) 2023 Liam Hauw
-
-  Physics source file.
+  Copyright (C) 2023 Liam Hauw.
 */
 
 #include "function/physics/physics.h"

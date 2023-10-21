@@ -1,9 +1,6 @@
 /*
   SPDX license identifier: MIT
-
-  Copyright (c) 2023 Liam Hauw
-
-  Editor input source file.
+  Copyright (C) 2023 Liam Hauw.
 */
 
 #include "editor/editor_input/editor_input.h"

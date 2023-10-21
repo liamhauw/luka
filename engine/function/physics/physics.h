@@ -1,9 +1,6 @@
 /*
   SPDX license identifier: MIT
-
-  Copyright (c) 2023 Liam Hauw
-
-  Physics header file.
+  Copyright (C) 2023 Liam Hauw.
 */
 
 #pragma once
