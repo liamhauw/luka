@@ -16,13 +16,16 @@
 namespace luka {
 
 Gpu::Gpu(std::shared_ptr<Window> window) : window_{window} {
-  MakeBase();
-  MakeDevice();
+  CreateBase();
+  CreateDevice();
+  CreateSwapchain();
 }
 
 Gpu::~Gpu() { device_.waitIdle(); }
 
-void Gpu::MakeBase() {
+void Gpu::Resize() { CreateSwapchain(); }
+
+void Gpu::CreateBase() {
   vk::InstanceCreateFlags flags;
 #ifdef __APPLE__
   flags |= vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR;
@@ -177,7 +180,7 @@ void Gpu::MakeBase() {
   }
 }
 
-void Gpu::MakeDevice() {
+void Gpu::CreateDevice() {
   // Properties.
   vk::PhysicalDeviceProperties physical_device_properties_{
       physical_device_.getProperties()};
@@ -331,6 +334,188 @@ void Gpu::MakeDevice() {
       vk::raii::Queue{device_, queue_family_.compute_index.value(), 0};
   present_queue_ =
       vk::raii::Queue{device_, queue_family_.present_index.value(), 0};
+}
+
+void Gpu::CreateSwapchain() {
+  // Image count.
+  vk::SurfaceCapabilitiesKHR surface_capabilities{
+      physical_device_.getSurfaceCapabilitiesKHR(*surface_)};
+  swapchain_data_.image_count = surface_capabilities.minImageCount + 1;
+  if (surface_capabilities.maxImageCount > 0 &&
+      swapchain_data_.image_count > surface_capabilities.maxImageCount) {
+    swapchain_data_.image_count = surface_capabilities.maxImageCount;
+  }
+
+  // Format and color space.
+  std::vector<vk::SurfaceFormatKHR> surface_formats{
+      physical_device_.getSurfaceFormatsKHR(*(surface_))};
+
+  vk::SurfaceFormatKHR picked_format{surface_formats[0]};
+
+  std::vector<vk::Format> requested_formats{
+      vk::Format::eB8G8R8A8Srgb, vk::Format::eR8G8B8A8Srgb,
+      vk::Format::eB8G8R8Srgb, vk::Format::eR8G8B8Srgb};
+  vk::ColorSpaceKHR requested_color_space{vk::ColorSpaceKHR::eSrgbNonlinear};
+  for (const auto& requested_format : requested_formats) {
+    auto it{std::find_if(surface_formats.begin(), surface_formats.end(),
+                         [requested_format, requested_color_space](
+                             const vk::SurfaceFormatKHR& f) {
+                           return (f.format == requested_format) &&
+                                  (f.colorSpace == requested_color_space);
+                         })};
+    if (it != surface_formats.end()) {
+      picked_format = *it;
+      break;
+    }
+  }
+
+  swapchain_data_.format = picked_format.format;
+  swapchain_data_.color_space = picked_format.colorSpace;
+
+  // Extent.
+  if (surface_capabilities.currentExtent.width ==
+      std::numeric_limits<uint32_t>::max()) {
+    int width{0};
+    int height{0};
+    window_->GetFramebufferSize(&width, &height);
+
+    swapchain_data_.extent.width = std::clamp(
+        static_cast<uint32_t>(width), surface_capabilities.minImageExtent.width,
+        surface_capabilities.maxImageExtent.width);
+    swapchain_data_.extent.height =
+        std::clamp(static_cast<uint32_t>(height),
+                   surface_capabilities.minImageExtent.height,
+                   surface_capabilities.maxImageExtent.height);
+  } else {
+    swapchain_data_.extent = surface_capabilities.currentExtent;
+  }
+
+  // Present mode.
+  std::vector<vk::PresentModeKHR> present_modes{
+      physical_device_.getSurfacePresentModesKHR(*surface_)};
+
+  vk::PresentModeKHR picked_mode{vk::PresentModeKHR::eFifo};
+  for (const auto& present_mode : present_modes) {
+    if (present_mode == vk::PresentModeKHR::eMailbox) {
+      picked_mode = present_mode;
+      break;
+    }
+
+    if (present_mode == vk::PresentModeKHR::eImmediate) {
+      picked_mode = present_mode;
+    }
+  }
+  swapchain_data_.present_mode = picked_mode;
+
+  // Create swapchain
+  vk::SwapchainCreateInfoKHR swapchain_create_info{
+      {},
+      *surface_,
+      swapchain_data_.image_count,
+      swapchain_data_.format,
+      swapchain_data_.color_space,
+      swapchain_data_.extent,
+      1,
+      vk::ImageUsageFlagBits::eColorAttachment,
+      vk::SharingMode::eExclusive,
+      {},
+      surface_capabilities.currentTransform,
+      vk::CompositeAlphaFlagBitsKHR::eOpaque,
+      swapchain_data_.present_mode,
+      VK_TRUE,
+      {}};
+
+  if (queue_family_.graphics_index.value() !=
+      queue_family_.present_index.value()) {
+    uint32_t queue_family_indices[2]{queue_family_.graphics_index.value(),
+                                     queue_family_.present_index.value()};
+    swapchain_create_info.imageSharingMode = vk::SharingMode::eConcurrent;
+    swapchain_create_info.queueFamilyIndexCount = 2;
+    swapchain_create_info.pQueueFamilyIndices = queue_family_indices;
+  }
+
+  swapchain_data_.swapchain.clear();
+  swapchain_data_.swapchain =
+      vk::raii::SwapchainKHR{device_, swapchain_create_info};
+
+  // Get swapchain images.
+  swapchain_data_.images = swapchain_data_.swapchain.getImages();
+
+  // Create swapchain image views
+  swapchain_data_.image_views.clear();
+  swapchain_data_.image_views.reserve(swapchain_data_.images.size());
+  vk::ImageViewCreateInfo image_view_create_info{
+      {},
+      {},
+      vk::ImageViewType::e2D,
+      swapchain_data_.format,
+      {},
+      {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}};
+  for (auto image : swapchain_data_.images) {
+    image_view_create_info.image = image;
+    swapchain_data_.image_views.emplace_back(device_, image_view_create_info);
+  }
+
+  // Create sync objects
+  command_executed_fences_.reserve(swapchain_data_.image_count);
+  image_available_semaphores_.reserve(swapchain_data_.image_count);
+  render_finished_semaphores_.reserve(swapchain_data_.image_count);
+
+  vk::FenceCreateInfo fence_create_info{vk::FenceCreateFlagBits::eSignaled};
+  vk::SemaphoreCreateInfo semaphore_create_info{};
+
+  for (uint32_t i{0}; i < swapchain_data_.image_count; ++i) {
+    command_executed_fences_.emplace_back(device_, fence_create_info);
+    image_available_semaphores_.emplace_back(device_, semaphore_create_info);
+    render_finished_semaphores_.emplace_back(device_, semaphore_create_info);
+  }
+
+  // Create render pass.
+  std::vector<vk::AttachmentDescription> attachment_descriptions;
+
+  attachment_descriptions.emplace_back(
+      vk::AttachmentDescriptionFlags{}, swapchain_data_.format,
+      vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eDontCare,
+      vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare,
+      vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined,
+      vk::ImageLayout::ePresentSrcKHR);
+
+  vk::AttachmentReference color_attachment_ref{
+      0, vk::ImageLayout::eColorAttachmentOptimal};
+
+  vk::SubpassDescription subpass_description{
+      {}, vk::PipelineBindPoint::eGraphics, {}, color_attachment_ref};
+
+  vk::SubpassDependency subpass_dependency{
+      VK_SUBPASS_EXTERNAL,
+      0,
+      vk::PipelineStageFlagBits::eColorAttachmentOutput,
+      vk::PipelineStageFlagBits::eColorAttachmentOutput,
+      {},
+      vk::AccessFlagBits::eColorAttachmentRead |
+          vk::AccessFlagBits::eColorAttachmentWrite};
+
+  vk::RenderPassCreateInfo render_pass_create_info{
+      {}, attachment_descriptions, subpass_description, subpass_dependency};
+
+  render_pass_ = vk::raii::RenderPass{device_, render_pass_create_info};
+
+  // Create framebuffer
+  std::vector<vk::ImageView> attachements(1);
+  vk::FramebufferCreateInfo framebuffer_create_info{
+      {},
+      *render_pass_,
+      attachements,
+      swapchain_data_.extent.width,
+      swapchain_data_.extent.height,
+      1};
+
+  framebuffers_.clear();
+  framebuffers_.reserve(swapchain_data_.image_views.size());
+  for (const auto& image_view : swapchain_data_.image_views) {
+    attachements[0] = *image_view;
+    framebuffers_.emplace_back(device_, framebuffer_create_info);
+  }
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL Gpu::DebugUtilsMessengerCallback(

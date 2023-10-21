@@ -24,6 +24,7 @@ void Rendering::Tick() {
 
   if (window_->GetFramebufferResized()) {
     window_->SetFramebufferResized(false);
+    gpu_->Resize();
   }
 }
 
