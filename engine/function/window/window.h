@@ -60,7 +60,7 @@ class Window {
   bool GetFocusMode() const;
   void SetFocusMode(bool mode);
 
-  static std::vector<const char*> GetRequiredInstanceExtension();
+  static std::vector<const char*> GetRequiredInstanceExtensions();
   void CreateWindowSurface(const vk::raii::Instance& instance,
                            VkSurfaceKHR* surface);
 

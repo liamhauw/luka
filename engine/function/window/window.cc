@@ -95,7 +95,7 @@ void Window::SetFocusMode(bool mode) {
                    focus_mode_ ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
 }
 
-std::vector<const char*> Window::GetRequiredInstanceExtension() {
+std::vector<const char*> Window::GetRequiredInstanceExtensions() {
   uint32_t glfw_extension_count{0};
   const char** glfw_extensions{
       glfwGetRequiredInstanceExtensions(&glfw_extension_count)};

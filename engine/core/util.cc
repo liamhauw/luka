@@ -8,6 +8,8 @@
 
 #include "core/util.h"
 
+#include <algorithm>
+
 namespace luka {
 
 std::string ReplacePathSlash(const std::string& str) {

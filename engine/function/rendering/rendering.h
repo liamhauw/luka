@@ -14,7 +14,6 @@
 
 namespace luka {
 
-class Asset;
 class Window;
 
 class Rendering {
@@ -25,7 +24,6 @@ class Rendering {
   void Tick();
 
  private:
-  std::shared_ptr<Asset> asset_;
   std::shared_ptr<Window> window_;
 
   std::unique_ptr<Gpu> gpu_;

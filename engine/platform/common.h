@@ -8,13 +8,12 @@
 
 #pragma once
 
-namespace luka
-{
-  
+namespace luka {
+
 #ifdef _WIN32
 #define PATH_SEPARATOR '\\'
 #elif __APPLE__
 #define PATH_SEPARATOR '/'
 #endif
 
-} // namespace luka
+}  // namespace luka
