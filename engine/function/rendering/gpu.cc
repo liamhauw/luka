@@ -8,6 +8,7 @@
 
 #include "function/rendering/gpu.h"
 
+#include <numeric>
 #include <set>
 
 #include "core/log.h"
@@ -16,16 +17,23 @@
 namespace luka {
 
 Gpu::Gpu(std::shared_ptr<Window> window) : window_{window} {
-  CreateBase();
+  CreateInstance();
+  CreateSurface();
+  CreatePhysicalDevice();
   CreateDevice();
   CreateSwapchain();
+  CreateSyncObjects();
+  CreateCommandObjects();
+  CreateDescriptorPool();
+  CreateRenderPass();
+  CreateFramebuffers();
 }
 
 Gpu::~Gpu() { device_.waitIdle(); }
 
 void Gpu::Resize() { CreateSwapchain(); }
 
-void Gpu::CreateBase() {
+void Gpu::CreateInstance() {
   vk::InstanceCreateFlags flags;
 #ifdef __APPLE__
   flags |= vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR;
@@ -139,11 +147,15 @@ void Gpu::CreateBase() {
   debug_utils_messenger_ = vk::raii::DebugUtilsMessengerEXT{
       instance_, info_chain.get<vk::DebugUtilsMessengerCreateInfoEXT>()};
 #endif
+}
 
+void Gpu::CreateSurface() {
   VkSurfaceKHR surface;
   window_->CreateWindowSurface(instance_, &surface);
   surface_ = vk::raii::SurfaceKHR{instance_, surface};
+}
 
+void Gpu::CreatePhysicalDevice() {
   vk::raii::PhysicalDevices physical_devices{instance_};
 
   uint32_t max_score{0};
@@ -257,24 +269,20 @@ void Gpu::CreateDevice() {
   }
 
   // Extensions.
+  std::vector<const char*> device_extensions_{
+      VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
+      VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_ROBUSTNESS_2_EXTENSION_NAME};
   std::vector<const char*> enabled_extensions;
   std::vector<vk::ExtensionProperties> extension_properties{
       physical_device_.enumerateDeviceExtensionProperties()};
   for (auto& extension : device_extensions_) {
-    auto& extension_name{extension.first};
-    auto& extension_enable{extension.second};
-    if (!extension_enable) {
-      continue;
-    }
     if (std::find_if(extension_properties.begin(), extension_properties.end(),
-                     [extension_name](const vk::ExtensionProperties& ep) {
-                       return (strcmp(extension_name, ep.extensionName) == 0);
+                     [extension](const vk::ExtensionProperties& ep) {
+                       return (strcmp(extension, ep.extensionName) == 0);
                      }) == extension_properties.end()) {
-      LOGI("Don't find {}, disable it.", extension_name);
-      extension_enable = false;
-      continue;
+      THROW("Don't find {}", extension);
     }
-    enabled_extensions.push_back(extension_name);
+    enabled_extensions.push_back(extension);
   }
 
 #ifdef __APPLE__
@@ -299,16 +307,12 @@ void Gpu::CreateDevice() {
   physical_device_vulkan12_features.shaderSubgroupExtendedTypes = VK_TRUE;
 
   vk::PhysicalDeviceFragmentShadingRateFeaturesKHR fragment_shading_rate;
-  if (device_extensions_[VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME]) {
-    fragment_shading_rate.pipelineFragmentShadingRate = VK_TRUE;
-    fragment_shading_rate.primitiveFragmentShadingRate = VK_TRUE;
-    fragment_shading_rate.attachmentFragmentShadingRate = VK_TRUE;
-  }
+  fragment_shading_rate.pipelineFragmentShadingRate = VK_TRUE;
+  fragment_shading_rate.primitiveFragmentShadingRate = VK_TRUE;
+  fragment_shading_rate.attachmentFragmentShadingRate = VK_TRUE;
 
   vk::PhysicalDeviceRobustness2FeaturesEXT robustness2;
-  if (device_extensions_[VK_EXT_ROBUSTNESS_2_EXTENSION_NAME]) {
-    robustness2.nullDescriptor = VK_TRUE;
-  }
+  robustness2.nullDescriptor = VK_TRUE;
 
   vk::StructureChain<vk::PhysicalDeviceFeatures2,
                      vk::PhysicalDeviceVulkan11Features,
@@ -455,8 +459,9 @@ void Gpu::CreateSwapchain() {
     image_view_create_info.image = image;
     swapchain_data_.image_views.emplace_back(device_, image_view_create_info);
   }
+}
 
-  // Create sync objects
+void Gpu::CreateSyncObjects() {
   command_executed_fences_.reserve(swapchain_data_.image_count);
   image_available_semaphores_.reserve(swapchain_data_.image_count);
   render_finished_semaphores_.reserve(swapchain_data_.image_count);
@@ -469,8 +474,49 @@ void Gpu::CreateSwapchain() {
     image_available_semaphores_.emplace_back(device_, semaphore_create_info);
     render_finished_semaphores_.emplace_back(device_, semaphore_create_info);
   }
+}
 
-  // Create render pass.
+void Gpu::CreateCommandObjects() {
+  command_pools_.reserve(kFramesInFlight);
+  command_buffers_.reserve(kFramesInFlight);
+
+  for (uint32_t i{0}; i < kFramesInFlight; ++i) {
+    command_pools_.emplace_back(vk::raii::CommandPool{
+        device_,
+        {vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+         queue_family_.graphics_index.value()}});
+
+    vk::CommandBufferAllocateInfo command_buffer_allocate_info{
+        *command_pools_[i], vk::CommandBufferLevel::ePrimary, 8};
+    command_buffers_.emplace_back(
+        vk::raii::CommandBuffers{device_, command_buffer_allocate_info});
+  }
+
+  int i = 0;
+}
+
+void Gpu::CreateDescriptorPool() {
+  std::vector<vk::DescriptorPoolSize> pool_sizes{
+      {vk::DescriptorType::eUniformBufferDynamic, 2000},
+      {vk::DescriptorType::eUniformBuffer, 2000},
+      {vk::DescriptorType::eCombinedImageSampler, 8000},
+      {vk::DescriptorType::eSampler, 20},
+      {vk::DescriptorType::eStorageBuffer, 10}};
+
+  uint32_t max_sets{std::accumulate(
+      pool_sizes.begin(), pool_sizes.end(), static_cast<uint32_t>(0),
+      [](uint32_t sum, const vk::DescriptorPoolSize& dps) {
+        return sum + dps.descriptorCount;
+      })};
+
+  vk::DescriptorPoolCreateInfo descriptor_pool_create_info{
+      vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, max_sets,
+      pool_sizes};
+  descriptor_pool_ =
+      vk::raii::DescriptorPool{device_, descriptor_pool_create_info};
+}
+
+void Gpu::CreateRenderPass() {
   std::vector<vk::AttachmentDescription> attachment_descriptions;
 
   attachment_descriptions.emplace_back(
@@ -499,8 +545,9 @@ void Gpu::CreateSwapchain() {
       {}, attachment_descriptions, subpass_description, subpass_dependency};
 
   render_pass_ = vk::raii::RenderPass{device_, render_pass_create_info};
+}
 
-  // Create framebuffer
+void Gpu::CreateFramebuffers() {
   std::vector<vk::ImageView> attachements(1);
   vk::FramebufferCreateInfo framebuffer_create_info{
       {},

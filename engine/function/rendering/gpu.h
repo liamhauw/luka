@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include <map>
 #include <memory>
 #include <optional>
 #include <string>
@@ -36,6 +35,7 @@ class Gpu {
              present_index.has_value();
     }
   };
+
   struct SwapchainData {
     uint32_t image_count;
     vk::Format format;
@@ -47,9 +47,16 @@ class Gpu {
     std::vector<vk::raii::ImageView> image_views;
   };
 
-  void CreateBase();
+  void CreateInstance();
+  void CreateSurface();
+  void CreatePhysicalDevice();
   void CreateDevice();
   void CreateSwapchain();
+  void CreateSyncObjects();
+  void CreateCommandObjects();
+  void CreateDescriptorPool();
+  void CreateRenderPass();
+  void CreateFramebuffers();
 
   static VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(
       VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
@@ -57,36 +64,51 @@ class Gpu {
       const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
       void* user_data);
 
+  // Window.
   std::shared_ptr<Window> window_;
 
-  // Base.
+  // Instance.
   vk::raii::Context context_;
   vk::raii::Instance instance_{nullptr};
 #ifndef NDEBUG
   vk::raii::DebugUtilsMessengerEXT debug_utils_messenger_{nullptr};
 #endif
+
+  // Surface.
   vk::raii::SurfaceKHR surface_{nullptr};
+
+  // Physical device.
   vk::raii::PhysicalDevice physical_device_{nullptr};
 
   // Device.
   vk::SampleCountFlagBits sample_count_{vk::SampleCountFlagBits::e1};
   float max_anisotropy_{0.0f};
   QueueFamliy queue_family_;
-  std::map<const char*, bool> device_extensions_{
-      {VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME, true},
-      {VK_KHR_SWAPCHAIN_EXTENSION_NAME, true},
-      {VK_EXT_ROBUSTNESS_2_EXTENSION_NAME, true}};
   vk::raii::Device device_{nullptr};
   vk::raii::Queue graphics_queue_{nullptr};
   vk::raii::Queue compute_queue_{nullptr};
   vk::raii::Queue present_queue_{nullptr};
 
-  // Render pass.
+  // Swapchain.
   SwapchainData swapchain_data_;
+
+  // Sync objects
   std::vector<vk::raii::Fence> command_executed_fences_;
   std::vector<vk::raii::Semaphore> image_available_semaphores_;
   std::vector<vk::raii::Semaphore> render_finished_semaphores_;
+
+  // Command objects.
+  uint32_t kFramesInFlight{3};
+  std::vector<vk::raii::CommandPool> command_pools_;
+  std::vector<vk::raii::CommandBuffers> command_buffers_;
+
+  // Descriptor pool.
+  vk::raii::DescriptorPool descriptor_pool_{nullptr};
+
+  // Render pass.
   vk::raii::RenderPass render_pass_{nullptr};
+
+  // Framebuffers.
   std::vector<vk::raii::Framebuffer> framebuffers_;
 };
 
