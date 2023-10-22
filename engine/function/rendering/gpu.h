@@ -1,6 +1,6 @@
 /*
   SPDX license identifier: MIT
-  Copyright (C) 2023 Liam Hauw.
+  Copyright (C) 2023 Liam Hauw
 */
 
 #pragma once
@@ -10,6 +10,8 @@
 #include <string>
 #include <vector>
 #include <vulkan/vulkan_raii.hpp>
+
+#include "function/rendering/dynamic_buffer_ring.h"
 
 namespace luka {
 
@@ -23,27 +25,6 @@ class Gpu {
   void Resize();
 
  private:
-  struct QueueFamliy {
-    std::optional<uint32_t> graphics_index;
-    std::optional<uint32_t> compute_index;
-    std::optional<uint32_t> present_index;
-    bool IsComplete() const {
-      return graphics_index.has_value() && compute_index.has_value() &&
-             present_index.has_value();
-    }
-  };
-
-  struct SwapchainData {
-    uint32_t image_count;
-    vk::Format format;
-    vk::ColorSpaceKHR color_space;
-    vk::Extent2D extent;
-    vk::PresentModeKHR present_mode;
-    vk::raii::SwapchainKHR swapchain{nullptr};
-    std::vector<vk::Image> images;
-    std::vector<vk::raii::ImageView> image_views;
-  };
-
   void CreateInstance();
   void CreateSurface();
   void CreatePhysicalDevice();
@@ -52,6 +33,7 @@ class Gpu {
   void CreateSyncObjects();
   void CreateCommandObjects();
   void CreateDescriptorPool();
+  void CreateAsset();
   void CreateRenderPass();
   void CreateFramebuffers();
 
@@ -62,7 +44,7 @@ class Gpu {
       void* user_data);
 
   // Parameters.
-  const uint32_t kFramesInFlight{3};
+  const uint32_t kBackBufferCount{3};
 
   // Window.
   std::shared_ptr<Window> window_;
@@ -83,14 +65,23 @@ class Gpu {
   // Device.
   vk::SampleCountFlagBits sample_count_{vk::SampleCountFlagBits::e1};
   float max_anisotropy_{0.0f};
-  QueueFamliy queue_family_;
+  std::optional<uint32_t> graphics_queue_index_;
+  std::optional<uint32_t> compute_queue_index_;
+  std::optional<uint32_t> present_queue_index_;
   vk::raii::Device device_{nullptr};
   vk::raii::Queue graphics_queue_{nullptr};
   vk::raii::Queue compute_queue_{nullptr};
   vk::raii::Queue present_queue_{nullptr};
 
   // Swapchain.
-  SwapchainData swapchain_data_;
+  uint32_t image_count_;
+  vk::Format format_;
+  vk::ColorSpaceKHR color_space_;
+  vk::Extent2D extent_;
+  vk::PresentModeKHR present_mode_;
+  vk::raii::SwapchainKHR swapchain_{nullptr};
+  std::vector<vk::Image> images_;
+  std::vector<vk::raii::ImageView> image_views_;
 
   // Sync objects
   std::vector<vk::raii::Fence> command_executed_fences_;
@@ -103,6 +94,9 @@ class Gpu {
 
   // Descriptor pool.
   vk::raii::DescriptorPool descriptor_pool_{nullptr};
+
+  // Resource
+  DynamicBufferRing dynamic_buffer_ring_;
 
   // Render pass.
   vk::raii::RenderPass render_pass_{nullptr};

@@ -16,6 +16,8 @@ set(HEADER_FILES
   resource/config/config.h
   function/function_input/function_input.h
   function/physics/physics.h
+  function/rendering/common.h
+  function/rendering/dynamic_buffer_ring.h
   function/rendering/gpu.h
   function/rendering/rendering.h
   function/time/time.h
@@ -35,6 +37,8 @@ set(SOURCE_FILES
   resource/config/config.cc
   function/function_input/function_input.cc
   function/physics/physics.cc
+  function/rendering/common.cc
+  function/rendering/dynamic_buffer_ring.cc
   function/rendering/gpu.cc
   function/rendering/rendering.cc
   function/time/time.cc

@@ -1,6 +1,6 @@
 /*
   SPDX license identifier: MIT
-  Copyright (C) 2023 Liam Hauw.
+  Copyright (C) 2023 Liam Hauw
 */
 
 #include "function/function_input/function_input.h"

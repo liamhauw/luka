@@ -1,6 +1,6 @@
 /*
   SPDX license identifier: MIT
-  Copyright (C) 2023 Liam Hauw.
+  Copyright (C) 2023 Liam Hauw
 */
 
 #pragma once
@@ -39,7 +39,7 @@ class Window {
   using OnScrollFunc = std::function<void(double, double)>;
   using OnDropFunc = std::function<void(int, const char**)>;
 
-  explicit Window(const WindowCreateInfo& window_create_info = {});
+  explicit Window(const WindowCreateInfo& window_ci = {});
   ~Window();
 
   void Tick();

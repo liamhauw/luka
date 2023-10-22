@@ -1,11 +1,13 @@
 /*
   SPDX license identifier: MIT
-  Copyright (C) 2023 Liam Hauw.
+  Copyright (C) 2023 Liam Hauw
 */
 
 #include "core/util.h"
 
 #include <algorithm>
+
+#include "platform/common.h"
 
 namespace luka {
 

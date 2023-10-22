@@ -1,6 +1,6 @@
 /*
   SPDX license identifier: MIT
-  Copyright (C) 2023 Liam Hauw.
+  Copyright (C) 2023 Liam Hauw
 */
 
 #include "function/rendering/gpu.h"
@@ -22,6 +22,7 @@ Gpu::Gpu(std::shared_ptr<Window> window) : window_{window} {
   CreateSyncObjects();
   CreateCommandObjects();
   CreateDescriptorPool();
+  CreateAsset();
   CreateRenderPass();
   CreateFramebuffers();
 }
@@ -122,7 +123,7 @@ void Gpu::CreateInstance() {
       vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
       vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation};
 
-  vk::DebugUtilsMessengerCreateInfoEXT debug_utils_messenger_create_info{
+  vk::DebugUtilsMessengerCreateInfoEXT debug_utils_messenger_ci{
       {},
       message_severity_flags,
       message_type_flags,
@@ -131,7 +132,7 @@ void Gpu::CreateInstance() {
   vk::StructureChain<vk::InstanceCreateInfo,
                      vk::DebugUtilsMessengerCreateInfoEXT>
       info_chain{{flags, &application_info, enabled_layers, enabled_extensions},
-                 debug_utils_messenger_create_info};
+                 debug_utils_messenger_ci};
 #else
   vk::StructureChain<vk::InstanceCreateInfo> info_chain{
       {flags, &application_info, enabled_layers, enabled_extensions}};
@@ -223,46 +224,50 @@ void Gpu::CreateDevice() {
     if ((queue_famliy_propertie.queueFlags & vk::QueueFlagBits::eGraphics) &&
         (queue_famliy_propertie.queueFlags & vk::QueueFlagBits::eCompute) &&
         physical_device_.getSurfaceSupportKHR(i, *surface_)) {
-      queue_family_.graphics_index = i;
-      queue_family_.compute_index = i;
-      queue_family_.present_index = i;
+      graphics_queue_index_ = i;
+      compute_queue_index_ = i;
+      present_queue_index_ = i;
       break;
     }
     ++i;
   }
-  if (!queue_family_.IsComplete()) {
+  if (!(graphics_queue_index_.has_value() && compute_queue_index_.has_value() &&
+        present_queue_index_.has_value())) {
     i = 0;
     for (const auto& queue_famliy_propertie : queue_family_properties) {
       if (queue_famliy_propertie.queueFlags & vk::QueueFlagBits::eGraphics) {
-        queue_family_.graphics_index = i;
+        graphics_queue_index_ = i;
       }
       if (queue_famliy_propertie.queueFlags & vk::QueueFlagBits::eCompute) {
-        queue_family_.compute_index = i;
+        compute_queue_index_ = i;
       }
       if (physical_device_.getSurfaceSupportKHR(i, *surface_)) {
-        queue_family_.present_index = i;
+        present_queue_index_ = i;
       }
-      if (queue_family_.IsComplete()) {
+      if (graphics_queue_index_.has_value() &&
+          compute_queue_index_.has_value() &&
+          present_queue_index_.has_value()) {
         break;
       }
       ++i;
     }
   }
 
-  if (!queue_family_.IsComplete()) {
+  if (!(graphics_queue_index_.has_value() && compute_queue_index_.has_value() &&
+        present_queue_index_.has_value())) {
     THROW("Fail to find queue family.");
   }
 
-  std::vector<vk::DeviceQueueCreateInfo> device_queue_create_infos;
-  std::set<uint32_t> queue_family_indexes{queue_family_.graphics_index.value(),
-                                          queue_family_.compute_index.value(),
-                                          queue_family_.present_index.value()};
+  std::vector<vk::DeviceQueueCreateInfo> device_queue_cis;
+  std::set<uint32_t> queue_family_indexes{graphics_queue_index_.value(),
+                                          compute_queue_index_.value(),
+                                          present_queue_index_.value()};
 
   float queue_priority{0.0f};
   for (uint32_t queue_family_index : queue_family_indexes) {
-    vk::DeviceQueueCreateInfo device_queue_create_info{
+    vk::DeviceQueueCreateInfo device_queue_ci{
         {}, queue_family_index, 1, &queue_priority};
-    device_queue_create_infos.push_back(device_queue_create_info);
+    device_queue_cis.push_back(device_queue_ci);
   }
 
   // Extensions.
@@ -322,29 +327,26 @@ void Gpu::CreateDevice() {
                                 fragment_shading_rate, robustness2};
 
   // Create device.
-  vk::DeviceCreateInfo device_create_info{{},      device_queue_create_infos,
-                                          {},      enabled_extensions,
-                                          nullptr, &physical_device_features2};
+  vk::DeviceCreateInfo device_ci{{},      device_queue_cis,
+                                 {},      enabled_extensions,
+                                 nullptr, &physical_device_features2};
 
-  device_ = vk::raii::Device{physical_device_, device_create_info};
+  device_ = vk::raii::Device{physical_device_, device_ci};
 
   // Create queue.
-  graphics_queue_ =
-      vk::raii::Queue{device_, queue_family_.graphics_index.value(), 0};
-  compute_queue_ =
-      vk::raii::Queue{device_, queue_family_.compute_index.value(), 0};
-  present_queue_ =
-      vk::raii::Queue{device_, queue_family_.present_index.value(), 0};
+  graphics_queue_ = vk::raii::Queue{device_, graphics_queue_index_.value(), 0};
+  compute_queue_ = vk::raii::Queue{device_, compute_queue_index_.value(), 0};
+  present_queue_ = vk::raii::Queue{device_, present_queue_index_.value(), 0};
 }
 
 void Gpu::CreateSwapchain() {
   // Image count.
   vk::SurfaceCapabilitiesKHR surface_capabilities{
       physical_device_.getSurfaceCapabilitiesKHR(*surface_)};
-  swapchain_data_.image_count = surface_capabilities.minImageCount + 1;
+  image_count_ = surface_capabilities.minImageCount + 1;
   if (surface_capabilities.maxImageCount > 0 &&
-      swapchain_data_.image_count > surface_capabilities.maxImageCount) {
-    swapchain_data_.image_count = surface_capabilities.maxImageCount;
+      image_count_ > surface_capabilities.maxImageCount) {
+    image_count_ = surface_capabilities.maxImageCount;
   }
 
   // Format and color space.
@@ -370,8 +372,8 @@ void Gpu::CreateSwapchain() {
     }
   }
 
-  swapchain_data_.format = picked_format.format;
-  swapchain_data_.color_space = picked_format.colorSpace;
+  format_ = picked_format.format;
+  color_space_ = picked_format.colorSpace;
 
   // Extent.
   if (surface_capabilities.currentExtent.width ==
@@ -380,15 +382,14 @@ void Gpu::CreateSwapchain() {
     int height{0};
     window_->GetFramebufferSize(&width, &height);
 
-    swapchain_data_.extent.width = std::clamp(
-        static_cast<uint32_t>(width), surface_capabilities.minImageExtent.width,
-        surface_capabilities.maxImageExtent.width);
-    swapchain_data_.extent.height =
-        std::clamp(static_cast<uint32_t>(height),
-                   surface_capabilities.minImageExtent.height,
-                   surface_capabilities.maxImageExtent.height);
+    extent_.width = std::clamp(static_cast<uint32_t>(width),
+                               surface_capabilities.minImageExtent.width,
+                               surface_capabilities.maxImageExtent.width);
+    extent_.height = std::clamp(static_cast<uint32_t>(height),
+                                surface_capabilities.minImageExtent.height,
+                                surface_capabilities.maxImageExtent.height);
   } else {
-    swapchain_data_.extent = surface_capabilities.currentExtent;
+    extent_ = surface_capabilities.currentExtent;
   }
 
   // Present mode.
@@ -406,82 +407,76 @@ void Gpu::CreateSwapchain() {
       picked_mode = present_mode;
     }
   }
-  swapchain_data_.present_mode = picked_mode;
+  present_mode_ = picked_mode;
 
   // Create swapchain
-  vk::SwapchainCreateInfoKHR swapchain_create_info{
+  vk::SwapchainCreateInfoKHR swapchain_ci{
       {},
       *surface_,
-      swapchain_data_.image_count,
-      swapchain_data_.format,
-      swapchain_data_.color_space,
-      swapchain_data_.extent,
+      image_count_,
+      format_,
+      color_space_,
+      extent_,
       1,
       vk::ImageUsageFlagBits::eColorAttachment,
       vk::SharingMode::eExclusive,
       {},
       surface_capabilities.currentTransform,
       vk::CompositeAlphaFlagBitsKHR::eOpaque,
-      swapchain_data_.present_mode,
+      present_mode_,
       VK_TRUE,
       {}};
 
-  if (queue_family_.graphics_index.value() !=
-      queue_family_.present_index.value()) {
-    uint32_t queue_family_indices[2]{queue_family_.graphics_index.value(),
-                                     queue_family_.present_index.value()};
-    swapchain_create_info.imageSharingMode = vk::SharingMode::eConcurrent;
-    swapchain_create_info.queueFamilyIndexCount = 2;
-    swapchain_create_info.pQueueFamilyIndices = queue_family_indices;
+  if (graphics_queue_index_.value() != present_queue_index_.value()) {
+    uint32_t queue_family_indices[2]{graphics_queue_index_.value(),
+                                     present_queue_index_.value()};
+    swapchain_ci.imageSharingMode = vk::SharingMode::eConcurrent;
+    swapchain_ci.queueFamilyIndexCount = 2;
+    swapchain_ci.pQueueFamilyIndices = queue_family_indices;
   }
 
-  swapchain_data_.swapchain.clear();
-  swapchain_data_.swapchain =
-      vk::raii::SwapchainKHR{device_, swapchain_create_info};
+  swapchain_.clear();
+  swapchain_ = vk::raii::SwapchainKHR{device_, swapchain_ci};
 
   // Get swapchain images.
-  swapchain_data_.images = swapchain_data_.swapchain.getImages();
+  images_ = swapchain_.getImages();
 
   // Create swapchain image views
-  swapchain_data_.image_views.clear();
-  swapchain_data_.image_views.reserve(swapchain_data_.images.size());
-  vk::ImageViewCreateInfo image_view_create_info{
-      {},
-      {},
-      vk::ImageViewType::e2D,
-      swapchain_data_.format,
-      {},
-      {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}};
-  for (auto image : swapchain_data_.images) {
-    image_view_create_info.image = image;
-    swapchain_data_.image_views.emplace_back(device_, image_view_create_info);
+  image_views_.clear();
+  image_views_.reserve(images_.size());
+  vk::ImageViewCreateInfo image_view_ci{
+      {},      {}, vk::ImageViewType::e2D,
+      format_, {}, {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}};
+  for (auto image : images_) {
+    image_view_ci.image = image;
+    image_views_.emplace_back(device_, image_view_ci);
   }
 }
 
 void Gpu::CreateSyncObjects() {
-  command_executed_fences_.reserve(swapchain_data_.image_count);
-  image_available_semaphores_.reserve(swapchain_data_.image_count);
-  render_finished_semaphores_.reserve(swapchain_data_.image_count);
+  command_executed_fences_.reserve(image_count_);
+  image_available_semaphores_.reserve(image_count_);
+  render_finished_semaphores_.reserve(image_count_);
 
-  vk::FenceCreateInfo fence_create_info{vk::FenceCreateFlagBits::eSignaled};
-  vk::SemaphoreCreateInfo semaphore_create_info{};
+  vk::FenceCreateInfo fence_ci{vk::FenceCreateFlagBits::eSignaled};
+  vk::SemaphoreCreateInfo semaphore_ci{};
 
-  for (uint32_t i{0}; i < swapchain_data_.image_count; ++i) {
-    command_executed_fences_.emplace_back(device_, fence_create_info);
-    image_available_semaphores_.emplace_back(device_, semaphore_create_info);
-    render_finished_semaphores_.emplace_back(device_, semaphore_create_info);
+  for (uint32_t i{0}; i < image_count_; ++i) {
+    command_executed_fences_.emplace_back(device_, fence_ci);
+    image_available_semaphores_.emplace_back(device_, semaphore_ci);
+    render_finished_semaphores_.emplace_back(device_, semaphore_ci);
   }
 }
 
 void Gpu::CreateCommandObjects() {
-  command_pools_.reserve(kFramesInFlight);
-  command_buffers_.reserve(kFramesInFlight);
+  command_pools_.reserve(kBackBufferCount);
+  command_buffers_.reserve(kBackBufferCount);
 
-  for (uint32_t i{0}; i < kFramesInFlight; ++i) {
+  for (uint32_t i{0}; i < kBackBufferCount; ++i) {
     command_pools_.emplace_back(vk::raii::CommandPool{
         device_,
         {vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-         queue_family_.graphics_index.value()}});
+         graphics_queue_index_.value()}});
 
     vk::CommandBufferAllocateInfo command_buffer_allocate_info{
         *command_pools_[i], vk::CommandBufferLevel::ePrimary, 8};
@@ -506,22 +501,25 @@ void Gpu::CreateDescriptorPool() {
         return sum + dps.descriptorCount;
       })};
 
-  vk::DescriptorPoolCreateInfo descriptor_pool_create_info{
+  vk::DescriptorPoolCreateInfo descriptor_pool_ci{
       vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, max_sets,
       pool_sizes};
-  descriptor_pool_ =
-      vk::raii::DescriptorPool{device_, descriptor_pool_create_info};
+  descriptor_pool_ = vk::raii::DescriptorPool{device_, descriptor_pool_ci};
+}
+
+void Gpu::CreateAsset() {
+  dynamic_buffer_ring_ = DynamicBufferRing{physical_device_, device_,
+                                           200 * 1024 * 1024, kBackBufferCount};
 }
 
 void Gpu::CreateRenderPass() {
   std::vector<vk::AttachmentDescription> attachment_descriptions;
 
   attachment_descriptions.emplace_back(
-      vk::AttachmentDescriptionFlags{}, swapchain_data_.format,
-      vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eDontCare,
-      vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare,
-      vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined,
-      vk::ImageLayout::ePresentSrcKHR);
+      vk::AttachmentDescriptionFlags{}, format_, vk::SampleCountFlagBits::e1,
+      vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eStore,
+      vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare,
+      vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
 
   vk::AttachmentReference color_attachment_ref{
       0, vk::ImageLayout::eColorAttachmentOptimal};
@@ -538,27 +536,22 @@ void Gpu::CreateRenderPass() {
       vk::AccessFlagBits::eColorAttachmentRead |
           vk::AccessFlagBits::eColorAttachmentWrite};
 
-  vk::RenderPassCreateInfo render_pass_create_info{
+  vk::RenderPassCreateInfo render_pass_ci{
       {}, attachment_descriptions, subpass_description, subpass_dependency};
 
-  render_pass_ = vk::raii::RenderPass{device_, render_pass_create_info};
+  render_pass_ = vk::raii::RenderPass{device_, render_pass_ci};
 }
 
 void Gpu::CreateFramebuffers() {
   std::vector<vk::ImageView> attachements(1);
-  vk::FramebufferCreateInfo framebuffer_create_info{
-      {},
-      *render_pass_,
-      attachements,
-      swapchain_data_.extent.width,
-      swapchain_data_.extent.height,
-      1};
+  vk::FramebufferCreateInfo framebuffer_ci{
+      {}, *render_pass_, attachements, extent_.width, extent_.height, 1};
 
   framebuffers_.clear();
-  framebuffers_.reserve(swapchain_data_.image_views.size());
-  for (const auto& image_view : swapchain_data_.image_views) {
+  framebuffers_.reserve(image_views_.size());
+  for (const auto& image_view : image_views_) {
     attachements[0] = *image_view;
-    framebuffers_.emplace_back(device_, framebuffer_create_info);
+    framebuffers_.emplace_back(device_, framebuffer_ci);
   }
 }
 
