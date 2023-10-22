@@ -18,11 +18,12 @@ Gpu::Gpu(std::shared_ptr<Window> window) : window_{window} {
   CreateSurface();
   CreatePhysicalDevice();
   CreateDevice();
+  CreateQueryPool();
   CreateSwapchain();
-  CreateSyncObjects();
   CreateCommandObjects();
+  CreateSyncObjects();
   CreateDescriptorPool();
-  CreateAsset();
+  CreateBuffers();
   CreateRenderPass();
   CreateFramebuffers();
 }
@@ -339,6 +340,13 @@ void Gpu::CreateDevice() {
   present_queue_ = vk::raii::Queue{device_, present_queue_index_.value(), 0};
 }
 
+void Gpu::CreateQueryPool() {
+  vk::QueryPoolCreateInfo query_pool_ci{
+      {}, vk::QueryType::eTimestamp, 128 * kBackBufferCount};
+
+  query_pool_ = vk::raii::QueryPool{device_, query_pool_ci};
+}
+
 void Gpu::CreateSwapchain() {
   // Image count.
   vk::SurfaceCapabilitiesKHR surface_capabilities{
@@ -453,21 +461,6 @@ void Gpu::CreateSwapchain() {
   }
 }
 
-void Gpu::CreateSyncObjects() {
-  command_executed_fences_.reserve(image_count_);
-  image_available_semaphores_.reserve(image_count_);
-  render_finished_semaphores_.reserve(image_count_);
-
-  vk::FenceCreateInfo fence_ci{vk::FenceCreateFlagBits::eSignaled};
-  vk::SemaphoreCreateInfo semaphore_ci{};
-
-  for (uint32_t i{0}; i < image_count_; ++i) {
-    command_executed_fences_.emplace_back(device_, fence_ci);
-    image_available_semaphores_.emplace_back(device_, semaphore_ci);
-    render_finished_semaphores_.emplace_back(device_, semaphore_ci);
-  }
-}
-
 void Gpu::CreateCommandObjects() {
   command_pools_.reserve(kBackBufferCount);
   command_buffers_.reserve(kBackBufferCount);
@@ -483,8 +476,21 @@ void Gpu::CreateCommandObjects() {
     command_buffers_.emplace_back(
         vk::raii::CommandBuffers{device_, command_buffer_allocate_info});
   }
+}
 
-  int i = 0;
+void Gpu::CreateSyncObjects() {
+  command_executed_fences_.reserve(kBackBufferCount);
+  image_available_semaphores_.reserve(kBackBufferCount);
+  render_finished_semaphores_.reserve(kBackBufferCount);
+
+  vk::FenceCreateInfo fence_ci{vk::FenceCreateFlagBits::eSignaled};
+  vk::SemaphoreCreateInfo semaphore_ci{};
+
+  for (uint32_t i{0}; i < kBackBufferCount; ++i) {
+    command_executed_fences_.emplace_back(device_, fence_ci);
+    image_available_semaphores_.emplace_back(device_, semaphore_ci);
+    render_finished_semaphores_.emplace_back(device_, semaphore_ci);
+  }
 }
 
 void Gpu::CreateDescriptorPool() {
@@ -507,9 +513,16 @@ void Gpu::CreateDescriptorPool() {
   descriptor_pool_ = vk::raii::DescriptorPool{device_, descriptor_pool_ci};
 }
 
-void Gpu::CreateAsset() {
-  dynamic_buffer_ring_ = DynamicBufferRing{physical_device_, device_,
-                                           200 * 1024 * 1024, kBackBufferCount};
+void Gpu::CreateBuffers() {
+  dynamic_buffer_ = DynamicBuffer{physical_device_, device_, 200 * 1024 * 1024,
+                                  kBackBufferCount};
+  device_static_buffer_ =
+      StaticBuffer{physical_device_, device_, 128 * 1024 * 1024, true};
+  host_static_buffer_ =
+      StaticBuffer{physical_device_, device_, 32 * 1024, false};
+  upload_buffer_ =
+      UploadBuffer{physical_device_, device_, graphics_queue_index_.value(),
+                   1000 * 1024 * 1024};
 }
 
 void Gpu::CreateRenderPass() {

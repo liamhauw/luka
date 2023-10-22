@@ -11,7 +11,9 @@
 #include <vector>
 #include <vulkan/vulkan_raii.hpp>
 
-#include "function/rendering/dynamic_buffer_ring.h"
+#include "function/rendering/dynamic_buffer.h"
+#include "function/rendering/static_buffer.h"
+#include "function/rendering/upload_buffer.h"
 
 namespace luka {
 
@@ -29,11 +31,12 @@ class Gpu {
   void CreateSurface();
   void CreatePhysicalDevice();
   void CreateDevice();
+  void CreateQueryPool();
   void CreateSwapchain();
-  void CreateSyncObjects();
   void CreateCommandObjects();
+  void CreateSyncObjects();
   void CreateDescriptorPool();
-  void CreateAsset();
+  void CreateBuffers();
   void CreateRenderPass();
   void CreateFramebuffers();
 
@@ -73,6 +76,9 @@ class Gpu {
   vk::raii::Queue compute_queue_{nullptr};
   vk::raii::Queue present_queue_{nullptr};
 
+  // Query pool
+  vk::raii::QueryPool query_pool_{nullptr};
+
   // Swapchain.
   uint32_t image_count_;
   vk::Format format_;
@@ -83,20 +89,23 @@ class Gpu {
   std::vector<vk::Image> images_;
   std::vector<vk::raii::ImageView> image_views_;
 
-  // Sync objects
-  std::vector<vk::raii::Fence> command_executed_fences_;
-  std::vector<vk::raii::Semaphore> image_available_semaphores_;
-  std::vector<vk::raii::Semaphore> render_finished_semaphores_;
-
   // Command objects.
   std::vector<vk::raii::CommandPool> command_pools_;
   std::vector<vk::raii::CommandBuffers> command_buffers_;
 
+  // Sync objects.
+  std::vector<vk::raii::Fence> command_executed_fences_;
+  std::vector<vk::raii::Semaphore> image_available_semaphores_;
+  std::vector<vk::raii::Semaphore> render_finished_semaphores_;
+
   // Descriptor pool.
   vk::raii::DescriptorPool descriptor_pool_{nullptr};
 
-  // Resource
-  DynamicBufferRing dynamic_buffer_ring_;
+  // Buffers.
+  DynamicBuffer dynamic_buffer_;
+  StaticBuffer device_static_buffer_;
+  StaticBuffer host_static_buffer_;
+  UploadBuffer upload_buffer_;
 
   // Render pass.
   vk::raii::RenderPass render_pass_{nullptr};

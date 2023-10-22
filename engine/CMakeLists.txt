@@ -17,9 +17,11 @@ set(HEADER_FILES
   function/function_input/function_input.h
   function/physics/physics.h
   function/rendering/common.h
-  function/rendering/dynamic_buffer_ring.h
+  function/rendering/dynamic_buffer.h
   function/rendering/gpu.h
   function/rendering/rendering.h
+  function/rendering/static_buffer.h
+  function/rendering/upload_buffer.h
   function/time/time.h
   function/window/window.h
   function/world/world.h
@@ -38,9 +40,11 @@ set(SOURCE_FILES
   function/function_input/function_input.cc
   function/physics/physics.cc
   function/rendering/common.cc
-  function/rendering/dynamic_buffer_ring.cc
+  function/rendering/dynamic_buffer.cc
   function/rendering/gpu.cc
   function/rendering/rendering.cc
+  function/rendering/static_buffer.cc
+  function/rendering/upload_buffer.cc
   function/time/time.cc
   function/window/window.cc
   function/world/world.cc
