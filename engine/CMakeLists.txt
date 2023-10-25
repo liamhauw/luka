@@ -13,6 +13,7 @@ set(HEADER_FILES
   core/math.h
   core/util.h
   resource/asset/asset.h
+  resource/asset/gltf.h
   resource/config/config.h
   function/function_input/function_input.h
   function/physics/physics.h
@@ -34,6 +35,7 @@ set(HEADER_FILES
 
 set(SOURCE_FILES
   core/util.cc
+  resource/asset/gltf.cc
   resource/asset/asset.cc
   resource/config/generated/source_path.h
   resource/config/config.cc

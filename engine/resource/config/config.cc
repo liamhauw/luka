@@ -27,4 +27,8 @@ Config::Config() {
 
 void Config::Tick() {}
 
+const std::filesystem::path& Config::GetModelFilePath() const {
+  return model_file_path_;
+}
+
 }  // namespace luka

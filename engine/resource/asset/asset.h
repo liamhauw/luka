@@ -5,16 +5,24 @@
 
 #pragma once
 
-#include <stb_image.h>
-#include <tiny_gltf.h>
+#include <memory>
+
+#include "resource/asset/gltf.h"
 
 namespace luka {
+
+class Config;
 
 class Asset {
  public:
   Asset();
 
   void Tick();
+
+ private:
+  std::shared_ptr<Config> config_;
+
+  std::unique_ptr<Gltf> gltf_;
 };
 
 }  // namespace luka

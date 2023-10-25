@@ -23,7 +23,7 @@ DynamicBuffer::DynamicBuffer(const vk::raii::PhysicalDevice& physical_device,
                              const vk::raii::Device& device,
                              uint32_t mem_total_size,
                              uint32_t back_buffer_count)
-    : ring_{AlignUp(mem_total_size, 256u)},
+    : ring_{AlignUp(mem_total_size, 256U)},
       allocated_mem_per_back_buffer_(back_buffer_count, 0) {
   vk::BufferCreateInfo buffer_ci{{},
                                  ring_.GetTotalSize(),
@@ -82,7 +82,7 @@ vk::DescriptorBufferInfo DynamicBuffer::AllocIndexBuffer(
 
 void DynamicBuffer::AllocBuffer(uint32_t size, void** data,
                                 vk::DescriptorBufferInfo* out) {
-  uint32_t align_up_size = AlignUp(size, 256u);
+  uint32_t align_up_size = AlignUp(size, 256U);
 
   uint32_t mem_offset;
   uint32_t padding{ring_.PaddingToAvoidCrossOver(align_up_size)};

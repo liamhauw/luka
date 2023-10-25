@@ -56,7 +56,7 @@ void Window::Tick() {
 
 bool Window::GetWindowResized() const { return window_resized_; }
 
-void Window::SetWindowResized(bool resized) { window_resized_ = false; }
+void Window::SetWindowResized(bool resized) { window_resized_ = resized; }
 
 void Window::GetWindowSize(int* width, int* height) const {
   glfwGetWindowSize(glfw_window_, width, height);

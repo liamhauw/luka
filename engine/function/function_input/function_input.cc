@@ -6,6 +6,7 @@
 #include "function/function_input/function_input.h"
 
 #include "context.h"
+#include "core/log.h"
 
 namespace luka {
 
@@ -38,7 +39,7 @@ FunctionInput::FunctionInput() : window_{gContext.window} {
 
 void FunctionInput::Tick() {}
 
-void FunctionInput::OnWindowSize(int width, int height) {
+void FunctionInput::OnWindowSize(int /*width*/, int /*height*/) {
   window_->window_resized_ = true;
 }
 
@@ -46,7 +47,7 @@ void FunctionInput::OnWindowIconify(int iconified) {
   window_->window_iconified_ = iconified == GLFW_TRUE;
 }
 
-void FunctionInput::OnFramebufferSize(int width, int height) {
+void FunctionInput::OnFramebufferSize(int /*width*/, int /*height*/) {
   window_->framebuffer_resized_ = true;
 }
 

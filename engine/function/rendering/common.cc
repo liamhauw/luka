@@ -21,7 +21,7 @@ vk::raii::DeviceMemory AllocateDeviceMemory(
 
   uint32_t type_index{static_cast<uint32_t>(~0)};
   for (uint32_t i{0}; i < memory_properties.memoryTypeCount; i++) {
-    if ((memory_type_bits & 1) &&
+    if (static_cast<bool>(memory_type_bits & 1) &&
         ((memory_properties.memoryTypes[i].propertyFlags &
           memory_properties_flags) == memory_properties_flags)) {
       type_index = i;

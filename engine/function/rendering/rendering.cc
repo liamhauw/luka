@@ -28,7 +28,6 @@ void Rendering::Tick() {
   const vk::raii::CommandBuffer& command_buffer{gpu_->GetCommandBuffer()};
   vk::CommandBufferBeginInfo command_buffer_bi{
       vk::CommandBufferUsageFlagBits::eOneTimeSubmit};
-      
 
   gpu_->EndFrame();
 }
