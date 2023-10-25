@@ -24,12 +24,6 @@ add_subdirectory(json)
 # spdlog
 add_subdirectory(spdlog)
 
-# tinygltf
-set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
-set(TINYGLTF_BUILD_LOADER_EXAMPLE OFF)
-set(TINYGLTF_INSTALL OFF)
-add_subdirectory(tinygltf)
-
 add_library(${PROJECT_NAME} INTERFACE)
 target_link_libraries(${PROJECT_NAME} INTERFACE
   Vulkan::Vulkan
@@ -37,7 +31,6 @@ target_link_libraries(${PROJECT_NAME} INTERFACE
   glm::glm
   nlohmann_json::nlohmann_json
   spdlog::spdlog_header_only
-  tinygltf
 )
 
 set(CMAKE_WARN_DEPRECATED TRUE CACHE BOOL "" FORCE)
