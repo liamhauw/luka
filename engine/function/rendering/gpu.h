@@ -21,10 +21,16 @@ class Window;
 
 class Gpu {
  public:
+  friend class Rendering;
+
   Gpu(std::shared_ptr<Window> window);
   ~Gpu();
 
   void Resize();
+  void BeginFrame();
+  void EndFrame();
+
+  const vk::raii::CommandBuffer& GetCommandBuffer();
 
  private:
   void CreateInstance();
@@ -48,6 +54,7 @@ class Gpu {
 
   // Parameters.
   const uint32_t kBackBufferCount{3};
+  uint32_t back_buffer_index{0};
 
   // Window.
   std::shared_ptr<Window> window_;
@@ -90,6 +97,8 @@ class Gpu {
   std::vector<vk::raii::ImageView> image_views_;
 
   // Command objects.
+  const uint32_t kMaxUsedCommandBufferCountperFrame{8};
+  std::vector<uint32_t> used_command_buffer_counts_;
   std::vector<vk::raii::CommandPool> command_pools_;
   std::vector<vk::raii::CommandBuffers> command_buffers_;
 

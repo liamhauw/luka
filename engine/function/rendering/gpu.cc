@@ -30,7 +30,30 @@ Gpu::Gpu(std::shared_ptr<Window> window) : window_{window} {
 
 Gpu::~Gpu() { device_.waitIdle(); }
 
-void Gpu::Resize() { CreateSwapchain(); }
+void Gpu::Resize() {
+  CreateSwapchain();
+  CreateFramebuffers();
+}
+
+void Gpu::BeginFrame() {
+  dynamic_buffer_.BeginFrame(back_buffer_index);
+  used_command_buffer_counts_[back_buffer_index] = 0;
+}
+
+void Gpu::EndFrame() {
+  back_buffer_index = (back_buffer_index + 1) % kBackBufferCount;
+  dynamic_buffer_.EndFrame(back_buffer_index);
+}
+
+const vk::raii::CommandBuffer& Gpu::GetCommandBuffer() {
+  uint32_t index{used_command_buffer_counts_[back_buffer_index]};
+  if (index >= kMaxUsedCommandBufferCountperFrame) {
+    THROW("Fail to get command buffer.");
+  }
+  ++used_command_buffer_counts_[back_buffer_index];
+
+  return command_buffers_[back_buffer_index][index];
+}
 
 void Gpu::CreateInstance() {
   vk::InstanceCreateFlags flags;
@@ -273,7 +296,6 @@ void Gpu::CreateDevice() {
 
   // Extensions.
   std::vector<const char*> device_extensions_{
-      VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
       VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_ROBUSTNESS_2_EXTENSION_NAME};
   std::vector<const char*> enabled_extensions;
   std::vector<vk::ExtensionProperties> extension_properties{
@@ -309,23 +331,16 @@ void Gpu::CreateDevice() {
   physical_device_vulkan12_features.shaderFloat16 = VK_TRUE;
   physical_device_vulkan12_features.shaderSubgroupExtendedTypes = VK_TRUE;
 
-  vk::PhysicalDeviceFragmentShadingRateFeaturesKHR fragment_shading_rate;
-  fragment_shading_rate.pipelineFragmentShadingRate = VK_TRUE;
-  fragment_shading_rate.primitiveFragmentShadingRate = VK_TRUE;
-  fragment_shading_rate.attachmentFragmentShadingRate = VK_TRUE;
-
   vk::PhysicalDeviceRobustness2FeaturesEXT robustness2;
   robustness2.nullDescriptor = VK_TRUE;
 
   vk::StructureChain<vk::PhysicalDeviceFeatures2,
                      vk::PhysicalDeviceVulkan11Features,
                      vk::PhysicalDeviceVulkan12Features,
-                     vk::PhysicalDeviceFragmentShadingRateFeaturesKHR,
                      vk::PhysicalDeviceRobustness2FeaturesEXT>
       physical_device_features2{physical_device_features,
                                 physical_device_vulkan11_features,
-                                physical_device_vulkan12_features,
-                                fragment_shading_rate, robustness2};
+                                physical_device_vulkan12_features, robustness2};
 
   // Create device.
   vk::DeviceCreateInfo device_ci{{},      device_queue_cis,
@@ -462,6 +477,7 @@ void Gpu::CreateSwapchain() {
 }
 
 void Gpu::CreateCommandObjects() {
+  used_command_buffer_counts_ = std::vector<uint32_t>(kBackBufferCount, 0);
   command_pools_.reserve(kBackBufferCount);
   command_buffers_.reserve(kBackBufferCount);
 
@@ -472,7 +488,8 @@ void Gpu::CreateCommandObjects() {
          graphics_queue_index_.value()}});
 
     vk::CommandBufferAllocateInfo command_buffer_allocate_info{
-        *command_pools_[i], vk::CommandBufferLevel::ePrimary, 8};
+        *command_pools_[i], vk::CommandBufferLevel::ePrimary,
+        kMaxUsedCommandBufferCountperFrame};
     command_buffers_.emplace_back(
         vk::raii::CommandBuffers{device_, command_buffer_allocate_info});
   }
