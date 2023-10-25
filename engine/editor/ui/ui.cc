@@ -1,6 +1,9 @@
 /*
   SPDX license identifier: MIT
-  Copyright (C) 2023 Liam Hauw
+
+  Copyright (c) 2023 Liam Hauw
+
+  UI source file.
 */
 
 #include "editor/ui/ui.h"

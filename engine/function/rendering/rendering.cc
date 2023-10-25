@@ -1,7 +1,11 @@
 /*
   SPDX license identifier: MIT
-  Copyright (C) 2023 Liam Hauw
+
+  Copyright (c) 2023 Liam Hauw
+
+  Rendering source file.
 */
+
 #include "function/rendering/rendering.h"
 
 #include "context.h"
@@ -9,7 +13,12 @@
 namespace luka {
 
 Rendering::Rendering()
-    : window_{gContext.window}, gpu_{std::make_unique<Gpu>(window_)} {}
+    : asset_{gContext.asset},
+      window_{gContext.window},
+      gpu_{std::make_unique<Gpu>(asset_, window_)} {
+  gpu_->MakePipeline(asset_->GetVertexShaderBuffer(),
+                             asset_->GetFragmentShaderBuffer());
+}
 
 Rendering::~Rendering() { gpu_.reset(); }
 
@@ -24,11 +33,6 @@ void Rendering::Tick() {
   }
 
   gpu_->BeginFrame();
-
-  const vk::raii::CommandBuffer& command_buffer{gpu_->GetCommandBuffer()};
-  vk::CommandBufferBeginInfo command_buffer_bi{
-      vk::CommandBufferUsageFlagBits::eOneTimeSubmit};
-      
 
   gpu_->EndFrame();
 }

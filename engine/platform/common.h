@@ -1,16 +1,20 @@
 /*
   SPDX license identifier: MIT
-  Copyright (C) 2023 Liam Hauw
+
+  Copyright (c) 2023 Liam Hauw
+
+  Common header file.
 */
 
 #pragma once
 
-namespace luka {
-
+namespace luka
+{
+  
 #ifdef _WIN32
 #define PATH_SEPARATOR '\\'
 #elif __APPLE__
 #define PATH_SEPARATOR '/'
 #endif
 
-}  // namespace luka
+} // namespace luka

@@ -24,13 +24,22 @@ add_subdirectory(json)
 # spdlog
 add_subdirectory(spdlog)
 
+# stb
+add_library(stb INTERFACE)
+target_include_directories(stb INTERFACE stb)
+
+# tinyobjloader
+add_subdirectory(tinyobjloader)
+
 add_library(${PROJECT_NAME} INTERFACE)
 target_link_libraries(${PROJECT_NAME} INTERFACE
   Vulkan::Vulkan
   glfw
-  glm::glm
-  nlohmann_json::nlohmann_json
-  spdlog::spdlog_header_only
+  glm
+  nlohmann_json
+  spdlog_header_only
+  stb
+  tinyobjloader
 )
 
 set(CMAKE_WARN_DEPRECATED TRUE CACHE BOOL "" FORCE)

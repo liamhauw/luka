@@ -1,6 +1,9 @@
 /*
   SPDX license identifier: MIT
-  Copyright (C) 2023 Liam Hauw
+
+  Copyright (c) 2023 Liam Hauw
+
+  Window header file.
 */
 
 #pragma once
@@ -39,7 +42,7 @@ class Window {
   using OnScrollFunc = std::function<void(double, double)>;
   using OnDropFunc = std::function<void(int, const char**)>;
 
-  explicit Window(const WindowCreateInfo& window_ci = {});
+  explicit Window(const WindowCreateInfo& window_create_info = {});
   ~Window();
 
   void Tick();
@@ -57,7 +60,7 @@ class Window {
   bool GetFocusMode() const;
   void SetFocusMode(bool mode);
 
-  static std::vector<const char*> GetRequiredInstanceExtensions();
+  static std::vector<const char*> GetRequiredInstanceExtension();
   void CreateWindowSurface(const vk::raii::Instance& instance,
                            VkSurfaceKHR* surface);
 

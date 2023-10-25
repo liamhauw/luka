@@ -1,50 +1,59 @@
 /*
   SPDX license identifier: MIT
-  Copyright (C) 2023 Liam Hauw
+
+  Copyright (c) 2023-present Liam Hauw.
+
+  GPU header file.
 */
 
 #pragma once
 
 #include <memory>
 #include <optional>
-#include <string>
 #include <vector>
 #include <vulkan/vulkan_raii.hpp>
 
-#include "function/rendering/dynamic_buffer.h"
-#include "function/rendering/static_buffer.h"
-#include "function/rendering/upload_buffer.h"
+#include "resource/asset/asset.h"
 
 namespace luka {
 
+class Asset;
 class Window;
 
 class Gpu {
  public:
-  friend class Rendering;
-
-  Gpu(std::shared_ptr<Window> window);
+  Gpu(std::shared_ptr<Asset> asset, std::shared_ptr<Window> window);
   ~Gpu();
 
   void Resize();
   void BeginFrame();
   void EndFrame();
 
-  const vk::raii::CommandBuffer& GetCommandBuffer();
+  void MakePipeline(const std::vector<char>& vertex_shader_buffer,
+                    const std::vector<char>& fragment_shader_buffer);
 
  private:
-  void CreateInstance();
-  void CreateSurface();
-  void CreatePhysicalDevice();
-  void CreateDevice();
-  void CreateQueryPool();
-  void CreateSwapchain();
-  void CreateCommandObjects();
-  void CreateSyncObjects();
-  void CreateDescriptorPool();
-  void CreateBuffers();
-  void CreateRenderPass();
-  void CreateFramebuffers();
+  void MakeInstance();
+  void MakeSurface();
+  void MakePhysicalDevice();
+  void MakeDevice();
+  void MakeCommandObjects();
+  void MakeSyncObjects();
+  void MakeSwapchain();
+  void MakeColorImage();
+  void MakeDepthImage();
+  void MakeRenderPass();
+  void MakeFramebuffer();
+
+  void MakeVertexBuffer();
+  void MakeIndexBuffer();
+  void MakeUniformBuffer();
+  void MakeTextureImage();
+  void MakeTextureSampler();
+
+  void MakeDescriptorSetLayout();
+  void MakeDescriptorPool();
+  void MakeDescriptorSet();
 
   static VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(
       VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
@@ -52,75 +61,123 @@ class Gpu {
       const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
       void* user_data);
 
-  // Parameters.
-  const uint32_t kBackBufferCount{3};
-  uint32_t back_buffer_index{0};
+  vk::raii::DeviceMemory AllocateDeviceMemory(
+      const vk::MemoryRequirements& memory_requirements,
+      vk::MemoryPropertyFlags memory_properties_flags);
 
-  // Window.
+  template <typename T>
+  void CopyToDevice(const vk::raii::DeviceMemory& device_memory, const T* data,
+                    vk::DeviceSize buffer_size) {
+    uint8_t* device_data{
+        static_cast<uint8_t*>(device_memory.mapMemory(0, buffer_size))};
+    memcpy(device_data, data, buffer_size);
+    device_memory.unmapMemory();
+  }
+
+  void CopyBuffer(const vk::raii::Buffer& src_buffer,
+                  const vk::raii::Buffer& dst_buffer, vk::DeviceSize size);
+
+  vk::raii::CommandBuffer BeginSingleTimeCommand();
+
+  void EndSingleTimeCommand(const vk::raii::CommandBuffer& command_buffer);
+
+  struct QueueFamliy {
+    std::optional<uint32_t> graphics_index;
+    std::optional<uint32_t> compute_index;
+    std::optional<uint32_t> present_index;
+
+    bool IsComplete() const {
+      return graphics_index.has_value() && compute_index.has_value() &&
+             present_index.has_value();
+    }
+  };
+
+  struct SwapchainData {
+    uint32_t count;
+    vk::Format format;
+    vk::ColorSpaceKHR color_space;
+    vk::Extent2D extent;
+    vk::raii::SwapchainKHR swapchain{nullptr};
+    std::vector<vk::Image> images;
+    std::vector<vk::raii::ImageView> image_views;
+  };
+
+  struct ImageData {
+    vk::Format format;
+    vk::raii::Image image{nullptr};
+    vk::raii::DeviceMemory device_memory{nullptr};
+    vk::raii::ImageView image_view{nullptr};
+  };
+
+  struct BufferData {
+    vk::raii::Buffer buffer{nullptr};
+    vk::raii::DeviceMemory device_memory{nullptr};
+  };
+
+  std::shared_ptr<Asset> asset_;
   std::shared_ptr<Window> window_;
 
-  // Instance.
+  const uint32_t kFramesInFlight{2};
+  uint32_t current_frame_{0};
+
   vk::raii::Context context_;
+  std::vector<const char*> required_instance_layers_;
+  std::vector<const char*> required_instance_extensions_;
   vk::raii::Instance instance_{nullptr};
 #ifndef NDEBUG
   vk::raii::DebugUtilsMessengerEXT debug_utils_messenger_{nullptr};
 #endif
 
-  // Surface.
   vk::raii::SurfaceKHR surface_{nullptr};
 
-  // Physical device.
   vk::raii::PhysicalDevice physical_device_{nullptr};
-
-  // Device.
+  QueueFamliy queue_family_;
+  std::vector<const char*> required_device_extensions_{
+      VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+      VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME};
   vk::SampleCountFlagBits sample_count_{vk::SampleCountFlagBits::e1};
   float max_anisotropy_{0.0f};
-  std::optional<uint32_t> graphics_queue_index_;
-  std::optional<uint32_t> compute_queue_index_;
-  std::optional<uint32_t> present_queue_index_;
+
   vk::raii::Device device_{nullptr};
   vk::raii::Queue graphics_queue_{nullptr};
   vk::raii::Queue compute_queue_{nullptr};
   vk::raii::Queue present_queue_{nullptr};
 
-  // Query pool
-  vk::raii::QueryPool query_pool_{nullptr};
+  vk::raii::CommandPool command_pool_{nullptr};
+  std::vector<vk::raii::CommandBuffer> command_buffers_;
 
-  // Swapchain.
-  uint32_t image_count_;
-  vk::Format format_;
-  vk::ColorSpaceKHR color_space_;
-  vk::Extent2D extent_;
-  vk::PresentModeKHR present_mode_;
-  vk::raii::SwapchainKHR swapchain_{nullptr};
-  std::vector<vk::Image> images_;
-  std::vector<vk::raii::ImageView> image_views_;
-
-  // Command objects.
-  const uint32_t kMaxUsedCommandBufferCountperFrame{8};
-  std::vector<uint32_t> used_command_buffer_counts_;
-  std::vector<vk::raii::CommandPool> command_pools_;
-  std::vector<vk::raii::CommandBuffers> command_buffers_;
-
-  // Sync objects.
-  std::vector<vk::raii::Fence> command_executed_fences_;
+  std::vector<vk::raii::Fence> fences_;
   std::vector<vk::raii::Semaphore> image_available_semaphores_;
   std::vector<vk::raii::Semaphore> render_finished_semaphores_;
 
-  // Descriptor pool.
-  vk::raii::DescriptorPool descriptor_pool_{nullptr};
+  SwapchainData swapchain_data_;
+  uint32_t image_index_;
 
-  // Buffers.
-  DynamicBuffer dynamic_buffer_;
-  StaticBuffer device_static_buffer_;
-  StaticBuffer host_static_buffer_;
-  UploadBuffer upload_buffer_;
+  ImageData color_image_data_;
 
-  // Render pass.
+  ImageData depth_image_data_;
+
   vk::raii::RenderPass render_pass_{nullptr};
 
-  // Framebuffers.
   std::vector<vk::raii::Framebuffer> framebuffers_;
+
+  BufferData vertex_buffer_data_;
+  BufferData index_buffer_data_;
+  std::vector<BufferData> uniform_buffer_datas_;
+  std::vector<void*> uniform_buffer_mapped_dates_;
+
+  uint32_t mip_level_count_{};
+  ImageData texture_image_data_;
+
+  vk::raii::Sampler sampler_{nullptr};
+
+  vk::raii::DescriptorSetLayout descriptor_set_layout_{nullptr};
+  vk::raii::DescriptorPool descriptor_pool_{nullptr};
+  std::vector<vk::raii::DescriptorSet> descriptor_sets_;
+
+  vk::raii::PipelineLayout pipeline_layout_{nullptr};
+  vk::raii::PipelineCache pipeline_cache_{nullptr};
+  vk::raii::Pipeline pipeline_{nullptr};
 };
 
 }  // namespace luka

@@ -1,6 +1,9 @@
 /*
   SPDX license identifier: MIT
-  Copyright (C) 2023 Liam Hauw
+
+  Copyright (c) 2023 Liam Hauw
+
+  Window source file.
 */
 
 #include "function/window/window.h"
@@ -10,7 +13,7 @@
 
 namespace luka {
 
-Window::Window(const WindowCreateInfo& window_ci) {
+Window::Window(const WindowCreateInfo& window_create_info) {
   if (!static_cast<bool>(glfwInit())) {
     THROW("Fail to init glfw.");
   }
@@ -19,8 +22,8 @@ Window::Window(const WindowCreateInfo& window_ci) {
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
   glfw_window_ =
-      glfwCreateWindow(window_ci.width, window_ci.height,
-                       window_ci.title.c_str(), nullptr, nullptr);
+      glfwCreateWindow(window_create_info.width, window_create_info.height,
+                       window_create_info.title.c_str(), nullptr, nullptr);
   if (!static_cast<bool>(glfw_window_)) {
     THROW("Fail to create glfw window.");
   }
@@ -92,7 +95,7 @@ void Window::SetFocusMode(bool mode) {
                    focus_mode_ ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
 }
 
-std::vector<const char*> Window::GetRequiredInstanceExtensions() {
+std::vector<const char*> Window::GetRequiredInstanceExtension() {
   uint32_t glfw_extension_count{0};
   const char** glfw_extensions{
       glfwGetRequiredInstanceExtensions(&glfw_extension_count)};
