@@ -1,0 +1,18 @@
+/*
+  SPDX license identifier: MIT
+  Copyright (C) 2023 Liam Hauw
+*/
+
+#include "function/rendering/camera.h"
+
+namespace luka {
+
+Camera::Camera() {
+
+}
+
+void Camera::LookAt(const glm::vec4& from, const glm::vec4& to) {
+
+}
+
+}  // namespace  luka

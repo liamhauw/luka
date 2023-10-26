@@ -9,11 +9,21 @@
 namespace luka {
 
 Rendering::Rendering()
-    : window_{gContext.window}, gpu_{std::make_unique<Gpu>(window_)} {}
+    : window_{gContext.window},
+      gpu_{std::make_unique<Gpu>()},
+      camera_{std::make_unique<Camera>()} {}
 
-Rendering::~Rendering() { gpu_.reset(); }
+Rendering::~Rendering() {
+  camera_.reset();
+  gpu_.reset();
+}
 
 void Rendering::Tick() {
+  if (gContext.load) {
+    camera_->LookAt(gContext.config->GetCameraFrom(),
+                    gContext.config->GetCameraTo());
+  }
+
   if (window_->GetIconified()) {
     return;
   }

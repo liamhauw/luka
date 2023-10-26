@@ -13,6 +13,7 @@
 namespace luka {
 
 void Engine::Run() {
+  gContext.load = true;
   gContext.is_editor_mode = false;
   gContext.config = std::make_shared<Config>();
   gContext.asset = std::make_shared<Asset>();

@@ -7,6 +7,8 @@
 
 #include <filesystem>
 
+#include "core/json.h"
+#include "core/math.h"
 #include "core/util.h"
 #include "resource/config/generated/source_path.h"
 
@@ -19,6 +21,8 @@ class Config {
   void Tick();
 
   const std::filesystem::path& GetModelFilePath() const;
+  const glm::vec4& GetCameraFrom() const;
+  const glm::vec4& GetCameraTo() const;
 
  private:
   std::filesystem::path source_path_{ReplacePathSlash(LUKA_SOURCE_PATH)};
@@ -31,7 +35,11 @@ class Config {
                                      std::filesystem::path{"generated"}};
   std::filesystem::path config_file_path_{config_path_ / "config.json"};
 
+  json cj_;
+  uint32_t scene_;
   std::filesystem::path model_file_path_;
+  glm::vec4 camera_from_;
+  glm::vec4 camera_to_;
 };
 
 }  // namespace luka

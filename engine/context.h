@@ -22,6 +22,7 @@
 namespace luka {
 
 struct Context {
+  bool load;
   bool is_editor_mode;
   std::shared_ptr<Config> config;
   std::shared_ptr<Asset> asset;

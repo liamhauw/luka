@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "function/rendering/camera.h"
 #include "function/rendering/gpu.h"
 
 namespace luka {
@@ -24,6 +25,7 @@ class Rendering {
   std::shared_ptr<Window> window_;
 
   std::unique_ptr<Gpu> gpu_;
+  std::unique_ptr<Camera> camera_;
 };
 
 }  // namespace luka

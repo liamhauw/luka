@@ -8,7 +8,7 @@
 namespace luka {
 
 glm::vec4 GetVec4(const json::array_t& json_array) {
-  return glm::vec4{json_array[0], json_array[1], json_array[1],
+  return glm::vec4{json_array[0], json_array[1], json_array[2],
                    (json_array.size() == 4) ? json_array[3] : 0};
 }
 

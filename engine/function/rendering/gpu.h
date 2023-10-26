@@ -23,7 +23,7 @@ class Gpu {
  public:
   friend class Rendering;
 
-  Gpu(std::shared_ptr<Window> window);
+  Gpu();
   ~Gpu();
 
   void Resize();

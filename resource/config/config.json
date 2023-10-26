@@ -1,3 +1,35 @@
 {
-  "model":"buster_drone/busterDrone.gltf"
+  "scene": 0,
+  "scenes": [
+    {
+      "model": "buster_drone/busterDrone.gltf",
+      "camera": {
+        "from": [
+          0,
+          0,
+          3.5
+        ],
+        "to": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "model": "buster_drone/busterDrone.gltf",
+      "camera": {
+        "from": [
+          5.13694048,
+          1.89175785,
+          -1.40289795
+        ],
+        "to": [
+          0.703276634,
+          1.02280307,
+          0.218072295
+        ]
+      }
+    }
+  ]
 }

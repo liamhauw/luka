@@ -8,12 +8,13 @@
 #include <numeric>
 #include <set>
 
+#include "context.h"
 #include "core/log.h"
 #include "function/window/window.h"
 
 namespace luka {
 
-Gpu::Gpu(std::shared_ptr<Window> window) : window_{window} {
+Gpu::Gpu() : window_{gContext.window} {
   CreateInstance();
   CreateSurface();
   CreatePhysicalDevice();
