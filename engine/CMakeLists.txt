@@ -9,6 +9,7 @@ configure_file(
 
 set(HEADER_FILES
   platform/common.h
+  core/json.h
   core/log.h
   core/math.h
   core/util.h
@@ -34,6 +35,7 @@ set(HEADER_FILES
 )
 
 set(SOURCE_FILES
+  core/json.cc
   core/util.cc
   resource/asset/gltf.cc
   resource/asset/asset.cc
