@@ -10,12 +10,11 @@
 
 namespace luka {
 
-Asset::Asset() : config_{gContext.config} {}
-
 void Asset::Tick() {
   if (gContext.load) {
     gltf_.reset();
-    const std::string& model_file_path{config_->GetModelFilePath().string()};
+    const std::string& model_file_path{
+        gContext.config->GetModelFilePath().string()};
     gltf_ = std::make_unique<Gltf>(model_file_path);
   }
 }

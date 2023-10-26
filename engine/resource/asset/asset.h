@@ -15,13 +15,9 @@ class Config;
 
 class Asset {
  public:
-  Asset();
-
   void Tick();
 
  private:
-  std::shared_ptr<Config> config_;
-
   std::unique_ptr<Gltf> gltf_;
 };
 

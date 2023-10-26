@@ -56,9 +56,6 @@ class Gpu {
   const uint32_t kBackBufferCount{3};
   uint32_t back_buffer_index{0};
 
-  // Window.
-  std::shared_ptr<Window> window_;
-
   // Instance.
   vk::raii::Context context_;
   vk::raii::Instance instance_{nullptr};

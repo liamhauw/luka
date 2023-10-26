@@ -22,8 +22,6 @@ class Rendering {
   void Tick();
 
  private:
-  std::shared_ptr<Window> window_;
-
   std::unique_ptr<Gpu> gpu_;
   std::unique_ptr<Camera> camera_;
 };

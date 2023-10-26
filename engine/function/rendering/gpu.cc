@@ -14,7 +14,7 @@
 
 namespace luka {
 
-Gpu::Gpu() : window_{gContext.window} {
+Gpu::Gpu() {
   CreateInstance();
   CreateSurface();
   CreatePhysicalDevice();
@@ -70,7 +70,7 @@ void Gpu::CreateInstance() {
   std::vector<const char*> required_instance_extensions;
 
   std::vector<const char*> window_required_instance_extensions{
-      window_->GetRequiredInstanceExtensions()};
+      gContext.window->GetRequiredInstanceExtensions()};
   required_instance_extensions.insert(
       required_instance_extensions.end(),
       window_required_instance_extensions.begin(),
@@ -174,7 +174,7 @@ void Gpu::CreateInstance() {
 
 void Gpu::CreateSurface() {
   VkSurfaceKHR surface;
-  window_->CreateWindowSurface(instance_, &surface);
+  gContext.window->CreateWindowSurface(instance_, &surface);
   surface_ = vk::raii::SurfaceKHR{instance_, surface};
 }
 
@@ -404,7 +404,7 @@ void Gpu::CreateSwapchain() {
       std::numeric_limits<uint32_t>::max()) {
     int width{0};
     int height{0};
-    window_->GetFramebufferSize(&width, &height);
+    gContext.window->GetFramebufferSize(&width, &height);
 
     extent_.width = std::clamp(static_cast<uint32_t>(width),
                                surface_capabilities.minImageExtent.width,
