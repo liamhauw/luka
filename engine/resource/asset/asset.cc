@@ -13,9 +13,8 @@ namespace luka {
 void Asset::Tick() {
   if (gContext.load) {
     gltf_.reset();
-    const std::string& model_file_path{
-        gContext.config->GetModelFilePath().string()};
-    gltf_ = std::make_unique<Gltf>(model_file_path);
+    gltf_ =
+        std::make_unique<Gltf>(gContext.config->GetModelFilePath().string());
   }
 }
 

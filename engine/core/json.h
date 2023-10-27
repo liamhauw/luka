@@ -10,27 +10,23 @@ using json = nlohmann::json;
 
 #include "core/math.h"
 
-namespace luka {
+NLOHMANN_JSON_NAMESPACE_BEGIN
 
-glm::vec4 GetVec4(const json::array_t& json_array);
+template <>
+struct adl_serializer<glm::vec4> {
+  static void from_json(const json& j, glm::vec4& v) {
+    v = {j[0], j[1], j[2], j.size() == 4 ? j[3] : 0};
+  }
+};
 
-glm::mat4 GetMat4(const json::array_t& json_array);
+template <>
+struct adl_serializer<glm::mat4> {
+  static void from_json(const json& j, glm::mat4& m) {
+    m = glm::mat4(glm::vec4(j[0], j[1], j[2], j[3]),
+                  glm::vec4(j[4], j[5], j[6], j[7]),
+                  glm::vec4(j[8], j[9], j[10], j[11]),
+                  glm::vec4(j[12], j[13], j[14], j[15]));
+  }
+};
 
-std::string GetElementString(const json::object_t& root,
-                             const std::string& path,
-                             const std::string& default_value);
-
-uint32_t GetElementUint32(const json::object_t& root, const std::string& path,
-                          uint32_t default_value);
-
-json::array_t GetElementJsonArray(const json::object_t& root,
-                                  const std::string& path,
-                                  const json::array_t& default_value);
-
-glm::vec4 GetElementVec4(const json::object_t& root, const std::string& path,
-                         const glm::vec4& default_value);
-
-glm::mat4 GetElementMat4(const json::object_t& root, const std::string& path,
-                         const glm::mat4& default_value);
-
-}  // namespace luka
+NLOHMANN_JSON_NAMESPACE_END

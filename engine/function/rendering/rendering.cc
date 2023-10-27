@@ -20,6 +20,8 @@ void Rendering::Tick() {
   if (gContext.load) {
     camera_->LookAt(gContext.config->GetCameraFrom(),
                     gContext.config->GetCameraTo());
+
+    gContext.load = false;                
   }
 
   if (gContext.window->GetIconified()) {

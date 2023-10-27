@@ -14,6 +14,13 @@
 
 namespace luka {
 
+struct ConfigJson {
+  uint32_t scene;
+  std::string model_file_name;
+  glm::vec4 camera_from_;
+  glm::vec4 camera_to_;
+};
+
 class Config {
  public:
   Config();
@@ -36,10 +43,8 @@ class Config {
   std::filesystem::path config_file_path_{config_path_ / "config.json"};
 
   json cj_;
-  uint32_t scene_;
-  std::filesystem::path model_file_path_;
-  glm::vec4 camera_from_;
-  glm::vec4 camera_to_;
+  
+  ConfigJson config
 };
 
 }  // namespace luka
