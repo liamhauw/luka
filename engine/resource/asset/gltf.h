@@ -49,8 +49,8 @@ struct GltfAccessor {
   const void* data{nullptr};
   uint32_t count{1};
   uint32_t stride;
-  uint32_t dimension;
-  uint32_t type;
+  uint32_t dimension_size;
+  uint32_t componet_size;
   glm::vec4 min;
   glm::vec4 max;
 
@@ -118,7 +118,7 @@ struct GltfAnimation {
   std::map<uint32_t, GltfChannel> node2channel;
 };
 
-struct GltfGltf {
+struct GltfInfo {
   uint32_t scene;
   std::vector<GltfScene> scenes;
   std::vector<GltfNode> nodes;
@@ -132,7 +132,7 @@ class Gltf {
   Gltf(const std::filesystem::path& model_file_path);
 
  private:
-  json mj_;
-  GltfGltf gltf_gltf_;
+  json j_;
+  GltfInfo gltf_info_;
 };
 }  // namespace luka
