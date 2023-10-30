@@ -7,10 +7,6 @@
 #include "platform/pch.h"
 // clang-format on
 
-
-
-#include <memory>
-
 #include "editor/editor_input/editor_input.h"
 #include "editor/scene/scene.h"
 #include "editor/ui/ui.h"

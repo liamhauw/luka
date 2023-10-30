@@ -7,11 +7,8 @@
 
 #include "engine.h"
 
-#include <chrono>
-#include <memory>
-#include <thread>
-
 #include "context.h"
+
 namespace luka {
 
 void Engine::Run() {

@@ -7,8 +7,6 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include <chrono>
-
 namespace luka {
 
 class Time {
