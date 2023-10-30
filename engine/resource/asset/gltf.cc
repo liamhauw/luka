@@ -1,11 +1,11 @@
-/*
-  SPDX license identifier: MIT
-  Copyright (C) 2023 Liam Hauw
-*/
+// SPDX license identifier: MIT.
+// Copyright (C) 2023 Liam Hauw.
+
+// clang-format off
+#include "platform/pch.h"
+// clang-format on
 
 #include "resource/asset/gltf.h"
-
-#include <fstream>
 
 #include "core/log.h"
 
@@ -16,7 +16,7 @@ const json* accessors{nullptr};
 const json* buffer_views{nullptr};
 const std::vector<GltfBuffer>* buffers{nullptr};
 
-uint32_t GetCompoentSize(uint32_t componet_type) {
+u32 GetCompoentSize(u32 componet_type) {
   switch (componet_type) {
     case 5120:
       return 1;  //(BYTE)1
@@ -36,7 +36,7 @@ uint32_t GetCompoentSize(uint32_t componet_type) {
   return UINT32_MAX;
 }
 
-uint32_t GetDimensionSize(const std::string& type) {
+u32 GetDimensionSize(const std::string& type) {
   if (type == "SCALAR")
     return 1;
   else if (type == "VEC2")
@@ -51,19 +51,19 @@ uint32_t GetDimensionSize(const std::string& type) {
     return UINT32_MAX;
 }
 
-void GetBufferDetails(uint32_t accessor, GltfAccessor* gltf_accessor) {
+void GetBufferDetails(u32 accessor, GltfAccessor* gltf_accessor) {
   const json& aj{accessors->at(accessor)};
-  uint32_t buffer_view{aj.value("bufferView", UINT32_MAX)};
-  uint32_t acc_byte_offset{aj.value("byteOffset", UINT32_MAX)};
-  uint32_t componet_type{aj.value("componentType", UINT32_MAX)};
-  uint32_t count{aj.value("count", UINT32_MAX)};
+  u32 buffer_view{aj.value("bufferView", UINT32_MAX)};
+  u32 acc_byte_offset{aj.value("byteOffset", UINT32_MAX)};
+  u32 componet_type{aj.value("componentType", UINT32_MAX)};
+  u32 count{aj.value("count", UINT32_MAX)};
   std::string type{aj.value("type", "")};
 
   const json& bvj{buffer_views->at(buffer_view)};
 
-  uint32_t buffer{bvj.value("buffer", UINT32_MAX)};
-  uint32_t byte_length{bvj.value("byteLength", UINT32_MAX)};
-  uint32_t byte_offset{bvj.value("byteOffset", UINT32_MAX)};
+  u32 buffer{bvj.value("buffer", UINT32_MAX)};
+  u32 byte_length{bvj.value("byteLength", UINT32_MAX)};
+  u32 byte_offset{bvj.value("byteOffset", UINT32_MAX)};
 
   const char* buffer_data{buffers->at(buffer).bin.data()};
   byte_offset += acc_byte_offset;
@@ -116,8 +116,7 @@ void from_json(const json& j, GltfNode& gltf_node) {
 void from_json(const json& j, GltfPrimitive& gltf_primitive) {
   if (j.contains("attributes") && j.at("attributes").contains("POSITION") &&
       accessors) {
-    uint32_t posotion{
-        j.at("attributes").at("POSITION").template get<uint32_t>()};
+    u32 posotion{j.at("attributes").at("POSITION").template get<u32>()};
     const json& aj{accessors->at(posotion)};
 
     glm::vec4 max, min;
@@ -140,7 +139,7 @@ void from_json(const json& j, GltfMesh& gltf_mesh) {
 
 void from_json(const json& j, GltfBuffer& buffer) {
   if (j.contains("byteLength") && j.contains("uri")) {
-    uint32_t byte_length{j.at("byteLength").template get<uint32_t>()};
+    u32 byte_length{j.at("byteLength").template get<u32>()};
 
     std::string uri{j.at("uri").template get<std::string>()};
     std::string data_file_path{(parent_path / uri).string()};
@@ -157,14 +156,14 @@ void from_json(const json& j, GltfAnimation& gltf_animation) {
     const json& cj{j.at("channels")};
     const json& sj{j.at("samplers")};
 
-    for (uint32_t i{0}; i < cj.size(); ++i) {
+    for (u32 i{0}; i < cj.size(); ++i) {
       const json& channel{cj[i]};
 
       if (channel.contains("sampler") && channel.contains("target") &&
           channel.at("target").contains("node") &&
           channel.at("target").contains("path")) {
-        uint32_t sampler{channel.at("sampler").template get<uint32_t>()};
-        uint32_t node{channel.at("target").at("node").template get<uint32_t>()};
+        u32 sampler{channel.at("sampler").template get<u32>()};
+        u32 node{channel.at("target").at("node").template get<u32>()};
         std::string path{
             channel.at("target").at("path").template get<std::string>()};
 
@@ -177,14 +176,14 @@ void from_json(const json& j, GltfAnimation& gltf_animation) {
         }
 
         GltfSampler gltf_sampler;
-        GetBufferDetails(sj.at(sampler).at("input").template get<uint32_t>(),
+        GetBufferDetails(sj.at(sampler).at("input").template get<u32>(),
                          &gltf_sampler.time_accessor);
 
         gltf_animation.duration = std::max(
-            gltf_animation.duration, *(float*)gltf_sampler.time_accessor.Get(
+            gltf_animation.duration, *(f32*)gltf_sampler.time_accessor.Get(
                                          gltf_sampler.time_accessor.count - 1));
 
-        GetBufferDetails(sj[sampler]["output"].get<uint32_t>(),
+        GetBufferDetails(sj[sampler]["output"].get<u32>(),
                          &gltf_sampler.value_accessor);
 
         if (path == "scale") {

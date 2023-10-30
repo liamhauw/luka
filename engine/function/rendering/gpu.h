@@ -1,15 +1,11 @@
-/*
-  SPDX license identifier: MIT
-  Copyright (C) 2023 Liam Hauw
-*/
+// SPDX license identifier: MIT.
+// Copyright (C) 2023 Liam Hauw.
 
 #pragma once
 
-#include <memory>
-#include <optional>
-#include <string>
-#include <vector>
-#include <vulkan/vulkan_raii.hpp>
+// clang-format off
+#include "platform/pch.h"
+// clang-format on
 
 #include "function/rendering/dynamic_buffer.h"
 #include "function/rendering/static_buffer.h"
@@ -53,8 +49,8 @@ class Gpu {
       void* user_data);
 
   // Parameters.
-  const uint32_t kBackBufferCount{3};
-  uint32_t back_buffer_index{0};
+  const u32 kBackBufferCount{3};
+  u32 back_buffer_index{0};
 
   // Instance.
   vk::raii::Context context_;
@@ -71,10 +67,10 @@ class Gpu {
 
   // Device.
   vk::SampleCountFlagBits sample_count_{vk::SampleCountFlagBits::e1};
-  float max_anisotropy_{0.0f};
-  std::optional<uint32_t> graphics_queue_index_;
-  std::optional<uint32_t> compute_queue_index_;
-  std::optional<uint32_t> present_queue_index_;
+  f32 max_anisotropy_{0.0f};
+  std::optional<u32> graphics_queue_index_;
+  std::optional<u32> compute_queue_index_;
+  std::optional<u32> present_queue_index_;
   vk::raii::Device device_{nullptr};
   vk::raii::Queue graphics_queue_{nullptr};
   vk::raii::Queue compute_queue_{nullptr};
@@ -84,7 +80,7 @@ class Gpu {
   vk::raii::QueryPool query_pool_{nullptr};
 
   // Swapchain.
-  uint32_t image_count_;
+  u32 image_count_;
   vk::Format format_;
   vk::ColorSpaceKHR color_space_;
   vk::Extent2D extent_;
@@ -94,8 +90,8 @@ class Gpu {
   std::vector<vk::raii::ImageView> image_views_;
 
   // Command objects.
-  const uint32_t kMaxUsedCommandBufferCountperFrame{8};
-  std::vector<uint32_t> used_command_buffer_counts_;
+  const u32 kMaxUsedCommandBufferCountperFrame{8};
+  std::vector<u32> used_command_buffer_counts_;
   std::vector<vk::raii::CommandPool> command_pools_;
   std::vector<vk::raii::CommandBuffers> command_buffers_;
 

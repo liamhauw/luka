@@ -1,12 +1,14 @@
-/*
-  SPDX license identifier: MIT
-  Copyright (C) 2023 Liam Hauw
-*/
+// SPDX license identifier: MIT.
+// Copyright (C) 2023 Liam Hauw.
+
+// clang-format off
+#include "platform/pch.h"
+// clang-format on
 
 #include "core/log.h"
 #include "engine.h"
 
-int main() {
+luka::i32 main() {
   try {
     luka::Engine::Run();
   } catch (const luka::Exception& e) {

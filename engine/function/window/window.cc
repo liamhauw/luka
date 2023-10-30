@@ -1,7 +1,9 @@
-/*
-  SPDX license identifier: MIT
-  Copyright (C) 2023 Liam Hauw
-*/
+// SPDX license identifier: MIT.
+// Copyright (C) 2023 Liam Hauw.
+
+// clang-format off
+#include "platform/pch.h"
+// clang-format on
 
 #include "function/window/window.h"
 
@@ -18,9 +20,8 @@ Window::Window(const WindowCreateInfo& window_ci) {
   glfwSetErrorCallback(ErrorCallback);
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-  glfw_window_ =
-      glfwCreateWindow(window_ci.width, window_ci.height,
-                       window_ci.title.c_str(), nullptr, nullptr);
+  glfw_window_ = glfwCreateWindow(window_ci.width, window_ci.height,
+                                  window_ci.title.c_str(), nullptr, nullptr);
   if (!static_cast<bool>(glfw_window_)) {
     THROW("Fail to create glfw window.");
   }
@@ -46,9 +47,9 @@ Window::~Window() {
 }
 
 void Window::Tick() {
-  double delta_time{gContext.time->GetDeltaTime()};
+  f64 delta_time{gContext.time->GetDeltaTime()};
   std::string title{std::string{"luka "} +
-                    std::to_string(static_cast<int>(1.0 / delta_time)) +
+                    std::to_string(static_cast<i32>(1.0 / delta_time)) +
                     " fps"};
   glfwSetWindowTitle(glfw_window_, title.c_str());
   glfwPollEvents();
@@ -58,7 +59,7 @@ bool Window::GetWindowResized() const { return window_resized_; }
 
 void Window::SetWindowResized(bool resized) { window_resized_ = resized; }
 
-void Window::GetWindowSize(int* width, int* height) const {
+void Window::GetWindowSize(i32* width, i32* height) const {
   glfwGetWindowSize(glfw_window_, width, height);
 }
 
@@ -80,7 +81,7 @@ void Window::SetFramebufferResized(bool resized) {
   framebuffer_resized_ = resized;
 }
 
-void Window::GetFramebufferSize(int* width, int* height) const {
+void Window::GetFramebufferSize(i32* width, i32* height) const {
   glfwGetFramebufferSize(glfw_window_, width, height);
 }
 
@@ -93,7 +94,7 @@ void Window::SetFocusMode(bool mode) {
 }
 
 std::vector<const char*> Window::GetRequiredInstanceExtensions() {
-  uint32_t glfw_extension_count{0};
+  u32 glfw_extension_count{0};
   const char** glfw_extensions{
       glfwGetRequiredInstanceExtensions(&glfw_extension_count)};
   std::vector<const char*> extension{glfw_extensions,
@@ -144,11 +145,11 @@ void Window::RegisterOnDropFunc(const OnDropFunc& func) {
   on_drop_func_.push_back(func);
 }
 
-void Window::ErrorCallback(int error_code, const char* description) {
+void Window::ErrorCallback(i32 error_code, const char* description) {
   LOGE("glfw error: [{} {}].", error_code, description);
 }
-void Window::WindowSizeCallback(GLFWwindow* glfw_window, int width,
-                                int height) {
+void Window::WindowSizeCallback(GLFWwindow* glfw_window, i32 width,
+                                i32 height) {
   if (auto* window{
           reinterpret_cast<Window*>(glfwGetWindowUserPointer(glfw_window))}) {
     window->OnWindowSize(width, height);
@@ -160,67 +161,65 @@ void Window::WindowCloseCallback(GLFWwindow* glfw_window) {
     window->OnWindowClose();
   }
 }
-void Window::WindowIconifyCallback(GLFWwindow* glfw_window, int iconified) {
+void Window::WindowIconifyCallback(GLFWwindow* glfw_window, i32 iconified) {
   if (auto* window{
           reinterpret_cast<Window*>(glfwGetWindowUserPointer(glfw_window))}) {
     window->OnWindowIconify(iconified);
   }
 }
-void Window::FramebufferSizeCallback(GLFWwindow* glfw_window, int width,
-                                     int height) {
+void Window::FramebufferSizeCallback(GLFWwindow* glfw_window, i32 width,
+                                     i32 height) {
   if (auto* window{
           reinterpret_cast<Window*>(glfwGetWindowUserPointer(glfw_window))}) {
     window->OnFramebufferSize(width, height);
   }
 }
-void Window::KeyCallback(GLFWwindow* glfw_window, int key, int scancode,
-                         int action, int mods) {
+void Window::KeyCallback(GLFWwindow* glfw_window, i32 key, i32 scancode,
+                         i32 action, i32 mods) {
   if (auto* window{
           reinterpret_cast<Window*>(glfwGetWindowUserPointer(glfw_window))}) {
     window->OnKey(key, scancode, action, mods);
   }
 }
-void Window::CharCallback(GLFWwindow* glfw_window, unsigned codepoint) {
+void Window::CharCallback(GLFWwindow* glfw_window, u32 codepoint) {
   if (auto* window{
           reinterpret_cast<Window*>(glfwGetWindowUserPointer(glfw_window))}) {
     window->OnChar(codepoint);
   }
 }
-void Window::CharModCallback(GLFWwindow* glfw_window, unsigned codepoint,
-                             int mods) {
+void Window::CharModCallback(GLFWwindow* glfw_window, u32 codepoint,
+                             i32 mods) {
   if (auto* window{
           reinterpret_cast<Window*>(glfwGetWindowUserPointer(glfw_window))}) {
     window->OnCharMod(codepoint, mods);
   }
 }
-void Window::MouseButtonCallback(GLFWwindow* glfw_window, int button,
-                                 int action, int mods) {
+void Window::MouseButtonCallback(GLFWwindow* glfw_window, i32 button,
+                                 i32 action, i32 mods) {
   if (auto* window{
           reinterpret_cast<Window*>(glfwGetWindowUserPointer(glfw_window))}) {
     window->OnMouseButton(button, action, mods);
   }
 }
-void Window::CursorPosCallback(GLFWwindow* glfw_window, double xpos,
-                               double ypos) {
+void Window::CursorPosCallback(GLFWwindow* glfw_window, f64 xpos, f64 ypos) {
   if (auto* window{
           reinterpret_cast<Window*>(glfwGetWindowUserPointer(glfw_window))}) {
     window->OnCursorPos(xpos, ypos);
   }
 }
-void Window::CursorEnterCallback(GLFWwindow* glfw_window, int entered) {
+void Window::CursorEnterCallback(GLFWwindow* glfw_window, i32 entered) {
   if (auto* window{
           reinterpret_cast<Window*>(glfwGetWindowUserPointer(glfw_window))}) {
     window->OnCursorEnter(entered);
   }
 }
-void Window::ScrollCallback(GLFWwindow* glfw_window, double xoffset,
-                            double yoffset) {
+void Window::ScrollCallback(GLFWwindow* glfw_window, f64 xoffset, f64 yoffset) {
   if (auto* window{
           reinterpret_cast<Window*>(glfwGetWindowUserPointer(glfw_window))}) {
     window->OnScroll(xoffset, yoffset);
   }
 }
-void Window::DropCallback(GLFWwindow* glfw_window, int path_count,
+void Window::DropCallback(GLFWwindow* glfw_window, i32 path_count,
                           const char** paths) {
   if (auto* window{
           reinterpret_cast<Window*>(glfwGetWindowUserPointer(glfw_window))}) {
@@ -232,57 +231,57 @@ void Window::OnWindowClose() {
     func();
   }
 }
-void Window::OnWindowSize(int width, int height) {
+void Window::OnWindowSize(i32 width, i32 height) {
   for (auto& func : on_window_size_func_) {
     func(width, height);
   }
 }
-void Window::OnWindowIconify(int iconified) {
+void Window::OnWindowIconify(i32 iconified) {
   for (auto& func : on_window_iconify_func_) {
     func(iconified);
   }
 }
-void Window::OnFramebufferSize(int width, int height) {
+void Window::OnFramebufferSize(i32 width, i32 height) {
   for (auto& func : on_framebuffer_size_func_) {
     func(width, height);
   }
 }
-void Window::OnKey(int key, int scancode, int action, int mods) {
+void Window::OnKey(i32 key, i32 scancode, i32 action, i32 mods) {
   for (auto& func : on_key_func_) {
     func(key, scancode, action, mods);
   }
 }
-void Window::OnChar(unsigned codepoint) {
+void Window::OnChar(u32 codepoint) {
   for (auto& func : on_char_func_) {
     func(codepoint);
   }
 }
-void Window::OnCharMod(unsigned codepoint, int mods) {
+void Window::OnCharMod(u32 codepoint, i32 mods) {
   for (auto& func : on_char_mod_func_) {
     func(codepoint, mods);
   }
 }
-void Window::OnMouseButton(int button, int action, int mods) {
+void Window::OnMouseButton(i32 button, i32 action, i32 mods) {
   for (auto& func : on_mouse_button_func_) {
     func(button, action, mods);
   }
 }
-void Window::OnCursorPos(double xpos, double ypos) {
+void Window::OnCursorPos(f64 xpos, f64 ypos) {
   for (auto& func : on_cursor_pos_func_) {
     func(xpos, ypos);
   }
 }
-void Window::OnCursorEnter(int entered) {
+void Window::OnCursorEnter(i32 entered) {
   for (auto& func : on_cursor_enter_func_) {
     func(entered);
   }
 }
-void Window::OnScroll(double xoffset, double yoffset) {
+void Window::OnScroll(f64 xoffset, f64 yoffset) {
   for (auto& func : on_scroll_func_) {
     func(xoffset, yoffset);
   }
 }
-void Window::OnDrop(int path_count, const char** paths) {
+void Window::OnDrop(i32 path_count, const char** paths) {
   for (auto& func : on_drop_func_) {
     func(path_count, paths);
   }

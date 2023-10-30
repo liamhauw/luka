@@ -1,7 +1,9 @@
-/*
-  SPDX license identifier: MIT
-  Copyright (C) 2023 Liam Hauw
-*/
+// SPDX license identifier: MIT.
+// Copyright (C) 2023 Liam Hauw.
+
+// clang-format off
+#include "platform/pch.h"
+// clang-format on
 
 #include "function/rendering/static_buffer.h"
 
@@ -11,7 +13,7 @@ namespace luka {
 
 StaticBuffer::StaticBuffer(const vk::raii::PhysicalDevice& physical_device,
                            const vk::raii::Device& device,
-                           uint32_t mem_total_size, bool is_device)
+                           u32 mem_total_size, bool is_device)
     : mem_total_size_{mem_total_size}, is_device_{is_device} {
   {
     vk::BufferCreateInfo buffer_ci{{},

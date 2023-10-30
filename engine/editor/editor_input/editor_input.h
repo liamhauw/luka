@@ -1,11 +1,11 @@
-/*
-  SPDX license identifier: MIT
-  Copyright (C) 2023 Liam Hauw
-*/
+// SPDX license identifier: MIT.
+// Copyright (C) 2023 Liam Hauw.
 
 #pragma once
 
-#include <memory>
+// clang-format off
+#include "platform/pch.h"
+// clang-format on
 
 namespace luka {
 
@@ -17,7 +17,7 @@ class EditorInput {
 
   void Tick();
 
-  void OnKey(int key, int scancode, int action, int mod);
+  void OnKey(i32 key, i32 scancode, i32 action, i32 mod);
 
  private:
   std::shared_ptr<Window> window_;

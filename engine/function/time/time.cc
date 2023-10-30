@@ -1,7 +1,9 @@
-/*
-  SPDX license identifier: MIT
-  Copyright (C) 2023 Liam Hauw
-*/
+// SPDX license identifier: MIT.
+// Copyright (C) 2023 Liam Hauw.
+
+// clang-format off
+#include "platform/pch.h"
+// clang-format on
 
 #include "function/time/time.h"
 
@@ -14,6 +16,6 @@ void Time::Tick() {
   last_ = now;
 }
 
-double Time::GetDeltaTime() const { return delta_time_; }
+f64 Time::GetDeltaTime() const { return delta_time_; }
 
 }  // namespace luka

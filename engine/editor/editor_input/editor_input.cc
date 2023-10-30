@@ -1,7 +1,9 @@
-/*
-  SPDX license identifier: MIT
-  Copyright (C) 2023 Liam Hauw
-*/
+// SPDX license identifier: MIT.
+// Copyright (C) 2023 Liam Hauw.
+
+// clang-format off
+#include "platform/pch.h"
+// clang-format on
 
 #include "editor/editor_input/editor_input.h"
 
@@ -19,7 +21,7 @@ EditorInput::EditorInput() : window_{gContext.window} {
 
 void EditorInput::Tick() {}
 
-void EditorInput::OnKey(int key, int /*scancode*/, int action, int /*mod*/) {
+void EditorInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mod*/) {
   if (!gContext.is_editor_mode) {
     return;
   }

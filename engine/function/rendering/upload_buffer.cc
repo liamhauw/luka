@@ -1,7 +1,9 @@
-/*
-  SPDX license identifier: MIT
-  Copyright (C) 2023 Liam Hauw
-*/
+// SPDX license identifier: MIT.
+// Copyright (C) 2023 Liam Hauw.
+
+// clang-format off
+#include "platform/pch.h"
+// clang-format on
 
 #include "function/rendering/upload_buffer.h"
 
@@ -10,8 +12,8 @@
 namespace luka {
 
 UploadBuffer::UploadBuffer(const vk::raii::PhysicalDevice& physical_device,
-                       const vk::raii::Device& device,
-                       uint32_t graphics_queue_index, uint32_t mem_total_size) {
+                           const vk::raii::Device& device,
+                           u32 graphics_queue_index, u32 mem_total_size) {
   // Command objects
   command_pool_ =
       vk::raii::CommandPool{device,

@@ -1,13 +1,11 @@
-/*
-  SPDX license identifier: MIT
-  Copyright (C) 2023 Liam Hauw
-*/
+// SPDX license identifier: MIT.
+// Copyright (C) 2023 Liam Hauw.
+
+// clang-format off
+#include "platform/pch.h"
+// clang-format on
 
 #include "core/util.h"
-
-#include <algorithm>
-
-#include "platform/common.h"
 
 namespace luka {
 

@@ -1,11 +1,11 @@
-/*
-  SPDX license identifier: MIT
-  Copyright (C) 2023 Liam Hauw
-*/
+// SPDX license identifier: MIT.
+// Copyright (C) 2023 Liam Hauw.
 
 #pragma once
 
-#include <vulkan/vulkan_raii.hpp>
+// clang-format off
+#include "platform/pch.h"
+// clang-format on
 
 namespace luka {
 
@@ -13,8 +13,8 @@ class UploadBuffer {
  public:
   UploadBuffer() = default;
   UploadBuffer(const vk::raii::PhysicalDevice& physical_device,
-             const vk::raii::Device& device, uint32_t graphics_queue_index,
-             uint32_t mem_total_siz);
+               const vk::raii::Device& device, u32 graphics_queue_index,
+               u32 mem_total_siz);
 
  private:
   vk::raii::CommandPool command_pool_{nullptr};

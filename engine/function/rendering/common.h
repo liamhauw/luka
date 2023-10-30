@@ -1,11 +1,11 @@
-/*
-  SPDX license identifier: MIT
-  Copyright (C) 2023 Liam Hauw
-*/
+// SPDX license identifier: MIT.
+// Copyright (C) 2023 Liam Hauw.
 
 #pragma once
 
-#include <vulkan/vulkan_raii.hpp>
+// clang-format off
+#include "platform/pch.h"
+// clang-format on
 
 namespace luka {
 

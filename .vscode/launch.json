@@ -23,7 +23,7 @@
       "cwd": "${workspaceFolder}",
       "environment": [],
       "console": "internalConsole",
-      "preLaunchTask": "Pre Relase"
+      "preLaunchTask": "Pre Release"
     },
     {
       "name": "macOS Debug",

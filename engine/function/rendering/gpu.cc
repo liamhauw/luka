@@ -1,12 +1,11 @@
-/*
-  SPDX license identifier: MIT
-  Copyright (C) 2023 Liam Hauw
-*/
+// SPDX license identifier: MIT.
+// Copyright (C) 2023 Liam Hauw.
+
+// clang-format off
+#include "platform/pch.h"
+// clang-format on
 
 #include "function/rendering/gpu.h"
-
-#include <numeric>
-#include <set>
 
 #include "context.h"
 #include "core/log.h"
@@ -47,7 +46,7 @@ void Gpu::EndFrame() {
 }
 
 const vk::raii::CommandBuffer& Gpu::GetCommandBuffer() {
-  uint32_t index{used_command_buffer_counts_[back_buffer_index]};
+  u32 index{used_command_buffer_counts_[back_buffer_index]};
   if (index >= kMaxUsedCommandBufferCountperFrame) {
     THROW("Fail to get command buffer.");
   }
@@ -181,9 +180,9 @@ void Gpu::CreateSurface() {
 void Gpu::CreatePhysicalDevice() {
   vk::raii::PhysicalDevices physical_devices{instance_};
 
-  uint32_t max_score{0};
+  u32 max_score{0};
   for (auto& physical_device : physical_devices) {
-    uint32_t cur_score{1};
+    u32 cur_score{1};
 
     vk::PhysicalDeviceProperties physical_device_properties{
         physical_device.getProperties()};
@@ -244,7 +243,7 @@ void Gpu::CreateDevice() {
   // Queue famliy.
   std::vector<vk::QueueFamilyProperties> queue_family_properties{
       physical_device_.getQueueFamilyProperties()};
-  uint32_t i{0};
+  u32 i{0};
   for (const auto& queue_famliy_propertie : queue_family_properties) {
     if ((queue_famliy_propertie.queueFlags & vk::QueueFlagBits::eGraphics) &&
         (queue_famliy_propertie.queueFlags & vk::QueueFlagBits::eCompute) &&
@@ -284,12 +283,12 @@ void Gpu::CreateDevice() {
   }
 
   std::vector<vk::DeviceQueueCreateInfo> device_queue_cis;
-  std::set<uint32_t> queue_family_indexes{graphics_queue_index_.value(),
-                                          compute_queue_index_.value(),
-                                          present_queue_index_.value()};
+  std::set<u32> queue_family_indexes{graphics_queue_index_.value(),
+                                     compute_queue_index_.value(),
+                                     present_queue_index_.value()};
 
-  float queue_priority{0.0f};
-  for (uint32_t queue_family_index : queue_family_indexes) {
+  f32 queue_priority{0.0f};
+  for (u32 queue_family_index : queue_family_indexes) {
     vk::DeviceQueueCreateInfo device_queue_ci{
         {}, queue_family_index, 1, &queue_priority};
     device_queue_cis.push_back(device_queue_ci);
@@ -401,15 +400,15 @@ void Gpu::CreateSwapchain() {
 
   // Extent.
   if (surface_capabilities.currentExtent.width ==
-      std::numeric_limits<uint32_t>::max()) {
-    int width{0};
-    int height{0};
+      std::numeric_limits<u32>::max()) {
+    i32 width{0};
+    i32 height{0};
     gContext.window->GetFramebufferSize(&width, &height);
 
-    extent_.width = std::clamp(static_cast<uint32_t>(width),
+    extent_.width = std::clamp(static_cast<u32>(width),
                                surface_capabilities.minImageExtent.width,
                                surface_capabilities.maxImageExtent.width);
-    extent_.height = std::clamp(static_cast<uint32_t>(height),
+    extent_.height = std::clamp(static_cast<u32>(height),
                                 surface_capabilities.minImageExtent.height,
                                 surface_capabilities.maxImageExtent.height);
   } else {
@@ -452,8 +451,8 @@ void Gpu::CreateSwapchain() {
       {}};
 
   if (graphics_queue_index_.value() != present_queue_index_.value()) {
-    uint32_t queue_family_indices[2]{graphics_queue_index_.value(),
-                                     present_queue_index_.value()};
+    u32 queue_family_indices[2]{graphics_queue_index_.value(),
+                                present_queue_index_.value()};
     swapchain_ci.imageSharingMode = vk::SharingMode::eConcurrent;
     swapchain_ci.queueFamilyIndexCount = 2;
     swapchain_ci.pQueueFamilyIndices = queue_family_indices;
@@ -478,11 +477,11 @@ void Gpu::CreateSwapchain() {
 }
 
 void Gpu::CreateCommandObjects() {
-  used_command_buffer_counts_ = std::vector<uint32_t>(kBackBufferCount, 0);
+  used_command_buffer_counts_ = std::vector<u32>(kBackBufferCount, 0);
   command_pools_.reserve(kBackBufferCount);
   command_buffers_.reserve(kBackBufferCount);
 
-  for (uint32_t i{0}; i < kBackBufferCount; ++i) {
+  for (u32 i{0}; i < kBackBufferCount; ++i) {
     command_pools_.emplace_back(vk::raii::CommandPool{
         device_,
         {vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
@@ -504,7 +503,7 @@ void Gpu::CreateSyncObjects() {
   vk::FenceCreateInfo fence_ci{vk::FenceCreateFlagBits::eSignaled};
   vk::SemaphoreCreateInfo semaphore_ci{};
 
-  for (uint32_t i{0}; i < kBackBufferCount; ++i) {
+  for (u32 i{0}; i < kBackBufferCount; ++i) {
     command_executed_fences_.emplace_back(device_, fence_ci);
     image_available_semaphores_.emplace_back(device_, semaphore_ci);
     render_finished_semaphores_.emplace_back(device_, semaphore_ci);
@@ -519,11 +518,11 @@ void Gpu::CreateDescriptorPool() {
       {vk::DescriptorType::eSampler, 20},
       {vk::DescriptorType::eStorageBuffer, 10}};
 
-  uint32_t max_sets{std::accumulate(
-      pool_sizes.begin(), pool_sizes.end(), static_cast<uint32_t>(0),
-      [](uint32_t sum, const vk::DescriptorPoolSize& dps) {
-        return sum + dps.descriptorCount;
-      })};
+  u32 max_sets{std::accumulate(pool_sizes.begin(), pool_sizes.end(),
+                               static_cast<u32>(0),
+                               [](u32 sum, const vk::DescriptorPoolSize& dps) {
+                                 return sum + dps.descriptorCount;
+                               })};
 
   vk::DescriptorPoolCreateInfo descriptor_pool_ci{
       vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, max_sets,
@@ -603,21 +602,21 @@ VKAPI_ATTR VkBool32 VKAPI_CALL Gpu::DebugUtilsMessengerCallback(
   LOGI("\tMessage           = [{}]", p_callback_data->pMessage);
   if (p_callback_data->queueLabelCount > 0) {
     LOGI("\tQueue lables:");
-    for (uint32_t i{0}; i < p_callback_data->queueLabelCount; i++) {
+    for (u32 i{0}; i < p_callback_data->queueLabelCount; i++) {
       LOGI("\t\tLabel name = [{}]",
            p_callback_data->pQueueLabels[i].pLabelName);
     }
   }
   if (p_callback_data->cmdBufLabelCount > 0) {
     LOGI("\tCommand buffer labels:");
-    for (uint32_t i{0}; i < p_callback_data->cmdBufLabelCount; i++) {
+    for (u32 i{0}; i < p_callback_data->cmdBufLabelCount; i++) {
       LOGI("\t\tLabel name = [{}]",
            p_callback_data->pCmdBufLabels[i].pLabelName);
     }
   }
   if (p_callback_data->objectCount > 0) {
     LOGI("\tObjects:");
-    for (uint32_t i{0}; i < p_callback_data->objectCount; i++) {
+    for (u32 i{0}; i < p_callback_data->objectCount; i++) {
       LOGI("\t\tObject {}", i);
       LOGI("\t\t\tObject type   = {}",
            vk::to_string(static_cast<vk::ObjectType>(

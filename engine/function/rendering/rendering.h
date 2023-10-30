@@ -1,11 +1,11 @@
-/*
-  SPDX license identifier: MIT
-  Copyright (C) 2023 Liam Hauw
-*/
+// SPDX license identifier: MIT.
+// Copyright (C) 2023 Liam Hauw.
 
 #pragma once
 
-#include <memory>
+// clang-format off
+#include "platform/pch.h"
+// clang-format on
 
 #include "function/rendering/camera.h"
 #include "function/rendering/gpu.h"

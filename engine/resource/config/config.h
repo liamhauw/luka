@@ -1,11 +1,11 @@
-/*
-  SPDX license identifier: MIT
-  Copyright (C) 2023 Liam Hauw
-*/
+// SPDX license identifier: MIT.
+// Copyright (C) 2023 Liam Hauw.
 
 #pragma once
 
-#include <filesystem>
+// clang-format off
+#include "platform/pch.h"
+// clang-format on
 
 #include "core/json.h"
 #include "core/math.h"
@@ -15,7 +15,7 @@
 namespace luka {
 
 struct ConfigInfo {
-  uint32_t scene;
+  u32 scene;
   std::filesystem::path model_file_path;
   glm::vec4 camera_from;
   glm::vec4 camera_to;

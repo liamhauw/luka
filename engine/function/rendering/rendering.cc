@@ -1,7 +1,9 @@
-/*
-  SPDX license identifier: MIT
-  Copyright (C) 2023 Liam Hauw
-*/
+// SPDX license identifier: MIT.
+// Copyright (C) 2023 Liam Hauw.
+
+// clang-format off
+#include "platform/pch.h"
+// clang-format on
 #include "function/rendering/rendering.h"
 
 #include "context.h"
@@ -21,7 +23,7 @@ void Rendering::Tick() {
     camera_->LookAt(gContext.config->GetCameraFrom(),
                     gContext.config->GetCameraTo());
 
-    gContext.load = false;                
+    gContext.load = false;
   }
 
   if (gContext.window->GetIconified()) {
