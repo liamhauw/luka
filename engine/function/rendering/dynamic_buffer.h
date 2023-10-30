@@ -79,7 +79,7 @@ class DynamicBuffer {
   std::vector<u32> allocated_mem_per_back_buffer_;
   vk::raii::Buffer buffer_{nullptr};
   vk::raii::DeviceMemory device_memory_{nullptr};
-  char* data_{nullptr};
+  u8* data_{nullptr};
 };
 
 }  // namespace luka

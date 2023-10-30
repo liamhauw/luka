@@ -3,10 +3,6 @@
 
 #pragma once
 
-// clang-format off
-#include "platform/pch.h"
-// clang-format on
-
 namespace luka {
 
 using i8 = int8_t;

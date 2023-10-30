@@ -40,7 +40,7 @@ DynamicBuffer::DynamicBuffer(const vk::raii::PhysicalDevice& physical_device,
 
   buffer_.bindMemory(*(device_memory_), 0);
 
-  data_ = reinterpret_cast<char*>(
+  data_ = reinterpret_cast<u8*>(
       device_memory_.mapMemory(0, mem_requirements.size));
 }
 
