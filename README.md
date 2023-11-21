@@ -11,15 +11,12 @@
 - Vulkan SDK
 - VSCode (optional)
 
-## Clone
-```shell
-git clone --recurse-submodules https://github.com/liamhauw/luka.git
-```
-
 ## Use
 
-### Terminal
 ```shell
+# Clone
+git clone --recurse-submodules https://github.com/liamhauw/luka.git
+
 # Config
 cmake --preset=Base
 
@@ -30,5 +27,5 @@ cmake --build --preset=[Debug/Release/RelWithDebInfo]
 build/engine/[Debug/Release/RelWithDebInfo]/luka_engine
 ```
 
-### VSCode
+## Debug with VSCode
 Click Run and Debug in the sidebar, and select Windows Debug or macOS Debug. Click Start Debugging or press F5.
