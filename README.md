@@ -16,19 +16,19 @@
 git clone --recurse-submodules https://github.com/liamhauw/luka.git
 ```
 
-## Build
+## Use
 
+### Terminal
 ```shell
-# Debug
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
-cmake --build build
+# Config
+cmake --preset=Base
 
-# Release
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build
+# Build
+cmake --build --preset=[Debug/Release/RelWithDebInfo]
+
+# Run
+build/engine/[Debug/Release/RelWithDebInfo]/luka_engine
 ```
 
-## Run
-```shell
-build/engine/luka_engine
-```
+### VSCode
+Click Run and Debug in the sidebar, and select Windows Debug or macOS Debug. Click Start Debugging or press F5.

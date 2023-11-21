@@ -3,55 +3,27 @@
 	"tasks": [
 		{
 			"type": "shell",
-			"label": "Config Debug",
+			"label": "Config",
 			"command": "cmake",
 			"args": [
-				"-S",
-				"${workspaceFolder}",
-				"-B",
-				"${workspaceFolder}/build",
-				"-G",
-				"Ninja",
-				"-DCMAKE_BUILD_TYPE=Debug"
+				"--preset=Base"
 			],
 		},
 		{
 			"type": "shell",
-			"label": "Config Release",
-			"command": "cmake",
-			"args": [
-				"-S",
-				"${workspaceFolder}",
-				"-B",
-				"${workspaceFolder}/build",
-				"-G",
-				"Ninja",
-				"-DCMAKE_BUILD_TYPE=Release"
-			],
-		},
-		{
-			"type": "shell",
-			"label": "Build",
+			"label": "Build Debug",
 			"command": "cmake",
 			"args": [
 				"--build",
-				"${workspaceFolder}/build",
+				"--preset=Debug"
 			],
 		},
 		{
-			"label": "Pre Debug",
+			"label": "CMake task",
 			"dependsOrder": "sequence",
 			"dependsOn": [
-				"Config Debug",
-				"Build"
-			]
-		},
-		{
-			"label": "Pre Release",
-			"dependsOrder": "sequence",
-			"dependsOn": [
-				"Config Release",
-				"Build"
+				"Config",
+				"Build Debug"
 			]
 		}
 	]

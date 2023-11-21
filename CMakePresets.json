@@ -1,0 +1,34 @@
+{
+  "version": 5,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 24,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "Base",
+      "description": "Base configuration inherited by all presets.",
+      "hidden": false,
+      "generator": "Ninja Multi-Config",
+      "binaryDir": "${sourceDir}/build"
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "Release",
+      "configurePreset": "Base",
+      "configuration": "Release"
+    },
+    {
+      "name": "Debug",
+      "configurePreset": "Base",
+      "configuration": "Debug"
+    },
+    {
+      "name": "RelWithDebInfo",
+      "configurePreset": "Base",
+      "configuration": "RelWithDebInfo"
+    }
+  ]
+}
