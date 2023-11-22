@@ -22,27 +22,27 @@ void Engine::Run() {
   gContext.physics = std::make_shared<Physics>();
   gContext.world = std::make_shared<World>();
   gContext.rendering = std::make_shared<Rendering>();
-  gContext.editor_input = std::make_shared<EditorInput>();
-  gContext.scene = std::make_shared<Scene>();
-  gContext.ui = std::make_shared<UI>();
+  // gContext.editor_input = std::make_shared<EditorInput>();
+  // gContext.scene = std::make_shared<Scene>();
+  // gContext.ui = std::make_shared<UI>();
 
-  while (!gContext.window->WindowShouldClose()) {
-    gContext.config->Tick();
-    gContext.asset->Tick();
-    gContext.time->Tick();
-    gContext.window->Tick();
-    gContext.function_input->Tick();
-    gContext.physics->Tick();
-    gContext.world->Tick();
-    gContext.rendering->Tick();
-    gContext.editor_input->Tick();
-    gContext.scene->Tick();
-    gContext.ui->Tick();
+  // while (!gContext.window->WindowShouldClose()) {
+  //   gContext.config->Tick();
+  //   gContext.asset->Tick();
+  //   gContext.time->Tick();
+  //   gContext.window->Tick();
+  //   gContext.function_input->Tick();
+  //   gContext.physics->Tick();
+  //   gContext.world->Tick();
+  //   gContext.rendering->Tick();
+  //   gContext.editor_input->Tick();
+  //   gContext.scene->Tick();
+  //   gContext.ui->Tick();
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(2));
-  }
+  //   std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  // }
 
-  gContext.rendering->~Rendering();
+  // gContext.rendering->~Rendering();
 }
 
 }  // namespace luka

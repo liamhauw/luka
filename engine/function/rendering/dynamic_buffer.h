@@ -39,7 +39,7 @@ class Ring {
   }
 
   bool Free(u32 size) {
-    if (allocated_size_ >= size) {
+    if (total_size_ > 0 && allocated_size_ >= size) {
       head_ = (head_ + size) % total_size_;
       allocated_size_ -= size;
       return true;
