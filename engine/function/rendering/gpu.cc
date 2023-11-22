@@ -15,21 +15,21 @@ namespace luka {
 
 Gpu::Gpu() {
   CreateInstance();
-  // CreateSurface();
-  // CreatePhysicalDevice();
-  // CreateDevice();
-  // CreateQueryPool();
-  // CreateSwapchain();
-  // CreateCommandObjects();
-  // CreateSyncObjects();
-  // CreateDescriptorPool();
-  // CreateBuffers();
-  // CreateRenderPass();
-  // CreateFramebuffers();
+  CreateSurface();
+  CreatePhysicalDevice();
+  CreateDevice();
+  CreateQueryPool();
+  CreateSwapchain();
+  CreateCommandObjects();
+  CreateSyncObjects();
+  CreateDescriptorPool();
+  CreateBuffers();
+  CreateRenderPass();
+  CreateFramebuffers();
 }
 
 Gpu::~Gpu() { 
-  //device_.waitIdle(); 
+  device_.waitIdle(); 
 }
 
 void Gpu::Resize() {
