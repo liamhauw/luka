@@ -10,7 +10,10 @@
 #include "editor/editor_input/editor_input.h"
 #include "editor/scene/scene.h"
 #include "editor/ui/ui.h"
+#include "function/camera/camera.h"
 #include "function/function_input/function_input.h"
+#include "function/function_ui/function_ui.h"
+#include "function/gpu/gpu.h"
 #include "function/physics/physics.h"
 #include "function/rendering/rendering.h"
 #include "function/time/time.h"
@@ -31,6 +34,9 @@ struct Context {
   std::shared_ptr<FunctionInput> function_input;
   std::shared_ptr<Physics> physics;
   std::shared_ptr<World> world;
+  std::shared_ptr<Camera> camera;
+  std::shared_ptr<Gpu> gpu;
+  std::shared_ptr<FunctionUI> function_ui;
   std::shared_ptr<Rendering> rendering;
   std::shared_ptr<EditorInput> editor_input;
   std::shared_ptr<Scene> scene;

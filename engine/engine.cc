@@ -21,6 +21,9 @@ void Engine::Run() {
   gContext.function_input = std::make_shared<FunctionInput>();
   gContext.physics = std::make_shared<Physics>();
   gContext.world = std::make_shared<World>();
+  gContext.camera = std::make_shared<Camera>();
+  gContext.gpu = std::make_shared<Gpu>();
+  gContext.function_ui = std::make_shared<FunctionUI>();
   gContext.rendering = std::make_shared<Rendering>();
   gContext.editor_input = std::make_shared<EditorInput>();
   gContext.scene = std::make_shared<Scene>();
@@ -34,15 +37,20 @@ void Engine::Run() {
     gContext.function_input->Tick();
     gContext.physics->Tick();
     gContext.world->Tick();
+    gContext.camera->Tick();
+    gContext.gpu->Tick();
+    gContext.function_ui->Tick();
     gContext.rendering->Tick();
     gContext.editor_input->Tick();
     gContext.scene->Tick();
     gContext.ui->Tick();
 
+    if (gContext.load) {
+      gContext.load = false;
+    }
+
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
-
-  gContext.rendering->~Rendering();
 }
 
 }  // namespace luka

@@ -1,5 +1,7 @@
-// SPDX license identifier: MIT.
-// Copyright (C) 2023 Liam Hauw.
+/*
+  SPDX license identifier: MIT.
+  Copyright (C) 2023 Liam Hauw.
+*/
 
 #pragma once
 
@@ -7,15 +9,11 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "function/gpu/gpu.h"
-
 namespace luka {
 
-class Window;
-
-class Rendering {
+class FunctionUI {
  public:
-  Rendering();
+  FunctionUI();
 
   void Tick();
 };

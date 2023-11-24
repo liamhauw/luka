@@ -16,15 +16,13 @@ set(HEADER_FILES
   resource/asset/asset.h
   resource/asset/gltf.h
   resource/config/config.h
+  function/camera/camera.h
   function/function_input/function_input.h
+  function/function_ui/function_ui.h
+  function/gpu/gpu.h
+  function/gpu/resource_manager.h
   function/physics/physics.h
-  function/rendering/camera.h
-  function/rendering/common.h
-  function/rendering/dynamic_buffer.h
-  function/rendering/gpu.h
   function/rendering/rendering.h
-  function/rendering/static_buffer.h
-  function/rendering/upload_buffer.h
   function/time/time.h
   function/window/window.h
   function/world/world.h
@@ -42,15 +40,13 @@ set(SOURCE_FILES
   resource/asset/asset.cc
   resource/config/generated/source_path.h
   resource/config/config.cc
+  function/camera/camera.cc
   function/function_input/function_input.cc
+  function/function_ui/function_ui.cc
+  function/gpu/gpu.cc
+  function/gpu/resource_manager.cc
   function/physics/physics.cc
-  function/rendering/camera.cc
-  function/rendering/common.cc
-  function/rendering/dynamic_buffer.cc
-  function/rendering/gpu.cc
   function/rendering/rendering.cc
-  function/rendering/static_buffer.cc
-  function/rendering/upload_buffer.cc
   function/time/time.cc
   function/window/window.cc
   function/world/world.cc

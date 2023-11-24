@@ -7,17 +7,18 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "function/gpu/gpu.h"
+#include "core/math.h"
 
 namespace luka {
 
-class Window;
-
-class Rendering {
+class Camera {
  public:
-  Rendering();
+  Camera();
 
   void Tick();
+
+ private:
+  void LookAt(const glm::vec4& from, const glm::vec4& to);
 };
 
 }  // namespace luka

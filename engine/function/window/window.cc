@@ -55,6 +55,8 @@ void Window::Tick() {
   glfwPollEvents();
 }
 
+GLFWwindow* Window::GetGlfwWindow() const { return glfw_window_; }
+
 bool Window::GetWindowResized() const { return window_resized_; }
 
 void Window::SetWindowResized(bool resized) { window_resized_ = resized; }
@@ -187,8 +189,7 @@ void Window::CharCallback(GLFWwindow* glfw_window, u32 codepoint) {
     window->OnChar(codepoint);
   }
 }
-void Window::CharModCallback(GLFWwindow* glfw_window, u32 codepoint,
-                             i32 mods) {
+void Window::CharModCallback(GLFWwindow* glfw_window, u32 codepoint, i32 mods) {
   if (auto* window{
           reinterpret_cast<Window*>(glfwGetWindowUserPointer(glfw_window))}) {
     window->OnCharMod(codepoint, mods);

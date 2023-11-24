@@ -41,6 +41,7 @@ class Window {
 
   void Tick();
 
+  GLFWwindow* GetGlfwWindow() const;
   bool GetWindowResized() const;
   void SetWindowResized(bool resized);
   void GetWindowSize(i32* width, i32* height) const;

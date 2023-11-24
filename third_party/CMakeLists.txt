@@ -46,7 +46,7 @@ add_subdirectory(json)
 add_subdirectory(spdlog)
 
 # vma
-add_subdirectory(vma)
+add_subdirectory(vma SYSTEM)
 
 add_library(${PROJECT_NAME} INTERFACE)
 target_link_libraries(${PROJECT_NAME} INTERFACE
