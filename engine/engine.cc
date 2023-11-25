@@ -27,7 +27,7 @@ void Engine::Run() {
   gContext.rendering = std::make_shared<Rendering>();
   gContext.editor_input = std::make_shared<EditorInput>();
   gContext.scene = std::make_shared<Scene>();
-  gContext.ui = std::make_shared<UI>();
+  gContext.editor_ui = std::make_shared<EditorUI>();
 
   while (!gContext.window->WindowShouldClose()) {
     gContext.config->Tick();
@@ -43,7 +43,7 @@ void Engine::Run() {
     gContext.rendering->Tick();
     gContext.editor_input->Tick();
     gContext.scene->Tick();
-    gContext.ui->Tick();
+    gContext.editor_ui->Tick();
 
     if (gContext.load) {
       gContext.load = false;

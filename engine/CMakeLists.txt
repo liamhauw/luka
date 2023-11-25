@@ -27,8 +27,8 @@ set(HEADER_FILES
   function/window/window.h
   function/world/world.h
   editor/editor_input/editor_input.h
+  editor/editor_ui/editor_ui.h
   editor/scene/scene.h
-  editor/ui/ui.h
   context.h
   engine.h
 )
@@ -51,8 +51,8 @@ set(SOURCE_FILES
   function/window/window.cc
   function/world/world.cc
   editor/editor_input/editor_input.cc
+  editor/editor_ui/editor_ui.cc
   editor/scene/scene.cc
-  editor/ui/ui.cc
   context.cc
   engine.cc
   main.cc

@@ -8,8 +8,8 @@
 // clang-format on
 
 #include "editor/editor_input/editor_input.h"
+#include "editor/editor_ui/editor_ui.h"
 #include "editor/scene/scene.h"
-#include "editor/ui/ui.h"
 #include "function/camera/camera.h"
 #include "function/function_input/function_input.h"
 #include "function/function_ui/function_ui.h"
@@ -40,7 +40,7 @@ struct Context {
   std::shared_ptr<Rendering> rendering;
   std::shared_ptr<EditorInput> editor_input;
   std::shared_ptr<Scene> scene;
-  std::shared_ptr<UI> ui;
+  std::shared_ptr<EditorUI> editor_ui;
 };
 
 extern Context gContext;
