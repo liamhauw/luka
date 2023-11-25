@@ -22,8 +22,11 @@ class Gpu {
   void BeginFrame();
   void EndFrame();
   const vk::raii::CommandBuffer& GetCommandBuffer();
+
+  vk::raii::CommandBuffer BeginTempCommandBuffer();
+
   ImGui_ImplVulkan_InitInfo GetVulkanInitInfoForImgui();
-  VkRenderPass GetRenderPass();
+  VkRenderPass GetRenderPassForImGui();
 
  private:
   void CreateInstance();

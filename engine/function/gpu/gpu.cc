@@ -59,6 +59,19 @@ const vk::raii::CommandBuffer& Gpu::GetCommandBuffer() {
   return command_buffers_[back_buffer_index][index];
 }
 
+vk::raii::CommandBuffer Gpu::BeginTempCommandBuffer() {
+  vk::CommandBufferAllocateInfo command_buffer_allocate_info{
+      *command_pools_[back_buffer_index], vk::CommandBufferLevel::ePrimary, 1};
+
+  vk::raii::CommandBuffer command_buffer{std::move(
+      vk::raii::CommandBuffers{device_, command_buffer_allocate_info}.front())};
+
+  vk::CommandBufferBeginInfo command_buffer_begin_info{
+      vk::CommandBufferUsageFlagBits::eOneTimeSubmit};
+  command_buffer.begin(command_buffer_begin_info);
+  return command_buffer;
+}
+
 ImGui_ImplVulkan_InitInfo Gpu::GetVulkanInitInfoForImgui() {
   ImGui_ImplVulkan_InitInfo init_info{
       .Instance = static_cast<VkInstance>(*instance_),
@@ -76,7 +89,7 @@ ImGui_ImplVulkan_InitInfo Gpu::GetVulkanInitInfoForImgui() {
   return init_info;
 }
 
-VkRenderPass Gpu::GetRenderPass() {
+VkRenderPass Gpu::GetRenderPassForImGui() {
   return static_cast<VkRenderPass>(*render_pass_);
 }
 

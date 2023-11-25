@@ -13,7 +13,8 @@
 #include "function/gpu/resource_manager.h"
 
 namespace luka {
-VmaResourceManager::VmaResourceManager(
+
+VmaMemoryAllocator::VmaMemoryAllocator(
     const vk::raii::Instance& instance,
     const vk::raii::PhysicalDevice& physical_device,
     const vk::raii::Device& device) {
@@ -26,8 +27,18 @@ VmaResourceManager::VmaResourceManager(
   vmaCreateAllocator(&allocator_ci, &vma_allocator_);
 }
 
-VmaResourceManager::~VmaResourceManager() {
+VmaMemoryAllocator::~VmaMemoryAllocator() {
   vmaDestroyAllocator(vma_allocator_);
 }
+
+VmaResourceManager::VmaResourceManager(
+    const vk::raii::Instance& instance,
+    const vk::raii::PhysicalDevice& physical_device,
+    const vk::raii::Device& device) {
+  memory_allocator_ =
+      std::make_unique<VmaMemoryAllocator>(instance, physical_device, device);
+}
+
+VmaResourceManager::~VmaResourceManager() {}
 
 }  // namespace luka

@@ -14,14 +14,30 @@
 
 namespace luka {
 
-class MemoryAllocator {};
+class MemoryAllocator {
+ public:
+  MemoryAllocator() = default;
+  virtual ~MemoryAllocator() = default;
+};
 
-class VmaMemoryAllocator : public MemoryAllocator {};
+class VmaMemoryAllocator : public MemoryAllocator {
+ public:
+  VmaMemoryAllocator(const vk::raii::Instance& instance,
+                     const vk::raii::PhysicalDevice& physical_device,
+                     const vk::raii::Device& device);
+  ~VmaMemoryAllocator() override;
+
+ private:
+  VmaAllocator vma_allocator_;
+};
 
 class ResourceManager {
  public:
   ResourceManager() = default;
   virtual ~ResourceManager() = default;
+
+ protected:
+  std::unique_ptr<MemoryAllocator> memory_allocator_;
 };
 
 class VmaResourceManager : public ResourceManager {
@@ -30,9 +46,6 @@ class VmaResourceManager : public ResourceManager {
                      const vk::raii::PhysicalDevice& physical_device,
                      const vk::raii::Device& device);
   ~VmaResourceManager() override;
-
- private:
-  VmaAllocator vma_allocator_;
 };
 
 }  // namespace luka

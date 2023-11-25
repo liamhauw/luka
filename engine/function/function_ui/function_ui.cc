@@ -28,7 +28,7 @@ FunctionUI::FunctionUI() {
 
   ImGui_ImplVulkan_InitInfo init_info{
       gContext.gpu->GetVulkanInitInfoForImgui()};
-  ImGui_ImplVulkan_Init(&init_info, gContext.gpu->GetRenderPass());
+  ImGui_ImplVulkan_Init(&init_info, gContext.gpu->GetRenderPassForImGui());
 }
 
 void FunctionUI::Tick() {}

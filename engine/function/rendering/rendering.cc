@@ -10,7 +10,11 @@
 
 namespace luka {
 
-Rendering::Rendering() {}
+Rendering::Rendering() {
+  vk::raii::CommandBuffer command_buffer{
+      gContext.gpu->BeginTempCommandBuffer()};
+  
+}
 
 void Rendering::Tick() {
   if (gContext.window->GetIconified()) {
