@@ -21,17 +21,12 @@ class Exception : public std::exception {
   std::string message_;
 };
 
-// #define LOGI(...) spdlog::info(__VA_ARGS__);
-// #define LOGW(...) spdlog::warn(__VA_ARGS__);
-// #define LOGE(...) spdlog::error(__VA_ARGS__);
-// #define THROW(...)                    \
-//   LOGE("{}:{} ", __FILE__, __LINE__); \
-//   LOGE(__VA_ARGS__);                  \
-//   throw Exception {}
-
-#define LOGI(...) ;
-#define LOGW(...) ;
-#define LOGE(...) ;
-#define THROW(...) ;
+#define LOGI(...) spdlog::info(__VA_ARGS__);
+#define LOGW(...) spdlog::warn(__VA_ARGS__);
+#define LOGE(...) spdlog::error(__VA_ARGS__);
+#define THROW(...)                    \
+  LOGE("{}:{} ", __FILE__, __LINE__); \
+  LOGE(__VA_ARGS__);                  \
+  throw Exception {}
 
 }  // namespace luka
