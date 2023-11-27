@@ -20,7 +20,6 @@ set(HEADER_FILES
   function/function_input/function_input.h
   function/function_ui/function_ui.h
   function/gpu/gpu.h
-  function/gpu/resource_manager.h
   function/physics/physics.h
   function/rendering/rendering.h
   function/time/time.h
@@ -44,7 +43,6 @@ set(SOURCE_FILES
   function/function_input/function_input.cc
   function/function_ui/function_ui.cc
   function/gpu/gpu.cc
-  function/gpu/resource_manager.cc
   function/physics/physics.cc
   function/rendering/rendering.cc
   function/time/time.cc

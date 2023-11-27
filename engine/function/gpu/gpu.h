@@ -5,12 +5,52 @@
 
 // clang-format off
 #include "platform/pch.h"
+#define VMA_VULKAN_VERSION 1003000
+#include "vk_mem_alloc.h"
 // clang-format on
 
-#include "function/gpu/resource_manager.h"
 #include "imgui_impl_vulkan.h"
 
 namespace luka {
+
+template <class T, class U = T>
+constexpr inline T Exchange(T& obj, U&& new_value) {
+  return std::exchange<T>(obj, std::forward<U>(new_value));
+}
+
+class Image {
+ public:
+ 
+  Image() = delete;
+  Image(std::nullptr_t) {}
+  Image(const VmaAllocator& allocator, const vk::ImageCreateInfo& image_ci);
+
+  ~Image();
+
+  Image(const Image&) = delete;
+  Image(Image&& rhs) noexcept
+      : allocator_{rhs.allocator_},
+        image_{Exchange(rhs.image_, {})},
+        allocation_{Exchange(rhs.allocation_, {})},
+        descriptor_image_info_{Exchange(rhs.descriptor_image_info_, {})} {}
+  Image& operator=(const Image&) = delete;
+
+  Image& operator=(Image&& rhs) noexcept {
+    if (this != &rhs) {
+      allocator_ = rhs.allocator_;
+      std::swap(image_, rhs.image_);
+      std::swap(allocation_, rhs.allocation_);
+      std::swap(descriptor_image_info_, rhs.descriptor_image_info_);
+    }
+    return *this;
+  }
+
+ private:
+  VmaAllocator allocator_{nullptr};
+  vk::Image image_{nullptr};
+  VmaAllocation allocation_{nullptr};
+  vk::DescriptorImageInfo descriptor_image_info_;
+};
 
 class Gpu {
  public:
@@ -19,11 +59,11 @@ class Gpu {
 
   void Tick();
 
+  Image CreateImage(const vk::ImageCreateInfo& image_ci);
+
   void BeginFrame();
   void EndFrame();
   const vk::raii::CommandBuffer& GetCommandBuffer();
-
-  vk::raii::CommandBuffer BeginTempCommandBuffer();
 
   ImGui_ImplVulkan_InitInfo GetVulkanInitInfoForImgui();
   VkRenderPass GetRenderPassForImGui();
@@ -41,9 +81,10 @@ class Gpu {
   void CreateSyncObjects();
   void CreatePipelineCache();
   void CreateDescriptorPool();
-  void CreateResourceManager();
+  void CreateVmaAllocator();
 
   void Resize();
+  vk::raii::CommandBuffer BeginTempCommandBuffer();
 
   static VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(
       VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
@@ -115,8 +156,8 @@ class Gpu {
   // Descriptor pool.
   vk::raii::DescriptorPool descriptor_pool_{nullptr};
 
-  // Resource manager.
-  std::unique_ptr<ResourceManager> resource_manager_;
+  // Vma allocator.
+  VmaAllocator vma_allocator_;
 };
 
 }  // namespace luka

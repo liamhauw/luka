@@ -11,13 +11,16 @@
 
 namespace luka {
 
-class Window;
-
 class Rendering {
  public:
   Rendering();
 
   void Tick();
+
+ private:
+  std::shared_ptr<Gpu> gpu_;
+
+  Image image_{nullptr};
 };
 
 }  // namespace luka

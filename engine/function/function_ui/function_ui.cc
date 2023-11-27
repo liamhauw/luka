@@ -17,18 +17,18 @@
 namespace luka {
 
 FunctionUI::FunctionUI() {
-  IMGUI_CHECKVERSION();
-  ImGui::CreateContext();
+  // IMGUI_CHECKVERSION();
+  // ImGui::CreateContext();
 
-  ImGuiIO& io = ImGui::GetIO();
-  io.IniFilename = nullptr;
-  io.ConfigFlags = ImGuiConfigFlags_NavEnableKeyboard;
+  // ImGuiIO& io = ImGui::GetIO();
+  // io.IniFilename = nullptr;
+  // io.ConfigFlags = ImGuiConfigFlags_NavEnableKeyboard;
 
-  ImGui_ImplGlfw_InitForVulkan(gContext.window->GetGlfwWindow(), true);
+  // ImGui_ImplGlfw_InitForVulkan(gContext.window->GetGlfwWindow(), true);
 
-  ImGui_ImplVulkan_InitInfo init_info{
-      gContext.gpu->GetVulkanInitInfoForImgui()};
-  ImGui_ImplVulkan_Init(&init_info, gContext.gpu->GetRenderPassForImGui());
+  // ImGui_ImplVulkan_InitInfo init_info{
+  //     gContext.gpu->GetVulkanInitInfoForImgui()};
+  // ImGui_ImplVulkan_Init(&init_info, gContext.gpu->GetRenderPassForImGui());
 }
 
 void FunctionUI::Tick() {}

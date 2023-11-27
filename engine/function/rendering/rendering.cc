@@ -10,10 +10,21 @@
 
 namespace luka {
 
-Rendering::Rendering() {
-  vk::raii::CommandBuffer command_buffer{
-      gContext.gpu->BeginTempCommandBuffer()};
-  
+Rendering::Rendering() : gpu_{gContext.gpu} {
+  vk::ImageCreateInfo image_ci{
+      {},
+      vk::ImageType::e2D,
+      vk::Format::eR32G32B32A32Sfloat,
+      {1, 1, 1},
+      1,
+      1,
+      vk::SampleCountFlagBits::e1,
+      vk::ImageTiling::eOptimal,
+      vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
+      vk::SharingMode::eExclusive,
+      {},
+      vk::ImageLayout::eUndefined};
+  image_ = gpu_->CreateImage(image_ci);
 }
 
 void Rendering::Tick() {

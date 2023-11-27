@@ -3,15 +3,46 @@
 
 // clang-format off
 #include "platform/pch.h"
+#define VMA_IMPLEMENTATION
+#define VMA_VULKAN_VERSION 1003000
+#include "vk_mem_alloc.h"
 // clang-format on
 
 #include "function/gpu/gpu.h"
 
 #include "context.h"
 #include "core/log.h"
-#include "function/window/window.h"
 
 namespace luka {
+
+Image::Image(const VmaAllocator& allocator, const vk::ImageCreateInfo& image_ci)
+    : allocator_{allocator} {
+  VkImageCreateInfo vk_image_ci{
+      .sType = static_cast<VkStructureType>(image_ci.sType),
+      .pNext = image_ci.pNext,
+      .flags = static_cast<VkImageCreateFlags>(image_ci.flags),
+      .imageType = static_cast<VkImageType>(image_ci.imageType),
+      .format = static_cast<VkFormat>(image_ci.format),
+      .extent = static_cast<VkExtent3D>(image_ci.extent),
+      .mipLevels = image_ci.mipLevels,
+      .arrayLayers = image_ci.arrayLayers,
+      .samples = static_cast<VkSampleCountFlagBits>(image_ci.samples),
+      .tiling = static_cast<VkImageTiling>(image_ci.tiling),
+      .usage = static_cast<VkImageUsageFlags>(image_ci.usage),
+      .sharingMode = static_cast<VkSharingMode>(image_ci.sharingMode),
+      .queueFamilyIndexCount = image_ci.queueFamilyIndexCount,
+      .pQueueFamilyIndices = image_ci.pQueueFamilyIndices,
+      .initialLayout = static_cast<VkImageLayout>(image_ci.initialLayout)};
+
+  VmaAllocationCreateInfo allocation_ci{.usage = VMA_MEMORY_USAGE_AUTO};
+
+  VkImage image;
+  vmaCreateImage(allocator_, &vk_image_ci, &allocation_ci, &image,
+                 &allocation_, nullptr);
+  image_ = image;               
+}
+
+Image::~Image() { vmaDestroyImage(allocator_, image_, allocation_); }
 
 Gpu::Gpu() {
   CreateInstance();
@@ -26,10 +57,13 @@ Gpu::Gpu() {
   CreateSyncObjects();
   CreatePipelineCache();
   CreateDescriptorPool();
-  CreateResourceManager();
+  CreateVmaAllocator();
 }
 
-Gpu::~Gpu() { device_.waitIdle(); }
+Gpu::~Gpu() {
+  vmaDestroyAllocator(vma_allocator_);
+  device_.waitIdle();
+}
 
 void Gpu::Tick() {
   if (gContext.window->GetFramebufferResized()) {
@@ -38,9 +72,8 @@ void Gpu::Tick() {
   }
 }
 
-void Gpu::Resize() {
-  CreateSwapchain();
-  CreateFramebuffers();
+Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci) {
+  return Image{vma_allocator_, image_ci};
 }
 
 void Gpu::BeginFrame() { used_command_buffer_counts_[back_buffer_index] = 0; }
@@ -57,19 +90,6 @@ const vk::raii::CommandBuffer& Gpu::GetCommandBuffer() {
   ++used_command_buffer_counts_[back_buffer_index];
 
   return command_buffers_[back_buffer_index][index];
-}
-
-vk::raii::CommandBuffer Gpu::BeginTempCommandBuffer() {
-  vk::CommandBufferAllocateInfo command_buffer_allocate_info{
-      *command_pools_[back_buffer_index], vk::CommandBufferLevel::ePrimary, 1};
-
-  vk::raii::CommandBuffer command_buffer{std::move(
-      vk::raii::CommandBuffers{device_, command_buffer_allocate_info}.front())};
-
-  vk::CommandBufferBeginInfo command_buffer_begin_info{
-      vk::CommandBufferUsageFlagBits::eOneTimeSubmit};
-  command_buffer.begin(command_buffer_begin_info);
-  return command_buffer;
 }
 
 ImGui_ImplVulkan_InitInfo Gpu::GetVulkanInitInfoForImgui() {
@@ -625,9 +645,33 @@ void Gpu::CreateDescriptorPool() {
   descriptor_pool_ = vk::raii::DescriptorPool{device_, descriptor_pool_ci};
 }
 
-void Gpu::CreateResourceManager() {
-  resource_manager_ = std::make_unique<VmaResourceManager>(
-      instance_, physical_device_, device_);
+void Gpu::CreateVmaAllocator() {
+  VmaAllocatorCreateInfo allocator_ci{
+      .flags = 0,
+      .physicalDevice = static_cast<VkPhysicalDevice>(*physical_device_),
+      .device = static_cast<VkDevice>(*device_),
+      .instance = static_cast<VkInstance>(*instance_),
+      .vulkanApiVersion = VK_API_VERSION_1_3,
+  };
+  vmaCreateAllocator(&allocator_ci, &vma_allocator_);
+}
+
+void Gpu::Resize() {
+  CreateSwapchain();
+  CreateFramebuffers();
+}
+
+vk::raii::CommandBuffer Gpu::BeginTempCommandBuffer() {
+  vk::CommandBufferAllocateInfo command_buffer_allocate_info{
+      *command_pools_[back_buffer_index], vk::CommandBufferLevel::ePrimary, 1};
+
+  vk::raii::CommandBuffer command_buffer{std::move(
+      vk::raii::CommandBuffers{device_, command_buffer_allocate_info}.front())};
+
+  vk::CommandBufferBeginInfo command_buffer_begin_info{
+      vk::CommandBufferUsageFlagBits::eOneTimeSubmit};
+  command_buffer.begin(command_buffer_begin_info);
+  return command_buffer;
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL Gpu::DebugUtilsMessengerCallback(
