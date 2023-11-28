@@ -97,12 +97,12 @@ void FunctionInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mods*/) {
   } else if (action == GLFW_RELEASE) {
     switch (key) {
       case GLFW_KEY_W:
-        function_command_ &= (control_command_ ^
-                              static_cast<u32>(FunctionCommand::FORWARD));
+        function_command_ &=
+            (control_command_ ^ static_cast<u32>(FunctionCommand::FORWARD));
         break;
       case GLFW_KEY_S:
-        function_command_ &= (control_command_ ^
-                              static_cast<u32>(FunctionCommand::BACKWARD));
+        function_command_ &=
+            (control_command_ ^ static_cast<u32>(FunctionCommand::BACKWARD));
         break;
       case GLFW_KEY_A:
         function_command_ &=

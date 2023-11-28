@@ -4,6 +4,7 @@
 // clang-format off
 #include "platform/pch.h"
 // clang-format on
+
 #include "function/rendering/rendering.h"
 
 #include "context.h"
@@ -22,7 +23,6 @@ void Rendering::Tick() {
   ImDrawData* draw_data{ImGui::GetDrawData()};
   ImGui_ImplVulkan_RenderDrawData(
       draw_data, static_cast<VkCommandBuffer>(*cur_command_buffer));
-  
 
   gpu_->EndFrame(cur_command_buffer);
 }

@@ -12,13 +12,13 @@ namespace luka {
 class Window;
 
 enum class FunctionCommand : u32 {
-  FORWARD = 1 << 0,                         // W
-  BACKWARD = 1 << 1,                        // S
-  LEFT = 1 << 2,                            // A
-  RIGHT = 1 << 3,                           // D
-  JUMP = 1 << 4,                            // Space
-  SQUAT = 1 << 5,                           // Left control
-  SPRINT = 1 << 6,                          // Left shift
+  FORWARD = 1 << 0,                    // W
+  BACKWARD = 1 << 1,                   // S
+  LEFT = 1 << 2,                       // A
+  RIGHT = 1 << 3,                      // D
+  JUMP = 1 << 4,                       // Space
+  SQUAT = 1 << 5,                      // Left control
+  SPRINT = 1 << 6,                     // Left shift
   INVALID = static_cast<u32>(1 << 31)  // Lost focus
 };
 

@@ -25,7 +25,7 @@ class FunctionUI {
 
   std::array<float, 4> image_data_{1.0f, 1.0f, 0.0f, 1.0f};
   Image image_{nullptr};
-  vk::DescriptorSet descriptor_set_;
+  vk::DescriptorSet descriptor_set_{nullptr};
 };
 
 }  // namespace luka

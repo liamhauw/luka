@@ -5,10 +5,9 @@
 
 // clang-format off
 #include "platform/pch.h"
-// clang-format on
-
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+// clang-format on
 
 namespace luka {
 

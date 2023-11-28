@@ -199,9 +199,7 @@ void Gpu::Tick() {
   }
 }
 
-void Gpu::WaitIdle() {
-  device_.waitIdle();
-}
+void Gpu::WaitIdle() { device_.waitIdle(); }
 
 Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci, u64 size,
                        const void* data) {
@@ -255,8 +253,8 @@ Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci, u64 size,
           {vk::ImageAspectFlagBits::eColor, 0, VK_REMAINING_MIP_LEVELS, 0,
            VK_REMAINING_ARRAY_LAYERS}};
       command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
-                                     vk::PipelineStageFlagBits::eAllCommands, {},
-                                     {}, {}, barrier);
+                                     vk::PipelineStageFlagBits::eAllCommands,
+                                     {}, {}, {}, barrier);
     }
 
     EndTempCommandBuffer(command_buffer);
