@@ -43,8 +43,9 @@ FunctionUI::FunctionUI() : gpu_{gContext.gpu} {
       vk::SharingMode::eExclusive,
       {},
       vk::ImageLayout::eUndefined};
-  image_ = gpu_->CreateImage(image_ci, image_data_.size() * sizeof(float),
-                             image_data_.data());
+  image_ =
+      gpu_->CreateImage(image_ci, vk::ImageLayout::eShaderReadOnlyOptimal,
+                        image_data_.size() * sizeof(float), image_data_.data());
 
   const vk::DescriptorImageInfo& descriptor_image_info{
       image_.GetDescriptorImageInfo()};

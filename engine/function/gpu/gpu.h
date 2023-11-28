@@ -9,55 +9,11 @@
 #include "vk_mem_alloc.h"
 // clang-format on
 
+#include "function/gpu/buffer.h"
+#include "function/gpu/image.h"
 #include "imgui_impl_vulkan.h"
 
 namespace luka {
-
-class Buffer {
- public:
-  Buffer() = delete;
-  Buffer(std::nullptr_t) {}
-  Buffer(const vk::raii::Device& device, const VmaAllocator& allocator,
-         const vk::BufferCreateInfo& buffer_ci, u64 size = 0,
-         const void* data = nullptr, bool staging = false,
-         const vk::raii::CommandBuffer& = nullptr);
-  ~Buffer();
-  Buffer(const Buffer&) = delete;
-  Buffer(Buffer&& rhs) noexcept;
-  Buffer& operator=(const Buffer&) = delete;
-  Buffer& operator=(Buffer&& rhs) noexcept;
-
-  const vk::Buffer& operator*() const noexcept;
-
- private:
-  VmaAllocator allocator_;
-  vk::Buffer buffer_{nullptr};
-  VmaAllocation allocation_{nullptr};
-};
-
-class Image {
- public:
-  Image() = delete;
-  Image(std::nullptr_t) {}
-  Image(const vk::raii::Device& device, const VmaAllocator& allocator,
-        const vk::ImageCreateInfo& image_ci);
-  ~Image();
-  Image(const Image&) = delete;
-  Image(Image&& rhs) noexcept;
-  Image& operator=(const Image&) = delete;
-  Image& operator=(Image&& rhs) noexcept;
-
-  const vk::Image& operator*() const noexcept;
-  const vk::DescriptorImageInfo& GetDescriptorImageInfo() const;
-
- private:
-  VmaAllocator allocator_;
-  vk::Image image_{nullptr};
-  VmaAllocation allocation_{nullptr};
-  vk::raii::ImageView image_view_{nullptr};
-  vk::raii::Sampler sampler_{nullptr};
-  vk::DescriptorImageInfo descriptor_image_info_;
-};
 
 class Gpu {
  public:
@@ -66,17 +22,21 @@ class Gpu {
 
   void Tick();
 
-  void WaitIdle();
+  ImGui_ImplVulkan_InitInfo GetVulkanInitInfoForImgui();
+  VkRenderPass GetRenderPassForImGui();
 
-  Image CreateImage(const vk::ImageCreateInfo& image_ci, u64 size = 0,
-                    const void* data = nullptr);
+  Buffer CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
+                      bool staging = false, u64 size = 0,
+                      const void* data = nullptr, const std::string& name = {});
+  Image CreateImage(
+      const vk::ImageCreateInfo& image_ci,
+      const vk::ImageLayout new_layout = vk::ImageLayout::eUndefined,
+      u64 size = 0, const void* data = nullptr, const std::string& name = {});
 
   const vk::raii::CommandBuffer& BeginFrame();
   void EndFrame(const vk::raii::CommandBuffer& cur_command_buffer);
-  const vk::raii::CommandBuffer& GetCommandBuffer();
 
-  ImGui_ImplVulkan_InitInfo GetVulkanInitInfoForImgui();
-  VkRenderPass GetRenderPassForImGui();
+  void WaitIdle();
 
  private:
   void CreateInstance();
@@ -91,12 +51,12 @@ class Gpu {
   void CreateSyncObjects();
   void CreatePipelineCache();
   void CreateDescriptorPool();
-  void CreateVmaAllocator();
+  void CreateAllocator();
 
   void Resize();
+  const vk::raii::CommandBuffer& GetCommandBuffer();
   vk::raii::CommandBuffer BeginTempCommandBuffer();
   void EndTempCommandBuffer(const vk::raii::CommandBuffer& command_buffer);
-
   static VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(
       VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
       VkDebugUtilsMessageTypeFlagsEXT message_type,
@@ -168,8 +128,8 @@ class Gpu {
   // Descriptor pool.
   vk::raii::DescriptorPool descriptor_pool_{nullptr};
 
-  // Vma allocator.
-  VmaAllocator vma_allocator_;
+  // Allocator.
+  VmaAllocator allocator_;
 };
 
 }  // namespace luka

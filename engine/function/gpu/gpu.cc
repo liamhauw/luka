@@ -15,162 +15,6 @@
 
 namespace luka {
 
-Buffer::Buffer(const vk::raii::Device& device, const VmaAllocator& allocator,
-               const vk::BufferCreateInfo& buffer_ci, u64 size,
-               const void* data, bool staging,
-               const vk::raii::CommandBuffer& command_buffer)
-    : allocator_{allocator} {
-  VkBufferCreateInfo vk_buffer_ci{static_cast<VkBufferCreateInfo>(buffer_ci)};
-  VmaAllocationCreateInfo allocation_ci{.usage = VMA_MEMORY_USAGE_AUTO};
-  if (staging) {
-    allocation_ci.flags =
-        VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
-  }
-  VkBuffer buffer;
-  vmaCreateBuffer(allocator_, &vk_buffer_ci, &allocation_ci, &buffer,
-                  &allocation_, nullptr);
-  buffer_ = buffer;
-
-  if (size > 0) {
-    if (staging) {
-      // Upload data.
-      void* mapped_data;
-      vmaMapMemory(allocator_, allocation_, &mapped_data);
-      memcpy(mapped_data, data, size);
-      vmaUnmapMemory(allocator, allocation_);
-    } else {
-      // Create a tempory staging buffer to upload data.
-      VmaAllocationCreateInfo staging_allocation_ci{
-          .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
-          .usage = VMA_MEMORY_USAGE_AUTO};
-      VkBuffer vk_staging_buffer;
-      VmaAllocation staging_allocation;
-      vmaCreateBuffer(allocator_, &vk_buffer_ci, &staging_allocation_ci,
-                      &vk_staging_buffer, &staging_allocation, nullptr);
-      vk::Buffer staging_buffer{vk_staging_buffer};
-
-      void* mapped_data;
-      vmaMapMemory(allocator_, staging_allocation, &mapped_data);
-      memcpy(mapped_data, data, size);
-      vmaUnmapMemory(allocator, staging_allocation);
-
-      vk::BufferCopy buffer_copy{0, 0, size};
-      command_buffer.copyBuffer(staging_buffer, buffer_, buffer_copy);
-    }
-  }
-}
-
-Buffer::~Buffer() {
-  vmaDestroyBuffer(allocator_, static_cast<VkBuffer>(buffer_), allocation_);
-}
-
-Buffer::Buffer(Buffer&& rhs) noexcept
-    : allocator_{rhs.allocator_},
-      buffer_{std::exchange(rhs.buffer_, {})},
-      allocation_{std::exchange(rhs.allocation_, {})} {}
-
-Buffer& Buffer::operator=(Buffer&& rhs) noexcept {
-  if (this != &rhs) {
-    allocator_ = rhs.allocator_;
-    std::swap(buffer_, rhs.buffer_);
-    std::swap(allocation_, rhs.allocation_);
-  }
-  return *this;
-}
-
-const vk::Buffer& Buffer::operator*() const noexcept { return buffer_; }
-
-Image::Image(const vk::raii::Device& device, const VmaAllocator& allocator,
-             const vk::ImageCreateInfo& image_ci)
-    : allocator_{allocator} {
-  VkImageCreateInfo vk_image_ci{static_cast<VkImageCreateInfo>(image_ci)};
-  VmaAllocationCreateInfo allocation_ci{.usage = VMA_MEMORY_USAGE_AUTO};
-  VkImage image;
-  vmaCreateImage(allocator_, &vk_image_ci, &allocation_ci, &image, &allocation_,
-                 nullptr);
-  image_ = image;
-
-  vk::ImageViewType image_view_type;
-  switch (image_ci.imageType) {
-    case vk::ImageType::e1D:
-      image_view_type = vk::ImageViewType::e1D;
-      break;
-    case vk::ImageType::e2D:
-      image_view_type = vk::ImageViewType::e2D;
-      break;
-    case vk::ImageType::e3D:
-      image_view_type = vk::ImageViewType::e3D;
-      break;
-    default:
-      THROW("Unknown image type");
-  }
-
-  vk::ImageViewCreateInfo image_view_ci{
-      {},
-      image_,
-      image_view_type,
-      image_ci.format,
-      {},
-      {vk::ImageAspectFlagBits::eColor, 0, VK_REMAINING_MIP_LEVELS, 0,
-       VK_REMAINING_ARRAY_LAYERS}};
-  image_view_ = vk::raii::ImageView{device, image_view_ci};
-
-  vk::SamplerCreateInfo sampler_ci;
-  sampler_ = vk::raii::Sampler{device, sampler_ci};
-
-  descriptor_image_info_ =
-      vk::DescriptorImageInfo{*sampler_, *image_view_, image_ci.initialLayout};
-
-#ifndef NDEBUG
-  vk::DebugUtilsObjectNameInfoEXT image_name_info{
-      vk::ObjectType::eImage,
-      reinterpret_cast<uint64_t>(static_cast<VkImage>(image_)), "test_image"};
-  device.setDebugUtilsObjectNameEXT(image_name_info);
-
-  vk::DebugUtilsObjectNameInfoEXT image_view_name_info{
-      vk::ObjectType::eImageView,
-      reinterpret_cast<uint64_t>(static_cast<VkImageView>(*image_view_)),
-      "test_image_view"};
-  device.setDebugUtilsObjectNameEXT(image_view_name_info);
-
-  vk::DebugUtilsObjectNameInfoEXT sampler_name_info{
-      vk::ObjectType::eSampler,
-      reinterpret_cast<uint64_t>(static_cast<VkSampler>(*sampler_)),
-      "test_sampler"};
-  device.setDebugUtilsObjectNameEXT(sampler_name_info);
-#endif
-}
-
-Image::~Image() {
-  vmaDestroyImage(allocator_, static_cast<VkImage>(image_), allocation_);
-}
-
-Image::Image(Image&& rhs) noexcept
-    : allocator_{rhs.allocator_},
-      image_{std::exchange(rhs.image_, {})},
-      allocation_{std::exchange(rhs.allocation_, {})},
-      image_view_{std::exchange(rhs.image_view_, {nullptr})},
-      sampler_{std::exchange(rhs.sampler_, {nullptr})},
-      descriptor_image_info_{std::exchange(rhs.descriptor_image_info_, {})} {}
-
-Image& Image::operator=(Image&& rhs) noexcept {
-  if (this != &rhs) {
-    allocator_ = rhs.allocator_;
-    std::swap(image_, rhs.image_);
-    std::swap(allocation_, rhs.allocation_);
-    std::swap(image_view_, rhs.image_view_);
-    std::swap(sampler_, rhs.sampler_);
-    std::swap(descriptor_image_info_, rhs.descriptor_image_info_);
-  }
-  return *this;
-}
-
-const vk::Image& Image::operator*() const noexcept { return image_; }
-
-const vk::DescriptorImageInfo& Image::GetDescriptorImageInfo() const {
-  return descriptor_image_info_;
-}
-
 Gpu::Gpu() {
   CreateInstance();
   CreateSurface();
@@ -184,13 +28,10 @@ Gpu::Gpu() {
   CreateSyncObjects();
   CreatePipelineCache();
   CreateDescriptorPool();
-  CreateVmaAllocator();
+  CreateAllocator();
 }
 
-Gpu::~Gpu() {
-  vmaDestroyAllocator(vma_allocator_);
-  // device_.waitIdle();
-}
+Gpu::~Gpu() { vmaDestroyAllocator(allocator_); }
 
 void Gpu::Tick() {
   if (gContext.window->GetFramebufferResized()) {
@@ -199,17 +40,68 @@ void Gpu::Tick() {
   }
 }
 
-void Gpu::WaitIdle() { device_.waitIdle(); }
+ImGui_ImplVulkan_InitInfo Gpu::GetVulkanInitInfoForImgui() {
+  ImGui_ImplVulkan_InitInfo init_info{
+      .Instance = static_cast<VkInstance>(*instance_),
+      .PhysicalDevice = static_cast<VkPhysicalDevice>(*physical_device_),
+      .Device = static_cast<VkDevice>(*device_),
+      .QueueFamily = graphics_queue_index_.value(),
+      .Queue = static_cast<VkQueue>(*graphics_queue_),
+      .PipelineCache = static_cast<VkPipelineCache>(*pipeline_cache_),
+      .DescriptorPool = static_cast<VkDescriptorPool>(*descriptor_pool_),
+      .Subpass = 0,
+      .MinImageCount = image_count_,
+      .ImageCount = image_count_,
+      .MSAASamples = VK_SAMPLE_COUNT_1_BIT,
+  };
+  return init_info;
+}
 
-Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci, u64 size,
-                       const void* data) {
-  Image image{device_, vma_allocator_, image_ci};
+VkRenderPass Gpu::GetRenderPassForImGui() {
+  return static_cast<VkRenderPass>(*render_pass_);
+}
+
+Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci, bool staging,
+                         u64 size, const void* data, const std::string& name) {
+  Buffer buffer{device_, allocator_, buffer_ci, staging, name};
+
+  if (size > 0) {
+    if (staging) {
+      // Upload data.
+      void* mapped_data;
+      VmaAllocation allocation{buffer.GetAllocation()};
+      vmaMapMemory(allocator_, allocation, &mapped_data);
+      memcpy(mapped_data, data, size);
+      vmaUnmapMemory(allocator_, allocation);
+    } else {
+      // Create a tempory staging buffer to upload data.
+      Buffer staging_buffer{device_, allocator_, buffer_ci, true};
+      void* mapped_data;
+      VmaAllocation allocation{staging_buffer.GetAllocation()};
+      vmaMapMemory(allocator_, allocation, &mapped_data);
+      memcpy(mapped_data, data, size);
+      vmaUnmapMemory(allocator_, allocation);
+
+      vk::raii::CommandBuffer command_buffer{BeginTempCommandBuffer()};
+
+      vk::BufferCopy buffer_copy{0, 0, size};
+      command_buffer.copyBuffer(*staging_buffer, *buffer, buffer_copy);
+      EndTempCommandBuffer(command_buffer);
+    }
+  }
+
+  return buffer;
+}
+
+Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
+                       const vk::ImageLayout new_layout, u64 size,
+                       const void* data, const std::string& name) {
+  Image image{device_, allocator_, image_ci, name};
 
   if (size > 0) {
     vk::BufferCreateInfo staging_buffer_ci{
         {}, size, vk::BufferUsageFlagBits::eTransferSrc};
-    Buffer staging_buffer{device_, vma_allocator_, staging_buffer_ci,
-                          size,    data,           true};
+    Buffer staging_buffer{CreateBuffer(staging_buffer_ci, true, size, data)};
 
     vk::raii::CommandBuffer command_buffer{BeginTempCommandBuffer()};
 
@@ -217,7 +109,7 @@ Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci, u64 size,
       vk::ImageMemoryBarrier barrier{
           {},
           vk::AccessFlagBits::eTransferWrite,
-          vk::ImageLayout::eUndefined,
+          image_ci.initialLayout,
           vk::ImageLayout::eTransferDstOptimal,
           VK_QUEUE_FAMILY_IGNORED,
           VK_QUEUE_FAMILY_IGNORED,
@@ -246,7 +138,7 @@ Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci, u64 size,
           vk::AccessFlagBits::eTransferWrite,
           vk::AccessFlagBits::eShaderRead,
           vk::ImageLayout::eTransferDstOptimal,
-          vk::ImageLayout::eShaderReadOnlyOptimal,
+          new_layout,
           VK_QUEUE_FAMILY_IGNORED,
           VK_QUEUE_FAMILY_IGNORED,
           *image,
@@ -320,36 +212,7 @@ void Gpu::EndFrame(const vk::raii::CommandBuffer& cur_command_buffer) {
   back_buffer_index = (back_buffer_index + 1) % kBackBufferCount;
 }
 
-const vk::raii::CommandBuffer& Gpu::GetCommandBuffer() {
-  u32 index{used_command_buffer_counts_[back_buffer_index]};
-  if (index >= kMaxUsedCommandBufferCountperFrame) {
-    THROW("Fail to get command buffer.");
-  }
-  ++used_command_buffer_counts_[back_buffer_index];
-
-  return command_buffers_[back_buffer_index][index];
-}
-
-ImGui_ImplVulkan_InitInfo Gpu::GetVulkanInitInfoForImgui() {
-  ImGui_ImplVulkan_InitInfo init_info{
-      .Instance = static_cast<VkInstance>(*instance_),
-      .PhysicalDevice = static_cast<VkPhysicalDevice>(*physical_device_),
-      .Device = static_cast<VkDevice>(*device_),
-      .QueueFamily = graphics_queue_index_.value(),
-      .Queue = static_cast<VkQueue>(*graphics_queue_),
-      .PipelineCache = static_cast<VkPipelineCache>(*pipeline_cache_),
-      .DescriptorPool = static_cast<VkDescriptorPool>(*descriptor_pool_),
-      .Subpass = 0,
-      .MinImageCount = image_count_,
-      .ImageCount = image_count_,
-      .MSAASamples = VK_SAMPLE_COUNT_1_BIT,
-  };
-  return init_info;
-}
-
-VkRenderPass Gpu::GetRenderPassForImGui() {
-  return static_cast<VkRenderPass>(*render_pass_);
-}
+void Gpu::WaitIdle() { device_.waitIdle(); }
 
 void Gpu::CreateInstance() {
   vk::InstanceCreateFlags flags;
@@ -883,7 +746,7 @@ void Gpu::CreateDescriptorPool() {
   descriptor_pool_ = vk::raii::DescriptorPool{device_, descriptor_pool_ci};
 }
 
-void Gpu::CreateVmaAllocator() {
+void Gpu::CreateAllocator() {
   VmaAllocatorCreateInfo allocator_ci{
       .flags = 0,
       .physicalDevice = static_cast<VkPhysicalDevice>(*physical_device_),
@@ -891,12 +754,22 @@ void Gpu::CreateVmaAllocator() {
       .instance = static_cast<VkInstance>(*instance_),
       .vulkanApiVersion = VK_API_VERSION_1_3,
   };
-  vmaCreateAllocator(&allocator_ci, &vma_allocator_);
+  vmaCreateAllocator(&allocator_ci, &allocator_);
 }
 
 void Gpu::Resize() {
   CreateSwapchain();
   CreateFramebuffers();
+}
+
+const vk::raii::CommandBuffer& Gpu::GetCommandBuffer() {
+  u32 index{used_command_buffer_counts_[back_buffer_index]};
+  if (index >= kMaxUsedCommandBufferCountperFrame) {
+    THROW("Fail to get command buffer.");
+  }
+  ++used_command_buffer_counts_[back_buffer_index];
+
+  return command_buffers_[back_buffer_index][index];
 }
 
 vk::raii::CommandBuffer Gpu::BeginTempCommandBuffer() {

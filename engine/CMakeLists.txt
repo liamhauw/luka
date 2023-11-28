@@ -19,7 +19,9 @@ set(HEADER_FILES
   function/camera/camera.h
   function/function_input/function_input.h
   function/function_ui/function_ui.h
+  function/gpu/buffer.h
   function/gpu/gpu.h
+  function/gpu/image.h
   function/physics/physics.h
   function/rendering/rendering.h
   function/time/time.h
@@ -42,7 +44,9 @@ set(SOURCE_FILES
   function/camera/camera.cc
   function/function_input/function_input.cc
   function/function_ui/function_ui.cc
+  function/gpu/buffer.cc
   function/gpu/gpu.cc
+  function/gpu/image.cc
   function/physics/physics.cc
   function/rendering/rendering.cc
   function/time/time.cc
