@@ -15,34 +15,161 @@
 
 namespace luka {
 
-Image::Image(const VmaAllocator& allocator, const vk::ImageCreateInfo& image_ci)
+Buffer::Buffer(const vk::raii::Device& device, const VmaAllocator& allocator,
+               const vk::BufferCreateInfo& buffer_ci, u64 size,
+               const void* data, bool staging,
+               const vk::raii::CommandBuffer& command_buffer)
     : allocator_{allocator} {
-  VkImageCreateInfo vk_image_ci{
-      .sType = static_cast<VkStructureType>(image_ci.sType),
-      .pNext = image_ci.pNext,
-      .flags = static_cast<VkImageCreateFlags>(image_ci.flags),
-      .imageType = static_cast<VkImageType>(image_ci.imageType),
-      .format = static_cast<VkFormat>(image_ci.format),
-      .extent = static_cast<VkExtent3D>(image_ci.extent),
-      .mipLevels = image_ci.mipLevels,
-      .arrayLayers = image_ci.arrayLayers,
-      .samples = static_cast<VkSampleCountFlagBits>(image_ci.samples),
-      .tiling = static_cast<VkImageTiling>(image_ci.tiling),
-      .usage = static_cast<VkImageUsageFlags>(image_ci.usage),
-      .sharingMode = static_cast<VkSharingMode>(image_ci.sharingMode),
-      .queueFamilyIndexCount = image_ci.queueFamilyIndexCount,
-      .pQueueFamilyIndices = image_ci.pQueueFamilyIndices,
-      .initialLayout = static_cast<VkImageLayout>(image_ci.initialLayout)};
-
+  VkBufferCreateInfo vk_buffer_ci{static_cast<VkBufferCreateInfo>(buffer_ci)};
   VmaAllocationCreateInfo allocation_ci{.usage = VMA_MEMORY_USAGE_AUTO};
+  if (staging) {
+    allocation_ci.flags =
+        VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+  }
+  VkBuffer buffer;
+  vmaCreateBuffer(allocator_, &vk_buffer_ci, &allocation_ci, &buffer,
+                  &allocation_, nullptr);
+  buffer_ = buffer;
 
-  VkImage image;
-  vmaCreateImage(allocator_, &vk_image_ci, &allocation_ci, &image,
-                 &allocation_, nullptr);
-  image_ = image;               
+  if (size > 0) {
+    if (staging) {
+      // Upload data.
+      void* mapped_data;
+      vmaMapMemory(allocator_, allocation_, &mapped_data);
+      memcpy(mapped_data, data, size);
+      vmaUnmapMemory(allocator, allocation_);
+    } else {
+      // Create a tempory staging buffer to upload data.
+      VmaAllocationCreateInfo staging_allocation_ci{
+          .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+          .usage = VMA_MEMORY_USAGE_AUTO};
+      VkBuffer vk_staging_buffer;
+      VmaAllocation staging_allocation;
+      vmaCreateBuffer(allocator_, &vk_buffer_ci, &staging_allocation_ci,
+                      &vk_staging_buffer, &staging_allocation, nullptr);
+      vk::Buffer staging_buffer{vk_staging_buffer};
+
+      void* mapped_data;
+      vmaMapMemory(allocator_, staging_allocation, &mapped_data);
+      memcpy(mapped_data, data, size);
+      vmaUnmapMemory(allocator, staging_allocation);
+
+      vk::BufferCopy buffer_copy{0, 0, size};
+      command_buffer.copyBuffer(staging_buffer, buffer_, buffer_copy);
+    }
+  }
 }
 
-Image::~Image() { vmaDestroyImage(allocator_, image_, allocation_); }
+Buffer::~Buffer() {
+  vmaDestroyBuffer(allocator_, static_cast<VkBuffer>(buffer_), allocation_);
+}
+
+Buffer::Buffer(Buffer&& rhs) noexcept
+    : allocator_{rhs.allocator_},
+      buffer_{std::exchange(rhs.buffer_, {})},
+      allocation_{std::exchange(rhs.allocation_, {})} {}
+
+Buffer& Buffer::operator=(Buffer&& rhs) noexcept {
+  if (this != &rhs) {
+    allocator_ = rhs.allocator_;
+    std::swap(buffer_, rhs.buffer_);
+    std::swap(allocation_, rhs.allocation_);
+  }
+  return *this;
+}
+
+const vk::Buffer& Buffer::operator*() const noexcept { return buffer_; }
+
+Image::Image(const vk::raii::Device& device, const VmaAllocator& allocator,
+             const vk::ImageCreateInfo& image_ci)
+    : allocator_{allocator} {
+  VkImageCreateInfo vk_image_ci{static_cast<VkImageCreateInfo>(image_ci)};
+  VmaAllocationCreateInfo allocation_ci{.usage = VMA_MEMORY_USAGE_AUTO};
+  VkImage image;
+  vmaCreateImage(allocator_, &vk_image_ci, &allocation_ci, &image, &allocation_,
+                 nullptr);
+  image_ = image;
+
+  vk::ImageViewType image_view_type;
+  switch (image_ci.imageType) {
+    case vk::ImageType::e1D:
+      image_view_type = vk::ImageViewType::e1D;
+      break;
+    case vk::ImageType::e2D:
+      image_view_type = vk::ImageViewType::e2D;
+      break;
+    case vk::ImageType::e3D:
+      image_view_type = vk::ImageViewType::e3D;
+      break;
+    default:
+      THROW("Unknown image type");
+  }
+
+  vk::ImageViewCreateInfo image_view_ci{
+      {},
+      image_,
+      image_view_type,
+      image_ci.format,
+      {},
+      {vk::ImageAspectFlagBits::eColor, 0, VK_REMAINING_MIP_LEVELS, 0,
+       VK_REMAINING_ARRAY_LAYERS}};
+  image_view_ = vk::raii::ImageView{device, image_view_ci};
+
+  vk::SamplerCreateInfo sampler_ci;
+  sampler_ = vk::raii::Sampler{device, sampler_ci};
+
+  descriptor_image_info_ =
+      vk::DescriptorImageInfo{*sampler_, *image_view_, image_ci.initialLayout};
+
+#ifndef NDEBUG
+  vk::DebugUtilsObjectNameInfoEXT image_name_info{
+      vk::ObjectType::eImage,
+      reinterpret_cast<uint64_t>(static_cast<VkImage>(image_)), "test_image"};
+  device.setDebugUtilsObjectNameEXT(image_name_info);
+
+  vk::DebugUtilsObjectNameInfoEXT image_view_name_info{
+      vk::ObjectType::eImageView,
+      reinterpret_cast<uint64_t>(static_cast<VkImageView>(*image_view_)),
+      "test_image_view"};
+  device.setDebugUtilsObjectNameEXT(image_view_name_info);
+
+  vk::DebugUtilsObjectNameInfoEXT sampler_name_info{
+      vk::ObjectType::eSampler,
+      reinterpret_cast<uint64_t>(static_cast<VkSampler>(*sampler_)),
+      "test_sampler"};
+  device.setDebugUtilsObjectNameEXT(sampler_name_info);
+#endif
+}
+
+Image::~Image() {
+  vmaDestroyImage(allocator_, static_cast<VkImage>(image_), allocation_);
+}
+
+Image::Image(Image&& rhs) noexcept
+    : allocator_{rhs.allocator_},
+      image_{std::exchange(rhs.image_, {})},
+      allocation_{std::exchange(rhs.allocation_, {})},
+      image_view_{std::exchange(rhs.image_view_, {nullptr})},
+      sampler_{std::exchange(rhs.sampler_, {nullptr})},
+      descriptor_image_info_{std::exchange(rhs.descriptor_image_info_, {})} {}
+
+Image& Image::operator=(Image&& rhs) noexcept {
+  if (this != &rhs) {
+    allocator_ = rhs.allocator_;
+    std::swap(image_, rhs.image_);
+    std::swap(allocation_, rhs.allocation_);
+    std::swap(image_view_, rhs.image_view_);
+    std::swap(sampler_, rhs.sampler_);
+    std::swap(descriptor_image_info_, rhs.descriptor_image_info_);
+  }
+  return *this;
+}
+
+const vk::Image& Image::operator*() const noexcept { return image_; }
+
+const vk::DescriptorImageInfo& Image::GetDescriptorImageInfo() const {
+  return descriptor_image_info_;
+}
 
 Gpu::Gpu() {
   CreateInstance();
@@ -62,7 +189,7 @@ Gpu::Gpu() {
 
 Gpu::~Gpu() {
   vmaDestroyAllocator(vma_allocator_);
-  device_.waitIdle();
+  // device_.waitIdle();
 }
 
 void Gpu::Tick() {
@@ -72,13 +199,126 @@ void Gpu::Tick() {
   }
 }
 
-Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci) {
-  return Image{vma_allocator_, image_ci};
+void Gpu::WaitIdle() {
+  device_.waitIdle();
 }
 
-void Gpu::BeginFrame() { used_command_buffer_counts_[back_buffer_index] = 0; }
+Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci, u64 size,
+                       const void* data) {
+  Image image{device_, vma_allocator_, image_ci};
 
-void Gpu::EndFrame() {
+  if (size > 0) {
+    vk::BufferCreateInfo staging_buffer_ci{
+        {}, size, vk::BufferUsageFlagBits::eTransferSrc};
+    Buffer staging_buffer{device_, vma_allocator_, staging_buffer_ci,
+                          size,    data,           true};
+
+    vk::raii::CommandBuffer command_buffer{BeginTempCommandBuffer()};
+
+    {
+      vk::ImageMemoryBarrier barrier{
+          {},
+          vk::AccessFlagBits::eTransferWrite,
+          vk::ImageLayout::eUndefined,
+          vk::ImageLayout::eTransferDstOptimal,
+          VK_QUEUE_FAMILY_IGNORED,
+          VK_QUEUE_FAMILY_IGNORED,
+          *image,
+          {vk::ImageAspectFlagBits::eColor, 0, VK_REMAINING_MIP_LEVELS, 0,
+           VK_REMAINING_ARRAY_LAYERS}};
+
+      command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe,
+                                     vk::PipelineStageFlagBits::eTransfer, {},
+                                     {}, {}, barrier);
+    }
+
+    {
+      vk::BufferImageCopy buffer_image_copy{
+          {},        {},
+          {},        {vk::ImageAspectFlagBits::eColor, 0, 0, 1},
+          {0, 0, 0}, image_ci.extent};
+
+      command_buffer.copyBufferToImage(*staging_buffer, *image,
+                                       vk::ImageLayout::eTransferDstOptimal,
+                                       buffer_image_copy);
+    }
+
+    {
+      vk::ImageMemoryBarrier barrier{
+          vk::AccessFlagBits::eTransferWrite,
+          vk::AccessFlagBits::eShaderRead,
+          vk::ImageLayout::eTransferDstOptimal,
+          vk::ImageLayout::eShaderReadOnlyOptimal,
+          VK_QUEUE_FAMILY_IGNORED,
+          VK_QUEUE_FAMILY_IGNORED,
+          *image,
+          {vk::ImageAspectFlagBits::eColor, 0, VK_REMAINING_MIP_LEVELS, 0,
+           VK_REMAINING_ARRAY_LAYERS}};
+      command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
+                                     vk::PipelineStageFlagBits::eAllCommands, {},
+                                     {}, {}, barrier);
+    }
+
+    EndTempCommandBuffer(command_buffer);
+  }
+
+  return image;
+}
+
+const vk::raii::CommandBuffer& Gpu::BeginFrame() {
+  used_command_buffer_counts_[back_buffer_index] = 0;
+
+  if (device_.waitForFences(*(command_executed_fences_[back_buffer_index]),
+                            VK_TRUE, UINT64_MAX) != vk::Result::eSuccess) {
+    THROW("Fail to wait for fences.");
+  }
+
+  vk::Result result;
+  std::tie(result, image_index_) = swapchain_.acquireNextImage(
+      UINT64_MAX, *image_available_semaphores_[back_buffer_index], nullptr);
+  if (result != vk::Result::eSuccess) {
+    THROW("Fail to acqurie next image.");
+  }
+
+  device_.resetFences(*(command_executed_fences_[back_buffer_index]));
+
+  const vk::raii::CommandBuffer& cur_commend_buffer{GetCommandBuffer()};
+  cur_commend_buffer.reset({});
+  cur_commend_buffer.begin({});
+
+  std::array<vk::ClearValue, 1> clear_values;
+  clear_values[0].color = vk::ClearColorValue{1.0f, 1.0f, 1.0f, 1.0f};
+
+  vk::RenderPassBeginInfo render_pass_begin_info{
+      *render_pass_, *framebuffers_[image_index_],
+      vk::Rect2D{vk::Offset2D{0, 0}, extent_}, clear_values};
+
+  cur_commend_buffer.beginRenderPass(render_pass_begin_info,
+                                     vk::SubpassContents::eInline);
+
+  return cur_commend_buffer;
+}
+
+void Gpu::EndFrame(const vk::raii::CommandBuffer& cur_command_buffer) {
+  cur_command_buffer.endRenderPass();
+  cur_command_buffer.end();
+  vk::PipelineStageFlags wait_stage{
+      vk::PipelineStageFlagBits::eColorAttachmentOutput};
+  vk::SubmitInfo submit_info{*(image_available_semaphores_[back_buffer_index]),
+                             wait_stage, *cur_command_buffer,
+                             *(render_finished_semaphores_[back_buffer_index])};
+  graphics_queue_.submit(submit_info,
+                         *(command_executed_fences_[back_buffer_index]));
+
+  vk::PresentInfoKHR presten_info_khr{
+      *(render_finished_semaphores_[back_buffer_index]), *swapchain_,
+      image_index_};
+
+  vk::Result result{present_queue_.presentKHR(presten_info_khr)};
+  if (result != vk::Result::eSuccess) {
+    THROW("Fail to present.");
+  }
+
   back_buffer_index = (back_buffer_index + 1) % kBackBufferCount;
 }
 
@@ -543,7 +783,7 @@ void Gpu::CreateRenderPass() {
 
   attachment_descriptions.emplace_back(
       vk::AttachmentDescriptionFlags{}, format_, vk::SampleCountFlagBits::e1,
-      vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eStore,
+      vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore,
       vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare,
       vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
 
@@ -672,6 +912,13 @@ vk::raii::CommandBuffer Gpu::BeginTempCommandBuffer() {
       vk::CommandBufferUsageFlagBits::eOneTimeSubmit};
   command_buffer.begin(command_buffer_begin_info);
   return command_buffer;
+}
+
+void Gpu::EndTempCommandBuffer(const vk::raii::CommandBuffer& command_buffer) {
+  command_buffer.end();
+  vk::SubmitInfo submit_info{nullptr, nullptr, *command_buffer};
+  graphics_queue_.submit(submit_info, nullptr);
+  graphics_queue_.waitIdle();
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL Gpu::DebugUtilsMessengerCallback(

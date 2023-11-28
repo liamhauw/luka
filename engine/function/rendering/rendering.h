@@ -19,8 +19,6 @@ class Rendering {
 
  private:
   std::shared_ptr<Gpu> gpu_;
-
-  Image image_{nullptr};
 };
 
 }  // namespace luka

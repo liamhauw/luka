@@ -10,27 +10,21 @@
 
 namespace luka {
 
-Rendering::Rendering() : gpu_{gContext.gpu} {
-  vk::ImageCreateInfo image_ci{
-      {},
-      vk::ImageType::e2D,
-      vk::Format::eR32G32B32A32Sfloat,
-      {1, 1, 1},
-      1,
-      1,
-      vk::SampleCountFlagBits::e1,
-      vk::ImageTiling::eOptimal,
-      vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
-      vk::SharingMode::eExclusive,
-      {},
-      vk::ImageLayout::eUndefined};
-  image_ = gpu_->CreateImage(image_ci);
-}
+Rendering::Rendering() : gpu_{gContext.gpu} {}
 
 void Rendering::Tick() {
   if (gContext.window->GetIconified()) {
     return;
   }
+
+  const vk::raii::CommandBuffer& cur_command_buffer{gpu_->BeginFrame()};
+
+  ImDrawData* draw_data{ImGui::GetDrawData()};
+  ImGui_ImplVulkan_RenderDrawData(
+      draw_data, static_cast<VkCommandBuffer>(*cur_command_buffer));
+  
+
+  gpu_->EndFrame(cur_command_buffer);
 }
 
 }  // namespace luka

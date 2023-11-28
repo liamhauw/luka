@@ -13,42 +13,49 @@
 
 namespace luka {
 
-template <class T, class U = T>
-constexpr inline T Exchange(T& obj, U&& new_value) {
-  return std::exchange<T>(obj, std::forward<U>(new_value));
-}
+class Buffer {
+ public:
+  Buffer() = delete;
+  Buffer(std::nullptr_t) {}
+  Buffer(const vk::raii::Device& device, const VmaAllocator& allocator,
+         const vk::BufferCreateInfo& buffer_ci, u64 size = 0,
+         const void* data = nullptr, bool staging = false,
+         const vk::raii::CommandBuffer& = nullptr);
+  ~Buffer();
+  Buffer(const Buffer&) = delete;
+  Buffer(Buffer&& rhs) noexcept;
+  Buffer& operator=(const Buffer&) = delete;
+  Buffer& operator=(Buffer&& rhs) noexcept;
+
+  const vk::Buffer& operator*() const noexcept;
+
+ private:
+  VmaAllocator allocator_;
+  vk::Buffer buffer_{nullptr};
+  VmaAllocation allocation_{nullptr};
+};
 
 class Image {
  public:
- 
   Image() = delete;
   Image(std::nullptr_t) {}
-  Image(const VmaAllocator& allocator, const vk::ImageCreateInfo& image_ci);
-
+  Image(const vk::raii::Device& device, const VmaAllocator& allocator,
+        const vk::ImageCreateInfo& image_ci);
   ~Image();
-
   Image(const Image&) = delete;
-  Image(Image&& rhs) noexcept
-      : allocator_{rhs.allocator_},
-        image_{Exchange(rhs.image_, {})},
-        allocation_{Exchange(rhs.allocation_, {})},
-        descriptor_image_info_{Exchange(rhs.descriptor_image_info_, {})} {}
+  Image(Image&& rhs) noexcept;
   Image& operator=(const Image&) = delete;
+  Image& operator=(Image&& rhs) noexcept;
 
-  Image& operator=(Image&& rhs) noexcept {
-    if (this != &rhs) {
-      allocator_ = rhs.allocator_;
-      std::swap(image_, rhs.image_);
-      std::swap(allocation_, rhs.allocation_);
-      std::swap(descriptor_image_info_, rhs.descriptor_image_info_);
-    }
-    return *this;
-  }
+  const vk::Image& operator*() const noexcept;
+  const vk::DescriptorImageInfo& GetDescriptorImageInfo() const;
 
  private:
-  VmaAllocator allocator_{nullptr};
+  VmaAllocator allocator_;
   vk::Image image_{nullptr};
   VmaAllocation allocation_{nullptr};
+  vk::raii::ImageView image_view_{nullptr};
+  vk::raii::Sampler sampler_{nullptr};
   vk::DescriptorImageInfo descriptor_image_info_;
 };
 
@@ -59,10 +66,13 @@ class Gpu {
 
   void Tick();
 
-  Image CreateImage(const vk::ImageCreateInfo& image_ci);
+  void WaitIdle();
 
-  void BeginFrame();
-  void EndFrame();
+  Image CreateImage(const vk::ImageCreateInfo& image_ci, u64 size = 0,
+                    const void* data = nullptr);
+
+  const vk::raii::CommandBuffer& BeginFrame();
+  void EndFrame(const vk::raii::CommandBuffer& cur_command_buffer);
   const vk::raii::CommandBuffer& GetCommandBuffer();
 
   ImGui_ImplVulkan_InitInfo GetVulkanInitInfoForImgui();
@@ -85,6 +95,7 @@ class Gpu {
 
   void Resize();
   vk::raii::CommandBuffer BeginTempCommandBuffer();
+  void EndTempCommandBuffer(const vk::raii::CommandBuffer& command_buffer);
 
   static VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(
       VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
@@ -95,6 +106,7 @@ class Gpu {
   // Parameters.
   const u32 kBackBufferCount{3};
   u32 back_buffer_index{0};
+  u32 image_index_{0};
 
   // Instance.
   vk::raii::Context context_;
