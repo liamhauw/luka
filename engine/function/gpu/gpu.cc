@@ -3,9 +3,6 @@
 
 // clang-format off
 #include "platform/pch.h"
-#define VMA_IMPLEMENTATION
-#define VMA_VULKAN_VERSION 1003000
-#include "vk_mem_alloc.h"
 // clang-format on
 
 #include "function/gpu/gpu.h"
@@ -172,25 +169,33 @@ const vk::raii::CommandBuffer& Gpu::BeginFrame() {
 
   device_.resetFences(*(command_executed_fences_[back_buffer_index]));
 
-  const vk::raii::CommandBuffer& cur_commend_buffer{GetCommandBuffer()};
-  cur_commend_buffer.reset({});
-  cur_commend_buffer.begin({});
+  const vk::raii::CommandBuffer& cur_command_buffer{GetCommandBuffer()};
+  cur_command_buffer.reset({});
+  cur_command_buffer.begin({});
+
+#ifndef NDEBUG
+  vk::DebugUtilsLabelEXT debug_utils_lable{"frame", {1.0, 0.0, 0.0, 1.0}};
+  cur_command_buffer.beginDebugUtilsLabelEXT(debug_utils_lable);
+#endif
 
   std::array<vk::ClearValue, 1> clear_values;
-  clear_values[0].color = vk::ClearColorValue{1.0f, 1.0f, 1.0f, 1.0f};
+  clear_values[0].color = vk::ClearColorValue{0.0f, 0.0f, 0.0f, 1.0f};
 
   vk::RenderPassBeginInfo render_pass_begin_info{
       *render_pass_, *framebuffers_[image_index_],
       vk::Rect2D{vk::Offset2D{0, 0}, extent_}, clear_values};
 
-  cur_commend_buffer.beginRenderPass(render_pass_begin_info,
+  cur_command_buffer.beginRenderPass(render_pass_begin_info,
                                      vk::SubpassContents::eInline);
 
-  return cur_commend_buffer;
+  return cur_command_buffer;
 }
 
 void Gpu::EndFrame(const vk::raii::CommandBuffer& cur_command_buffer) {
   cur_command_buffer.endRenderPass();
+#ifndef NDEBUG
+  cur_command_buffer.endDebugUtilsLabelEXT();
+#endif
   cur_command_buffer.end();
   vk::PipelineStageFlags wait_stage{
       vk::PipelineStageFlagBits::eColorAttachmentOutput};

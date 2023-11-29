@@ -48,8 +48,9 @@ add_subdirectory(spdlog)
 # vma
 add_subdirectory(vma SYSTEM)
 
-add_library(${PROJECT_NAME} INTERFACE)
-target_link_libraries(${PROJECT_NAME} INTERFACE
+add_library(${PROJECT_NAME})
+target_sources(${PROJECT_NAME} PRIVATE third_party.cc)
+target_link_libraries(${PROJECT_NAME} PUBLIC
   Vulkan::Vulkan
   glfw
   imgui::imgui

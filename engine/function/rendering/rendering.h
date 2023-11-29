@@ -7,9 +7,10 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "function/gpu/gpu.h"
-
 namespace luka {
+
+class Gpu;
+class FunctionUI;
 
 class Rendering {
  public:
@@ -19,6 +20,7 @@ class Rendering {
 
  private:
   std::shared_ptr<Gpu> gpu_;
+  std::shared_ptr<FunctionUI> function_ui_;
 };
 
 }  // namespace luka

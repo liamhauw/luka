@@ -11,7 +11,8 @@
 
 namespace luka {
 
-Rendering::Rendering() : gpu_{gContext.gpu} {}
+Rendering::Rendering()
+    : gpu_{gContext.gpu}, function_ui_{gContext.function_ui} {}
 
 void Rendering::Tick() {
   if (gContext.window->GetIconified()) {
@@ -20,9 +21,7 @@ void Rendering::Tick() {
 
   const vk::raii::CommandBuffer& cur_command_buffer{gpu_->BeginFrame()};
 
-  ImDrawData* draw_data{ImGui::GetDrawData()};
-  ImGui_ImplVulkan_RenderDrawData(
-      draw_data, static_cast<VkCommandBuffer>(*cur_command_buffer));
+  function_ui_->Render(cur_command_buffer);
 
   gpu_->EndFrame(cur_command_buffer);
 }

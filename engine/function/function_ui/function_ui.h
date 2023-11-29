@@ -20,6 +20,8 @@ class FunctionUI {
 
   void Tick();
 
+  void Render(const vk::raii::CommandBuffer& command_buffer);
+
  private:
   std::shared_ptr<Gpu> gpu_;
 

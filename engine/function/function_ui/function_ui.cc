@@ -80,4 +80,10 @@ void FunctionUI::Tick() {
   ImGui::Render();
 }
 
+void FunctionUI::Render(const vk::raii::CommandBuffer& command_buffer) {
+  ImDrawData* draw_data{ImGui::GetDrawData()};
+  ImGui_ImplVulkan_RenderDrawData(
+      draw_data, static_cast<VkCommandBuffer>(*command_buffer));
+}
+
 }  // namespace luka
