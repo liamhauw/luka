@@ -18,6 +18,14 @@ void from_json(const json& j, ConfigInfo& config_info) {
     if (scene_json.contains("model")) {
       scene_json.at("model").get_to(config_info.model_file_path);
     }
+    if (scene_json.contains("vertex_shader")) {
+      scene_json.at("vertex_shader")
+          .get_to(config_info.vertex_shader_file_path);
+    }
+    if (scene_json.contains("fragment_shader")) {
+      scene_json.at("fragment_shader")
+          .get_to(config_info.fragment_shader_file_path);
+    }
     if (scene_json.contains("camera") &&
         scene_json.at("camera").contains("from") &&
         scene_json.at("camera").contains("to")) {
@@ -35,18 +43,26 @@ Config::Config() {
   j_ = json::parse(config_file);
   if (j_.contains("scene")) {
     j_.at("scene").get_to(config_info_.scene);
+    j_.get_to(config_info_);
+
+    config_info_.model_file_path = model_path_ / config_info_.model_file_path;
+    config_info_.vertex_shader_file_path = shader_path_ / config_info_.vertex_shader_file_path;
+    config_info_.fragment_shader_file_path = shader_path_ / config_info_.fragment_shader_file_path;
   }
 }
 
-void Config::Tick() {
-  if (gContext.load) {
-    j_.get_to(config_info_);
-    config_info_.model_file_path = model_path_ / config_info_.model_file_path;
-  }
-}
+void Config::Tick() {}
 
 const std::filesystem::path& Config::GetModelFilePath() const {
   return config_info_.model_file_path;
+}
+
+const std::filesystem::path& Config::GetVertexShaderFilePath() const {
+  return config_info_.vertex_shader_file_path;
+}
+
+const std::filesystem::path& Config::GetFragmentShaderFilePath() const {
+  return config_info_.fragment_shader_file_path;
 }
 
 const glm::vec4& Config::GetCameraFrom() const {

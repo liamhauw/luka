@@ -72,7 +72,12 @@ Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci, bool staging,
       vmaUnmapMemory(allocator_, allocation);
     } else {
       // Create a tempory staging buffer to upload data.
-      Buffer staging_buffer{device_, allocator_, buffer_ci, true};
+      vk::BufferCreateInfo staging_buffer_ci{
+          {},
+          size,
+          vk::BufferUsageFlagBits::eTransferSrc,
+          vk::SharingMode::eExclusive};
+      Buffer staging_buffer{device_, allocator_, staging_buffer_ci, true};
       void* mapped_data;
       VmaAllocation allocation{staging_buffer.GetAllocation()};
       vmaMapMemory(allocator_, allocation, &mapped_data);
@@ -150,6 +155,131 @@ Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
   }
 
   return image;
+}
+
+vk::raii::PipelineLayout Gpu::CreatePipelineLayout(
+    const vk::PipelineLayoutCreateInfo& pipeline_layout_ci) {
+  return vk::raii::PipelineLayout{device_, pipeline_layout_ci};
+}
+
+vk::raii::Pipeline Gpu::CreatePipeline(
+    const std::vector<u8>& vertex_shader_buffer,
+    const std::vector<u8>& fragment_shader_buffer, uint32_t vertex_stride,
+    const std::vector<std::pair<vk::Format, uint32_t>>&
+        vertex_input_attribute_format_offset,
+    const vk::raii::PipelineLayout& pipeline_layout,
+    const vk::PipelineRenderingCreateInfo& pipeline_rendering_ci) {
+  vk::ShaderModuleCreateInfo vertex_shader_module_ci{
+      {},
+      vertex_shader_buffer.size(),
+      reinterpret_cast<const uint32_t*>(vertex_shader_buffer.data())};
+  vk::ShaderModuleCreateInfo fragment_shader_module_ci{
+      {},
+      fragment_shader_buffer.size(),
+      reinterpret_cast<const uint32_t*>(fragment_shader_buffer.data())};
+
+  vk::raii::ShaderModule vertex_shader_module{device_, vertex_shader_module_ci};
+  vk::raii::ShaderModule fragment_shader_module{device_,
+                                                fragment_shader_module_ci};
+
+  std::vector<vk::PipelineShaderStageCreateInfo> shader_stage_cis{
+      {{},
+       vk::ShaderStageFlagBits::eVertex,
+       *vertex_shader_module,
+       "main",
+       nullptr},
+      {{},
+       vk::ShaderStageFlagBits::eFragment,
+       *fragment_shader_module,
+       "main",
+       nullptr}};
+
+  vk::PipelineVertexInputStateCreateInfo vertex_input_state_ci;
+
+  vk::VertexInputBindingDescription vertex_input_binding_description{
+      0, vertex_stride, vk::VertexInputRate::eVertex};
+
+  std::vector<vk::VertexInputAttributeDescription>
+      vertex_input_attribute_descriptions;
+
+  vertex_input_attribute_descriptions.reserve(
+      vertex_input_attribute_format_offset.size());
+
+  for (uint32_t i = 0; i < vertex_input_attribute_format_offset.size(); i++) {
+    vertex_input_attribute_descriptions.emplace_back(
+        i, 0, vertex_input_attribute_format_offset[i].first,
+        vertex_input_attribute_format_offset[i].second);
+  }
+  vertex_input_state_ci.setVertexBindingDescriptions(
+      vertex_input_binding_description);
+  vertex_input_state_ci.setVertexAttributeDescriptions(
+      vertex_input_attribute_descriptions);
+
+  vk::PipelineInputAssemblyStateCreateInfo input_assembly_state_ci{
+      {}, vk::PrimitiveTopology::eTriangleList, VK_FALSE};
+
+  vk::PipelineViewportStateCreateInfo viewport_state_ci{
+      {}, 1, nullptr, 1, nullptr};
+
+  vk::PipelineRasterizationStateCreateInfo rasterization_state_ci{
+      {},
+      VK_FALSE,
+      VK_FALSE,
+      vk::PolygonMode::eFill,
+      vk::CullModeFlagBits::eBack,
+      vk::FrontFace::eClockwise,
+      VK_FALSE,
+      0.0f,
+      0.0f,
+      0.0f,
+      1.0f};
+
+  vk::PipelineMultisampleStateCreateInfo multisample_state_ci{{},
+                                                              sample_count_};
+
+  vk::PipelineDepthStencilStateCreateInfo depth_stencil_state_ci{
+      {}, VK_TRUE, VK_TRUE, vk::CompareOp::eLessOrEqual, VK_FALSE, VK_FALSE,
+  };
+
+  vk::ColorComponentFlags color_component_flags{
+      vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+      vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA};
+  vk::PipelineColorBlendAttachmentState color_blend_attachment_state{
+      VK_FALSE,          vk::BlendFactor::eZero, vk::BlendFactor::eZero,
+      vk::BlendOp::eAdd, vk::BlendFactor::eZero, vk::BlendFactor::eZero,
+      vk::BlendOp::eAdd, color_component_flags};
+
+  vk::PipelineColorBlendStateCreateInfo color_blend_state_ci{
+      {},
+      VK_FALSE,
+      {},
+      color_blend_attachment_state,
+      {{0.0f, 0.0f, 0.0f, 0.0f}}};
+
+  std::array<vk::DynamicState, 2> dynamic_states{vk::DynamicState::eViewport,
+                                                 vk::DynamicState::eScissor};
+  vk::PipelineDynamicStateCreateInfo dynamic_state_ci{{}, dynamic_states};
+
+  vk::StructureChain<vk::GraphicsPipelineCreateInfo,
+                     vk::PipelineRenderingCreateInfo>
+      graphics_pipeline_ci{{{},
+                            shader_stage_cis,
+                            &vertex_input_state_ci,
+                            &input_assembly_state_ci,
+                            nullptr,
+                            &viewport_state_ci,
+                            &rasterization_state_ci,
+                            &multisample_state_ci,
+                            &depth_stencil_state_ci,
+                            &color_blend_state_ci,
+                            &dynamic_state_ci,
+                            *pipeline_layout,
+                            nullptr},
+                           pipeline_rendering_ci};
+
+  return vk::raii::Pipeline{
+      device_, nullptr,
+      graphics_pipeline_ci.get<vk::GraphicsPipelineCreateInfo>()};
 }
 
 const vk::raii::CommandBuffer& Gpu::BeginFrame() {
@@ -319,21 +449,21 @@ void Gpu::CreateInstance() {
 
   vk::StructureChain<vk::InstanceCreateInfo,
                      vk::DebugUtilsMessengerCreateInfoEXT>
-      info_chain{{flags, &application_info, enabled_instance_layers,
-                  enabled_instance_extensions},
-                 debug_utils_messenger_ci};
+      instance_ci{{flags, &application_info, enabled_instance_layers,
+                   enabled_instance_extensions},
+                  debug_utils_messenger_ci};
 #else
-  vk::StructureChain<vk::InstanceCreateInfo> info_chain{
+  vk::StructureChain<vk::InstanceCreateInfo> instance_ci{
       {flags, &application_info, enabled_instance_layers,
        enabled_instance_extensions}};
 #endif
 
   instance_ =
-      vk::raii::Instance{context_, info_chain.get<vk::InstanceCreateInfo>()};
+      vk::raii::Instance{context_, instance_ci.get<vk::InstanceCreateInfo>()};
 
 #ifndef NDEBUG
   debug_utils_messenger_ = vk::raii::DebugUtilsMessengerEXT{
-      instance_, info_chain.get<vk::DebugUtilsMessengerCreateInfoEXT>()};
+      instance_, instance_ci.get<vk::DebugUtilsMessengerCreateInfoEXT>()};
 #endif
 }
 
@@ -465,7 +595,7 @@ void Gpu::CreateDevice() {
       physical_device_.enumerateDeviceExtensionProperties()};
 
   std::vector<const char*> required_device_extensions_{
-      VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_ROBUSTNESS_2_EXTENSION_NAME};
+      VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
   std::vector<const char*> enabled_device_extensions;
   for (auto& extension : required_device_extensions_) {
@@ -499,16 +629,15 @@ void Gpu::CreateDevice() {
   physical_device_vulkan12_features.shaderFloat16 = VK_TRUE;
   physical_device_vulkan12_features.shaderSubgroupExtendedTypes = VK_TRUE;
 
-  vk::PhysicalDeviceRobustness2FeaturesEXT robustness2;
-  robustness2.nullDescriptor = VK_TRUE;
+  vk::PhysicalDeviceVulkan13Features physical_device_vulkan13_features;
+  physical_device_vulkan13_features.dynamicRendering = VK_TRUE;
 
-  vk::StructureChain<vk::PhysicalDeviceFeatures2,
-                     vk::PhysicalDeviceVulkan11Features,
-                     vk::PhysicalDeviceVulkan12Features,
-                     vk::PhysicalDeviceRobustness2FeaturesEXT>
-      physical_device_features2{physical_device_features,
-                                physical_device_vulkan11_features,
-                                physical_device_vulkan12_features, robustness2};
+  vk::StructureChain<
+      vk::PhysicalDeviceFeatures2, vk::PhysicalDeviceVulkan11Features,
+      vk::PhysicalDeviceVulkan12Features, vk::PhysicalDeviceVulkan13Features>
+      physical_device_features2{
+          physical_device_features, physical_device_vulkan11_features,
+          physical_device_vulkan12_features, physical_device_vulkan13_features};
 
   // Create device.
   vk::DeviceCreateInfo device_ci{{},      device_queue_cis,

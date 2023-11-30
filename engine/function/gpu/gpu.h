@@ -33,6 +33,17 @@ class Gpu {
       const vk::ImageLayout new_layout = vk::ImageLayout::eUndefined,
       u64 size = 0, const void* data = nullptr, const std::string& name = {});
 
+  vk::raii::PipelineLayout CreatePipelineLayout(
+      const vk::PipelineLayoutCreateInfo& pipeline_layout_ci);
+
+  vk::raii::Pipeline CreatePipeline(
+      const std::vector<u8>& vertex_shader_buffer,
+      const std::vector<u8>& fragment_shader_buffer, uint32_t vertex_stride,
+      const std::vector<std::pair<vk::Format, uint32_t>>&
+          vertex_input_attribute_format_offset,
+      const vk::raii::PipelineLayout& pipeline_layout,
+      const vk::PipelineRenderingCreateInfo& pipeline_rendering_ci);
+
   const vk::raii::CommandBuffer& BeginFrame();
   void EndFrame(const vk::raii::CommandBuffer& cur_command_buffer);
 

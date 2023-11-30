@@ -15,10 +15,20 @@ class Config;
 
 class Asset {
  public:
+  Asset();
+
   void Tick();
 
+  const std::vector<u8>& GetVertexShaderBuffer() const;
+  const std::vector<u8>& GetFragmentShaderBuffer() const;
+
  private:
-  std::unique_ptr<Gltf> gltf_;
+  void LoadShader(const std::string& shader_path,
+                  std::vector<u8>& shader_buffer);
+
+  // std::unique_ptr<Gltf> gltf_;
+  std::vector<u8> vertext_shader_buffer_;
+  std::vector<u8> fragment_shader_buffer_;
 };
 
 }  // namespace luka
