@@ -47,6 +47,11 @@ Window::~Window() {
 }
 
 void Window::Tick() {
+  // In the last frame, funcrion Ui changes it if framebuffer resized .
+  if (framebuffer_resized_) {
+    framebuffer_resized_ = false;
+  }
+
   f64 delta_time{gContext.time->GetDeltaTime()};
   std::string title{std::string{"luka "} +
                     std::to_string(static_cast<i32>(1.0 / delta_time)) +

@@ -15,9 +15,8 @@ class Buffer {
  public:
   Buffer() = delete;
   Buffer(std::nullptr_t) {}
-  Buffer(const vk::raii::Device& device, const VmaAllocator& allocator,
-         const vk::BufferCreateInfo& buffer_ci, bool staging = false,
-         const std::string& name = {});
+  Buffer(const VmaAllocator& allocator, const vk::BufferCreateInfo& buffer_ci,
+         bool staging = false);
   ~Buffer();
   Buffer(const Buffer&) = delete;
   Buffer(Buffer&& rhs) noexcept;
@@ -25,11 +24,12 @@ class Buffer {
   Buffer& operator=(Buffer&& rhs) noexcept;
 
   const vk::Buffer& operator*() const noexcept;
+  void Clear() noexcept;
 
   const VmaAllocation& GetAllocation() const;
 
  private:
-  VmaAllocator allocator_;
+  VmaAllocator allocator_{nullptr};
   vk::Buffer buffer_{nullptr};
   VmaAllocation allocation_{nullptr};
 };

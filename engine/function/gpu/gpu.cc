@@ -31,8 +31,11 @@ Gpu::Gpu() {
 Gpu::~Gpu() { vmaDestroyAllocator(allocator_); }
 
 void Gpu::Tick() {
+  if (gContext.window->GetIconified()) {
+    return;
+  }
+
   if (gContext.window->GetFramebufferResized()) {
-    gContext.window->SetFramebufferResized(false);
     Resize();
   }
 }
@@ -58,9 +61,22 @@ VkRenderPass Gpu::GetRenderPassForImGui() {
   return static_cast<VkRenderPass>(*render_pass_);
 }
 
+const vk::Extent2D& Gpu::GetExtent2D() const { return extent_; }
+
 Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci, bool staging,
                          u64 size, const void* data, const std::string& name) {
-  Buffer buffer{device_, allocator_, buffer_ci, staging, name};
+  Buffer buffer{allocator_, buffer_ci, staging};
+
+#ifndef NDEBUG
+  if (!name.empty()) {
+    std::string debug_name{name + "_buffer"};
+    vk::DebugUtilsObjectNameInfoEXT buffer_name_info{
+        vk::ObjectType::eBuffer,
+        reinterpret_cast<uint64_t>(static_cast<VkBuffer>(*buffer)),
+        debug_name.c_str()};
+    device_.setDebugUtilsObjectNameEXT(buffer_name_info);
+  }
+#endif
 
   if (size > 0) {
     if (staging) {
@@ -77,7 +93,7 @@ Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci, bool staging,
           size,
           vk::BufferUsageFlagBits::eTransferSrc,
           vk::SharingMode::eExclusive};
-      Buffer staging_buffer{device_, allocator_, staging_buffer_ci, true};
+      Buffer staging_buffer{allocator_, staging_buffer_ci, true};
       void* mapped_data;
       VmaAllocation allocation{staging_buffer.GetAllocation()};
       vmaMapMemory(allocator_, allocation, &mapped_data);
@@ -98,7 +114,21 @@ Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci, bool staging,
 Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
                        const vk::ImageLayout new_layout, u64 size,
                        const void* data, const std::string& name) {
-  Image image{device_, allocator_, image_ci, name};
+  Image image{allocator_, image_ci};
+
+#ifndef NDEBUG
+  if (!name.empty()) {
+    std::string debug_name{name + "_image"};
+    vk::DebugUtilsObjectNameInfoEXT image_name_info{
+        vk::ObjectType::eImage,
+        reinterpret_cast<uint64_t>(static_cast<VkImage>(*image)),
+        debug_name.c_str()};
+    device_.setDebugUtilsObjectNameEXT(image_name_info);
+  }
+
+#endif
+
+  vk::ImageLayout cur_layout{image_ci.initialLayout};
 
   if (size > 0) {
     vk::BufferCreateInfo staging_buffer_ci{
@@ -152,14 +182,87 @@ Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
     }
 
     EndTempCommandBuffer(command_buffer);
+
+    cur_layout = new_layout;
+  }
+
+  if (cur_layout != new_layout) {
+    vk::raii::CommandBuffer command_buffer{BeginTempCommandBuffer()};
+
+    vk::ImageMemoryBarrier barrier{
+        {},
+        vk::AccessFlagBits::eShaderRead,
+        cur_layout,
+        new_layout,
+        VK_QUEUE_FAMILY_IGNORED,
+        VK_QUEUE_FAMILY_IGNORED,
+        *image,
+        {vk::ImageAspectFlagBits::eColor, 0, VK_REMAINING_MIP_LEVELS, 0,
+         VK_REMAINING_ARRAY_LAYERS}};
+    command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe,
+                                   vk::PipelineStageFlagBits::eAllCommands, {},
+                                   {}, {}, barrier);
+
+    EndTempCommandBuffer(command_buffer);
   }
 
   return image;
 }
 
+vk::raii::ImageView Gpu::CreateImageView(
+    const vk::ImageViewCreateInfo& image_view_ci, const std::string& name) {
+  vk::raii::ImageView image_view{vk::raii::ImageView{device_, image_view_ci}};
+
+#ifndef NDEBUG
+  if (!name.empty()) {
+    std::string debug_name{name + "_image_view"};
+    vk::DebugUtilsObjectNameInfoEXT image_view_name_info{
+        vk::ObjectType::eImageView,
+        reinterpret_cast<uint64_t>(static_cast<VkImageView>(*image_view)),
+        debug_name.c_str()};
+    device_.setDebugUtilsObjectNameEXT(image_view_name_info);
+  }
+#endif
+
+  return image_view;
+}
+
+vk::raii::Sampler Gpu::CreateSampler(const vk::SamplerCreateInfo sampler_ci,
+                                     const std::string& name) {
+  vk::raii::Sampler sampler{device_, sampler_ci};
+
+#ifndef NDEBUG
+  if (!name.empty()) {
+    std::string debug_name{name + "_sampler"};
+    vk::DebugUtilsObjectNameInfoEXT sampler_name_info{
+        vk::ObjectType::eSampler,
+        reinterpret_cast<uint64_t>(static_cast<VkSampler>(*sampler)),
+        debug_name.c_str()};
+    device_.setDebugUtilsObjectNameEXT(sampler_name_info);
+  }
+#endif
+
+  return sampler;
+}
+
 vk::raii::PipelineLayout Gpu::CreatePipelineLayout(
-    const vk::PipelineLayoutCreateInfo& pipeline_layout_ci) {
-  return vk::raii::PipelineLayout{device_, pipeline_layout_ci};
+    const vk::PipelineLayoutCreateInfo& pipeline_layout_ci,
+    const std::string& name) {
+  vk::raii::PipelineLayout pipeline_layout{device_, pipeline_layout_ci};
+
+#ifndef NDEBUG
+  if (!name.empty()) {
+    std::string debug_name{name + "_pipeline_layout"};
+    vk::DebugUtilsObjectNameInfoEXT sampler_name_info{
+        vk::ObjectType::ePipelineLayout,
+        reinterpret_cast<uint64_t>(
+            static_cast<VkPipelineLayout>(*pipeline_layout)),
+        debug_name.c_str()};
+    device_.setDebugUtilsObjectNameEXT(sampler_name_info);
+  }
+#endif
+
+  return pipeline_layout;
 }
 
 vk::raii::Pipeline Gpu::CreatePipeline(
@@ -168,7 +271,8 @@ vk::raii::Pipeline Gpu::CreatePipeline(
     const std::vector<std::pair<vk::Format, uint32_t>>&
         vertex_input_attribute_format_offset,
     const vk::raii::PipelineLayout& pipeline_layout,
-    const vk::PipelineRenderingCreateInfo& pipeline_rendering_ci) {
+    const vk::PipelineRenderingCreateInfo& pipeline_rendering_ci,
+    const std::string& name) {
   vk::ShaderModuleCreateInfo vertex_shader_module_ci{
       {},
       vertex_shader_buffer.size(),
@@ -227,7 +331,7 @@ vk::raii::Pipeline Gpu::CreatePipeline(
       VK_FALSE,
       vk::PolygonMode::eFill,
       vk::CullModeFlagBits::eBack,
-      vk::FrontFace::eClockwise,
+      vk::FrontFace::eCounterClockwise,
       VK_FALSE,
       0.0f,
       0.0f,
@@ -277,9 +381,22 @@ vk::raii::Pipeline Gpu::CreatePipeline(
                             nullptr},
                            pipeline_rendering_ci};
 
-  return vk::raii::Pipeline{
+  vk::raii::Pipeline pipeline{
       device_, nullptr,
       graphics_pipeline_ci.get<vk::GraphicsPipelineCreateInfo>()};
+
+#ifndef NDEBUG
+  if (!name.empty()) {
+    std::string debug_name{name + "_pipeline"};
+    vk::DebugUtilsObjectNameInfoEXT sampler_name_info{
+        vk::ObjectType::ePipeline,
+        reinterpret_cast<uint64_t>(static_cast<VkPipeline>(*pipeline)),
+        debug_name.c_str()};
+    device_.setDebugUtilsObjectNameEXT(sampler_name_info);
+  }
+#endif
+
+  return pipeline;
 }
 
 const vk::raii::CommandBuffer& Gpu::BeginFrame() {
@@ -304,25 +421,14 @@ const vk::raii::CommandBuffer& Gpu::BeginFrame() {
   cur_command_buffer.begin({});
 
 #ifndef NDEBUG
-  vk::DebugUtilsLabelEXT debug_utils_lable{"frame", {1.0, 0.0, 0.0, 1.0}};
+  vk::DebugUtilsLabelEXT debug_utils_lable{"frame", {0.0, 0.0, 1.0, 1.0}};
   cur_command_buffer.beginDebugUtilsLabelEXT(debug_utils_lable);
 #endif
-
-  std::array<vk::ClearValue, 1> clear_values;
-  clear_values[0].color = vk::ClearColorValue{0.0f, 0.0f, 0.0f, 1.0f};
-
-  vk::RenderPassBeginInfo render_pass_begin_info{
-      *render_pass_, *framebuffers_[image_index_],
-      vk::Rect2D{vk::Offset2D{0, 0}, extent_}, clear_values};
-
-  cur_command_buffer.beginRenderPass(render_pass_begin_info,
-                                     vk::SubpassContents::eInline);
 
   return cur_command_buffer;
 }
 
 void Gpu::EndFrame(const vk::raii::CommandBuffer& cur_command_buffer) {
-  cur_command_buffer.endRenderPass();
 #ifndef NDEBUG
   cur_command_buffer.endDebugUtilsLabelEXT();
 #endif
@@ -345,6 +451,22 @@ void Gpu::EndFrame(const vk::raii::CommandBuffer& cur_command_buffer) {
   }
 
   back_buffer_index = (back_buffer_index + 1) % kBackBufferCount;
+}
+
+void Gpu::BeginRenderPass(const vk::raii::CommandBuffer& cur_command_buffer) {
+  std::array<vk::ClearValue, 1> clear_values;
+  clear_values[0].color = vk::ClearColorValue{0.0f, 0.0f, 0.0f, 1.0f};
+
+  vk::RenderPassBeginInfo render_pass_begin_info{
+      *render_pass_, *framebuffers_[image_index_],
+      vk::Rect2D{vk::Offset2D{0, 0}, extent_}, clear_values};
+
+  cur_command_buffer.beginRenderPass(render_pass_begin_info,
+                                     vk::SubpassContents::eInline);
+}
+
+void Gpu::EndRenderPass(const vk::raii::CommandBuffer& cur_command_buffer) {
+  cur_command_buffer.endRenderPass();
 }
 
 void Gpu::WaitIdle() { device_.waitIdle(); }
@@ -515,26 +637,26 @@ void Gpu::CreateDevice() {
   vk::PhysicalDeviceProperties physical_device_properties_{
       physical_device_.getProperties()};
 
-  vk::SampleCountFlags sample_count{
-      physical_device_properties_.limits.framebufferColorSampleCounts &
-      physical_device_properties_.limits.framebufferDepthSampleCounts};
-  if (sample_count & vk::SampleCountFlagBits::e64) {
-    sample_count_ = vk::SampleCountFlagBits::e64;
-  } else if (sample_count & vk::SampleCountFlagBits::e32) {
-    sample_count_ = vk::SampleCountFlagBits::e32;
-  } else if (sample_count & vk::SampleCountFlagBits::e16) {
-    sample_count_ = vk::SampleCountFlagBits::e16;
-  } else if (sample_count & vk::SampleCountFlagBits::e8) {
-    sample_count_ = vk::SampleCountFlagBits::e8;
-  } else if (sample_count & vk::SampleCountFlagBits::e4) {
-    sample_count_ = vk::SampleCountFlagBits::e4;
-  } else if (sample_count & vk::SampleCountFlagBits::e2) {
-    sample_count_ = vk::SampleCountFlagBits::e2;
-  } else {
-    sample_count_ = vk::SampleCountFlagBits::e1;
-  }
+  // vk::SampleCountFlags sample_count{
+  //     physical_device_properties_.limits.framebufferColorSampleCounts &
+  //     physical_device_properties_.limits.framebufferDepthSampleCounts};
+  // if (sample_count & vk::SampleCountFlagBits::e64) {
+  //   sample_count_ = vk::SampleCountFlagBits::e64;
+  // } else if (sample_count & vk::SampleCountFlagBits::e32) {
+  //   sample_count_ = vk::SampleCountFlagBits::e32;
+  // } else if (sample_count & vk::SampleCountFlagBits::e16) {
+  //   sample_count_ = vk::SampleCountFlagBits::e16;
+  // } else if (sample_count & vk::SampleCountFlagBits::e8) {
+  //   sample_count_ = vk::SampleCountFlagBits::e8;
+  // } else if (sample_count & vk::SampleCountFlagBits::e4) {
+  //   sample_count_ = vk::SampleCountFlagBits::e4;
+  // } else if (sample_count & vk::SampleCountFlagBits::e2) {
+  //   sample_count_ = vk::SampleCountFlagBits::e2;
+  // } else {
+  //   sample_count_ = vk::SampleCountFlagBits::e1;
+  // }
 
-  max_anisotropy_ = physical_device_properties_.limits.maxSamplerAnisotropy;
+  // max_anisotropy_ = physical_device_properties_.limits.maxSamplerAnisotropy;
 
   // Queue famliy properties.
   std::vector<vk::QueueFamilyProperties> queue_family_properties{
@@ -676,8 +798,11 @@ void Gpu::CreateSwapchain() {
   vk::SurfaceFormatKHR picked_format{surface_formats[0]};
 
   std::vector<vk::Format> requested_formats{
-      vk::Format::eB8G8R8A8Srgb, vk::Format::eR8G8B8A8Srgb,
-      vk::Format::eB8G8R8Srgb, vk::Format::eR8G8B8Srgb};
+      vk::Format::eB8G8R8A8Unorm
+      // ,
+      // vk::Format::eR8G8B8A8Srgb,
+      // vk::Format::eB8G8R8Srgb, vk::Format::eR8G8B8Srgb
+  };
   vk::ColorSpaceKHR requested_color_space{vk::ColorSpaceKHR::eSrgbNonlinear};
   for (const auto& requested_format : requested_formats) {
     auto it{std::find_if(surface_formats.begin(), surface_formats.end(),

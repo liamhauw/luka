@@ -11,9 +11,8 @@
 
 namespace luka {
 
-Buffer::Buffer(const vk::raii::Device& device, const VmaAllocator& allocator,
-               const vk::BufferCreateInfo& buffer_ci, bool staging,
-               const std::string& name)
+Buffer::Buffer(const VmaAllocator& allocator,
+               const vk::BufferCreateInfo& buffer_ci, bool staging)
     : allocator_{allocator} {
   VkBufferCreateInfo vk_buffer_ci{static_cast<VkBufferCreateInfo>(buffer_ci)};
   VmaAllocationCreateInfo allocation_ci{.usage = VMA_MEMORY_USAGE_AUTO};
@@ -25,20 +24,10 @@ Buffer::Buffer(const vk::raii::Device& device, const VmaAllocator& allocator,
   vmaCreateBuffer(allocator_, &vk_buffer_ci, &allocation_ci, &buffer,
                   &allocation_, nullptr);
   buffer_ = buffer;
-
-#ifndef NDEBUG
-  if (!name.empty()) {
-    vk::DebugUtilsObjectNameInfoEXT buffer_name_info{
-        vk::ObjectType::eBuffer,
-        reinterpret_cast<uint64_t>(static_cast<VkBuffer>(buffer_)),
-        (name + "_buffer").c_str()};
-    device.setDebugUtilsObjectNameEXT(buffer_name_info);
-  }
-#endif
 }
 
 Buffer::~Buffer() {
-  vmaDestroyBuffer(allocator_, static_cast<VkBuffer>(buffer_), allocation_);
+  Clear();
 }
 
 Buffer::Buffer(Buffer&& rhs) noexcept
@@ -56,6 +45,15 @@ Buffer& Buffer::operator=(Buffer&& rhs) noexcept {
 }
 
 const vk::Buffer& Buffer::operator*() const noexcept { return buffer_; }
+
+void Buffer::Clear() noexcept {
+  if (buffer_) {
+    vmaDestroyBuffer(allocator_, static_cast<VkBuffer>(buffer_), allocation_);
+  }
+  allocator_ = nullptr;
+  buffer_ = nullptr;
+  allocation_ = nullptr;
+}
 
 const VmaAllocation& Buffer::GetAllocation() const { return allocation_; }
 

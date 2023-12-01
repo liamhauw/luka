@@ -24,6 +24,7 @@ class Gpu {
 
   ImGui_ImplVulkan_InitInfo GetVulkanInitInfoForImgui();
   VkRenderPass GetRenderPassForImGui();
+  const vk::Extent2D& GetExtent2D() const;
 
   Buffer CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
                       bool staging = false, u64 size = 0,
@@ -33,8 +34,16 @@ class Gpu {
       const vk::ImageLayout new_layout = vk::ImageLayout::eUndefined,
       u64 size = 0, const void* data = nullptr, const std::string& name = {});
 
+  vk::raii::ImageView CreateImageView(
+      const vk::ImageViewCreateInfo& image_view_ci,
+      const std::string& name = {});
+
+  vk::raii::Sampler CreateSampler(const vk::SamplerCreateInfo sampler_ci,
+                                  const std::string& name = {});
+
   vk::raii::PipelineLayout CreatePipelineLayout(
-      const vk::PipelineLayoutCreateInfo& pipeline_layout_ci);
+      const vk::PipelineLayoutCreateInfo& pipeline_layout_ci,
+      const std::string& name = {});
 
   vk::raii::Pipeline CreatePipeline(
       const std::vector<u8>& vertex_shader_buffer,
@@ -42,11 +51,17 @@ class Gpu {
       const std::vector<std::pair<vk::Format, uint32_t>>&
           vertex_input_attribute_format_offset,
       const vk::raii::PipelineLayout& pipeline_layout,
-      const vk::PipelineRenderingCreateInfo& pipeline_rendering_ci);
+      const vk::PipelineRenderingCreateInfo& pipeline_rendering_ci,
+      const std::string& name = {});
 
+  
+  const vk::raii::CommandBuffer& GetCommandBuffer();
+  vk::raii::CommandBuffer BeginTempCommandBuffer();
+  void EndTempCommandBuffer(const vk::raii::CommandBuffer& command_buffer);
   const vk::raii::CommandBuffer& BeginFrame();
   void EndFrame(const vk::raii::CommandBuffer& cur_command_buffer);
-
+  void BeginRenderPass(const vk::raii::CommandBuffer& cur_command_buffer);
+  void EndRenderPass(const vk::raii::CommandBuffer& cur_command_buffer);
   void WaitIdle();
 
  private:
@@ -65,9 +80,7 @@ class Gpu {
   void CreateAllocator();
 
   void Resize();
-  const vk::raii::CommandBuffer& GetCommandBuffer();
-  vk::raii::CommandBuffer BeginTempCommandBuffer();
-  void EndTempCommandBuffer(const vk::raii::CommandBuffer& command_buffer);
+  
   static VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(
       VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
       VkDebugUtilsMessageTypeFlagsEXT message_type,
