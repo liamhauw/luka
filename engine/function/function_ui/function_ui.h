@@ -20,13 +20,13 @@ class FunctionUI {
 
   void Tick();
 
-  void SetImage(const std::vector<vk::DescriptorSet>& descriptor_set);
+  void SetViewportImage(vk::DescriptorSet descriptor_set);
   void Render(const vk::raii::CommandBuffer& command_buffer);
 
  private:
   std::shared_ptr<Gpu> gpu_;
 
-  std::vector<vk::DescriptorSet> descriptor_sets_;
+  vk::DescriptorSet descriptor_set_;
 };
 
 }  // namespace luka

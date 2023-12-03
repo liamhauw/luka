@@ -46,8 +46,10 @@ Config::Config() {
     j_.get_to(config_info_);
 
     config_info_.model_file_path = model_path_ / config_info_.model_file_path;
-    config_info_.vertex_shader_file_path = shader_path_ / config_info_.vertex_shader_file_path;
-    config_info_.fragment_shader_file_path = shader_path_ / config_info_.fragment_shader_file_path;
+    config_info_.vertex_shader_file_path =
+        shader_path_ / config_info_.vertex_shader_file_path;
+    config_info_.fragment_shader_file_path =
+        shader_path_ / config_info_.fragment_shader_file_path;
   }
 }
 

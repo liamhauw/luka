@@ -28,7 +28,10 @@ Gpu::Gpu() {
   CreateAllocator();
 }
 
-Gpu::~Gpu() { vmaDestroyAllocator(allocator_); }
+Gpu::~Gpu() {
+  WaitIdle();
+  vmaDestroyAllocator(allocator_);
+}
 
 void Gpu::Tick() {
   if (gContext.window->GetIconified()) {
@@ -416,27 +419,27 @@ const vk::raii::CommandBuffer& Gpu::BeginFrame() {
 
   device_.resetFences(*(command_executed_fences_[back_buffer_index]));
 
-  const vk::raii::CommandBuffer& cur_command_buffer{GetCommandBuffer()};
-  cur_command_buffer.reset({});
-  cur_command_buffer.begin({});
+  const vk::raii::CommandBuffer& command_buffer{GetCommandBuffer()};
+  command_buffer.reset({});
+  command_buffer.begin({});
 
 #ifndef NDEBUG
   vk::DebugUtilsLabelEXT debug_utils_lable{"frame", {0.0, 0.0, 1.0, 1.0}};
-  cur_command_buffer.beginDebugUtilsLabelEXT(debug_utils_lable);
+  command_buffer.beginDebugUtilsLabelEXT(debug_utils_lable);
 #endif
 
-  return cur_command_buffer;
+  return command_buffer;
 }
 
-void Gpu::EndFrame(const vk::raii::CommandBuffer& cur_command_buffer) {
+void Gpu::EndFrame(const vk::raii::CommandBuffer& command_buffer) {
 #ifndef NDEBUG
-  cur_command_buffer.endDebugUtilsLabelEXT();
+  command_buffer.endDebugUtilsLabelEXT();
 #endif
-  cur_command_buffer.end();
+  command_buffer.end();
   vk::PipelineStageFlags wait_stage{
       vk::PipelineStageFlagBits::eColorAttachmentOutput};
   vk::SubmitInfo submit_info{*(image_available_semaphores_[back_buffer_index]),
-                             wait_stage, *cur_command_buffer,
+                             wait_stage, *command_buffer,
                              *(render_finished_semaphores_[back_buffer_index])};
   graphics_queue_.submit(submit_info,
                          *(command_executed_fences_[back_buffer_index]));
@@ -453,7 +456,7 @@ void Gpu::EndFrame(const vk::raii::CommandBuffer& cur_command_buffer) {
   back_buffer_index = (back_buffer_index + 1) % kBackBufferCount;
 }
 
-void Gpu::BeginRenderPass(const vk::raii::CommandBuffer& cur_command_buffer) {
+void Gpu::BeginRenderPass(const vk::raii::CommandBuffer& command_buffer) {
   std::array<vk::ClearValue, 1> clear_values;
   clear_values[0].color = vk::ClearColorValue{0.0f, 0.0f, 0.0f, 1.0f};
 
@@ -461,12 +464,12 @@ void Gpu::BeginRenderPass(const vk::raii::CommandBuffer& cur_command_buffer) {
       *render_pass_, *framebuffers_[image_index_],
       vk::Rect2D{vk::Offset2D{0, 0}, extent_}, clear_values};
 
-  cur_command_buffer.beginRenderPass(render_pass_begin_info,
+  command_buffer.beginRenderPass(render_pass_begin_info,
                                      vk::SubpassContents::eInline);
 }
 
-void Gpu::EndRenderPass(const vk::raii::CommandBuffer& cur_command_buffer) {
-  cur_command_buffer.endRenderPass();
+void Gpu::EndRenderPass(const vk::raii::CommandBuffer& command_buffer) {
+  command_buffer.endRenderPass();
 }
 
 void Gpu::WaitIdle() { device_.waitIdle(); }

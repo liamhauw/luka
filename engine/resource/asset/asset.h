@@ -26,7 +26,7 @@ class Asset {
   void LoadShader(const std::string& shader_path,
                   std::vector<u8>& shader_buffer);
 
-  // std::unique_ptr<Gltf> gltf_;
+  std::unique_ptr<Gltf> gltf_;
   std::vector<u8> vertext_shader_buffer_;
   std::vector<u8> fragment_shader_buffer_;
 };

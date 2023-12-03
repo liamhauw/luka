@@ -42,22 +42,23 @@ void FunctionUI::Tick() {
 
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
   ImGui::Begin("viewport");
-  ImGui::Image(descriptor_sets_[0], {640, 380});
+  ImGui::Image(descriptor_set_, {640, 380});
   ImGui::End();
   ImGui::PopStyleVar();
 
   ImGui::Render();
 }
 
-void FunctionUI::SetImage(
-    const std::vector<vk::DescriptorSet>& descriptor_sets) {
-  descriptor_sets_ = descriptor_sets;
+void FunctionUI::SetViewportImage(vk::DescriptorSet descriptor_set) {
+  descriptor_set_ = descriptor_set;
 }
 
 void FunctionUI::Render(const vk::raii::CommandBuffer& command_buffer) {
+  gpu_->BeginRenderPass(command_buffer);
   ImDrawData* draw_data{ImGui::GetDrawData()};
   ImGui_ImplVulkan_RenderDrawData(
       draw_data, static_cast<VkCommandBuffer>(*command_buffer));
+  gpu_->EndRenderPass(command_buffer);
 }
 
 }  // namespace luka

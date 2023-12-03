@@ -55,7 +55,6 @@ class Gpu {
       const std::string& name = {});
 
   
-  const vk::raii::CommandBuffer& GetCommandBuffer();
   vk::raii::CommandBuffer BeginTempCommandBuffer();
   void EndTempCommandBuffer(const vk::raii::CommandBuffer& command_buffer);
   const vk::raii::CommandBuffer& BeginFrame();
@@ -80,7 +79,8 @@ class Gpu {
   void CreateAllocator();
 
   void Resize();
-  
+  const vk::raii::CommandBuffer& GetCommandBuffer();
+
   static VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(
       VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
       VkDebugUtilsMessageTypeFlagsEXT message_type,

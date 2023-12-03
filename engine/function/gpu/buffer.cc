@@ -26,9 +26,7 @@ Buffer::Buffer(const VmaAllocator& allocator,
   buffer_ = buffer;
 }
 
-Buffer::~Buffer() {
-  Clear();
-}
+Buffer::~Buffer() { Clear(); }
 
 Buffer::Buffer(Buffer&& rhs) noexcept
     : allocator_{rhs.allocator_},

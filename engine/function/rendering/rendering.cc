@@ -33,15 +33,16 @@ void Rendering::CreatePipeline() {
           {vk::Format::eR32G32B32Sfloat, offsetof(Vertex, color)}};
 
   vk::PipelineLayoutCreateInfo pipeline_layout_ci;
-  pipeline_layout_ = gpu_->CreatePipelineLayout(pipeline_layout_ci);
+  pipeline_layout_ =
+      gpu_->CreatePipelineLayout(pipeline_layout_ci, "rendering");
 
   vk::PipelineRenderingCreateInfo pipeline_rendering_ci{
       {}, color_formats_, depth_format_};
 
-  pipeline_ =
-      gpu_->CreatePipeline(vertex_shader_buffer, fragment_shader_buffer,
-                           vertex_stride, vertex_input_attribute_format_offset,
-                           pipeline_layout_, pipeline_rendering_ci);
+  pipeline_ = gpu_->CreatePipeline(
+      vertex_shader_buffer, fragment_shader_buffer, vertex_stride,
+      vertex_input_attribute_format_offset, pipeline_layout_,
+      pipeline_rendering_ci, "rendering");
 }
 
 void Rendering::CreateGeometry() {
@@ -74,19 +75,6 @@ void Rendering::CreateGeometry() {
 }
 
 void Rendering::CreateGBuffer() {
-  color_images_.clear();
-  color_image_views_.clear();
-  depth_image_.Clear();
-  depth_image_view_.clear();
-  sampler_.clear();
-  if (!descriptor_sets_.empty()) {
-    for (u64 i = 0; i < descriptor_sets_.size(); ++i) {
-      ImGui_ImplVulkan_RemoveTexture(
-          static_cast<VkDescriptorSet>(descriptor_sets_[i]));
-    }
-  }
-  descriptor_sets_.clear();
-
   extent_ = gpu_->GetExtent2D();
   u64 color_image_count{color_formats_.size()};
 
@@ -178,7 +166,7 @@ void Rendering::CreateGBuffer() {
         static_cast<VkImageLayout>(vk::ImageLayout::eGeneral)));
   }
 
-  function_ui_->SetImage(descriptor_sets_);
+  function_ui_->SetViewportImage(descriptor_sets_[0]);
 }
 
 void Rendering::Tick() {
@@ -188,22 +176,34 @@ void Rendering::Tick() {
 
   if (gContext.window->GetFramebufferResized()) {
     Resize();
+    return;
   }
 
-  const vk::raii::CommandBuffer& cur_command_buffer{gpu_->BeginFrame()};
+  const vk::raii::CommandBuffer& command_buffer{gpu_->BeginFrame()};
 
-  Render(cur_command_buffer);
+  Render(command_buffer);
 
-  gpu_->BeginRenderPass(cur_command_buffer);
+  function_ui_->Render(command_buffer);
 
-  function_ui_->Render(cur_command_buffer);
-
-  gpu_->EndRenderPass(cur_command_buffer);
-
-  gpu_->EndFrame(cur_command_buffer);
+  gpu_->EndFrame(command_buffer);
 }
 
-void Rendering::Resize() { CreateGBuffer(); }
+void Rendering::Resize() {
+  gpu_->WaitIdle();
+  if (!descriptor_sets_.empty()) {
+    for (u64 i = 0; i < descriptor_sets_.size(); ++i) {
+      ImGui_ImplVulkan_RemoveTexture(
+          static_cast<VkDescriptorSet>(descriptor_sets_[i]));
+    }
+  }
+  descriptor_sets_.clear();
+  color_image_views_.clear();
+  color_images_.clear();
+  depth_image_view_.clear();
+  depth_image_.Clear();
+  sampler_.clear();
+  CreateGBuffer();
+}
 
 void Rendering::Render(const vk::raii::CommandBuffer& command_buffer) {
   vk::RenderingAttachmentInfo attachment_info{

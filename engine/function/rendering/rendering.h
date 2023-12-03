@@ -8,12 +8,12 @@
 // clang-format on
 
 #include "core/math.h"
+#include "function/function_ui/function_ui.h"
 #include "function/gpu/gpu.h"
 
 namespace luka {
 
 class Asset;
-class FunctionUI;
 
 class Rendering {
  public:
@@ -39,9 +39,7 @@ class Rendering {
     glm::vec3 color;
   };
 
-  vk::Extent2D extent_;
-
-  // Pipeline
+  // Pipeline.
   vk::raii::PipelineLayout pipeline_layout_{nullptr};
   std::vector<vk::Format> color_formats_{vk::Format::eB8G8R8A8Unorm};
   vk::Format depth_format_{vk::Format::eUndefined};
@@ -52,6 +50,7 @@ class Rendering {
   Buffer index_buffer_{nullptr};
 
   // GBuffer.
+  vk::Extent2D extent_;
   std::vector<Image> color_images_;
   std::vector<vk::raii::ImageView> color_image_views_;
   Image depth_image_{nullptr};
