@@ -36,11 +36,11 @@ struct Context {
   std::shared_ptr<World> world;
   std::shared_ptr<Camera> camera;
   std::shared_ptr<Gpu> gpu;
-  std::shared_ptr<FunctionUI> function_ui;
   std::shared_ptr<Rendering> rendering;
+  std::shared_ptr<FunctionUi> function_ui;
   std::shared_ptr<EditorInput> editor_input;
   std::shared_ptr<Scene> scene;
-  std::shared_ptr<EditorUI> editor_ui;
+  std::shared_ptr<EditorUi> editor_ui;
 };
 
 extern Context gContext;

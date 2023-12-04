@@ -11,16 +11,76 @@
 
 namespace luka {
 
-Rendering::Rendering()
-    : asset_{gContext.asset},
-      gpu_{gContext.gpu},
-      function_ui_{gContext.function_ui} {
+Rendering::Rendering() : asset_{gContext.asset}, gpu_{gContext.gpu} {
   CreatePipeline();
   CreateGeometry();
   CreateGBuffer();
 }
 
 Rendering::~Rendering() { gpu_->WaitIdle(); }
+
+void Rendering::Tick() {
+  if (gContext.window->GetIconified()) {
+    return;
+  }
+
+  if (gContext.window->GetFramebufferResized()) {
+    Resize();
+    return;
+  }
+}
+
+std::pair<const vk::raii::Sampler&, const vk::raii::ImageView&>
+Rendering::GetViewportImage() const {
+  return std::make_pair(std::ref(sampler_), std::ref(color_image_views_[0]));
+}
+
+void Rendering::Render(const vk::raii::CommandBuffer& command_buffer) {
+  vk::RenderingAttachmentInfo attachment_info{
+      {},
+      vk::ImageLayout::eAttachmentOptimal,
+      {},
+      {},
+      {},
+      vk::AttachmentLoadOp::eClear,
+      vk::AttachmentStoreOp::eStore};
+
+  std::vector<vk::RenderingAttachmentInfo> color_attachment_infos;
+  attachment_info.clearValue.color = {0.0f, 0.0f, 0.0f, 1.0f};
+  for (u64 i = 0; i < color_image_views_.size(); ++i) {
+    attachment_info.imageView = *color_image_views_[i];
+    color_attachment_infos.push_back(attachment_info);
+  }
+
+  vk::RenderingInfo rendering_info{
+      {}, {{0, 0}, extent_}, 1, 0, color_attachment_infos, nullptr, nullptr};
+
+  command_buffer.beginRendering(rendering_info);
+
+  command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline_);
+
+  command_buffer.setViewport(
+      0, vk::Viewport{0.0f, 0.0f, static_cast<float>(extent_.width),
+                      static_cast<float>(extent_.height), 0.0f, 1.0f});
+  command_buffer.setScissor(0, vk::Rect2D{vk::Offset2D{0, 0}, extent_});
+
+  command_buffer.bindVertexBuffers(0, *vertex_buffer_, {0});
+  command_buffer.bindIndexBuffer(*index_buffer_, 0, vk::IndexType::eUint16);
+
+  command_buffer.drawIndexed(6, 1, 0, 0, 0);
+
+  command_buffer.endRendering();
+}
+
+void Rendering::Resize() {
+  gpu_->WaitIdle();
+  color_image_views_.clear();
+  color_images_.clear();
+  depth_image_view_.clear();
+  depth_image_.Clear();
+  sampler_.clear();
+  CreateGBuffer();
+}
 
 void Rendering::CreatePipeline() {
   const std::vector<u8>& vertex_shader_buffer{asset_->GetVertexShaderBuffer()};
@@ -154,94 +214,6 @@ void Rendering::CreateGBuffer() {
                                    vk::SamplerAddressMode::eClampToBorder,
                                    vk::SamplerAddressMode::eClampToBorder};
   sampler_ = gpu_->CreateSampler(sampler_ci, "g");
-
-  for (u64 i = 0; i < color_image_count; ++i) {
-    descriptor_sets_.push_back(ImGui_ImplVulkan_AddTexture(
-        *sampler_, *color_image_views_[i],
-        static_cast<VkImageLayout>(vk::ImageLayout::eGeneral)));
-  }
-  if (depth_format_ != vk::Format::eUndefined) {
-    descriptor_sets_.push_back(ImGui_ImplVulkan_AddTexture(
-        *sampler_, *depth_image_view_,
-        static_cast<VkImageLayout>(vk::ImageLayout::eGeneral)));
-  }
-
-  function_ui_->SetViewportImage(descriptor_sets_[0]);
-}
-
-void Rendering::Tick() {
-  if (gContext.window->GetIconified()) {
-    return;
-  }
-
-  if (gContext.window->GetFramebufferResized()) {
-    Resize();
-    return;
-  }
-
-  const vk::raii::CommandBuffer& command_buffer{gpu_->BeginFrame()};
-
-  Render(command_buffer);
-
-  function_ui_->Render(command_buffer);
-
-  gpu_->EndFrame(command_buffer);
-}
-
-void Rendering::Resize() {
-  gpu_->WaitIdle();
-  if (!descriptor_sets_.empty()) {
-    for (u64 i = 0; i < descriptor_sets_.size(); ++i) {
-      ImGui_ImplVulkan_RemoveTexture(
-          static_cast<VkDescriptorSet>(descriptor_sets_[i]));
-    }
-  }
-  descriptor_sets_.clear();
-  color_image_views_.clear();
-  color_images_.clear();
-  depth_image_view_.clear();
-  depth_image_.Clear();
-  sampler_.clear();
-  CreateGBuffer();
-}
-
-void Rendering::Render(const vk::raii::CommandBuffer& command_buffer) {
-  vk::RenderingAttachmentInfo attachment_info{
-      {},
-      vk::ImageLayout::eAttachmentOptimal,
-      {},
-      {},
-      {},
-      vk::AttachmentLoadOp::eClear,
-      vk::AttachmentStoreOp::eStore};
-
-  std::vector<vk::RenderingAttachmentInfo> color_attachment_infos;
-  attachment_info.clearValue.color = {0.0f, 0.0f, 0.0f, 1.0f};
-  for (u64 i = 0; i < color_image_views_.size(); ++i) {
-    attachment_info.imageView = *color_image_views_[i];
-    color_attachment_infos.push_back(attachment_info);
-  }
-
-  vk::RenderingInfo rendering_info{
-      {},     {{0, 0}, gpu_->GetExtent2D()}, 1,
-      0,      color_attachment_infos,        nullptr,
-      nullptr};
-
-  command_buffer.beginRendering(rendering_info);
-
-  command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline_);
-
-  command_buffer.setViewport(
-      0, vk::Viewport{0.0f, 0.0f, static_cast<float>(extent_.width),
-                      static_cast<float>(extent_.height), 0.0f, 1.0f});
-  command_buffer.setScissor(0, vk::Rect2D{vk::Offset2D{0, 0}, extent_});
-
-  command_buffer.bindVertexBuffers(0, *vertex_buffer_, {0});
-  command_buffer.bindIndexBuffer(*index_buffer_, 0, vk::IndexType::eUint16);
-
-  command_buffer.drawIndexed(6, 1, 0, 0, 0);
-
-  command_buffer.endRendering();
 }
 
 }  // namespace luka

@@ -22,8 +22,8 @@ class Gpu {
 
   void Tick();
 
-  ImGui_ImplVulkan_InitInfo GetVulkanInitInfoForImgui();
-  VkRenderPass GetRenderPassForImGui();
+  std::pair<ImGui_ImplVulkan_InitInfo, VkRenderPass> GetVulkanInfoForImgui()
+      const;
   const vk::Extent2D& GetExtent2D() const;
 
   Buffer CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
@@ -54,7 +54,6 @@ class Gpu {
       const vk::PipelineRenderingCreateInfo& pipeline_rendering_ci,
       const std::string& name = {});
 
-  
   vk::raii::CommandBuffer BeginTempCommandBuffer();
   void EndTempCommandBuffer(const vk::raii::CommandBuffer& command_buffer);
   const vk::raii::CommandBuffer& BeginFrame();
@@ -79,8 +78,8 @@ class Gpu {
   void CreateAllocator();
 
   void Resize();
-  const vk::raii::CommandBuffer& GetCommandBuffer();
 
+  const vk::raii::CommandBuffer& GetCommandBuffer();
   static VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(
       VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
       VkDebugUtilsMessageTypeFlagsEXT message_type,

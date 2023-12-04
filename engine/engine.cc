@@ -23,11 +23,11 @@ void Engine::Run() {
   gContext.world = std::make_shared<World>();
   gContext.camera = std::make_shared<Camera>();
   gContext.gpu = std::make_shared<Gpu>();
-  gContext.function_ui = std::make_shared<FunctionUI>();
   gContext.rendering = std::make_shared<Rendering>();
+  gContext.function_ui = std::make_shared<FunctionUi>();
   gContext.editor_input = std::make_shared<EditorInput>();
   gContext.scene = std::make_shared<Scene>();
-  gContext.editor_ui = std::make_shared<EditorUI>();
+  gContext.editor_ui = std::make_shared<EditorUi>();
 
   while (!gContext.window->WindowShouldClose()) {
     gContext.config->Tick();
@@ -39,12 +39,11 @@ void Engine::Run() {
     gContext.world->Tick();
     gContext.camera->Tick();
     gContext.gpu->Tick();
-    gContext.function_ui->Tick();
     gContext.rendering->Tick();
+    gContext.function_ui->Tick();
     gContext.editor_input->Tick();
     gContext.scene->Tick();
     gContext.editor_ui->Tick();
-
     if (gContext.load) {
       gContext.load = false;
     }

@@ -9,7 +9,7 @@
 
 namespace luka {
 
-class EditorUI {
+class EditorUi {
  public:
   void Tick();
 };

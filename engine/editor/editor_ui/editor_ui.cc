@@ -9,6 +9,6 @@
 
 namespace luka {
 
-void EditorUI::Tick() {}
+void EditorUi::Tick() {}
 
 }  // namespace luka

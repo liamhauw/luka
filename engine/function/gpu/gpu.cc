@@ -43,7 +43,8 @@ void Gpu::Tick() {
   }
 }
 
-ImGui_ImplVulkan_InitInfo Gpu::GetVulkanInitInfoForImgui() {
+std::pair<ImGui_ImplVulkan_InitInfo, VkRenderPass> Gpu::GetVulkanInfoForImgui()
+    const {
   ImGui_ImplVulkan_InitInfo init_info{
       .Instance = static_cast<VkInstance>(*instance_),
       .PhysicalDevice = static_cast<VkPhysicalDevice>(*physical_device_),
@@ -57,11 +58,8 @@ ImGui_ImplVulkan_InitInfo Gpu::GetVulkanInitInfoForImgui() {
       .ImageCount = image_count_,
       .MSAASamples = VK_SAMPLE_COUNT_1_BIT,
   };
-  return init_info;
-}
 
-VkRenderPass Gpu::GetRenderPassForImGui() {
-  return static_cast<VkRenderPass>(*render_pass_);
+  return std::make_pair(init_info, static_cast<VkRenderPass>(*render_pass_));
 }
 
 const vk::Extent2D& Gpu::GetExtent2D() const { return extent_; }
@@ -402,6 +400,26 @@ vk::raii::Pipeline Gpu::CreatePipeline(
   return pipeline;
 }
 
+vk::raii::CommandBuffer Gpu::BeginTempCommandBuffer() {
+  vk::CommandBufferAllocateInfo command_buffer_allocate_info{
+      *command_pools_[back_buffer_index], vk::CommandBufferLevel::ePrimary, 1};
+
+  vk::raii::CommandBuffer command_buffer{std::move(
+      vk::raii::CommandBuffers{device_, command_buffer_allocate_info}.front())};
+
+  vk::CommandBufferBeginInfo command_buffer_begin_info{
+      vk::CommandBufferUsageFlagBits::eOneTimeSubmit};
+  command_buffer.begin(command_buffer_begin_info);
+  return command_buffer;
+}
+
+void Gpu::EndTempCommandBuffer(const vk::raii::CommandBuffer& command_buffer) {
+  command_buffer.end();
+  vk::SubmitInfo submit_info{nullptr, nullptr, *command_buffer};
+  graphics_queue_.submit(submit_info, nullptr);
+  graphics_queue_.waitIdle();
+}
+
 const vk::raii::CommandBuffer& Gpu::BeginFrame() {
   used_command_buffer_counts_[back_buffer_index] = 0;
 
@@ -465,7 +483,7 @@ void Gpu::BeginRenderPass(const vk::raii::CommandBuffer& command_buffer) {
       vk::Rect2D{vk::Offset2D{0, 0}, extent_}, clear_values};
 
   command_buffer.beginRenderPass(render_pass_begin_info,
-                                     vk::SubpassContents::eInline);
+                                 vk::SubpassContents::eInline);
 }
 
 void Gpu::EndRenderPass(const vk::raii::CommandBuffer& command_buffer) {
@@ -1032,26 +1050,6 @@ const vk::raii::CommandBuffer& Gpu::GetCommandBuffer() {
   ++used_command_buffer_counts_[back_buffer_index];
 
   return command_buffers_[back_buffer_index][index];
-}
-
-vk::raii::CommandBuffer Gpu::BeginTempCommandBuffer() {
-  vk::CommandBufferAllocateInfo command_buffer_allocate_info{
-      *command_pools_[back_buffer_index], vk::CommandBufferLevel::ePrimary, 1};
-
-  vk::raii::CommandBuffer command_buffer{std::move(
-      vk::raii::CommandBuffers{device_, command_buffer_allocate_info}.front())};
-
-  vk::CommandBufferBeginInfo command_buffer_begin_info{
-      vk::CommandBufferUsageFlagBits::eOneTimeSubmit};
-  command_buffer.begin(command_buffer_begin_info);
-  return command_buffer;
-}
-
-void Gpu::EndTempCommandBuffer(const vk::raii::CommandBuffer& command_buffer) {
-  command_buffer.end();
-  vk::SubmitInfo submit_info{nullptr, nullptr, *command_buffer};
-  graphics_queue_.submit(submit_info, nullptr);
-  graphics_queue_.waitIdle();
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL Gpu::DebugUtilsMessengerCallback(

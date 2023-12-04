@@ -8,7 +8,6 @@
 // clang-format on
 
 #include "core/math.h"
-#include "function/function_ui/function_ui.h"
 #include "function/gpu/gpu.h"
 
 namespace luka {
@@ -22,17 +21,20 @@ class Rendering {
 
   void Tick();
 
+  std::pair<const vk::raii::Sampler&, const vk::raii::ImageView&>
+  GetViewportImage() const;
+
+  void Render(const vk::raii::CommandBuffer& command_buffer);
+
  private:
+  void Resize();
+
   void CreatePipeline();
   void CreateGeometry();
   void CreateGBuffer();
 
-  void Resize();
-  void Render(const vk::raii::CommandBuffer& command_buffer);
-
   std::shared_ptr<Asset> asset_;
   std::shared_ptr<Gpu> gpu_;
-  std::shared_ptr<FunctionUI> function_ui_;
 
   struct Vertex {
     glm::vec2 pos;
@@ -56,7 +58,6 @@ class Rendering {
   Image depth_image_{nullptr};
   vk::raii::ImageView depth_image_view_{nullptr};
   vk::raii::Sampler sampler_{nullptr};
-  std::vector<vk::DescriptorSet> descriptor_sets_;
 };
 
 }  // namespace luka
