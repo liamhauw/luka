@@ -7,11 +7,13 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "resource/asset/gltf.h"
+// If delete this and declare Config, there will be a intellisense error.
+// But if i remove tiny_gltf.h, everything will be ok.
+#include "resource/config/config.h"
+#include "tiny_gltf.h"
+// I think there is a header containment conflict, which editor can't fix.
 
 namespace luka {
-
-class Config;
 
 class Asset {
  public:
@@ -19,14 +21,17 @@ class Asset {
 
   void Tick();
 
+  const tinygltf::Model& GetModel() const;
   const std::vector<u8>& GetVertexShaderBuffer() const;
   const std::vector<u8>& GetFragmentShaderBuffer() const;
 
  private:
-  void LoadShader(const std::string& shader_path,
-                  std::vector<u8>& shader_buffer);
+  tinygltf::Model LoadModel(const std::filesystem::path& model_path);
+  std::vector<u8> LoadShader(const std::filesystem::path& shader_path);
 
-  std::unique_ptr<Gltf> gltf_;
+  std::shared_ptr<Config> config_;
+
+  tinygltf::Model model_;
   std::vector<u8> vertext_shader_buffer_;
   std::vector<u8> fragment_shader_buffer_;
 };

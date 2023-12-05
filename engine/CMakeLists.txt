@@ -14,7 +14,6 @@ set(HEADER_FILES
   core/math.h
   core/util.h
   resource/asset/asset.h
-  resource/asset/gltf.h
   resource/config/config.h
   function/camera/camera.h
   function/function_input/function_input.h
@@ -37,7 +36,6 @@ set(HEADER_FILES
 set(SOURCE_FILES
   core/json.cc
   core/util.cc
-  resource/asset/gltf.cc
   resource/asset/asset.cc
   resource/config/generated/source_path.h
   resource/config/config.cc

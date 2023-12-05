@@ -41,6 +41,10 @@ class Rendering {
     glm::vec3 color;
   };
 
+  // Images.
+   
+
+
   // Pipeline.
   vk::raii::PipelineLayout pipeline_layout_{nullptr};
   std::vector<vk::Format> color_formats_{vk::Format::eB8G8R8A8Unorm};

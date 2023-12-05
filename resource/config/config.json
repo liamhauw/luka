@@ -2,7 +2,7 @@
   "scene": 0,
   "scenes": [
     {
-      "model": "buster_drone/busterDrone.gltf",
+      "model": "sponza/Sponza.gltf",
       "vertex_shader": "shader.vert.spv",
       "fragment_shader": "shader.frag.spv",
       "camera": {

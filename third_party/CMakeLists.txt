@@ -45,6 +45,12 @@ add_subdirectory(json)
 # spdlog
 add_subdirectory(spdlog)
 
+# tinygltf
+set(TINYGLTF_BUILD_LOADER_EXAMPLE OFF CACHE INTERNAL "" FORCE)
+set(TINYGLTF_HEADER_ONLY ON CACHE INTERNAL "" FORCE)
+set(TINYGLTF_INSTALL OFF CACHE INTERNAL "" FORCE)
+add_subdirectory(tinygltf)
+
 # vma
 add_subdirectory(vma SYSTEM)
 
@@ -57,6 +63,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
   glm::glm
   nlohmann_json::nlohmann_json
   spdlog::spdlog_header_only
+  tinygltf
   GPUOpen::VulkanMemoryAllocator
 )
 

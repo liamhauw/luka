@@ -12,6 +12,8 @@
 namespace luka {
 
 Rendering::Rendering() : asset_{gContext.asset}, gpu_{gContext.gpu} {
+  const tinygltf::Model& model{asset_->GetModel()};
+
   CreatePipeline();
   CreateGeometry();
   CreateGBuffer();
