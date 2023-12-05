@@ -1,6 +1,7 @@
 # luka engine
 
 ## Features
+- Modular
 
 ## Prerequisites
 - Windows/macOS
@@ -17,6 +18,9 @@
 # Clone
 git clone --recurse-submodules https://github.com/liamhauw/luka.git
 
+# Pull 
+git pull --recurse-submodules
+
 # Config
 cmake --preset=Base
 
@@ -27,5 +31,21 @@ cmake --build --preset=[Debug/Release/RelWithDebInfo]
 build/engine/[Debug/Release/RelWithDebInfo]/luka_engine
 ```
 
-## Debug with VSCode
+## Development
+
+### Debug
 Click Run and Debug in the sidebar, and select Windows Debug or macOS Debug. Click Start Debugging or press F5.
+
+### Update submodule
+```shell
+git submodule update --remote
+```
+
+## Third party
+- [glfw](https://github.com/glfw/glfw)
+- [glm](https://github.com/g-truc/glm)
+- [imgui](https://github.com/ocornut/imgui)
+- [json](https://github.com/nlohmann/json)
+- [spdlog](https://github.com/gabime/spdlog)
+- [tinygltf](https://github.com/syoyo/tinygltf)
+- [vma](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator)
