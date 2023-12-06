@@ -64,80 +64,57 @@ std::pair<ImGui_ImplVulkan_InitInfo, VkRenderPass> Gpu::GetVulkanInfoForImgui()
 
 const vk::Extent2D& Gpu::GetExtent2D() const { return extent_; }
 
-Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci, bool staging,
-                         u64 size, const void* data, const std::string& name) {
-  Buffer buffer{allocator_, buffer_ci, staging};
+Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
+                         const void* data, const std::string& name) {
+  Buffer buffer{allocator_, buffer_ci, true};
 
 #ifndef NDEBUG
-  if (!name.empty()) {
-    std::string debug_name{name + "_buffer"};
-    vk::DebugUtilsObjectNameInfoEXT buffer_name_info{
-        vk::ObjectType::eBuffer,
-        reinterpret_cast<uint64_t>(static_cast<VkBuffer>(*buffer)),
-        debug_name.c_str()};
-    device_.setDebugUtilsObjectNameEXT(buffer_name_info);
-  }
+  SetName(vk::ObjectType::eBuffer,
+          reinterpret_cast<uint64_t>(static_cast<VkBuffer>(*buffer)), name,
+          "buffer");
 #endif
 
-  if (size > 0) {
-    if (staging) {
-      // Upload data.
-      void* mapped_data;
-      VmaAllocation allocation{buffer.GetAllocation()};
-      vmaMapMemory(allocator_, allocation, &mapped_data);
-      memcpy(mapped_data, data, size);
-      vmaUnmapMemory(allocator_, allocation);
-    } else {
-      // Create a tempory staging buffer to upload data.
-      vk::BufferCreateInfo staging_buffer_ci{
-          {},
-          size,
-          vk::BufferUsageFlagBits::eTransferSrc,
-          vk::SharingMode::eExclusive};
-      Buffer staging_buffer{allocator_, staging_buffer_ci, true};
-      void* mapped_data;
-      VmaAllocation allocation{staging_buffer.GetAllocation()};
-      vmaMapMemory(allocator_, allocation, &mapped_data);
-      memcpy(mapped_data, data, size);
-      vmaUnmapMemory(allocator_, allocation);
+  void* mapped_data;
+  VmaAllocation allocation{buffer.GetAllocation()};
+  vmaMapMemory(allocator_, allocation, &mapped_data);
+  memcpy(mapped_data, data, buffer_ci.size);
+  vmaUnmapMemory(allocator_, allocation);
 
-      vk::raii::CommandBuffer command_buffer{BeginTempCommandBuffer()};
+  return buffer;
+}
 
-      vk::BufferCopy buffer_copy{0, 0, size};
-      command_buffer.copyBuffer(*staging_buffer, *buffer, buffer_copy);
-      EndTempCommandBuffer(command_buffer);
-    }
+Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
+                         const Buffer& staging_buffer,
+                         const vk::raii::CommandBuffer& command_buffer,
+                         const std::string& name) {
+  Buffer buffer{allocator_, buffer_ci};
+
+#ifndef NDEBUG
+  SetName(vk::ObjectType::eBuffer,
+          reinterpret_cast<uint64_t>(static_cast<VkBuffer>(*buffer)), name,
+          "buffer");
+#endif
+  if (*staging_buffer) {
+    vk::BufferCopy buffer_copy{0, 0, buffer_ci.size};
+    command_buffer.copyBuffer(*staging_buffer, *buffer, buffer_copy);
   }
 
   return buffer;
 }
 
 Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
-                       const vk::ImageLayout new_layout, u64 size,
-                       const void* data, const std::string& name) {
+                       const vk::ImageLayout new_layout,
+                       const Buffer& staging_buffer,
+                       const vk::raii::CommandBuffer& command_buffer,
+                       const std::string& name) {
   Image image{allocator_, image_ci};
 
 #ifndef NDEBUG
-  if (!name.empty()) {
-    std::string debug_name{name + "_image"};
-    vk::DebugUtilsObjectNameInfoEXT image_name_info{
-        vk::ObjectType::eImage,
-        reinterpret_cast<uint64_t>(static_cast<VkImage>(*image)),
-        debug_name.c_str()};
-    device_.setDebugUtilsObjectNameEXT(image_name_info);
-  }
-
+  SetName(vk::ObjectType::eImage,
+          reinterpret_cast<u64>(static_cast<VkImage>(*image)), name, "image");
 #endif
 
-  vk::ImageLayout cur_layout{image_ci.initialLayout};
-
-  if (size > 0) {
-    vk::BufferCreateInfo staging_buffer_ci{
-        {}, size, vk::BufferUsageFlagBits::eTransferSrc};
-    Buffer staging_buffer{CreateBuffer(staging_buffer_ci, true, size, data)};
-
-    vk::raii::CommandBuffer command_buffer{BeginTempCommandBuffer()};
-
+  if (*staging_buffer) {
     {
       vk::ImageMemoryBarrier barrier{
           {},
@@ -182,18 +159,11 @@ Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
                                      {}, {}, {}, barrier);
     }
 
-    EndTempCommandBuffer(command_buffer);
-
-    cur_layout = new_layout;
-  }
-
-  if (cur_layout != new_layout) {
-    vk::raii::CommandBuffer command_buffer{BeginTempCommandBuffer()};
-
+  } else {
     vk::ImageMemoryBarrier barrier{
         {},
         vk::AccessFlagBits::eShaderRead,
-        cur_layout,
+        image_ci.initialLayout,
         new_layout,
         VK_QUEUE_FAMILY_IGNORED,
         VK_QUEUE_FAMILY_IGNORED,
@@ -203,8 +173,6 @@ Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
     command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe,
                                    vk::PipelineStageFlagBits::eAllCommands, {},
                                    {}, {}, barrier);
-
-    EndTempCommandBuffer(command_buffer);
   }
 
   return image;
@@ -215,14 +183,9 @@ vk::raii::ImageView Gpu::CreateImageView(
   vk::raii::ImageView image_view{vk::raii::ImageView{device_, image_view_ci}};
 
 #ifndef NDEBUG
-  if (!name.empty()) {
-    std::string debug_name{name + "_image_view"};
-    vk::DebugUtilsObjectNameInfoEXT image_view_name_info{
-        vk::ObjectType::eImageView,
-        reinterpret_cast<uint64_t>(static_cast<VkImageView>(*image_view)),
-        debug_name.c_str()};
-    device_.setDebugUtilsObjectNameEXT(image_view_name_info);
-  }
+  SetName(vk::ObjectType::eImageView,
+          reinterpret_cast<u64>(static_cast<VkImageView>(*image_view)), name,
+          "image_view");
 #endif
 
   return image_view;
@@ -233,14 +196,9 @@ vk::raii::Sampler Gpu::CreateSampler(const vk::SamplerCreateInfo sampler_ci,
   vk::raii::Sampler sampler{device_, sampler_ci};
 
 #ifndef NDEBUG
-  if (!name.empty()) {
-    std::string debug_name{name + "_sampler"};
-    vk::DebugUtilsObjectNameInfoEXT sampler_name_info{
-        vk::ObjectType::eSampler,
-        reinterpret_cast<uint64_t>(static_cast<VkSampler>(*sampler)),
-        debug_name.c_str()};
-    device_.setDebugUtilsObjectNameEXT(sampler_name_info);
-  }
+  SetName(vk::ObjectType::eSampler,
+          reinterpret_cast<uint64_t>(static_cast<VkSampler>(*sampler)), name,
+          "sampler");
 #endif
 
   return sampler;
@@ -252,15 +210,10 @@ vk::raii::PipelineLayout Gpu::CreatePipelineLayout(
   vk::raii::PipelineLayout pipeline_layout{device_, pipeline_layout_ci};
 
 #ifndef NDEBUG
-  if (!name.empty()) {
-    std::string debug_name{name + "_pipeline_layout"};
-    vk::DebugUtilsObjectNameInfoEXT sampler_name_info{
-        vk::ObjectType::ePipelineLayout,
-        reinterpret_cast<uint64_t>(
-            static_cast<VkPipelineLayout>(*pipeline_layout)),
-        debug_name.c_str()};
-    device_.setDebugUtilsObjectNameEXT(sampler_name_info);
-  }
+  SetName(vk::ObjectType::ePipelineLayout,
+          reinterpret_cast<uint64_t>(
+              static_cast<VkPipelineLayout>(*pipeline_layout)),
+          name, "pipeline_layout");
 #endif
 
   return pipeline_layout;
@@ -387,14 +340,9 @@ vk::raii::Pipeline Gpu::CreatePipeline(
       graphics_pipeline_ci.get<vk::GraphicsPipelineCreateInfo>()};
 
 #ifndef NDEBUG
-  if (!name.empty()) {
-    std::string debug_name{name + "_pipeline"};
-    vk::DebugUtilsObjectNameInfoEXT sampler_name_info{
-        vk::ObjectType::ePipeline,
-        reinterpret_cast<uint64_t>(static_cast<VkPipeline>(*pipeline)),
-        debug_name.c_str()};
-    device_.setDebugUtilsObjectNameEXT(sampler_name_info);
-  }
+  SetName(vk::ObjectType::ePipeline,
+          reinterpret_cast<uint64_t>(static_cast<VkPipeline>(*pipeline)), name,
+          "pipeline");
 #endif
 
   return pipeline;
@@ -1040,6 +988,16 @@ void Gpu::CreateAllocator() {
 void Gpu::Resize() {
   CreateSwapchain();
   CreateFramebuffers();
+}
+
+void Gpu::SetName(vk::ObjectType object_type, u64 handle,
+                  const std::string& name, const std::string& suffix) {
+  if (!name.empty()) {
+    std::string name_suffix{name + "_" + suffix};
+    vk::DebugUtilsObjectNameInfoEXT buffer_name_info{object_type, handle,
+                                                     name_suffix.c_str()};
+    device_.setDebugUtilsObjectNameEXT(buffer_name_info);
+  }
 }
 
 const vk::raii::CommandBuffer& Gpu::GetCommandBuffer() {

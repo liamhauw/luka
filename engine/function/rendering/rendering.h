@@ -29,6 +29,8 @@ class Rendering {
  private:
   void Resize();
 
+  void CreateModelResource();
+
   void CreatePipeline();
   void CreateGeometry();
   void CreateGBuffer();
@@ -41,9 +43,13 @@ class Rendering {
     glm::vec3 color;
   };
 
-  // Images.
-   
-
+  // Model resource.
+  std::vector<Buffer> model_buffer_staging_buffers_;
+  std::vector<Buffer> model_image_staging_buffers_; 
+  std::vector<Buffer> model_buffers_;
+  std::vector<Image> model_images_;
+  std::vector<vk::raii::ImageView> model_image_views_;
+  std::vector<vk::raii::Sampler> model_samplers_;
 
   // Pipeline.
   vk::raii::PipelineLayout pipeline_layout_{nullptr};

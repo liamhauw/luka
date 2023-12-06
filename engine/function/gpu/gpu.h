@@ -26,13 +26,20 @@ class Gpu {
       const;
   const vk::Extent2D& GetExtent2D() const;
 
+  Buffer CreateBuffer(const vk::BufferCreateInfo& buffer_ci, const void* data,
+                      const std::string& name = {});
+
   Buffer CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
-                      bool staging = false, u64 size = 0,
-                      const void* data = nullptr, const std::string& name = {});
+                      const Buffer& staging_buffer = nullptr,
+                      const vk::raii::CommandBuffer& command_buffer = nullptr,
+                      const std::string& name = {});
+
   Image CreateImage(
       const vk::ImageCreateInfo& image_ci,
       const vk::ImageLayout new_layout = vk::ImageLayout::eUndefined,
-      u64 size = 0, const void* data = nullptr, const std::string& name = {});
+      const Buffer& staging_buffer = nullptr,
+      const vk::raii::CommandBuffer& command_buffer = nullptr,
+      const std::string& name = {});
 
   vk::raii::ImageView CreateImageView(
       const vk::ImageViewCreateInfo& image_view_ci,
@@ -79,6 +86,8 @@ class Gpu {
 
   void Resize();
 
+  void SetName(vk::ObjectType object_type, u64 handle, const std::string& name,
+               const std::string& suffix = {});
   const vk::raii::CommandBuffer& GetCommandBuffer();
   static VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(
       VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,

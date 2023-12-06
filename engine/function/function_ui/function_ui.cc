@@ -37,13 +37,7 @@ void FunctionUi::Tick() {
   }
 
   CreateUi();
-
-  // {
-  //   const vk::raii::CommandBuffer& cb{gpu_->BeginTempCommandBuffer()};
-  //   gContext.rendering->Render(cb);
-  //   gpu_->EndTempCommandBuffer(cb);
-  // }
-
+  
   const vk::raii::CommandBuffer& command_buffer{gpu_->BeginFrame()};
 
   gContext.rendering->Render(command_buffer);
@@ -54,6 +48,7 @@ void FunctionUi::Tick() {
 }
 
 void FunctionUi::Render(const vk::raii::CommandBuffer& command_buffer) {
+  ImGui::Render();
   gpu_->BeginRenderPass(command_buffer);
   ImDrawData* draw_data{ImGui::GetDrawData()};
   ImGui_ImplVulkan_RenderDrawData(
@@ -108,8 +103,6 @@ void FunctionUi::CreateUi() {
   ImGui::Image(descriptor_set_, {640, 380});
   ImGui::End();
   ImGui::PopStyleVar();
-
-  ImGui::Render();
 }
 
 }  // namespace luka
