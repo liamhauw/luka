@@ -129,120 +129,143 @@ void Rendering::CreateModelResource() {
   }
 
   // Images and image views.
-  u64 model_image_count{model.images.size()};
+  {
+    u64 model_image_count{model.images.size()};
 
-  vk::BufferCreateInfo model_image_staging_buffer_ci{
-      {}, {}, vk::BufferUsageFlagBits::eTransferSrc};
-  vk::ImageCreateInfo model_image_ci{{}, vk::ImageType::e2D, {}, {}, 1, 1};
-  vk::ImageViewCreateInfo model_image_view_ci{
-      {}, {}, vk::ImageViewType::e2D,
-      {}, {}, {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}};
+    vk::BufferCreateInfo model_image_staging_buffer_ci{
+        {}, {}, vk::BufferUsageFlagBits::eTransferSrc};
+    vk::ImageCreateInfo model_image_ci{{}, vk::ImageType::e2D, {}, {}, 1, 1};
+    vk::ImageViewCreateInfo model_image_view_ci{
+        {}, {}, vk::ImageViewType::e2D,
+        {}, {}, {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}};
 
-  for (u64 i{0}; i < model_image_count; ++i) {
-    const tinygltf::Image& image{model.images[i]};
+    for (u64 i{0}; i < model_image_count; ++i) {
+      const tinygltf::Image& image{model.images[i]};
 
-    const std::string& name{image.name};
-    vk::Format format;
+      const std::string& name{image.name};
+      vk::Format format;
 
-    if (image.component == 4 && image.bits == 8) {
-      format = vk::Format::eR8G8B8A8Unorm;
-    } else {
-      THROW("Unsupport image format.");
+      if (image.component == 4 && image.bits == 8) {
+        format = vk::Format::eR8G8B8A8Unorm;
+      } else {
+        THROW("Unsupport image format.");
+      }
+
+      model_image_ci.format = format;
+      model_image_ci.extent = vk::Extent3D{static_cast<u32>(image.width),
+                                           static_cast<u32>(image.height), 1};
+      model_image_ci.usage = vk::ImageUsageFlagBits::eSampled |
+                             vk::ImageUsageFlagBits::eTransferDst;
+
+      model_image_staging_buffer_ci.size = image.image.size();
+      Buffer model_image_staging_buffer{gpu_->CreateBuffer(
+          model_image_staging_buffer_ci, image.image.data())};
+      model_image_staging_buffers_.push_back(
+          std::move(model_image_staging_buffer));
+
+      Image model_image{gpu_->CreateImage(
+          model_image_ci, vk::ImageLayout::eShaderReadOnlyOptimal,
+          model_image_staging_buffers_[i], command_buffer, name)};
+
+      model_images_.push_back(std::move(model_image));
+
+      model_image_view_ci.image = *model_images_[i];
+      model_image_view_ci.format = format;
+
+      vk::raii::ImageView image_view =
+          gpu_->CreateImageView(model_image_view_ci, name);
+
+      model_image_views_.push_back(std::move(image_view));
     }
-
-    model_image_ci.format = format;
-    model_image_ci.extent = vk::Extent3D{static_cast<u32>(image.width),
-                                         static_cast<u32>(image.height), 1};
-    model_image_ci.usage =
-        vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
-
-    model_image_staging_buffer_ci.size = image.image.size();
-    Buffer model_image_staging_buffer{
-        gpu_->CreateBuffer(model_image_staging_buffer_ci, image.image.data())};
-    model_image_staging_buffers_.push_back(
-        std::move(model_image_staging_buffer));
-
-    Image model_image{gpu_->CreateImage(
-        model_image_ci, vk::ImageLayout::eShaderReadOnlyOptimal,
-        model_image_staging_buffers_[i], command_buffer, name)};
-
-    model_images_.push_back(std::move(model_image));
-
-    model_image_view_ci.image = *model_images_[i];
-    model_image_view_ci.format = format;
-
-    vk::raii::ImageView image_view =
-        gpu_->CreateImageView(model_image_view_ci, name);
-
-    model_image_views_.push_back(std::move(image_view));
   }
 
   // Samplers.
-  u64 model_sampler_count{model.samplers.size()};
+  {
+    u64 model_sampler_count{model.samplers.size()};
 
-  vk::SamplerCreateInfo sampler_ci;
-  for (u64 i{0}; i < model_sampler_count; ++i) {
-    const tinygltf::Sampler& sampler{model.samplers[i]};
+    vk::SamplerCreateInfo sampler_ci;
+    for (u64 i{0}; i < model_sampler_count; ++i) {
+      const tinygltf::Sampler& sampler{model.samplers[i]};
 
-    const std::string& name{sampler.name};
+      const std::string& name{sampler.name};
 
-    switch (sampler.magFilter) {
-      case TINYGLTF_TEXTURE_FILTER_NEAREST:
-        sampler_ci.magFilter = vk::Filter::eNearest;
-        break;
-      case TINYGLTF_TEXTURE_FILTER_LINEAR:
-        sampler_ci.magFilter = vk::Filter::eLinear;
-        break;
-      default:
-        sampler_ci.magFilter = vk::Filter::eNearest;
-        break;
+      switch (sampler.magFilter) {
+        case TINYGLTF_TEXTURE_FILTER_NEAREST:
+          sampler_ci.magFilter = vk::Filter::eNearest;
+          break;
+        case TINYGLTF_TEXTURE_FILTER_LINEAR:
+          sampler_ci.magFilter = vk::Filter::eLinear;
+          break;
+        default:
+          sampler_ci.magFilter = vk::Filter::eNearest;
+          break;
+      }
+
+      switch (sampler.minFilter) {
+        case TINYGLTF_TEXTURE_FILTER_NEAREST:
+          sampler_ci.minFilter = vk::Filter::eNearest;
+          sampler_ci.mipmapMode = vk::SamplerMipmapMode::eNearest;
+          break;
+        case TINYGLTF_TEXTURE_FILTER_LINEAR:
+          sampler_ci.minFilter = vk::Filter::eLinear;
+          sampler_ci.mipmapMode = vk::SamplerMipmapMode::eNearest;
+          break;
+        case TINYGLTF_TEXTURE_FILTER_NEAREST_MIPMAP_NEAREST:
+          sampler_ci.minFilter = vk::Filter::eNearest;
+          sampler_ci.mipmapMode = vk::SamplerMipmapMode::eNearest;
+          break;
+        case TINYGLTF_TEXTURE_FILTER_LINEAR_MIPMAP_NEAREST:
+          sampler_ci.minFilter = vk::Filter::eLinear;
+          sampler_ci.mipmapMode = vk::SamplerMipmapMode::eNearest;
+          break;
+        case TINYGLTF_TEXTURE_FILTER_NEAREST_MIPMAP_LINEAR:
+          sampler_ci.minFilter = vk::Filter::eNearest;
+          sampler_ci.mipmapMode = vk::SamplerMipmapMode::eLinear;
+          break;
+        case TINYGLTF_TEXTURE_FILTER_LINEAR_MIPMAP_LINEAR:
+          sampler_ci.minFilter = vk::Filter::eLinear;
+          sampler_ci.mipmapMode = vk::SamplerMipmapMode::eLinear;
+          break;
+        default:
+          sampler_ci.minFilter = vk::Filter::eNearest;
+          sampler_ci.mipmapMode = vk::SamplerMipmapMode::eNearest;
+          break;
+      }
+
+      switch (sampler.wrapS) {
+        case TINYGLTF_TEXTURE_WRAP_REPEAT:
+          sampler_ci.addressModeU = vk::SamplerAddressMode::eRepeat;
+          break;
+        case TINYGLTF_TEXTURE_WRAP_CLAMP_TO_EDGE:
+          sampler_ci.addressModeU = vk::SamplerAddressMode::eClampToEdge;
+          break;
+        case TINYGLTF_TEXTURE_WRAP_MIRRORED_REPEAT:
+          sampler_ci.addressModeU = vk::SamplerAddressMode::eMirroredRepeat;
+          break;
+        default:
+          sampler_ci.addressModeU = vk::SamplerAddressMode::eRepeat;
+          break;
+      }
+
+      switch (sampler.wrapT) {
+        case TINYGLTF_TEXTURE_WRAP_REPEAT:
+          sampler_ci.addressModeV = vk::SamplerAddressMode::eRepeat;
+          break;
+        case TINYGLTF_TEXTURE_WRAP_CLAMP_TO_EDGE:
+          sampler_ci.addressModeV = vk::SamplerAddressMode::eClampToEdge;
+          break;
+        case TINYGLTF_TEXTURE_WRAP_MIRRORED_REPEAT:
+          sampler_ci.addressModeV = vk::SamplerAddressMode::eMirroredRepeat;
+          break;
+        default:
+          sampler_ci.addressModeV = vk::SamplerAddressMode::eRepeat;
+          break;
+      }
+
+      vk::raii::Sampler model_sampler{gpu_->CreateSampler(sampler_ci, name)};
+
+      model_samplers_.push_back(std::move(model_sampler));
     }
-
-    switch (sampler.minFilter) {
-      case TINYGLTF_TEXTURE_FILTER_NEAREST:
-        sampler_ci.minFilter = vk::Filter::eNearest;
-        break;
-      case TINYGLTF_TEXTURE_FILTER_LINEAR:
-        sampler_ci.minFilter = vk::Filter::eLinear;
-        break;
-      default:
-        sampler_ci.minFilter = vk::Filter::eNearest;
-        break;
-    }
-
-    switch (sampler.wrapS) {
-      case TINYGLTF_TEXTURE_WRAP_REPEAT:
-        sampler_ci.addressModeU = vk::SamplerAddressMode::eRepeat;
-        break;
-      case TINYGLTF_TEXTURE_WRAP_CLAMP_TO_EDGE:
-        sampler_ci.addressModeU = vk::SamplerAddressMode::eClampToEdge;
-        break;
-      case TINYGLTF_TEXTURE_WRAP_MIRRORED_REPEAT:
-        sampler_ci.addressModeU = vk::SamplerAddressMode::eMirroredRepeat;
-        break;
-      default:
-        sampler_ci.addressModeU = vk::SamplerAddressMode::eRepeat;
-        break;
-    }
-
-    switch (sampler.wrapT) {
-      case TINYGLTF_TEXTURE_WRAP_REPEAT:
-        sampler_ci.addressModeV = vk::SamplerAddressMode::eRepeat;
-        break;
-      case TINYGLTF_TEXTURE_WRAP_CLAMP_TO_EDGE:
-        sampler_ci.addressModeV = vk::SamplerAddressMode::eClampToEdge;
-        break;
-      case TINYGLTF_TEXTURE_WRAP_MIRRORED_REPEAT:
-        sampler_ci.addressModeV = vk::SamplerAddressMode::eMirroredRepeat;
-        break;
-      default:
-        sampler_ci.addressModeV = vk::SamplerAddressMode::eRepeat;
-        break;
-    }
-
-    vk::raii::Sampler model_sampler{gpu_->CreateSampler(sampler_ci, name)};
-
-    model_samplers_.push_back(std::move(model_sampler));
   }
 
   gpu_->EndTempCommandBuffer(command_buffer);

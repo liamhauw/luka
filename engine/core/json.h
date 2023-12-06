@@ -17,7 +17,7 @@ NLOHMANN_JSON_NAMESPACE_BEGIN
 template <>
 struct adl_serializer<glm::vec4> {
   static void from_json(const json& j, glm::vec4& v) {
-    v = {j[0], j[1], j[2], j.size() == 4 ? j[3] : 0};
+    v = {j[0], j[1], j[2], j.size() == 4 ? j[3] : 0.0f};
   }
 };
 
