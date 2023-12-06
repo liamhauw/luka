@@ -80,10 +80,10 @@ void FunctionUi::CreateImgui() {
 void FunctionUi::AddViewportImage() {
   auto image{gContext.rendering->GetViewportImage()};
   const vk::raii::Sampler& sampler = image.first;
-  const vk::raii::ImageView& imageView = image.second;
+  const vk::raii::ImageView& image_view = image.second;
 
   descriptor_set_ = ImGui_ImplVulkan_AddTexture(
-      *sampler, *imageView,
+      *sampler, *image_view,
       static_cast<VkImageLayout>(vk::ImageLayout::eGeneral));
 }
 
@@ -98,7 +98,7 @@ void FunctionUi::CreateUi() {
   ImGui_ImplGlfw_NewFrame();
   ImGui::NewFrame();
 
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0F, 0.0F));
   ImGui::Begin("viewport");
   ImGui::Image(descriptor_set_, {640, 380});
   ImGui::End();

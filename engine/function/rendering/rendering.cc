@@ -49,9 +49,9 @@ void Rendering::Render(const vk::raii::CommandBuffer& command_buffer) {
       vk::AttachmentStoreOp::eStore};
 
   std::vector<vk::RenderingAttachmentInfo> color_attachment_infos;
-  attachment_info.clearValue.color = {0.0f, 0.0f, 0.0f, 1.0f};
-  for (u64 i = 0; i < color_image_views_.size(); ++i) {
-    attachment_info.imageView = *color_image_views_[i];
+  attachment_info.clearValue.color = {0.0F, 0.0F, 0.0F, 1.0F};
+  for (const auto& color_image_view : color_image_views_) {
+    attachment_info.imageView = *color_image_view;
     color_attachment_infos.push_back(attachment_info);
   }
 
@@ -63,8 +63,8 @@ void Rendering::Render(const vk::raii::CommandBuffer& command_buffer) {
   command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline_);
 
   command_buffer.setViewport(
-      0, vk::Viewport{0.0f, 0.0f, static_cast<float>(extent_.width),
-                      static_cast<float>(extent_.height), 0.0f, 1.0f});
+      0, vk::Viewport{0.0F, 0.0F, static_cast<float>(extent_.width),
+                      static_cast<float>(extent_.height), 0.0F, 1.0F});
   command_buffer.setScissor(0, vk::Rect2D{vk::Offset2D{0, 0}, extent_});
 
   command_buffer.bindVertexBuffers(0, *vertex_buffer_, {0});
