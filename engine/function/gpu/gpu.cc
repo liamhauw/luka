@@ -204,6 +204,22 @@ vk::raii::Sampler Gpu::CreateSampler(const vk::SamplerCreateInfo sampler_ci,
   return sampler;
 }
 
+vk::raii::DescriptorSetLayout Gpu::CreateDescriptorSetLayout(
+    const vk::DescriptorSetLayoutCreateInfo& descriptor_set_layout_ci,
+    const std::string& name) {
+  vk::raii::DescriptorSetLayout descriptor_set_layout{device_,
+                                                      descriptor_set_layout_ci};
+
+#ifndef NDEBUG
+  SetName(vk::ObjectType::eDescriptorSetLayout,
+          reinterpret_cast<uint64_t>(
+              static_cast<VkDescriptorSetLayout>(*descriptor_set_layout)),
+          name, "descriptor_set_layout");
+#endif
+
+  return descriptor_set_layout;
+}
+
 vk::raii::PipelineLayout Gpu::CreatePipelineLayout(
     const vk::PipelineLayoutCreateInfo& pipeline_layout_ci,
     const std::string& name) {
@@ -221,9 +237,8 @@ vk::raii::PipelineLayout Gpu::CreatePipelineLayout(
 
 vk::raii::Pipeline Gpu::CreatePipeline(
     const std::vector<u8>& vertex_shader_buffer,
-    const std::vector<u8>& fragment_shader_buffer, uint32_t vertex_stride,
-    const std::vector<std::pair<vk::Format, uint32_t>>&
-        vertex_input_attribute_format_offset,
+    const std::vector<u8>& fragment_shader_buffer,
+    const std::vector<std::pair<u32, vk::Format>>& vertex_input_stride_format,
     const vk::raii::PipelineLayout& pipeline_layout,
     const vk::PipelineRenderingCreateInfo& pipeline_rendering_ci,
     const std::string& name) {
@@ -254,22 +269,20 @@ vk::raii::Pipeline Gpu::CreatePipeline(
 
   vk::PipelineVertexInputStateCreateInfo vertex_input_state_ci;
 
-  vk::VertexInputBindingDescription vertex_input_binding_description{
-      0, vertex_stride, vk::VertexInputRate::eVertex};
-
+  std::vector<vk::VertexInputBindingDescription>
+      vertex_input_binding_descriptions;
   std::vector<vk::VertexInputAttributeDescription>
       vertex_input_attribute_descriptions;
 
-  vertex_input_attribute_descriptions.reserve(
-      vertex_input_attribute_format_offset.size());
-
-  for (uint32_t i = 0; i < vertex_input_attribute_format_offset.size(); i++) {
+  for (u32 i = 0; i < vertex_input_stride_format.size(); ++i) {
+    vertex_input_binding_descriptions.emplace_back(
+        i, vertex_input_stride_format[i].first);
     vertex_input_attribute_descriptions.emplace_back(
-        i, 0, vertex_input_attribute_format_offset[i].first,
-        vertex_input_attribute_format_offset[i].second);
+        i, i, vertex_input_stride_format[i].second, 0);
   }
+
   vertex_input_state_ci.setVertexBindingDescriptions(
-      vertex_input_binding_description);
+      vertex_input_binding_descriptions);
   vertex_input_state_ci.setVertexAttributeDescriptions(
       vertex_input_attribute_descriptions);
 
@@ -292,8 +305,8 @@ vk::raii::Pipeline Gpu::CreatePipeline(
       0.0f,
       1.0f};
 
-  vk::PipelineMultisampleStateCreateInfo multisample_state_ci{{},
-                                                              sample_count_};
+  vk::PipelineMultisampleStateCreateInfo multisample_state_ci{
+      {}, vk::SampleCountFlagBits::e1};
 
   vk::PipelineDepthStencilStateCreateInfo depth_stencil_state_ci{
       {}, VK_TRUE, VK_TRUE, vk::CompareOp::eLessOrEqual, VK_FALSE, VK_FALSE,

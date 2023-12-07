@@ -14,8 +14,8 @@ namespace luka {
 
 Rendering::Rendering() : asset_{gContext.asset}, gpu_{gContext.gpu} {
   CreateModelResource();
-
   CreatePipeline();
+
   CreateGeometry();
   CreateGBuffer();
 }
@@ -272,29 +272,58 @@ void Rendering::CreateModelResource() {
 
   model_buffer_staging_buffers_.clear();
   model_image_staging_buffers_.clear();
+
+  // Scene.
+  {
+    const tinygltf::Scene& scene{model.scenes[model.defaultScene]};
+    const std::vector<int>& scene_nodes{scene.nodes};
+    
+  }
 }
 
 void Rendering::CreatePipeline() {
   const std::vector<u8>& vertex_shader_buffer{asset_->GetVertexShaderBuffer()};
   const std::vector<u8>& fragment_shader_buffer{
       asset_->GetFragmentShaderBuffer()};
-  uint32_t vertex_stride{sizeof(Vertex)};
-  std::vector<std::pair<vk::Format, uint32_t>>
-      vertex_input_attribute_format_offset{
-          {vk::Format::eR32G32Sfloat, offsetof(Vertex, pos)},
-          {vk::Format::eR32G32B32Sfloat, offsetof(Vertex, color)}};
 
-  vk::PipelineLayoutCreateInfo pipeline_layout_ci;
+  std::vector<std::pair<u32, vk::Format>> vertex_input_stride_format{
+      {12, vk::Format::eR32G32B32Sfloat},
+      {16, vk::Format::eR32G32B32A32Sfloat},
+      {12, vk::Format::eR32G32B32Sfloat},
+      {8, vk::Format::eR32G32Sfloat}};
+
+  std::vector<vk::DescriptorSetLayoutBinding> descriptor_set_layout_bindings{
+      {0, vk::DescriptorType::eUniformBufferDynamic, 1,
+       vk::ShaderStageFlagBits::eAll},
+      {1, vk::DescriptorType::eUniformBufferDynamic, 1,
+       vk::ShaderStageFlagBits::eAll},
+      {2, vk::DescriptorType::eCombinedImageSampler, 1,
+       vk::ShaderStageFlagBits::eAll},
+      {3, vk::DescriptorType::eCombinedImageSampler, 1,
+       vk::ShaderStageFlagBits::eAll},
+      {4, vk::DescriptorType::eCombinedImageSampler, 1,
+       vk::ShaderStageFlagBits::eAll},
+      {5, vk::DescriptorType::eCombinedImageSampler, 1,
+       vk::ShaderStageFlagBits::eAll},
+      {6, vk::DescriptorType::eCombinedImageSampler, 1,
+       vk::ShaderStageFlagBits::eAll},
+  };
+
+  vk::DescriptorSetLayoutCreateInfo descriptor_set_layout_ci{
+      {}, descriptor_set_layout_bindings};
+  descriptor_set_layout_ =
+      gpu_->CreateDescriptorSetLayout(descriptor_set_layout_ci, "rendering");
+
+  vk::PipelineLayoutCreateInfo pipeline_layout_ci{{}, *descriptor_set_layout_};
   pipeline_layout_ =
       gpu_->CreatePipelineLayout(pipeline_layout_ci, "rendering");
 
   vk::PipelineRenderingCreateInfo pipeline_rendering_ci{
       {}, color_formats_, depth_format_};
 
-  pipeline_ = gpu_->CreatePipeline(
-      vertex_shader_buffer, fragment_shader_buffer, vertex_stride,
-      vertex_input_attribute_format_offset, pipeline_layout_,
-      pipeline_rendering_ci, "rendering");
+  pipeline_ = gpu_->CreatePipeline(vertex_shader_buffer, fragment_shader_buffer,
+                                   vertex_input_stride_format, pipeline_layout_,
+                                   pipeline_rendering_ci, "rendering");
 }
 
 void Rendering::CreateGeometry() {

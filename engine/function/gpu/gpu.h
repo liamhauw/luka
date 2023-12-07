@@ -48,15 +48,18 @@ class Gpu {
   vk::raii::Sampler CreateSampler(const vk::SamplerCreateInfo sampler_ci,
                                   const std::string& name = {});
 
+  vk::raii::DescriptorSetLayout CreateDescriptorSetLayout(
+      const vk::DescriptorSetLayoutCreateInfo& descriptor_set_layout_ci,
+      const std::string& name = {});
+
   vk::raii::PipelineLayout CreatePipelineLayout(
       const vk::PipelineLayoutCreateInfo& pipeline_layout_ci,
       const std::string& name = {});
 
   vk::raii::Pipeline CreatePipeline(
       const std::vector<u8>& vertex_shader_buffer,
-      const std::vector<u8>& fragment_shader_buffer, uint32_t vertex_stride,
-      const std::vector<std::pair<vk::Format, uint32_t>>&
-          vertex_input_attribute_format_offset,
+      const std::vector<u8>& fragment_shader_buffer,
+      const std::vector<std::pair<u32, vk::Format>>& vertex_input_stride_format,
       const vk::raii::PipelineLayout& pipeline_layout,
       const vk::PipelineRenderingCreateInfo& pipeline_rendering_ci,
       const std::string& name = {});

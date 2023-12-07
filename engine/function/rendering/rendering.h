@@ -30,18 +30,13 @@ class Rendering {
   void Resize();
 
   void CreateModelResource();
-
   void CreatePipeline();
+
   void CreateGeometry();
   void CreateGBuffer();
 
   std::shared_ptr<Asset> asset_;
   std::shared_ptr<Gpu> gpu_;
-
-  struct Vertex {
-    glm::vec2 pos;
-    glm::vec3 color;
-  };
 
   // Model resource.
   std::vector<Buffer> model_buffer_staging_buffers_;
@@ -52,6 +47,7 @@ class Rendering {
   std::vector<vk::raii::Sampler> model_samplers_;
 
   // Pipeline.
+  vk::raii::DescriptorSetLayout descriptor_set_layout_{nullptr};
   vk::raii::PipelineLayout pipeline_layout_{nullptr};
   std::vector<vk::Format> color_formats_{vk::Format::eB8G8R8A8Unorm};
   vk::Format depth_format_{vk::Format::eUndefined};
