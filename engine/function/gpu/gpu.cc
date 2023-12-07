@@ -245,11 +245,11 @@ vk::raii::Pipeline Gpu::CreatePipeline(
   vk::ShaderModuleCreateInfo vertex_shader_module_ci{
       {},
       vertex_shader_buffer.size(),
-      reinterpret_cast<const uint32_t*>(vertex_shader_buffer.data())};
+      reinterpret_cast<const u32*>(vertex_shader_buffer.data())};
   vk::ShaderModuleCreateInfo fragment_shader_module_ci{
       {},
       fragment_shader_buffer.size(),
-      reinterpret_cast<const uint32_t*>(fragment_shader_buffer.data())};
+      reinterpret_cast<const u32*>(fragment_shader_buffer.data())};
 
   vk::raii::ShaderModule vertex_shader_module{device_, vertex_shader_module_ci};
   vk::raii::ShaderModule fragment_shader_module{device_,

@@ -35,16 +35,45 @@ class Rendering {
   void CreateGeometry();
   void CreateGBuffer();
 
+  struct alignas(16) MaterialData {
+    glm::dmat4 model_mat4;
+    glm::dmat4 inv_model_mat4;
+  };
+
+  struct DrawElement {
+    u32 index_buffer_index;
+    u32 index_buffer_offset;
+    u32 index_count;
+
+    u32 postion_buffer_index;
+    u32 position_buffer_offset;
+
+    u32 texcoord0_buffer_index;
+    u32 texcoord0_buffer_offset;
+
+    u32 normal_buffer_index;
+    u32 normal_buffer_offset;
+
+    u32 tangent_buffer_index;
+    u32 tangent_buffer_offset;
+
+    MaterialData material_data;
+    u32 material_buffer_index;
+
+    vk::IndexType index_type;
+  };
+
   std::shared_ptr<Asset> asset_;
   std::shared_ptr<Gpu> gpu_;
 
   // Model resource.
   std::vector<Buffer> model_buffer_staging_buffers_;
-  std::vector<Buffer> model_image_staging_buffers_; 
+  std::vector<Buffer> model_image_staging_buffers_;
   std::vector<Buffer> model_buffers_;
   std::vector<Image> model_images_;
   std::vector<vk::raii::ImageView> model_image_views_;
   std::vector<vk::raii::Sampler> model_samplers_;
+  std::vector<DrawElement> draw_elements_;
 
   // Pipeline.
   vk::raii::DescriptorSetLayout descriptor_set_layout_{nullptr};

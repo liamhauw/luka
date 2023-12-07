@@ -59,7 +59,7 @@ std::vector<u8> Asset::LoadShader(const std::filesystem::path& shader_path) {
   if (!shader_file) {
     THROW("Fail to open {}", shader_path.string());
   }
-  uint32_t file_size{static_cast<uint32_t>(shader_file.tellg())};
+  u32 file_size{static_cast<u32>(shader_file.tellg())};
   shader_buffer.resize(file_size);
   shader_file.seekg(0);
   shader_file.read(reinterpret_cast<char*>(shader_buffer.data()), file_size);

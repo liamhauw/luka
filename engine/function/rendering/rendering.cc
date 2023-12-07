@@ -276,7 +276,145 @@ void Rendering::CreateModelResource() {
   // Scene.
   {
     const tinygltf::Scene& scene{model.scenes[model.defaultScene]};
-    const std::vector<int>& scene_nodes{scene.nodes};
+    const std::vector<i32>& scene_nodes{scene.nodes};
+
+    std::map<i32, i32> node_parents;
+    std::vector<i32> node_stack;
+    std::map<i32, glm::dmat4> node_mat4s;
+
+    for (i32 i{0}; i < scene_nodes.size(); ++i) {
+      i32 root_node{scene_nodes[i]};
+      node_parents[root_node] = -1;
+      node_stack.push_back(root_node);
+    }
+
+    while (!node_stack.empty()) {
+      i32 node_index{node_stack.back()};
+      node_stack.pop_back();
+      const tinygltf::Node node{model.nodes[node_index]};
+      // Model matrix.
+      glm::dmat4 model_mat4{1.0f};
+      {
+        glm::dmat4 cur_model_mat4{1.0f};
+
+        if (!node.matrix.empty()) {
+          cur_model_mat4 = glm::make_mat4(node.matrix.data());
+        } else {
+          if (!node.translation.empty()) {
+            glm::dvec3 translation_vec3{
+                glm::make_vec3(node.translation.data())};
+            cur_model_mat4 = glm::translate(cur_model_mat4, translation_vec3);
+          }
+
+          if (!node.rotation.empty()) {
+            glm::dvec4 roatation_vec4{glm::make_vec4(node.rotation.data())};
+            glm::dquat rotation{roatation_vec4};
+            cur_model_mat4 = cur_model_mat4 * glm::mat4_cast(rotation);
+          }
+
+          if (!node.scale.empty()) {
+            glm::dvec3 scale_vec3{glm::make_vec3(node.scale.data())};
+            cur_model_mat4 = glm::scale(cur_model_mat4, scale_vec3);
+          }
+        }
+
+        node_mat4s[node_index] = cur_model_mat4;
+
+        model_mat4 = cur_model_mat4;
+        i32 node_parent{node_parents[node_index]};
+        while (node_parent != -1) {
+          model_mat4 = node_mat4s[node_parent] * model_mat4;
+          node_parent = node_parents[node_parent];
+        }
+
+        for (i32 i{0}; i < node.children.size(); ++i) {
+          i32 node_children_index{node.children[i]};
+          node_parents[node_children_index] = node_index;
+          node_stack.push_back(node_children_index);
+        }
+      }
+
+      // Mesh.
+      const tinygltf::Mesh& mesh{model.meshes[node.mesh]};
+      for (u32 i{0}; i < mesh.primitives.size(); ++i) {
+        DrawElement draw_element;
+        draw_element.material_data.model_mat4 = model_mat4;
+
+        const tinygltf::Primitive& primitive{mesh.primitives[i]};
+
+        const tinygltf::Accessor& indices_accessor{
+            model.accessors[primitive.indices]};
+
+        switch (indices_accessor.componentType) {
+          case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+            draw_element.index_type = vk::IndexType::eUint16;
+            break;
+          case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
+            draw_element.index_type = vk::IndexType::eUint32;
+          default:
+            draw_element.index_type = vk::IndexType::eUint16;
+            break;
+        }
+
+        draw_element.index_buffer_index = indices_accessor.bufferView;
+        draw_element.index_buffer_offset = indices_accessor.byteOffset;
+        draw_element.index_count = indices_accessor.count;
+
+        const std::map<std::string, i32>& primitive_attributes{
+            primitive.attributes};
+
+        if (primitive_attributes.contains("POSITION")) {
+          i32 position_accessor_index{primitive_attributes.at("POSITION")};
+          const tinygltf::Accessor& position_accessor{
+              model.accessors[position_accessor_index]};
+
+          draw_element.postion_buffer_index = position_accessor.bufferView;
+          draw_element.position_buffer_offset = position_accessor.byteOffset;
+        } else {
+          THROW("Don't have positon data.");
+        }
+
+        if (primitive_attributes.contains("TEXCOORD_0")) {
+          i32 texcoord0_accessor_index{primitive_attributes.at("TEXCOORD_0")};
+          const tinygltf::Accessor& texcoord0_accessor{
+              model.accessors[texcoord0_accessor_index]};
+
+          draw_element.texcoord0_buffer_index = texcoord0_accessor.bufferView;
+          draw_element.texcoord0_buffer_offset = texcoord0_accessor.byteOffset;
+        } else {
+          THROW("Don't have texcoord0 data.");
+        }
+
+        if (primitive_attributes.contains("NORMAL")) {
+          i32 normal_accessor_index{primitive_attributes.at("NORMAL")};
+          const tinygltf::Accessor& normal_accessor{
+              model.accessors[normal_accessor_index]};
+
+          draw_element.normal_buffer_index = normal_accessor.bufferView;
+          draw_element.normal_buffer_offset = normal_accessor.byteOffset;
+        } else {
+          THROW("Don't have normal data.");
+        }
+
+        if (primitive_attributes.contains("TANGENT")) {
+          i32 tangent_accessor_index{primitive_attributes.at("TANGENT")};
+          const tinygltf::Accessor& tangent_accessor{
+              model.accessors[tangent_accessor_index]};
+
+          draw_element.tangent_buffer_index = tangent_accessor.bufferView;
+          draw_element.tangent_buffer_offset = tangent_accessor.byteOffset;
+        }
+
+        const tinygltf::Material& material{model.materials[primitive.material]};
+
+
+        draw_elements_.push_back(draw_element);
+
+
+
+      }
+    }
+
     
   }
 }
