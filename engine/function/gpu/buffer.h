@@ -26,6 +26,7 @@ class Buffer {
   const vk::Buffer& operator*() const noexcept;
   void Clear() noexcept;
 
+  const VmaAllocator& GetAllocator() const;
   const VmaAllocation& GetAllocation() const;
 
  private:

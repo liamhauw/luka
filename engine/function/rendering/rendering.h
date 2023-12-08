@@ -29,21 +29,33 @@ class Rendering {
  private:
   void Resize();
 
-  void CreateModelResource();
   void CreatePipeline();
-
-  void CreateGeometry();
+  void CreateModelResource();
   void CreateGBuffer();
+
+  struct UniformData {
+    glm::dmat4 m;
+    glm::dmat4 vp;
+    glm::dvec4 eye;
+    glm::dvec4 light;
+  };
 
   struct alignas(16) MaterialData {
     glm::dmat4 model_mat4;
     glm::dmat4 inv_model_mat4;
+    glm::dvec4 base_color_factor;
+    double matallic_factor;
+    double roughness_factor;
+    double nomal_scale;
+    double occlusion_strength;
+    glm::dvec3 emissive_factor;
   };
 
   struct DrawElement {
+    vk::IndexType index_type;
+    u32 index_count;
     u32 index_buffer_index;
     u32 index_buffer_offset;
-    u32 index_count;
 
     u32 postion_buffer_index;
     u32 position_buffer_offset;
@@ -57,30 +69,38 @@ class Rendering {
     u32 tangent_buffer_index;
     u32 tangent_buffer_offset;
 
+    vk::raii::DescriptorSet descriptor_set{nullptr};
     MaterialData material_data;
-    u32 material_buffer_index;
-
-    vk::IndexType index_type;
+    Buffer material_buffer{nullptr};
   };
 
   std::shared_ptr<Asset> asset_;
   std::shared_ptr<Gpu> gpu_;
 
-  // Model resource.
-  std::vector<Buffer> model_buffer_staging_buffers_;
-  std::vector<Buffer> model_image_staging_buffers_;
-  std::vector<Buffer> model_buffers_;
-  std::vector<Image> model_images_;
-  std::vector<vk::raii::ImageView> model_image_views_;
-  std::vector<vk::raii::Sampler> model_samplers_;
-  std::vector<DrawElement> draw_elements_;
-
   // Pipeline.
   vk::raii::DescriptorSetLayout descriptor_set_layout_{nullptr};
   vk::raii::PipelineLayout pipeline_layout_{nullptr};
   std::vector<vk::Format> color_formats_{vk::Format::eB8G8R8A8Unorm};
-  vk::Format depth_format_{vk::Format::eUndefined};
+  vk::Format depth_format_{vk::Format::eD32Sfloat};
   vk::raii::Pipeline pipeline_{nullptr};
+  UniformData uniform_data_;
+  Buffer uniform_buffer_{nullptr};
+
+  // Model resource.
+  Buffer dummy_buffer_staging_buffer_{nullptr};
+  Buffer dummy_buffer_{nullptr};
+  Buffer dummy_image_staging_buffer_{nullptr};
+  Image dummy_image_{nullptr};
+  vk::raii::ImageView dummy_image_view_{nullptr};
+  vk::raii::Sampler dummy_sampler_{nullptr};
+
+  std::vector<Buffer> model_buffer_staging_buffers_;
+  std::vector<Buffer> model_buffers_;
+  std::vector<Buffer> model_image_staging_buffers_;
+  std::vector<Image> model_images_;
+  std::vector<vk::raii::ImageView> model_image_views_;
+  std::vector<vk::raii::Sampler> model_samplers_;
+  std::vector<DrawElement> draw_elements_;
 
   // Geometry.
   Buffer vertex_buffer_{nullptr};

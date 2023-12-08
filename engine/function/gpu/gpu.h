@@ -64,6 +64,11 @@ class Gpu {
       const vk::PipelineRenderingCreateInfo& pipeline_rendering_ci,
       const std::string& name = {});
 
+  vk::raii::DescriptorSet AllocateDescriptorSet(
+      vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
+      const std::string& name = {});
+  void UpdateDescriptorSets(const std::vector<vk::WriteDescriptorSet>& writes);    
+
   vk::raii::CommandBuffer BeginTempCommandBuffer();
   void EndTempCommandBuffer(const vk::raii::CommandBuffer& command_buffer);
   const vk::raii::CommandBuffer& BeginFrame();

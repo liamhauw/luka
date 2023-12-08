@@ -13,10 +13,8 @@
 namespace luka {
 
 Rendering::Rendering() : asset_{gContext.asset}, gpu_{gContext.gpu} {
-  CreateModelResource();
   CreatePipeline();
-
-  CreateGeometry();
+  CreateModelResource();
   CreateGBuffer();
 }
 
@@ -39,6 +37,27 @@ Rendering::GetViewportImage() const {
 }
 
 void Rendering::Render(const vk::raii::CommandBuffer& command_buffer) {
+  glm::vec3 eye{0.0F, 2.5F, 2.0F};
+  glm::vec3 look{0.0F, 0.0F, -1.0F};
+  glm::vec3 right{1.0F, 0.0F, 0.0F};
+
+  glm::mat4 view{glm::lookAt(eye, look, glm::vec3(0.0f, 1.0f, 0.0f))};
+  glm::mat4 projection{glm::perspective(
+      glm::radians(60.0f),
+      static_cast<float>(extent_.width) / static_cast<float>(extent_.height),
+      0.1f, 1000.0f)};
+
+  uniform_data_.m = glm::rotate(glm::mat4(1.0f), glm::radians(40.0f),
+                                glm::vec3(0.0f, 1.0f, 0.0f));
+  uniform_data_.vp = projection * view;
+
+  void* mapped_data;
+  const VmaAllocator& allocator{uniform_buffer_.GetAllocator()};
+  const VmaAllocation& allocation{uniform_buffer_.GetAllocation()};
+  vmaMapMemory(allocator, allocation, &mapped_data);
+  memcpy(mapped_data, &uniform_data_, sizeof(uniform_data_));
+  vmaUnmapMemory(allocator, allocation);
+
   vk::RenderingAttachmentInfo attachment_info{
       {},
       vk::ImageLayout::eAttachmentOptimal,
@@ -55,8 +74,20 @@ void Rendering::Render(const vk::raii::CommandBuffer& command_buffer) {
     color_attachment_infos.push_back(attachment_info);
   }
 
+  vk::RenderingAttachmentInfo depthe_attchment_info{
+      *depth_image_view_,
+      vk::ImageLayout::eAttachmentOptimal,
+      {},
+      {},
+      {},
+      vk::AttachmentLoadOp::eClear,
+      vk::AttachmentStoreOp::eStore};
+  depthe_attchment_info.clearValue.depthStencil.setDepth(1.0F);
+
   vk::RenderingInfo rendering_info{
-      {}, {{0, 0}, extent_}, 1, 0, color_attachment_infos, nullptr, nullptr};
+      {},     {{0, 0}, extent_},      1,
+      0,      color_attachment_infos, &depthe_attchment_info,
+      nullptr};
 
   command_buffer.beginRendering(rendering_info);
 
@@ -67,10 +98,44 @@ void Rendering::Render(const vk::raii::CommandBuffer& command_buffer) {
                       static_cast<float>(extent_.height), 0.0F, 1.0F});
   command_buffer.setScissor(0, vk::Rect2D{vk::Offset2D{0, 0}, extent_});
 
-  command_buffer.bindVertexBuffers(0, *vertex_buffer_, {0});
-  command_buffer.bindIndexBuffer(*index_buffer_, 0, vk::IndexType::eUint16);
+  for (u32 i{0}; i < draw_elements_.size(); ++i) {
+    const DrawElement& draw_element{draw_elements_[i]};
 
-  command_buffer.drawIndexed(6, 1, 0, 0, 0);
+    const Buffer& position_buffer{
+        model_buffers_[draw_element.postion_buffer_index]};
+    command_buffer.bindVertexBuffers(0, *position_buffer,
+                                     draw_element.position_buffer_offset);
+
+    const Buffer& texcoord0_buffer{
+        model_buffers_[draw_element.texcoord0_buffer_index]};
+    command_buffer.bindVertexBuffers(3, *texcoord0_buffer,
+                                     draw_element.texcoord0_buffer_offset);
+
+    const Buffer& normal_buffer{
+        model_buffers_[draw_element.normal_buffer_index]};
+    command_buffer.bindVertexBuffers(2, *normal_buffer,
+                                     draw_element.normal_buffer_offset);
+
+    if (draw_element.tangent_buffer_index != UINT32_MAX) {
+      const Buffer& tangent_buffer{
+          model_buffers_[draw_element.tangent_buffer_index]};
+      command_buffer.bindVertexBuffers(1, *tangent_buffer,
+                                       draw_element.tangent_buffer_offset);
+    } else {
+      command_buffer.bindVertexBuffers(1, *dummy_buffer_, {});
+    }
+
+    const Buffer& index_buffer{model_buffers_[draw_element.index_buffer_index]};
+    command_buffer.bindIndexBuffer(*index_buffer,
+                                   draw_element.index_buffer_offset,
+                                   draw_element.index_type);
+
+    command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+                                      *pipeline_layout_, 0,
+                                      *draw_element.descriptor_set, nullptr);
+
+    command_buffer.drawIndexed(draw_element.index_count, 1, 0, 0, 0);
+  }
 
   command_buffer.endRendering();
 }
@@ -85,10 +150,112 @@ void Rendering::Resize() {
   CreateGBuffer();
 }
 
-void Rendering::CreateModelResource() {
-  const tinygltf::Model& model{asset_->GetModel()};
+void Rendering::CreatePipeline() {
+  const std::vector<u8>& vertex_shader_buffer{asset_->GetVertexShaderBuffer()};
+  const std::vector<u8>& fragment_shader_buffer{
+      asset_->GetFragmentShaderBuffer()};
 
+  std::vector<std::pair<u32, vk::Format>> vertex_input_stride_format{
+      {12, vk::Format::eR32G32B32Sfloat},
+      {16, vk::Format::eR32G32B32A32Sfloat},
+      {12, vk::Format::eR32G32B32Sfloat},
+      {8, vk::Format::eR32G32Sfloat}};
+
+  std::vector<vk::DescriptorSetLayoutBinding> descriptor_set_layout_bindings{
+      {0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eAll},
+      {1, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eAll},
+      {2, vk::DescriptorType::eCombinedImageSampler, 1,
+       vk::ShaderStageFlagBits::eAll},
+      {3, vk::DescriptorType::eCombinedImageSampler, 1,
+       vk::ShaderStageFlagBits::eAll},
+      {4, vk::DescriptorType::eCombinedImageSampler, 1,
+       vk::ShaderStageFlagBits::eAll},
+      {5, vk::DescriptorType::eCombinedImageSampler, 1,
+       vk::ShaderStageFlagBits::eAll},
+      {6, vk::DescriptorType::eCombinedImageSampler, 1,
+       vk::ShaderStageFlagBits::eAll},
+  };
+
+  vk::DescriptorSetLayoutCreateInfo descriptor_set_layout_ci{
+      {}, descriptor_set_layout_bindings};
+  descriptor_set_layout_ =
+      gpu_->CreateDescriptorSetLayout(descriptor_set_layout_ci, "rendering");
+
+  vk::PipelineLayoutCreateInfo pipeline_layout_ci{{}, *descriptor_set_layout_};
+  pipeline_layout_ =
+      gpu_->CreatePipelineLayout(pipeline_layout_ci, "rendering");
+
+  vk::PipelineRenderingCreateInfo pipeline_rendering_ci{
+      {}, color_formats_, depth_format_};
+
+  pipeline_ = gpu_->CreatePipeline(vertex_shader_buffer, fragment_shader_buffer,
+                                   vertex_input_stride_format, pipeline_layout_,
+                                   pipeline_rendering_ci, "rendering");
+
+  vk::BufferCreateInfo uniform_buffer_ci{
+      {},
+      sizeof(UniformData),
+      vk::BufferUsageFlagBits::eUniformBuffer,
+      vk::SharingMode::eExclusive};
+  uniform_buffer_ = gpu_->CreateBuffer(uniform_buffer_ci);
+}
+
+void Rendering::CreateModelResource() {
   const vk::raii::CommandBuffer& command_buffer{gpu_->BeginTempCommandBuffer()};
+
+  // Dummy resource.
+  {
+    glm::vec3 buffer_dummy_data[3]{
+        {0.0F, 0.0F, 0.0F}, {0.0F, 0.0F, 0.0F}, {0.0F, 0.0F, 0.0F}};
+    vk::BufferCreateInfo dummy_buffer_staging_buffer_ci{
+        {}, sizeof(glm::vec3) * 3, vk::BufferUsageFlagBits::eTransferSrc};
+    dummy_buffer_staging_buffer_ =
+        gpu_->CreateBuffer(dummy_buffer_staging_buffer_ci, &buffer_dummy_data);
+
+    vk::BufferCreateInfo dummy_buffer_ci{
+        {},
+        sizeof(glm::vec3) * 3,
+        vk::BufferUsageFlagBits::eVertexBuffer |
+            vk::BufferUsageFlagBits::eIndexBuffer |
+            vk::BufferUsageFlagBits::eTransferDst};
+    dummy_buffer_ = gpu_->CreateBuffer(
+        dummy_buffer_ci, dummy_buffer_staging_buffer_, command_buffer);
+
+    u32 dummy_data{0};
+    vk::BufferCreateInfo dummy_image_staging_buffer_ci{
+        {}, sizeof(dummy_data), vk::BufferUsageFlagBits::eTransferSrc};
+    dummy_image_staging_buffer_ =
+        gpu_->CreateBuffer(dummy_image_staging_buffer_ci, &dummy_data);
+    vk::ImageCreateInfo dummy_image_ci{
+        {},
+        vk::ImageType::e2D,
+        vk::Format::eR8G8B8A8Unorm,
+        {1, 1, 1},
+        1,
+        1,
+        vk::SampleCountFlagBits::e1,
+        vk::ImageTiling::eOptimal,
+        vk::ImageUsageFlagBits::eSampled |
+            vk::ImageUsageFlagBits::eTransferDst};
+    dummy_image_ = gpu_->CreateImage(
+        dummy_image_ci, vk::ImageLayout::eShaderReadOnlyOptimal,
+        dummy_image_staging_buffer_, command_buffer);
+
+    vk::ImageViewCreateInfo dummy_image_view_ci{
+        {},
+        *dummy_image_,
+        vk::ImageViewType::e2D,
+        vk::Format::eR8G8B8A8Unorm,
+        {},
+        {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}};
+
+    dummy_image_view_ = gpu_->CreateImageView(dummy_image_view_ci);
+
+    vk::SamplerCreateInfo sampler_ci;
+    dummy_sampler_ = gpu_->CreateSampler(sampler_ci);
+  }
+
+  const tinygltf::Model& model{asset_->GetModel()};
 
   // Buffers.
   {
@@ -270,10 +437,12 @@ void Rendering::CreateModelResource() {
 
   gpu_->EndTempCommandBuffer(command_buffer);
 
+  dummy_buffer_staging_buffer_.Clear();
+  dummy_image_staging_buffer_.Clear();
   model_buffer_staging_buffers_.clear();
   model_image_staging_buffers_.clear();
 
-  // Scene.
+  // Draw elements.
   {
     const tinygltf::Scene& scene{model.scenes[model.defaultScene]};
     const std::vector<i32>& scene_nodes{scene.nodes};
@@ -338,7 +507,6 @@ void Rendering::CreateModelResource() {
       const tinygltf::Mesh& mesh{model.meshes[node.mesh]};
       for (u32 i{0}; i < mesh.primitives.size(); ++i) {
         DrawElement draw_element;
-        draw_element.material_data.model_mat4 = model_mat4;
 
         const tinygltf::Primitive& primitive{mesh.primitives[i]};
 
@@ -356,9 +524,9 @@ void Rendering::CreateModelResource() {
             break;
         }
 
+        draw_element.index_count = indices_accessor.count;
         draw_element.index_buffer_index = indices_accessor.bufferView;
         draw_element.index_buffer_offset = indices_accessor.byteOffset;
-        draw_element.index_count = indices_accessor.count;
 
         const std::map<std::string, i32>& primitive_attributes{
             primitive.attributes};
@@ -403,176 +571,344 @@ void Rendering::CreateModelResource() {
 
           draw_element.tangent_buffer_index = tangent_accessor.bufferView;
           draw_element.tangent_buffer_offset = tangent_accessor.byteOffset;
+        } else {
+          draw_element.tangent_buffer_index = UINT32_MAX;
+        }
+
+        vk::DescriptorSetAllocateInfo descriptor_set_allocate_info{
+            {}, *descriptor_set_layout_};
+        draw_element.descriptor_set =
+            gpu_->AllocateDescriptorSet(descriptor_set_allocate_info);
+
+        std::vector<vk::WriteDescriptorSet> write_descriptor_set;
+
+        // write_descriptor_set: 0. uniform buffer.
+        {
+          vk::DescriptorBufferInfo descriptor_buffer_info{*uniform_buffer_, 0,
+                                                          sizeof(UniformData)};
+          write_descriptor_set.push_back(vk::WriteDescriptorSet{
+              *(draw_element.descriptor_set),
+              0,
+              0,
+              vk::DescriptorType::eUniformBuffer,
+              nullptr,
+              descriptor_buffer_info,
+          });
         }
 
         const tinygltf::Material& material{model.materials[primitive.material]};
+        const tinygltf::PbrMetallicRoughness& pbr{
+            material.pbrMetallicRoughness};
 
+        // write_descriptor_set: 2. material buffer.
+        {
+          draw_element.material_data.model_mat4 = model_mat4;
+          draw_element.material_data.inv_model_mat4 =
+              glm::transpose(model_mat4);
+          draw_element.material_data.base_color_factor =
+              glm::make_vec4(pbr.baseColorFactor.data());
+          draw_element.material_data.matallic_factor = pbr.metallicFactor;
+          draw_element.material_data.roughness_factor = pbr.roughnessFactor;
+          draw_element.material_data.nomal_scale = material.normalTexture.scale;
+          draw_element.material_data.occlusion_strength =
+              material.occlusionTexture.strength;
+          draw_element.material_data.emissive_factor =
+              glm::make_vec3(material.emissiveFactor.data());
 
-        draw_elements_.push_back(draw_element);
+          vk::BufferCreateInfo material_buffer_ci{
+              {},
+              sizeof(MaterialData),
+              vk::BufferUsageFlagBits::eUniformBuffer,
+              vk::SharingMode::eExclusive};
+          draw_element.material_buffer = gpu_->CreateBuffer(material_buffer_ci, &(draw_element.material_data));
 
+          vk::DescriptorBufferInfo descriptor_buffer_info{
+              *(draw_element.material_buffer), 0, sizeof(MaterialData)};
+          write_descriptor_set.push_back(vk::WriteDescriptorSet{
+              *(draw_element.descriptor_set),
+              1,
+              0,
+              vk::DescriptorType::eUniformBuffer,
+              nullptr,
+              descriptor_buffer_info,
+          });
+        }
 
+        // write_descriptor_set: 2. base color image.
+        {
+          vk::DescriptorImageInfo descriptor_image_info;
 
+          if (pbr.baseColorTexture.index != -1) {
+            const tinygltf::Texture& texture{
+                model.textures[pbr.baseColorTexture.index]};
+
+            if (texture.sampler != -1) {
+              descriptor_image_info.sampler = *model_samplers_[texture.sampler];
+            } else {
+              descriptor_image_info.sampler = *dummy_sampler_;
+            }
+
+            if (texture.source != -1) {
+              descriptor_image_info.imageView =
+                  *model_image_views_[texture.source];
+            } else {
+              descriptor_image_info.imageView = *dummy_image_view_;
+            }
+
+          } else {
+            descriptor_image_info.sampler = *dummy_sampler_;
+            descriptor_image_info.imageView = *dummy_image_view_;
+          }
+
+          descriptor_image_info.imageLayout =
+              vk::ImageLayout::eShaderReadOnlyOptimal;
+
+          write_descriptor_set.push_back(vk::WriteDescriptorSet{
+              *(draw_element.descriptor_set),
+              2,
+              0,
+              vk::DescriptorType::eCombinedImageSampler,
+              descriptor_image_info,
+          });
+        }
+
+        // write_descriptor_set: 3. matallic roughness image
+        {
+          vk::DescriptorImageInfo descriptor_image_info;
+          if (pbr.metallicRoughnessTexture.index != -1) {
+            const tinygltf::Texture& texture{
+                model.textures[pbr.metallicRoughnessTexture.index]};
+
+            if (texture.sampler != -1) {
+              descriptor_image_info.sampler = *model_samplers_[texture.sampler];
+            } else {
+              descriptor_image_info.sampler = *dummy_sampler_;
+            }
+
+            if (texture.source != -1) {
+              descriptor_image_info.imageView =
+                  *model_image_views_[texture.source];
+            } else {
+              descriptor_image_info.imageView = *dummy_image_view_;
+            }
+
+          } else {
+            descriptor_image_info.sampler = *dummy_sampler_;
+            descriptor_image_info.imageView = *dummy_image_view_;
+          }
+
+          descriptor_image_info.imageLayout =
+              vk::ImageLayout::eShaderReadOnlyOptimal;
+
+          write_descriptor_set.push_back(vk::WriteDescriptorSet{
+              *(draw_element.descriptor_set),
+              3,
+              0,
+              vk::DescriptorType::eCombinedImageSampler,
+              descriptor_image_info,
+          });
+        }
+
+        // write_descriptor_set: 4. normal image.
+        {
+          vk::DescriptorImageInfo descriptor_image_info;
+          if (material.normalTexture.index != -1) {
+            const tinygltf::Texture& texture{
+                model.textures[material.normalTexture.index]};
+
+            if (texture.sampler != -1) {
+              descriptor_image_info.sampler = *model_samplers_[texture.sampler];
+            } else {
+              descriptor_image_info.sampler = *dummy_sampler_;
+            }
+
+            if (texture.source != -1) {
+              descriptor_image_info.imageView =
+                  *model_image_views_[texture.source];
+            } else {
+              descriptor_image_info.imageView = *dummy_image_view_;
+            }
+
+          } else {
+            descriptor_image_info.sampler = *dummy_sampler_;
+            descriptor_image_info.imageView = *dummy_image_view_;
+          }
+
+          descriptor_image_info.imageLayout =
+              vk::ImageLayout::eShaderReadOnlyOptimal;
+
+          write_descriptor_set.push_back(vk::WriteDescriptorSet{
+              *(draw_element.descriptor_set),
+              4,
+              0,
+              vk::DescriptorType::eCombinedImageSampler,
+              descriptor_image_info,
+          });
+        }
+
+        // write_descriptor_set: 5. occlusion image.
+        {
+          vk::DescriptorImageInfo descriptor_image_info;
+          if (material.occlusionTexture.index != -1) {
+            const tinygltf::Texture& texture{
+                model.textures[material.occlusionTexture.index]};
+
+            if (texture.sampler != -1) {
+              descriptor_image_info.sampler = *model_samplers_[texture.sampler];
+            } else {
+              descriptor_image_info.sampler = *dummy_sampler_;
+            }
+
+            if (texture.source != -1) {
+              descriptor_image_info.imageView =
+                  *model_image_views_[texture.source];
+            } else {
+              descriptor_image_info.imageView = *dummy_image_view_;
+            }
+
+          } else {
+            descriptor_image_info.sampler = *dummy_sampler_;
+            descriptor_image_info.imageView = *dummy_image_view_;
+          }
+
+          descriptor_image_info.imageLayout =
+              vk::ImageLayout::eShaderReadOnlyOptimal;
+
+          write_descriptor_set.push_back(vk::WriteDescriptorSet{
+              *(draw_element.descriptor_set),
+              5,
+              0,
+              vk::DescriptorType::eCombinedImageSampler,
+              descriptor_image_info,
+          });
+        }
+
+        // write_descriptor_set: 6. emissive image.
+        {
+          vk::DescriptorImageInfo descriptor_image_info;
+          if (material.emissiveTexture.index != -1) {
+            const tinygltf::Texture& texture{
+                model.textures[material.emissiveTexture.index]};
+
+            if (texture.sampler != -1) {
+              descriptor_image_info.sampler = *model_samplers_[texture.sampler];
+            } else {
+              descriptor_image_info.sampler = *dummy_sampler_;
+            }
+
+            if (texture.source != -1) {
+              descriptor_image_info.imageView =
+                  *model_image_views_[texture.source];
+            } else {
+              descriptor_image_info.imageView = *dummy_image_view_;
+            }
+
+          } else {
+            descriptor_image_info.sampler = *dummy_sampler_;
+            descriptor_image_info.imageView = *dummy_image_view_;
+          }
+
+          descriptor_image_info.imageLayout =
+              vk::ImageLayout::eShaderReadOnlyOptimal;
+
+          write_descriptor_set.push_back(vk::WriteDescriptorSet{
+              *(draw_element.descriptor_set),
+              6,
+              0,
+              vk::DescriptorType::eCombinedImageSampler,
+              descriptor_image_info,
+          });
+        }
+        gpu_->UpdateDescriptorSets(write_descriptor_set);
+        draw_elements_.push_back(std::move(draw_element));
       }
     }
-
-    
   }
 }
 
-void Rendering::CreatePipeline() {
-  const std::vector<u8>& vertex_shader_buffer{asset_->GetVertexShaderBuffer()};
-  const std::vector<u8>& fragment_shader_buffer{
-      asset_->GetFragmentShaderBuffer()};
-
-  std::vector<std::pair<u32, vk::Format>> vertex_input_stride_format{
-      {12, vk::Format::eR32G32B32Sfloat},
-      {16, vk::Format::eR32G32B32A32Sfloat},
-      {12, vk::Format::eR32G32B32Sfloat},
-      {8, vk::Format::eR32G32Sfloat}};
-
-  std::vector<vk::DescriptorSetLayoutBinding> descriptor_set_layout_bindings{
-      {0, vk::DescriptorType::eUniformBufferDynamic, 1,
-       vk::ShaderStageFlagBits::eAll},
-      {1, vk::DescriptorType::eUniformBufferDynamic, 1,
-       vk::ShaderStageFlagBits::eAll},
-      {2, vk::DescriptorType::eCombinedImageSampler, 1,
-       vk::ShaderStageFlagBits::eAll},
-      {3, vk::DescriptorType::eCombinedImageSampler, 1,
-       vk::ShaderStageFlagBits::eAll},
-      {4, vk::DescriptorType::eCombinedImageSampler, 1,
-       vk::ShaderStageFlagBits::eAll},
-      {5, vk::DescriptorType::eCombinedImageSampler, 1,
-       vk::ShaderStageFlagBits::eAll},
-      {6, vk::DescriptorType::eCombinedImageSampler, 1,
-       vk::ShaderStageFlagBits::eAll},
-  };
-
-  vk::DescriptorSetLayoutCreateInfo descriptor_set_layout_ci{
-      {}, descriptor_set_layout_bindings};
-  descriptor_set_layout_ =
-      gpu_->CreateDescriptorSetLayout(descriptor_set_layout_ci, "rendering");
-
-  vk::PipelineLayoutCreateInfo pipeline_layout_ci{{}, *descriptor_set_layout_};
-  pipeline_layout_ =
-      gpu_->CreatePipelineLayout(pipeline_layout_ci, "rendering");
-
-  vk::PipelineRenderingCreateInfo pipeline_rendering_ci{
-      {}, color_formats_, depth_format_};
-
-  pipeline_ = gpu_->CreatePipeline(vertex_shader_buffer, fragment_shader_buffer,
-                                   vertex_input_stride_format, pipeline_layout_,
-                                   pipeline_rendering_ci, "rendering");
-}
-
-void Rendering::CreateGeometry() {
-  // const std::vector<Vertex> vertices{{{-0.5F, -0.5F}, {1.0F, 1.0F, 0.0F}},
-  //                                    {{0.5F, -0.5F}, {0.0F, 1.0F, 1.0F}},
-  //                                    {{0.5F, 0.5F}, {1.0F, 0.0F, 1.0F}},
-  //                                    {{-0.5F, 0.5F}, {1.0F, 1.0F, 1.0F}}};
-  // const std::vector<u16> indices = {0, 2, 1, 2, 0, 3};
-
-  // u64 vertices_size{vertices.size() * sizeof(Vertex)};
-  // u64 indices_size{indices.size() * sizeof(u16)};
-
-  // vk::BufferCreateInfo vertex_buffer_ci{
-  //     {},
-  //     vertices_size,
-  //     vk::BufferUsageFlagBits::eVertexBuffer |
-  //         vk::BufferUsageFlagBits::eTransferDst,
-  //     vk::SharingMode::eExclusive};
-  // vk::BufferCreateInfo index_buffer_ci{
-  //     {},
-  //     indices_size,
-  //     vk::BufferUsageFlagBits::eIndexBuffer |
-  //         vk::BufferUsageFlagBits::eTransferDst,
-  //     vk::SharingMode::eExclusive};
-
-  // vertex_buffer_ = gpu_->CreateBuffer(vertex_buffer_ci, false, vertices_size,
-  //                                     vertices.data(), "vertex");
-  // index_buffer_ = gpu_->CreateBuffer(index_buffer_ci, false, indices_size,
-  //                                    indices.data(), "index");
-}
-
 void Rendering::CreateGBuffer() {
-  // extent_ = gpu_->GetExtent2D();
-  // u64 color_image_count{color_formats_.size()};
+  vk::raii::CommandBuffer command_buffer{gpu_->BeginTempCommandBuffer()};
 
-  // {
-  //   vk::ImageCreateInfo image_ci{{},
-  //                                vk::ImageType::e2D,
-  //                                {},
-  //                                {extent_.width, extent_.height, 1},
-  //                                1,
-  //                                1,
-  //                                vk::SampleCountFlagBits::e1,
-  //                                vk::ImageTiling::eOptimal,
-  //                                vk::ImageUsageFlagBits::eColorAttachment |
-  //                                    vk::ImageUsageFlagBits::eSampled |
-  //                                    vk::ImageUsageFlagBits::eStorage,
-  //                                vk::SharingMode::eExclusive,
-  //                                {},
-  //                                vk::ImageLayout::eUndefined};
+  extent_ = gpu_->GetExtent2D();
+  u64 color_image_count{color_formats_.size()};
 
-  //   vk::ImageViewCreateInfo image_view_ci{
-  //       {},
-  //       {},
-  //       vk::ImageViewType::e2D,
-  //       {},
-  //       {},
-  //       {vk::ImageAspectFlagBits::eColor, 0, VK_REMAINING_MIP_LEVELS, 0,
-  //        VK_REMAINING_ARRAY_LAYERS}};
+  {
+    vk::ImageCreateInfo image_ci{{},
+                                 vk::ImageType::e2D,
+                                 {},
+                                 {extent_.width, extent_.height, 1},
+                                 1,
+                                 1,
+                                 vk::SampleCountFlagBits::e1,
+                                 vk::ImageTiling::eOptimal,
+                                 vk::ImageUsageFlagBits::eColorAttachment |
+                                     vk::ImageUsageFlagBits::eSampled |
+                                     vk::ImageUsageFlagBits::eStorage,
+                                 vk::SharingMode::eExclusive,
+                                 {},
+                                 vk::ImageLayout::eUndefined};
 
-  //   for (u64 i = 0; i < color_image_count; ++i) {
-  //     image_ci.format = color_formats_[i];
-  //     color_images_.push_back(std::move(
-  //         gpu_->CreateImage(image_ci, vk::ImageLayout::eGeneral, 0, nullptr,
-  //                           "g_color_" + std::to_string(i))));
+    vk::ImageViewCreateInfo image_view_ci{
+        {},
+        {},
+        vk::ImageViewType::e2D,
+        {},
+        {},
+        {vk::ImageAspectFlagBits::eColor, 0, VK_REMAINING_MIP_LEVELS, 0,
+         VK_REMAINING_ARRAY_LAYERS}};
 
-  //     image_view_ci.image = *color_images_[i];
-  //     image_view_ci.format = color_formats_[i];
-  //     color_image_views_.push_back(std::move(gpu_->CreateImageView(
-  //         image_view_ci, "g_color_" + std::to_string(i))));
-  //   }
-  // }
+    for (u64 i = 0; i < color_image_count; ++i) {
+      image_ci.format = color_formats_[i];
+      color_images_.push_back(std::move(gpu_->CreateImage(
+          image_ci, vk::ImageLayout::eGeneral, nullptr, command_buffer, "g_color")));
 
-  // if (depth_format_ != vk::Format::eUndefined) {
-  //   vk::ImageCreateInfo image_ci{
-  //       {},
-  //       vk::ImageType::e2D,
-  //       {},
-  //       {extent_.width, extent_.height, 1},
-  //       1,
-  //       1,
-  //       vk::SampleCountFlagBits::e1,
-  //       vk::ImageTiling::eOptimal,
-  //       vk::ImageUsageFlagBits::eDepthStencilAttachment |
-  //           vk::ImageUsageFlagBits::eSampled,
-  //       vk::SharingMode::eExclusive,
-  //       {},
-  //       vk::ImageLayout::eUndefined};
+      image_view_ci.image = *color_images_[i];
+      image_view_ci.format = color_formats_[i];
+      color_image_views_.push_back(
+          std::move(gpu_->CreateImageView(image_view_ci, "g_color")));
+    }
+  }
 
-  //   depth_image_ = gpu_->CreateImage(image_ci, vk::ImageLayout::eGeneral, 0,
-  //                                    nullptr, "g_depth");
+  if (depth_format_ != vk::Format::eUndefined) {
+    vk::ImageCreateInfo image_ci{
+        {},
+        vk::ImageType::e2D,
+        depth_format_,
+        {extent_.width, extent_.height, 1},
+        1,
+        1,
+        vk::SampleCountFlagBits::e1,
+        vk::ImageTiling::eOptimal,
+        vk::ImageUsageFlagBits::eDepthStencilAttachment |
+            vk::ImageUsageFlagBits::eSampled,
+        vk::SharingMode::eExclusive,
+        {},
+        vk::ImageLayout::eUndefined};
 
-  //   vk::ImageViewCreateInfo image_view_ci{
-  //       {},
-  //       {},
-  //       vk::ImageViewType::e2D,
-  //       {},
-  //       {},
-  //       {vk::ImageAspectFlagBits::eDepth, 0, VK_REMAINING_MIP_LEVELS, 0,
-  //        VK_REMAINING_ARRAY_LAYERS}};
-  //   depth_image_view_ = gpu_->CreateImageView(image_view_ci, "g_depth");
-  // }
+    depth_image_ = gpu_->CreateImage(image_ci, vk::ImageLayout::eGeneral,
+                                     nullptr, command_buffer, "g_depth");
 
-  // vk::SamplerCreateInfo sampler_ci{{},
-  //                                  vk::Filter::eLinear,
-  //                                  vk::Filter::eLinear,
-  //                                  vk::SamplerMipmapMode::eLinear,
-  //                                  vk::SamplerAddressMode::eClampToBorder,
-  //                                  vk::SamplerAddressMode::eClampToBorder,
-  //                                  vk::SamplerAddressMode::eClampToBorder};
-  // sampler_ = gpu_->CreateSampler(sampler_ci, "g");
+    vk::ImageViewCreateInfo image_view_ci{
+        {},
+        *depth_image_,
+        vk::ImageViewType::e2D,
+        depth_format_,
+        {},
+        {vk::ImageAspectFlagBits::eDepth, 0, VK_REMAINING_MIP_LEVELS, 0,
+         VK_REMAINING_ARRAY_LAYERS}};
+    depth_image_view_ = gpu_->CreateImageView(image_view_ci, "g_depth");
+  }
+
+  vk::SamplerCreateInfo sampler_ci{{},
+                                   vk::Filter::eLinear,
+                                   vk::Filter::eLinear,
+                                   vk::SamplerMipmapMode::eLinear,
+                                   vk::SamplerAddressMode::eClampToBorder,
+                                   vk::SamplerAddressMode::eClampToBorder,
+                                   vk::SamplerAddressMode::eClampToBorder};
+  sampler_ = gpu_->CreateSampler(sampler_ci, "g");
+
+  gpu_->EndTempCommandBuffer(command_buffer);
 }
 
 }  // namespace luka

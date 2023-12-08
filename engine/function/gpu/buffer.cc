@@ -52,6 +52,7 @@ void Buffer::Clear() noexcept {
   buffer_ = nullptr;
   allocation_ = nullptr;
 }
+const VmaAllocator& Buffer::GetAllocator() const { return allocator_; }
 
 const VmaAllocation& Buffer::GetAllocation() const { return allocation_; }
 

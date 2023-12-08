@@ -361,6 +361,28 @@ vk::raii::Pipeline Gpu::CreatePipeline(
   return pipeline;
 }
 
+vk::raii::DescriptorSet Gpu::AllocateDescriptorSet(
+    vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
+    const std::string& name) {
+  descriptor_set_allocate_info.descriptorPool = *descriptor_pool_;
+  vk::raii::DescriptorSet descriptor_set{std::move(
+      device_.allocateDescriptorSets(descriptor_set_allocate_info).front())};
+
+#ifndef NDEBUG
+  SetName(
+      vk::ObjectType::eDescriptorSet,
+      reinterpret_cast<uint64_t>(static_cast<VkDescriptorSet>(*descriptor_set)),
+      name, "descriptor_set");
+#endif
+
+  return descriptor_set;
+}
+
+void Gpu::UpdateDescriptorSets(
+    const std::vector<vk::WriteDescriptorSet>& writes) {
+  device_.updateDescriptorSets(writes, nullptr);
+}
+
 vk::raii::CommandBuffer Gpu::BeginTempCommandBuffer() {
   vk::CommandBufferAllocateInfo command_buffer_allocate_info{
       *command_pools_[back_buffer_index], vk::CommandBufferLevel::ePrimary, 1};
