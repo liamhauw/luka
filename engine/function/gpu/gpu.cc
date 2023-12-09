@@ -113,19 +113,23 @@ Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
   SetName(vk::ObjectType::eImage,
           reinterpret_cast<u64>(static_cast<VkImage>(*image)), name, "image");
 #endif
-
+  vk::ImageAspectFlagBits flag_bits;
+  if (image_ci.usage & vk::ImageUsageFlagBits::eDepthStencilAttachment) {
+    flag_bits = vk::ImageAspectFlagBits::eDepth;
+  } else {
+    flag_bits = vk::ImageAspectFlagBits::eColor;
+  }
   if (*staging_buffer) {
     {
-      vk::ImageMemoryBarrier barrier{
-          {},
-          vk::AccessFlagBits::eTransferWrite,
-          image_ci.initialLayout,
-          vk::ImageLayout::eTransferDstOptimal,
-          VK_QUEUE_FAMILY_IGNORED,
-          VK_QUEUE_FAMILY_IGNORED,
-          *image,
-          {vk::ImageAspectFlagBits::eColor, 0, VK_REMAINING_MIP_LEVELS, 0,
-           VK_REMAINING_ARRAY_LAYERS}};
+      vk::ImageMemoryBarrier barrier{{},
+                                     vk::AccessFlagBits::eTransferWrite,
+                                     image_ci.initialLayout,
+                                     vk::ImageLayout::eTransferDstOptimal,
+                                     VK_QUEUE_FAMILY_IGNORED,
+                                     VK_QUEUE_FAMILY_IGNORED,
+                                     *image,
+                                     {flag_bits, 0, VK_REMAINING_MIP_LEVELS, 0,
+                                      VK_REMAINING_ARRAY_LAYERS}};
 
       command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe,
                                      vk::PipelineStageFlagBits::eTransfer, {},
@@ -144,16 +148,15 @@ Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
     }
 
     {
-      vk::ImageMemoryBarrier barrier{
-          vk::AccessFlagBits::eTransferWrite,
-          vk::AccessFlagBits::eShaderRead,
-          vk::ImageLayout::eTransferDstOptimal,
-          new_layout,
-          VK_QUEUE_FAMILY_IGNORED,
-          VK_QUEUE_FAMILY_IGNORED,
-          *image,
-          {vk::ImageAspectFlagBits::eColor, 0, VK_REMAINING_MIP_LEVELS, 0,
-           VK_REMAINING_ARRAY_LAYERS}};
+      vk::ImageMemoryBarrier barrier{vk::AccessFlagBits::eTransferWrite,
+                                     vk::AccessFlagBits::eShaderRead,
+                                     vk::ImageLayout::eTransferDstOptimal,
+                                     new_layout,
+                                     VK_QUEUE_FAMILY_IGNORED,
+                                     VK_QUEUE_FAMILY_IGNORED,
+                                     *image,
+                                     {flag_bits, 0, VK_REMAINING_MIP_LEVELS, 0,
+                                      VK_REMAINING_ARRAY_LAYERS}};
       command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
                                      vk::PipelineStageFlagBits::eAllCommands,
                                      {}, {}, {}, barrier);
@@ -168,8 +171,7 @@ Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
         VK_QUEUE_FAMILY_IGNORED,
         VK_QUEUE_FAMILY_IGNORED,
         *image,
-        {vk::ImageAspectFlagBits::eColor, 0, VK_REMAINING_MIP_LEVELS, 0,
-         VK_REMAINING_ARRAY_LAYERS}};
+        {flag_bits, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS}};
     command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe,
                                    vk::PipelineStageFlagBits::eAllCommands, {},
                                    {}, {}, barrier);

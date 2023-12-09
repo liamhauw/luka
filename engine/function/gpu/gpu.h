@@ -104,7 +104,7 @@ class Gpu {
       void* user_data);
 
   // Parameters.
-  const u32 kBackBufferCount{3};
+  const u32 kBackBufferCount{1};
   u32 back_buffer_index{0};
   u32 image_index_{0};
 

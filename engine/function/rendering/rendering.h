@@ -33,22 +33,25 @@ class Rendering {
   void CreateModelResource();
   void CreateGBuffer();
 
-  struct UniformData {
-    glm::dmat4 m;
-    glm::dmat4 vp;
-    glm::dvec4 eye;
-    glm::dvec4 light;
+  struct alignas(16) UniformData {
+    glm::mat4 m;
+    glm::mat4 vp;
+    glm::vec4 eye;
+    glm::vec4 light;
   };
 
   struct alignas(16) MaterialData {
-    glm::dmat4 model_mat4;
-    glm::dmat4 inv_model_mat4;
-    glm::dvec4 base_color_factor;
-    double matallic_factor;
-    double roughness_factor;
-    double nomal_scale;
-    double occlusion_strength;
-    glm::dvec3 emissive_factor;
+    glm::vec4 base_color_factor;
+    glm::mat4 model_mat4;
+    glm::mat4 inv_model_mat4;
+
+    glm::vec3 emissive_factor;
+    float matallic_factor;
+    
+    float roughness_factor;
+    float nomal_scale;
+    float occlusion_strength;
+    u32 flag;
   };
 
   struct DrawElement {

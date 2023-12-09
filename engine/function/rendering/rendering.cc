@@ -41,15 +41,17 @@ void Rendering::Render(const vk::raii::CommandBuffer& command_buffer) {
   glm::vec3 look{0.0F, 0.0F, -1.0F};
   glm::vec3 right{1.0F, 0.0F, 0.0F};
 
-  glm::mat4 view{glm::lookAt(eye, look, glm::vec3(0.0f, 1.0f, 0.0f))};
+  glm::mat4 view{glm::lookAt(eye, eye + look, glm::vec3(0.0f, -1.0f, 0.0f))};
   glm::mat4 projection{glm::perspective(
       glm::radians(60.0f),
       static_cast<float>(extent_.width) / static_cast<float>(extent_.height),
       0.1f, 1000.0f)};
 
-  uniform_data_.m = glm::rotate(glm::mat4(1.0f), glm::radians(40.0f),
+  uniform_data_.m = glm::rotate(glm::mat4(1.0f), glm::radians(45.0f),
                                 glm::vec3(0.0f, 1.0f, 0.0f));
   uniform_data_.vp = projection * view;
+  uniform_data_.eye = glm::vec4{eye, 1.0F};
+  uniform_data_.light = glm::vec4{2.0F, 2.0F, 0.0F, 1.0F};
 
   void* mapped_data;
   const VmaAllocator& allocator{uniform_buffer_.GetAllocator()};
@@ -122,7 +124,7 @@ void Rendering::Render(const vk::raii::CommandBuffer& command_buffer) {
       command_buffer.bindVertexBuffers(1, *tangent_buffer,
                                        draw_element.tangent_buffer_offset);
     } else {
-      command_buffer.bindVertexBuffers(1, *dummy_buffer_, {});
+      command_buffer.bindVertexBuffers(1, *dummy_buffer_, {0});
     }
 
     const Buffer& index_buffer{model_buffers_[draw_element.index_buffer_index]};
@@ -197,7 +199,7 @@ void Rendering::CreatePipeline() {
       sizeof(UniformData),
       vk::BufferUsageFlagBits::eUniformBuffer,
       vk::SharingMode::eExclusive};
-  uniform_buffer_ = gpu_->CreateBuffer(uniform_buffer_ci);
+  uniform_buffer_ = gpu_->CreateBuffer(uniform_buffer_ci, &uniform_data_, "uniform");
 }
 
 void Rendering::CreateModelResource() {
@@ -604,7 +606,7 @@ void Rendering::CreateModelResource() {
         {
           draw_element.material_data.model_mat4 = model_mat4;
           draw_element.material_data.inv_model_mat4 =
-              glm::transpose(model_mat4);
+              glm::inverse(model_mat4);
           draw_element.material_data.base_color_factor =
               glm::make_vec4(pbr.baseColorFactor.data());
           draw_element.material_data.matallic_factor = pbr.metallicFactor;

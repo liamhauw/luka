@@ -100,7 +100,7 @@ void FunctionUi::CreateUi() {
 
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0F, 0.0F));
   ImGui::Begin("viewport");
-  ImGui::Image(descriptor_set_, {640, 380});
+  ImGui::Image(descriptor_set_, {1270, 860});
   ImGui::End();
   ImGui::PopStyleVar();
 }

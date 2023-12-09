@@ -19,11 +19,10 @@ layout(std140, binding = 1) uniform MaterialConstant {
   vec4 base_color_factor;
   mat4 model;
   mat4 model_inv;
-
   vec3  emissive_factor;
   float metallic_factor;
-
   float roughness_factor;
+  float normal_scale;
   float occlusion_factor;
   uint  flags;
 };
@@ -42,12 +41,12 @@ void main() {
   gl_Position = vp * m * model * vec4(position, 1);
   vPosition = m * model * vec4(position, 1.0);
 
-  if ( ( flags & MaterialFeatures_TexcoordVertexAttribute ) != 0 ) {
+  
       vTexcoord0 = texCoord0;
-  }
+  
   vNormal = mat3( model_inv ) * normal;
 
-  if ( ( flags & MaterialFeatures_TangentVertexAttribute ) != 0 ) {
+  
       vTangent = tangent;
-    }
+    
 }
