@@ -47,11 +47,11 @@ void Rendering::Render(const vk::raii::CommandBuffer& command_buffer) {
       static_cast<float>(extent_.width) / static_cast<float>(extent_.height),
       0.1f, 1000.0f)};
 
-  uniform_data_.m = glm::rotate(glm::mat4(1.0f), glm::radians(45.0f),
-                                glm::vec3(0.0f, 1.0f, 0.0f));
   uniform_data_.vp = projection * view;
   uniform_data_.eye = glm::vec4{eye, 1.0F};
-  uniform_data_.light = glm::vec4{2.0F, 2.0F, 0.0F, 1.0F};
+  uniform_data_.light = glm::vec4{0.0F, 4.0F, 0.0F, 1.0F};
+  uniform_data_.light_range = 20.0f;
+  uniform_data_.light_intensity = 80.0f;
 
   void* mapped_data;
   const VmaAllocator& allocator{uniform_buffer_.GetAllocator()};
@@ -133,8 +133,12 @@ void Rendering::Render(const vk::raii::CommandBuffer& command_buffer) {
                                    draw_element.index_type);
 
     command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-                                      *pipeline_layout_, 0,
+                                      *(gpu_->GetPipelineLayout()), 0,
                                       *draw_element.descriptor_set, nullptr);
+
+    command_buffer.bindDescriptorSets(
+        vk::PipelineBindPoint::eGraphics, *(gpu_->GetPipelineLayout()), 1,
+        *(gpu_->GetBindlessDescriptorSet()), nullptr);
 
     command_buffer.drawIndexed(draw_element.index_count, 1, 0, 0, 0);
   }
@@ -164,9 +168,9 @@ void Rendering::CreatePipeline() {
       {8, vk::Format::eR32G32Sfloat}};
 
   std::vector<vk::DescriptorSetLayoutBinding> descriptor_set_layout_bindings{
-      {0, vk::DescriptorType::eUniformBufferDynamic, 1,
+      {0, vk::DescriptorType::eUniformBuffer, 1,
        vk::ShaderStageFlagBits::eAll},
-      {1, vk::DescriptorType::eUniformBufferDynamic, 1,
+      {1, vk::DescriptorType::eUniformBuffer, 1,
        vk::ShaderStageFlagBits::eAll}};
 
   vk::DescriptorSetLayoutCreateInfo descriptor_set_layout_ci{
@@ -565,11 +569,9 @@ void Rendering::CreateModelResource() {
           draw_element.tangent_buffer_index = UINT32_MAX;
         }
 
-        vk::DescriptorSetAllocateInfo descriptor_set_allocate_info{
-            {}, *descriptor_set_layout_};
-        draw_element.descriptor_set = *(gpu_->GetBindlessDescriptorSet());
-
-        std::vector<vk::WriteDescriptorSet> write_descriptor_set;
+        std::vector<vk::WriteDescriptorSet> bindless_write_descriptor_set;
+        const vk::raii::DescriptorSet& bindless_descriptor_set{
+            gpu_->GetBindlessDescriptorSet()};
 
         const tinygltf::Material& material{model.materials[primitive.material]};
         const tinygltf::PbrMetallicRoughness& pbr{
@@ -577,6 +579,8 @@ void Rendering::CreateModelResource() {
 
         // write_descriptor_set: 0. base color image.
         {
+          draw_element.material_data.textures[0] = image_index_++;
+
           vk::DescriptorImageInfo descriptor_image_info;
 
           if (pbr.baseColorTexture.index != -1) {
@@ -604,10 +608,10 @@ void Rendering::CreateModelResource() {
           descriptor_image_info.imageLayout =
               vk::ImageLayout::eShaderReadOnlyOptimal;
 
-          write_descriptor_set.push_back(vk::WriteDescriptorSet{
-              draw_element.descriptor_set,
-              2,
-              0,
+          bindless_write_descriptor_set.push_back(vk::WriteDescriptorSet{
+              *bindless_descriptor_set,
+              10,
+              draw_element.material_data.textures[0],
               vk::DescriptorType::eCombinedImageSampler,
               descriptor_image_info,
           });
@@ -615,6 +619,7 @@ void Rendering::CreateModelResource() {
 
         // write_descriptor_set: 1. matallic roughness image
         {
+          draw_element.material_data.textures[1] = image_index_++;
           vk::DescriptorImageInfo descriptor_image_info;
           if (pbr.metallicRoughnessTexture.index != -1) {
             const tinygltf::Texture& texture{
@@ -641,10 +646,10 @@ void Rendering::CreateModelResource() {
           descriptor_image_info.imageLayout =
               vk::ImageLayout::eShaderReadOnlyOptimal;
 
-          write_descriptor_set.push_back(vk::WriteDescriptorSet{
-              draw_element.descriptor_set,
-              3,
-              0,
+          bindless_write_descriptor_set.push_back(vk::WriteDescriptorSet{
+              *bindless_descriptor_set,
+              10,
+              draw_element.material_data.textures[1],
               vk::DescriptorType::eCombinedImageSampler,
               descriptor_image_info,
           });
@@ -652,6 +657,8 @@ void Rendering::CreateModelResource() {
 
         // write_descriptor_set: 2. normal image.
         {
+          draw_element.material_data.textures[2] = image_index_++;
+
           vk::DescriptorImageInfo descriptor_image_info;
           if (material.normalTexture.index != -1) {
             const tinygltf::Texture& texture{
@@ -678,10 +685,10 @@ void Rendering::CreateModelResource() {
           descriptor_image_info.imageLayout =
               vk::ImageLayout::eShaderReadOnlyOptimal;
 
-          write_descriptor_set.push_back(vk::WriteDescriptorSet{
-              draw_element.descriptor_set,
-              4,
-              0,
+          bindless_write_descriptor_set.push_back(vk::WriteDescriptorSet{
+              *bindless_descriptor_set,
+              10,
+              draw_element.material_data.textures[2],
               vk::DescriptorType::eCombinedImageSampler,
               descriptor_image_info,
           });
@@ -689,6 +696,7 @@ void Rendering::CreateModelResource() {
 
         // write_descriptor_set: 3. occlusion image.
         {
+          draw_element.material_data.textures[3] = image_index_++;
           vk::DescriptorImageInfo descriptor_image_info;
           if (material.occlusionTexture.index != -1) {
             const tinygltf::Texture& texture{
@@ -715,14 +723,21 @@ void Rendering::CreateModelResource() {
           descriptor_image_info.imageLayout =
               vk::ImageLayout::eShaderReadOnlyOptimal;
 
-          write_descriptor_set.push_back(vk::WriteDescriptorSet{
-              draw_element.descriptor_set,
-              5,
-              0,
+          bindless_write_descriptor_set.push_back(vk::WriteDescriptorSet{
+              *bindless_descriptor_set,
+              10,
+              draw_element.material_data.textures[3],
               vk::DescriptorType::eCombinedImageSampler,
               descriptor_image_info,
           });
         }
+        gpu_->UpdateDescriptorSets(bindless_write_descriptor_set);
+
+        std::vector<vk::WriteDescriptorSet> write_descriptor_set;
+        vk::DescriptorSetAllocateInfo descriptor_set_allocate_info{
+            {}, *descriptor_set_layouts_[0]};
+        draw_element.descriptor_set =
+            gpu_->AllocateDescriptorSet(descriptor_set_allocate_info);
 
         // write_descriptor_set: 0. uniform buffer.
         {

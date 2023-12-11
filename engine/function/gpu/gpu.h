@@ -81,6 +81,10 @@ class Gpu {
     return bindless_descriptor_set;
   }
 
+  const vk::raii::PipelineLayout& GetPipelineLayout() const {
+    return pipeline_layout_;
+  }
+
  private:
   void CreateInstance();
   void CreateSurface();

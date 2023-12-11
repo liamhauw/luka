@@ -70,7 +70,7 @@ class Rendering {
     u32 tangent_buffer_index;
     u32 tangent_buffer_offset;
 
-    vk::DescriptorSet descriptor_set{nullptr};
+    vk::raii::DescriptorSet descriptor_set{nullptr};
     MaterialData material_data;
     Buffer material_buffer{nullptr};
   };
@@ -80,7 +80,6 @@ class Rendering {
 
   // Pipeline.
   std::vector<vk::raii::DescriptorSetLayout> descriptor_set_layouts_;
-  vk::raii::DescriptorSetLayout descriptor_set_layout_{nullptr};
   vk::raii::PipelineLayout pipeline_layout_{nullptr};
   std::vector<vk::Format> color_formats_{vk::Format::eB8G8R8A8Unorm};
   vk::Format depth_format_{vk::Format::eD32Sfloat};

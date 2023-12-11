@@ -340,7 +340,8 @@ vk::raii::Pipeline Gpu::CreatePipeline(
   descriptor_set_layout_with_bindless.push_back(
       *bindless_descriptor_set_layout_);
 
-  vk::PipelineLayoutCreateInfo pipeline_layout_ci{{}, descriptor_set_layout_with_bindless};
+  vk::PipelineLayoutCreateInfo pipeline_layout_ci{
+      {}, descriptor_set_layout_with_bindless};
   pipeline_layout_ = CreatePipelineLayout(pipeline_layout_ci);
 
   vk::StructureChain<vk::GraphicsPipelineCreateInfo,
@@ -732,22 +733,41 @@ void Gpu::CreateDevice() {
   // Features.
   vk::PhysicalDeviceFeatures physical_device_features;
 
-  vk::PhysicalDeviceVulkan11Features physical_device_vulkan11_features;
+  // vk::PhysicalDeviceVulkan11Features physical_device_vulkan11_features;
 
-  vk::PhysicalDeviceVulkan12Features physical_device_vulkan12_features;
-  physical_device_vulkan12_features.descriptorIndexing = VK_TRUE;
-  physical_device_vulkan12_features.descriptorBindingPartiallyBound = VK_TRUE;
-  physical_device_vulkan12_features.runtimeDescriptorArray = VK_TRUE;
+  // vk::PhysicalDeviceVulkan12Features physical_device_vulkan12_features;
+  // physical_device_vulkan12_features.descriptorIndexing = VK_TRUE;
+  // physical_device_vulkan12_features.descriptorBindingPartiallyBound =
+  // VK_TRUE; physical_device_vulkan12_features.runtimeDescriptorArray =
+  // VK_TRUE;
 
-  vk::PhysicalDeviceVulkan13Features physical_device_vulkan13_features;
-  physical_device_vulkan13_features.dynamicRendering = VK_TRUE;
+  // vk::PhysicalDeviceVulkan13Features physical_device_vulkan13_features;
+  // physical_device_vulkan13_features.dynamicRendering = VK_TRUE;
 
-  vk::StructureChain<
-      vk::PhysicalDeviceFeatures2, vk::PhysicalDeviceVulkan11Features,
-      vk::PhysicalDeviceVulkan12Features, vk::PhysicalDeviceVulkan13Features>
-      physical_device_features2{
-          physical_device_features, physical_device_vulkan11_features,
-          physical_device_vulkan12_features, physical_device_vulkan13_features};
+  // vk::PhysicalDeviceDescriptorIndexingFeatures indexing_features;
+  // indexing_features.descriptorBindingPartiallyBound = VK_TRUE;
+  // indexing_features.runtimeDescriptorArray = VK_TRUE;
+
+  // vk::PhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features;
+  // dynamic_rendering_features.dynamicRendering = VK_TRUE;
+
+  // vk::StructureChain<vk::PhysicalDeviceFeatures2,
+  //                    vk::PhysicalDeviceDescriptorIndexingFeatures,
+  //                    vk::PhysicalDeviceDynamicRenderingFeatures>
+  //     physical_device_features2{physical_device_features, indexing_features,
+  //                               dynamic_rendering_features};
+
+  vk::PhysicalDeviceDescriptorIndexingFeatures indexing_features;
+  indexing_features.descriptorBindingPartiallyBound = VK_TRUE;
+  indexing_features.runtimeDescriptorArray = VK_TRUE;
+  indexing_features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+
+  vk::PhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features;
+  dynamic_rendering_features.pNext = &indexing_features;
+  dynamic_rendering_features.dynamicRendering = VK_TRUE;
+
+  vk::PhysicalDeviceFeatures2 physical_device_features2;
+  physical_device_features2.pNext = &dynamic_rendering_features;
 
   // Create device.
   vk::DeviceCreateInfo device_ci{{},      device_queue_cis,
@@ -1003,15 +1023,16 @@ void Gpu::CreateDescriptorPool() {
       })};
 
   vk::DescriptorPoolCreateInfo bindless_descriptor_pool_ci{
-      vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind, bindless_max_sets,
-      bindlessl_pool_sizes};
+      vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind |
+          vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
+      bindless_max_sets, bindlessl_pool_sizes};
   bindless_descriptor_pool_ =
       vk::raii::DescriptorPool{device_, bindless_descriptor_pool_ci};
 
   std::vector<vk::DescriptorSetLayoutBinding> descriptor_set_layout_bindings{
       {kBindlessBinding, vk::DescriptorType::eCombinedImageSampler,
        kBindlessDescriptorCount, vk::ShaderStageFlagBits::eAll},
-      {kBindlessBinding + 1, vk::DescriptorType::eUniformBuffer,
+      {kBindlessBinding + 1, vk::DescriptorType::eCombinedImageSampler,
        kBindlessDescriptorCount, vk::ShaderStageFlagBits::eAll},
   };
 
