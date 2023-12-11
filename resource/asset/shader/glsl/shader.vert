@@ -1,30 +1,25 @@
 #version 450
 
-uint MaterialFeatures_ColorTexture     = 1 << 0;
-uint MaterialFeatures_NormalTexture    = 1 << 1;
-uint MaterialFeatures_RoughnessTexture = 1 << 2;
-uint MaterialFeatures_OcclusionTexture = 1 << 3;
-uint MaterialFeatures_EmissiveTexture =  1 << 4;
-uint MaterialFeatures_TangentVertexAttribute = 1 << 5;
-uint MaterialFeatures_TexcoordVertexAttribute = 1 << 6;
-
-layout(std140, binding = 0) uniform LocalConstants {
-  mat4 m;
-  mat4 vp;
-  vec4 eye;
-  vec4 light;
+layout ( std140, binding = 0 ) uniform LocalConstants {
+    mat4        view_projection;
+    vec4        eye;
+    vec4        light;
+    float       light_range;
+    float       light_intensity;
 };
 
-layout(std140, binding = 1) uniform MaterialConstant {
-  vec4 base_color_factor;
-  mat4 model;
-  mat4 model_inv;
-  vec3  emissive_factor;
-  float metallic_factor;
-  float roughness_factor;
-  float normal_scale;
-  float occlusion_factor;
-  uint  flags;
+layout ( std140, binding = 1 ) uniform Mesh {
+
+    mat4        model;
+    mat4        model_inverse;
+
+    // x = diffuse index, y = roughness index, z = normal index, w = occlusion index.
+    // Occlusion and roughness are encoded in the same texture
+    uvec4       textures;
+    vec4        base_color_factor;
+    vec4        metallic_roughness_occlusion_factor;
+    float       alpha_cutoff;
+    uint        flags;
 };
 
 layout(location=0) in vec3 position;
@@ -34,19 +29,16 @@ layout(location=3) in vec2 texCoord0;
 
 layout (location = 0) out vec2 vTexcoord0;
 layout (location = 1) out vec3 vNormal;
-layout (location = 2) out vec4 vTangent;
-layout (location = 3) out vec4 vPosition;
+layout (location = 2) out vec3 vTangent;
+layout (location = 3) out vec3 vBiTangent;
+layout (location = 4) out vec3 vPosition;
 
 void main() {
-  gl_Position = vp * m * model * vec4(position, 1);
-  vPosition = m * model * vec4(position, 1.0);
-
-  
-      vTexcoord0 = texCoord0;
-  
-  vNormal = mat3( model_inv ) * normal;
-
-  
-      vTangent = tangent;
-    
+    vec4 worldPosition = model * vec4(position, 1.0);
+    gl_Position = view_projection * worldPosition;
+    vPosition = worldPosition.xyz / worldPosition.w;
+    vTexcoord0 = texCoord0;
+    vNormal = normalize( mat3(model_inverse) * normal );
+    vTangent = normalize( mat3(model) * tangent.xyz );
+    vBiTangent = cross( vNormal, vTangent ) * tangent.w;
 }

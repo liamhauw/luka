@@ -33,25 +33,23 @@ class Rendering {
   void CreateModelResource();
   void CreateGBuffer();
 
-  struct alignas(16) UniformData {
-    glm::mat4 m;
+  struct UniformData {
     glm::mat4 vp;
     glm::vec4 eye;
     glm::vec4 light;
+    f32 light_range;
+    f32 light_intensity;
   };
 
-  struct alignas(16) MaterialData {
+  struct MaterialData {
+    glm::mat4 m;
+    glm::mat4 inverseM;
+    glm::uvec4 textures;
     glm::vec4 base_color_factor;
-    glm::mat4 model_mat4;
-    glm::mat4 inv_model_mat4;
-
-    glm::vec3 emissive_factor;
-    float matallic_factor;
-    
-    float roughness_factor;
-    float nomal_scale;
-    float occlusion_strength;
-    u32 flag;
+    glm::vec4 metallic_roughness_occlussion_factor;
+    f32 alpha_cutoff;
+    f32 padding[3];
+    u32 flags;
   };
 
   struct DrawElement {
@@ -72,7 +70,7 @@ class Rendering {
     u32 tangent_buffer_index;
     u32 tangent_buffer_offset;
 
-    vk::raii::DescriptorSet descriptor_set{nullptr};
+    vk::DescriptorSet descriptor_set{nullptr};
     MaterialData material_data;
     Buffer material_buffer{nullptr};
   };
@@ -81,6 +79,7 @@ class Rendering {
   std::shared_ptr<Gpu> gpu_;
 
   // Pipeline.
+  std::vector<vk::raii::DescriptorSetLayout> descriptor_set_layouts_;
   vk::raii::DescriptorSetLayout descriptor_set_layout_{nullptr};
   vk::raii::PipelineLayout pipeline_layout_{nullptr};
   std::vector<vk::Format> color_formats_{vk::Format::eB8G8R8A8Unorm};
@@ -90,6 +89,8 @@ class Rendering {
   Buffer uniform_buffer_{nullptr};
 
   // Model resource.
+  u32 image_index_{0};
+
   Buffer dummy_buffer_staging_buffer_{nullptr};
   Buffer dummy_buffer_{nullptr};
   Buffer dummy_image_staging_buffer_{nullptr};

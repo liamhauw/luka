@@ -164,42 +164,30 @@ void Rendering::CreatePipeline() {
       {8, vk::Format::eR32G32Sfloat}};
 
   std::vector<vk::DescriptorSetLayoutBinding> descriptor_set_layout_bindings{
-      {0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eAll},
-      {1, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eAll},
-      {2, vk::DescriptorType::eCombinedImageSampler, 1,
+      {0, vk::DescriptorType::eUniformBufferDynamic, 1,
        vk::ShaderStageFlagBits::eAll},
-      {3, vk::DescriptorType::eCombinedImageSampler, 1,
-       vk::ShaderStageFlagBits::eAll},
-      {4, vk::DescriptorType::eCombinedImageSampler, 1,
-       vk::ShaderStageFlagBits::eAll},
-      {5, vk::DescriptorType::eCombinedImageSampler, 1,
-       vk::ShaderStageFlagBits::eAll},
-      {6, vk::DescriptorType::eCombinedImageSampler, 1,
-       vk::ShaderStageFlagBits::eAll},
-  };
+      {1, vk::DescriptorType::eUniformBufferDynamic, 1,
+       vk::ShaderStageFlagBits::eAll}};
 
   vk::DescriptorSetLayoutCreateInfo descriptor_set_layout_ci{
       {}, descriptor_set_layout_bindings};
-  descriptor_set_layout_ =
-      gpu_->CreateDescriptorSetLayout(descriptor_set_layout_ci, "rendering");
-
-  vk::PipelineLayoutCreateInfo pipeline_layout_ci{{}, *descriptor_set_layout_};
-  pipeline_layout_ =
-      gpu_->CreatePipelineLayout(pipeline_layout_ci, "rendering");
+  descriptor_set_layouts_.push_back(std::move(
+      gpu_->CreateDescriptorSetLayout(descriptor_set_layout_ci, "rendering")));
 
   vk::PipelineRenderingCreateInfo pipeline_rendering_ci{
       {}, color_formats_, depth_format_};
 
-  pipeline_ = gpu_->CreatePipeline(vertex_shader_buffer, fragment_shader_buffer,
-                                   vertex_input_stride_format, pipeline_layout_,
-                                   pipeline_rendering_ci, "rendering");
+  pipeline_ = gpu_->CreatePipeline(
+      vertex_shader_buffer, fragment_shader_buffer, vertex_input_stride_format,
+      descriptor_set_layouts_, pipeline_rendering_ci, "rendering");
 
   vk::BufferCreateInfo uniform_buffer_ci{
       {},
       sizeof(UniformData),
       vk::BufferUsageFlagBits::eUniformBuffer,
       vk::SharingMode::eExclusive};
-  uniform_buffer_ = gpu_->CreateBuffer(uniform_buffer_ci, &uniform_data_, "uniform");
+  uniform_buffer_ =
+      gpu_->CreateBuffer(uniform_buffer_ci, &uniform_data_, "uniform");
 }
 
 void Rendering::CreateModelResource() {
@@ -579,64 +567,15 @@ void Rendering::CreateModelResource() {
 
         vk::DescriptorSetAllocateInfo descriptor_set_allocate_info{
             {}, *descriptor_set_layout_};
-        draw_element.descriptor_set =
-            gpu_->AllocateDescriptorSet(descriptor_set_allocate_info);
+        draw_element.descriptor_set = *(gpu_->GetBindlessDescriptorSet());
 
         std::vector<vk::WriteDescriptorSet> write_descriptor_set;
-
-        // write_descriptor_set: 0. uniform buffer.
-        {
-          vk::DescriptorBufferInfo descriptor_buffer_info{*uniform_buffer_, 0,
-                                                          sizeof(UniformData)};
-          write_descriptor_set.push_back(vk::WriteDescriptorSet{
-              *(draw_element.descriptor_set),
-              0,
-              0,
-              vk::DescriptorType::eUniformBuffer,
-              nullptr,
-              descriptor_buffer_info,
-          });
-        }
 
         const tinygltf::Material& material{model.materials[primitive.material]};
         const tinygltf::PbrMetallicRoughness& pbr{
             material.pbrMetallicRoughness};
 
-        // write_descriptor_set: 2. material buffer.
-        {
-          draw_element.material_data.model_mat4 = model_mat4;
-          draw_element.material_data.inv_model_mat4 =
-              glm::inverse(model_mat4);
-          draw_element.material_data.base_color_factor =
-              glm::make_vec4(pbr.baseColorFactor.data());
-          draw_element.material_data.matallic_factor = pbr.metallicFactor;
-          draw_element.material_data.roughness_factor = pbr.roughnessFactor;
-          draw_element.material_data.nomal_scale = material.normalTexture.scale;
-          draw_element.material_data.occlusion_strength =
-              material.occlusionTexture.strength;
-          draw_element.material_data.emissive_factor =
-              glm::make_vec3(material.emissiveFactor.data());
-
-          vk::BufferCreateInfo material_buffer_ci{
-              {},
-              sizeof(MaterialData),
-              vk::BufferUsageFlagBits::eUniformBuffer,
-              vk::SharingMode::eExclusive};
-          draw_element.material_buffer = gpu_->CreateBuffer(material_buffer_ci, &(draw_element.material_data));
-
-          vk::DescriptorBufferInfo descriptor_buffer_info{
-              *(draw_element.material_buffer), 0, sizeof(MaterialData)};
-          write_descriptor_set.push_back(vk::WriteDescriptorSet{
-              *(draw_element.descriptor_set),
-              1,
-              0,
-              vk::DescriptorType::eUniformBuffer,
-              nullptr,
-              descriptor_buffer_info,
-          });
-        }
-
-        // write_descriptor_set: 2. base color image.
+        // write_descriptor_set: 0. base color image.
         {
           vk::DescriptorImageInfo descriptor_image_info;
 
@@ -666,7 +605,7 @@ void Rendering::CreateModelResource() {
               vk::ImageLayout::eShaderReadOnlyOptimal;
 
           write_descriptor_set.push_back(vk::WriteDescriptorSet{
-              *(draw_element.descriptor_set),
+              draw_element.descriptor_set,
               2,
               0,
               vk::DescriptorType::eCombinedImageSampler,
@@ -674,7 +613,7 @@ void Rendering::CreateModelResource() {
           });
         }
 
-        // write_descriptor_set: 3. matallic roughness image
+        // write_descriptor_set: 1. matallic roughness image
         {
           vk::DescriptorImageInfo descriptor_image_info;
           if (pbr.metallicRoughnessTexture.index != -1) {
@@ -703,7 +642,7 @@ void Rendering::CreateModelResource() {
               vk::ImageLayout::eShaderReadOnlyOptimal;
 
           write_descriptor_set.push_back(vk::WriteDescriptorSet{
-              *(draw_element.descriptor_set),
+              draw_element.descriptor_set,
               3,
               0,
               vk::DescriptorType::eCombinedImageSampler,
@@ -711,7 +650,7 @@ void Rendering::CreateModelResource() {
           });
         }
 
-        // write_descriptor_set: 4. normal image.
+        // write_descriptor_set: 2. normal image.
         {
           vk::DescriptorImageInfo descriptor_image_info;
           if (material.normalTexture.index != -1) {
@@ -740,7 +679,7 @@ void Rendering::CreateModelResource() {
               vk::ImageLayout::eShaderReadOnlyOptimal;
 
           write_descriptor_set.push_back(vk::WriteDescriptorSet{
-              *(draw_element.descriptor_set),
+              draw_element.descriptor_set,
               4,
               0,
               vk::DescriptorType::eCombinedImageSampler,
@@ -748,7 +687,7 @@ void Rendering::CreateModelResource() {
           });
         }
 
-        // write_descriptor_set: 5. occlusion image.
+        // write_descriptor_set: 3. occlusion image.
         {
           vk::DescriptorImageInfo descriptor_image_info;
           if (material.occlusionTexture.index != -1) {
@@ -777,7 +716,7 @@ void Rendering::CreateModelResource() {
               vk::ImageLayout::eShaderReadOnlyOptimal;
 
           write_descriptor_set.push_back(vk::WriteDescriptorSet{
-              *(draw_element.descriptor_set),
+              draw_element.descriptor_set,
               5,
               0,
               vk::DescriptorType::eCombinedImageSampler,
@@ -785,42 +724,50 @@ void Rendering::CreateModelResource() {
           });
         }
 
-        // write_descriptor_set: 6. emissive image.
+        // write_descriptor_set: 0. uniform buffer.
         {
-          vk::DescriptorImageInfo descriptor_image_info;
-          if (material.emissiveTexture.index != -1) {
-            const tinygltf::Texture& texture{
-                model.textures[material.emissiveTexture.index]};
-
-            if (texture.sampler != -1) {
-              descriptor_image_info.sampler = *model_samplers_[texture.sampler];
-            } else {
-              descriptor_image_info.sampler = *dummy_sampler_;
-            }
-
-            if (texture.source != -1) {
-              descriptor_image_info.imageView =
-                  *model_image_views_[texture.source];
-            } else {
-              descriptor_image_info.imageView = *dummy_image_view_;
-            }
-
-          } else {
-            descriptor_image_info.sampler = *dummy_sampler_;
-            descriptor_image_info.imageView = *dummy_image_view_;
-          }
-
-          descriptor_image_info.imageLayout =
-              vk::ImageLayout::eShaderReadOnlyOptimal;
-
+          vk::DescriptorBufferInfo descriptor_buffer_info{*uniform_buffer_, 0,
+                                                          sizeof(UniformData)};
           write_descriptor_set.push_back(vk::WriteDescriptorSet{
               *(draw_element.descriptor_set),
-              6,
               0,
-              vk::DescriptorType::eCombinedImageSampler,
-              descriptor_image_info,
+              0,
+              vk::DescriptorType::eUniformBuffer,
+              nullptr,
+              descriptor_buffer_info,
           });
         }
+
+        // write_descriptor_set: 1. material buffer.
+        {
+          draw_element.material_data.m = model_mat4;
+          draw_element.material_data.inverseM = glm::inverse(model_mat4);
+          draw_element.material_data.base_color_factor =
+              glm::make_vec4(pbr.baseColorFactor.data());
+          draw_element.material_data.metallic_roughness_occlussion_factor =
+              glm::vec4{pbr.metallicFactor, pbr.roughnessFactor,
+                        material.occlusionTexture.strength, 0.0F};
+
+          vk::BufferCreateInfo material_buffer_ci{
+              {},
+              sizeof(MaterialData),
+              vk::BufferUsageFlagBits::eUniformBuffer,
+              vk::SharingMode::eExclusive};
+          draw_element.material_buffer = gpu_->CreateBuffer(
+              material_buffer_ci, &(draw_element.material_data));
+
+          vk::DescriptorBufferInfo descriptor_buffer_info{
+              *(draw_element.material_buffer), 0, sizeof(MaterialData)};
+          write_descriptor_set.push_back(vk::WriteDescriptorSet{
+              *(draw_element.descriptor_set),
+              1,
+              0,
+              vk::DescriptorType::eUniformBuffer,
+              nullptr,
+              descriptor_buffer_info,
+          });
+        }
+
         gpu_->UpdateDescriptorSets(write_descriptor_set);
         draw_elements_.push_back(std::move(draw_element));
       }
@@ -861,8 +808,9 @@ void Rendering::CreateGBuffer() {
 
     for (u64 i = 0; i < color_image_count; ++i) {
       image_ci.format = color_formats_[i];
-      color_images_.push_back(std::move(gpu_->CreateImage(
-          image_ci, vk::ImageLayout::eGeneral, nullptr, command_buffer, "g_color")));
+      color_images_.push_back(
+          std::move(gpu_->CreateImage(image_ci, vk::ImageLayout::eGeneral,
+                                      nullptr, command_buffer, "g_color")));
 
       image_view_ci.image = *color_images_[i];
       image_view_ci.format = color_formats_[i];

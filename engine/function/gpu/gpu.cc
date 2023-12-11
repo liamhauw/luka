@@ -241,7 +241,7 @@ vk::raii::Pipeline Gpu::CreatePipeline(
     const std::vector<u8>& vertex_shader_buffer,
     const std::vector<u8>& fragment_shader_buffer,
     const std::vector<std::pair<u32, vk::Format>>& vertex_input_stride_format,
-    const vk::raii::PipelineLayout& pipeline_layout,
+    const std::vector<vk::raii::DescriptorSetLayout>& descriptor_set_layout,
     const vk::PipelineRenderingCreateInfo& pipeline_rendering_ci,
     const std::string& name) {
   vk::ShaderModuleCreateInfo vertex_shader_module_ci{
@@ -333,6 +333,16 @@ vk::raii::Pipeline Gpu::CreatePipeline(
                                                  vk::DynamicState::eScissor};
   vk::PipelineDynamicStateCreateInfo dynamic_state_ci{{}, dynamic_states};
 
+  std::vector<vk::DescriptorSetLayout> descriptor_set_layout_with_bindless;
+  for (u32 i{0}; i < descriptor_set_layout.size(); ++i) {
+    descriptor_set_layout_with_bindless.push_back(*descriptor_set_layout[i]);
+  }
+  descriptor_set_layout_with_bindless.push_back(
+      *bindless_descriptor_set_layout_);
+
+  vk::PipelineLayoutCreateInfo pipeline_layout_ci{{}, descriptor_set_layout_with_bindless};
+  pipeline_layout_ = CreatePipelineLayout(pipeline_layout_ci);
+
   vk::StructureChain<vk::GraphicsPipelineCreateInfo,
                      vk::PipelineRenderingCreateInfo>
       graphics_pipeline_ci{{{},
@@ -346,7 +356,7 @@ vk::raii::Pipeline Gpu::CreatePipeline(
                             &depth_stencil_state_ci,
                             &color_blend_state_ci,
                             &dynamic_state_ci,
-                            *pipeline_layout,
+                            *pipeline_layout_,
                             nullptr},
                            pipeline_rendering_ci};
 
@@ -643,27 +653,6 @@ void Gpu::CreateDevice() {
   vk::PhysicalDeviceProperties physical_device_properties_{
       physical_device_.getProperties()};
 
-  // vk::SampleCountFlags sample_count{
-  //     physical_device_properties_.limits.framebufferColorSampleCounts &
-  //     physical_device_properties_.limits.framebufferDepthSampleCounts};
-  // if (sample_count & vk::SampleCountFlagBits::e64) {
-  //   sample_count_ = vk::SampleCountFlagBits::e64;
-  // } else if (sample_count & vk::SampleCountFlagBits::e32) {
-  //   sample_count_ = vk::SampleCountFlagBits::e32;
-  // } else if (sample_count & vk::SampleCountFlagBits::e16) {
-  //   sample_count_ = vk::SampleCountFlagBits::e16;
-  // } else if (sample_count & vk::SampleCountFlagBits::e8) {
-  //   sample_count_ = vk::SampleCountFlagBits::e8;
-  // } else if (sample_count & vk::SampleCountFlagBits::e4) {
-  //   sample_count_ = vk::SampleCountFlagBits::e4;
-  // } else if (sample_count & vk::SampleCountFlagBits::e2) {
-  //   sample_count_ = vk::SampleCountFlagBits::e2;
-  // } else {
-  //   sample_count_ = vk::SampleCountFlagBits::e1;
-  // }
-
-  // max_anisotropy_ = physical_device_properties_.limits.maxSamplerAnisotropy;
-
   // Queue famliy properties.
   std::vector<vk::QueueFamilyProperties> queue_family_properties{
       physical_device_.getQueueFamilyProperties()};
@@ -742,20 +731,13 @@ void Gpu::CreateDevice() {
 
   // Features.
   vk::PhysicalDeviceFeatures physical_device_features;
-  physical_device_features.independentBlend = VK_TRUE;
-  physical_device_features.fillModeNonSolid = VK_TRUE;
-  physical_device_features.wideLines = VK_TRUE;
-  physical_device_features.samplerAnisotropy = VK_TRUE;
-  physical_device_features.pipelineStatisticsQuery = VK_TRUE;
-  physical_device_features.vertexPipelineStoresAndAtomics = VK_TRUE;
-  physical_device_features.shaderImageGatherExtended = VK_TRUE;
 
   vk::PhysicalDeviceVulkan11Features physical_device_vulkan11_features;
-  physical_device_vulkan11_features.storageBuffer16BitAccess = VK_TRUE;
 
   vk::PhysicalDeviceVulkan12Features physical_device_vulkan12_features;
-  physical_device_vulkan12_features.shaderFloat16 = VK_TRUE;
-  physical_device_vulkan12_features.shaderSubgroupExtendedTypes = VK_TRUE;
+  physical_device_vulkan12_features.descriptorIndexing = VK_TRUE;
+  physical_device_vulkan12_features.descriptorBindingPartiallyBound = VK_TRUE;
+  physical_device_vulkan12_features.runtimeDescriptorArray = VK_TRUE;
 
   vk::PhysicalDeviceVulkan13Features physical_device_vulkan13_features;
   physical_device_vulkan13_features.dynamicRendering = VK_TRUE;
@@ -1009,6 +991,49 @@ void Gpu::CreateDescriptorPool() {
       vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, max_sets,
       pool_sizes};
   descriptor_pool_ = vk::raii::DescriptorPool{device_, descriptor_pool_ci};
+
+  std::vector<vk::DescriptorPoolSize> bindlessl_pool_sizes{
+      {vk::DescriptorType::eCombinedImageSampler, kBindlessDescriptorCount},
+      {vk::DescriptorType::eStorageImage, kBindlessDescriptorCount}};
+
+  u32 bindless_max_sets{std::accumulate(
+      bindlessl_pool_sizes.begin(), bindlessl_pool_sizes.end(),
+      static_cast<u32>(0), [](u32 sum, const vk::DescriptorPoolSize& dps) {
+        return sum + dps.descriptorCount;
+      })};
+
+  vk::DescriptorPoolCreateInfo bindless_descriptor_pool_ci{
+      vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind, bindless_max_sets,
+      bindlessl_pool_sizes};
+  bindless_descriptor_pool_ =
+      vk::raii::DescriptorPool{device_, bindless_descriptor_pool_ci};
+
+  std::vector<vk::DescriptorSetLayoutBinding> descriptor_set_layout_bindings{
+      {kBindlessBinding, vk::DescriptorType::eCombinedImageSampler,
+       kBindlessDescriptorCount, vk::ShaderStageFlagBits::eAll},
+      {kBindlessBinding + 1, vk::DescriptorType::eUniformBuffer,
+       kBindlessDescriptorCount, vk::ShaderStageFlagBits::eAll},
+  };
+
+  std::vector<vk::DescriptorBindingFlags> descriptor_binding_flags(
+      2, vk::DescriptorBindingFlagBits::ePartiallyBound);
+
+  vk::DescriptorSetLayoutBindingFlagsCreateInfo
+      descriptor_set_layout_binding_flags_ci{descriptor_binding_flags};
+
+  vk::DescriptorSetLayoutCreateInfo bindless_descriptor_set_layout_ci{
+      vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool,
+      descriptor_set_layout_bindings, &descriptor_set_layout_binding_flags_ci};
+
+  bindless_descriptor_set_layout_ =
+      vk::raii::DescriptorSetLayout{device_, bindless_descriptor_set_layout_ci};
+
+  vk::DescriptorSetAllocateInfo bindless_descriptor_set_allocate_info{
+      *bindless_descriptor_pool_, *bindless_descriptor_set_layout_};
+
+  bindless_descriptor_set = std::move(
+      device_.allocateDescriptorSets(bindless_descriptor_set_allocate_info)
+          .front());
 }
 
 void Gpu::CreateAllocator() {

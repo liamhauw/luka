@@ -60,14 +60,14 @@ class Gpu {
       const std::vector<u8>& vertex_shader_buffer,
       const std::vector<u8>& fragment_shader_buffer,
       const std::vector<std::pair<u32, vk::Format>>& vertex_input_stride_format,
-      const vk::raii::PipelineLayout& pipeline_layout,
+      const std::vector<vk::raii::DescriptorSetLayout>& descriptor_set_layout,
       const vk::PipelineRenderingCreateInfo& pipeline_rendering_ci,
       const std::string& name = {});
 
   vk::raii::DescriptorSet AllocateDescriptorSet(
       vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
       const std::string& name = {});
-  void UpdateDescriptorSets(const std::vector<vk::WriteDescriptorSet>& writes);    
+  void UpdateDescriptorSets(const std::vector<vk::WriteDescriptorSet>& writes);
 
   vk::raii::CommandBuffer BeginTempCommandBuffer();
   void EndTempCommandBuffer(const vk::raii::CommandBuffer& command_buffer);
@@ -76,6 +76,10 @@ class Gpu {
   void BeginRenderPass(const vk::raii::CommandBuffer& cur_command_buffer);
   void EndRenderPass(const vk::raii::CommandBuffer& cur_command_buffer);
   void WaitIdle();
+
+  const vk::raii::DescriptorSet& GetBindlessDescriptorSet() const {
+    return bindless_descriptor_set;
+  }
 
  private:
   void CreateInstance();
@@ -162,11 +166,17 @@ class Gpu {
   std::vector<vk::raii::Semaphore> image_available_semaphores_;
   std::vector<vk::raii::Semaphore> render_finished_semaphores_;
 
-  // Pipeline cache.
-  vk::raii::PipelineCache pipeline_cache_{nullptr};
-
-  // Descriptor pool.
+   // Descriptor pool.
   vk::raii::DescriptorPool descriptor_pool_{nullptr};
+  const u32 kBindlessDescriptorCount{1024};
+  const u32 kBindlessBinding{10};
+  vk::raii::DescriptorPool bindless_descriptor_pool_{nullptr};
+  vk::raii::DescriptorSetLayout bindless_descriptor_set_layout_{nullptr};
+  vk::raii::DescriptorSet bindless_descriptor_set{nullptr};
+
+  // Pipeline.
+  vk::raii::PipelineCache pipeline_cache_{nullptr};
+  vk::raii::PipelineLayout pipeline_layout_{nullptr};
 
   // Allocator.
   VmaAllocator allocator_;
