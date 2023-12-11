@@ -733,30 +733,6 @@ void Gpu::CreateDevice() {
   // Features.
   vk::PhysicalDeviceFeatures physical_device_features;
 
-  // vk::PhysicalDeviceVulkan11Features physical_device_vulkan11_features;
-
-  // vk::PhysicalDeviceVulkan12Features physical_device_vulkan12_features;
-  // physical_device_vulkan12_features.descriptorIndexing = VK_TRUE;
-  // physical_device_vulkan12_features.descriptorBindingPartiallyBound =
-  // VK_TRUE; physical_device_vulkan12_features.runtimeDescriptorArray =
-  // VK_TRUE;
-
-  // vk::PhysicalDeviceVulkan13Features physical_device_vulkan13_features;
-  // physical_device_vulkan13_features.dynamicRendering = VK_TRUE;
-
-  // vk::PhysicalDeviceDescriptorIndexingFeatures indexing_features;
-  // indexing_features.descriptorBindingPartiallyBound = VK_TRUE;
-  // indexing_features.runtimeDescriptorArray = VK_TRUE;
-
-  // vk::PhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features;
-  // dynamic_rendering_features.dynamicRendering = VK_TRUE;
-
-  // vk::StructureChain<vk::PhysicalDeviceFeatures2,
-  //                    vk::PhysicalDeviceDescriptorIndexingFeatures,
-  //                    vk::PhysicalDeviceDynamicRenderingFeatures>
-  //     physical_device_features2{physical_device_features, indexing_features,
-  //                               dynamic_rendering_features};
-
   vk::PhysicalDeviceDescriptorIndexingFeatures indexing_features;
   indexing_features.descriptorBindingPartiallyBound = VK_TRUE;
   indexing_features.runtimeDescriptorArray = VK_TRUE;
@@ -766,8 +742,11 @@ void Gpu::CreateDevice() {
   dynamic_rendering_features.pNext = &indexing_features;
   dynamic_rendering_features.dynamicRendering = VK_TRUE;
 
-  vk::PhysicalDeviceFeatures2 physical_device_features2;
-  physical_device_features2.pNext = &dynamic_rendering_features;
+  vk::StructureChain<vk::PhysicalDeviceFeatures2,
+                     vk::PhysicalDeviceDescriptorIndexingFeatures,
+                     vk::PhysicalDeviceDynamicRenderingFeatures>
+      physical_device_features2{physical_device_features, indexing_features,
+                                dynamic_rendering_features};
 
   // Create device.
   vk::DeviceCreateInfo device_ci{{},      device_queue_cis,
