@@ -13,9 +13,9 @@
 namespace luka {
 
 Rendering::Rendering() : asset_{gContext.asset}, gpu_{gContext.gpu} {
+  CreateGBuffer();
   CreatePipeline();
   CreateModelResource();
-  CreateGBuffer();
 }
 
 Rendering::~Rendering() { gpu_->WaitIdle(); }
@@ -31,21 +31,17 @@ void Rendering::Tick() {
   }
 }
 
-std::pair<const vk::raii::Sampler&, const vk::raii::ImageView&>
-Rendering::GetViewportImage() const {
-  return std::make_pair(std::ref(sampler_), std::ref(color_image_views_[0]));
-}
-
 void Rendering::Render(const vk::raii::CommandBuffer& command_buffer) {
-  glm::vec3 eye{0.0F, 2.5F, 2.0F};
+  glm::vec3 eye{0.0F, 2.5F, 0.0F};
   glm::vec3 look{0.0F, 0.0F, -1.0F};
   glm::vec3 right{1.0F, 0.0F, 0.0F};
 
-  glm::mat4 view{glm::lookAt(eye, eye + look, glm::vec3(0.0f, -1.0f, 0.0f))};
+  glm::mat4 view{glm::lookAt(eye, eye + look, glm::vec3(0.0f, 1.0f, 0.0f))};
   glm::mat4 projection{glm::perspective(
       glm::radians(60.0f),
       static_cast<float>(extent_.width) / static_cast<float>(extent_.height),
       0.1f, 1000.0f)};
+  projection[1][1] *= -1;
 
   uniform_data_.vp = projection * view;
   uniform_data_.eye = glm::vec4{eye, 1.0F};
@@ -78,12 +74,12 @@ void Rendering::Render(const vk::raii::CommandBuffer& command_buffer) {
 
   vk::RenderingAttachmentInfo depthe_attchment_info{
       *depth_image_view_,
-      vk::ImageLayout::eAttachmentOptimal,
+      vk::ImageLayout::eDepthStencilAttachmentOptimal,
       {},
       {},
       {},
       vk::AttachmentLoadOp::eClear,
-      vk::AttachmentStoreOp::eStore};
+      vk::AttachmentStoreOp::eDontCare};
   depthe_attchment_info.clearValue.depthStencil.setDepth(1.0F);
 
   vk::RenderingInfo rendering_info{
@@ -146,6 +142,11 @@ void Rendering::Render(const vk::raii::CommandBuffer& command_buffer) {
   command_buffer.endRendering();
 }
 
+std::pair<const vk::raii::Sampler&, const vk::raii::ImageView&>
+Rendering::GetViewportImage() const {
+  return std::make_pair(std::ref(sampler_), std::ref(color_image_views_[0]));
+}
+
 void Rendering::Resize() {
   gpu_->WaitIdle();
   color_image_views_.clear();
@@ -154,6 +155,92 @@ void Rendering::Resize() {
   depth_image_.Clear();
   sampler_.clear();
   CreateGBuffer();
+}
+
+void Rendering::CreateGBuffer() {
+  vk::raii::CommandBuffer command_buffer{gpu_->BeginTempCommandBuffer()};
+
+  extent_ = gpu_->GetExtent2D();
+  u64 color_image_count{color_formats_.size()};
+
+  {
+    vk::ImageCreateInfo image_ci{{},
+                                 vk::ImageType::e2D,
+                                 {},
+                                 {extent_.width, extent_.height, 1},
+                                 1,
+                                 1,
+                                 vk::SampleCountFlagBits::e1,
+                                 vk::ImageTiling::eOptimal,
+                                 vk::ImageUsageFlagBits::eColorAttachment |
+                                     vk::ImageUsageFlagBits::eSampled |
+                                     vk::ImageUsageFlagBits::eStorage,
+                                 vk::SharingMode::eExclusive,
+                                 {},
+                                 vk::ImageLayout::eUndefined};
+
+    vk::ImageViewCreateInfo image_view_ci{
+        {},
+        {},
+        vk::ImageViewType::e2D,
+        {},
+        {},
+        {vk::ImageAspectFlagBits::eColor, 0, VK_REMAINING_MIP_LEVELS, 0,
+         VK_REMAINING_ARRAY_LAYERS}};
+
+    for (u64 i = 0; i < color_image_count; ++i) {
+      image_ci.format = color_formats_[i];
+      color_images_.push_back(
+          std::move(gpu_->CreateImage(image_ci, vk::ImageLayout::eGeneral,
+                                      nullptr, command_buffer, "g_color")));
+
+      image_view_ci.image = *color_images_[i];
+      image_view_ci.format = color_formats_[i];
+      color_image_views_.push_back(
+          std::move(gpu_->CreateImageView(image_view_ci, "g_color")));
+    }
+  }
+
+  if (depth_format_ != vk::Format::eUndefined) {
+    vk::ImageCreateInfo image_ci{
+        {},
+        vk::ImageType::e2D,
+        depth_format_,
+        {extent_.width, extent_.height, 1},
+        1,
+        1,
+        vk::SampleCountFlagBits::e1,
+        vk::ImageTiling::eOptimal,
+        vk::ImageUsageFlagBits::eDepthStencilAttachment |
+            vk::ImageUsageFlagBits::eSampled,
+        vk::SharingMode::eExclusive,
+        {},
+        vk::ImageLayout::eUndefined};
+
+    depth_image_ = gpu_->CreateImage(image_ci, vk::ImageLayout::eGeneral,
+                                     nullptr, command_buffer, "g_depth");
+
+    vk::ImageViewCreateInfo image_view_ci{
+        {},
+        *depth_image_,
+        vk::ImageViewType::e2D,
+        depth_format_,
+        {},
+        {vk::ImageAspectFlagBits::eDepth, 0, VK_REMAINING_MIP_LEVELS, 0,
+         VK_REMAINING_ARRAY_LAYERS}};
+    depth_image_view_ = gpu_->CreateImageView(image_view_ci, "g_depth");
+  }
+
+  vk::SamplerCreateInfo sampler_ci{{},
+                                   vk::Filter::eLinear,
+                                   vk::Filter::eLinear,
+                                   vk::SamplerMipmapMode::eLinear,
+                                   vk::SamplerAddressMode::eClampToBorder,
+                                   vk::SamplerAddressMode::eClampToBorder,
+                                   vk::SamplerAddressMode::eClampToBorder};
+  sampler_ = gpu_->CreateSampler(sampler_ci, "g");
+
+  gpu_->EndTempCommandBuffer(command_buffer);
 }
 
 void Rendering::CreatePipeline() {
@@ -168,8 +255,7 @@ void Rendering::CreatePipeline() {
       {8, vk::Format::eR32G32Sfloat}};
 
   std::vector<vk::DescriptorSetLayoutBinding> descriptor_set_layout_bindings{
-      {0, vk::DescriptorType::eUniformBuffer, 1,
-       vk::ShaderStageFlagBits::eAll},
+      {0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eAll},
       {1, vk::DescriptorType::eUniformBuffer, 1,
        vk::ShaderStageFlagBits::eAll}};
 
@@ -788,92 +874,6 @@ void Rendering::CreateModelResource() {
       }
     }
   }
-}
-
-void Rendering::CreateGBuffer() {
-  vk::raii::CommandBuffer command_buffer{gpu_->BeginTempCommandBuffer()};
-
-  extent_ = gpu_->GetExtent2D();
-  u64 color_image_count{color_formats_.size()};
-
-  {
-    vk::ImageCreateInfo image_ci{{},
-                                 vk::ImageType::e2D,
-                                 {},
-                                 {extent_.width, extent_.height, 1},
-                                 1,
-                                 1,
-                                 vk::SampleCountFlagBits::e1,
-                                 vk::ImageTiling::eOptimal,
-                                 vk::ImageUsageFlagBits::eColorAttachment |
-                                     vk::ImageUsageFlagBits::eSampled |
-                                     vk::ImageUsageFlagBits::eStorage,
-                                 vk::SharingMode::eExclusive,
-                                 {},
-                                 vk::ImageLayout::eUndefined};
-
-    vk::ImageViewCreateInfo image_view_ci{
-        {},
-        {},
-        vk::ImageViewType::e2D,
-        {},
-        {},
-        {vk::ImageAspectFlagBits::eColor, 0, VK_REMAINING_MIP_LEVELS, 0,
-         VK_REMAINING_ARRAY_LAYERS}};
-
-    for (u64 i = 0; i < color_image_count; ++i) {
-      image_ci.format = color_formats_[i];
-      color_images_.push_back(
-          std::move(gpu_->CreateImage(image_ci, vk::ImageLayout::eGeneral,
-                                      nullptr, command_buffer, "g_color")));
-
-      image_view_ci.image = *color_images_[i];
-      image_view_ci.format = color_formats_[i];
-      color_image_views_.push_back(
-          std::move(gpu_->CreateImageView(image_view_ci, "g_color")));
-    }
-  }
-
-  if (depth_format_ != vk::Format::eUndefined) {
-    vk::ImageCreateInfo image_ci{
-        {},
-        vk::ImageType::e2D,
-        depth_format_,
-        {extent_.width, extent_.height, 1},
-        1,
-        1,
-        vk::SampleCountFlagBits::e1,
-        vk::ImageTiling::eOptimal,
-        vk::ImageUsageFlagBits::eDepthStencilAttachment |
-            vk::ImageUsageFlagBits::eSampled,
-        vk::SharingMode::eExclusive,
-        {},
-        vk::ImageLayout::eUndefined};
-
-    depth_image_ = gpu_->CreateImage(image_ci, vk::ImageLayout::eGeneral,
-                                     nullptr, command_buffer, "g_depth");
-
-    vk::ImageViewCreateInfo image_view_ci{
-        {},
-        *depth_image_,
-        vk::ImageViewType::e2D,
-        depth_format_,
-        {},
-        {vk::ImageAspectFlagBits::eDepth, 0, VK_REMAINING_MIP_LEVELS, 0,
-         VK_REMAINING_ARRAY_LAYERS}};
-    depth_image_view_ = gpu_->CreateImageView(image_view_ci, "g_depth");
-  }
-
-  vk::SamplerCreateInfo sampler_ci{{},
-                                   vk::Filter::eLinear,
-                                   vk::Filter::eLinear,
-                                   vk::SamplerMipmapMode::eLinear,
-                                   vk::SamplerAddressMode::eClampToBorder,
-                                   vk::SamplerAddressMode::eClampToBorder,
-                                   vk::SamplerAddressMode::eClampToBorder};
-  sampler_ = gpu_->CreateSampler(sampler_ci, "g");
-
-  gpu_->EndTempCommandBuffer(command_buffer);
 }
 
 }  // namespace luka

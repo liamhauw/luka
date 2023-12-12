@@ -26,7 +26,9 @@ class FunctionUi {
 
   void CreateImgui();
   void AddViewportImage();
+
   void DestroyImgui();
+  
   void CreateUi();
 
   std::shared_ptr<Gpu> gpu_;

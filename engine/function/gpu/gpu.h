@@ -22,10 +22,6 @@ class Gpu {
 
   void Tick();
 
-  std::pair<ImGui_ImplVulkan_InitInfo, VkRenderPass> GetVulkanInfoForImgui()
-      const;
-  const vk::Extent2D& GetExtent2D() const;
-
   Buffer CreateBuffer(const vk::BufferCreateInfo& buffer_ci, const void* data,
                       const std::string& name = {});
 
@@ -70,41 +66,55 @@ class Gpu {
   void UpdateDescriptorSets(const std::vector<vk::WriteDescriptorSet>& writes);
 
   vk::raii::CommandBuffer BeginTempCommandBuffer();
+
   void EndTempCommandBuffer(const vk::raii::CommandBuffer& command_buffer);
+
   const vk::raii::CommandBuffer& BeginFrame();
+
   void EndFrame(const vk::raii::CommandBuffer& cur_command_buffer);
+
+  void BeginLabel(const vk::raii::CommandBuffer& command_buffer,
+                  const std::string& label,
+                  const std::array<f32, 4>& color = {0.0F, 0.0F, 0.6F, 1.0F});
+
+  void EndLabel(const vk::raii::CommandBuffer& command_buffer);
+
   void BeginRenderPass(const vk::raii::CommandBuffer& cur_command_buffer);
+
   void EndRenderPass(const vk::raii::CommandBuffer& cur_command_buffer);
+
   void WaitIdle();
 
-  const vk::raii::DescriptorSet& GetBindlessDescriptorSet() const {
-    return bindless_descriptor_set;
-  }
+  const vk::Extent2D& GetExtent2D() const;
 
-  const vk::raii::PipelineLayout& GetPipelineLayout() const {
-    return pipeline_layout_;
-  }
+  const vk::raii::DescriptorSet& GetBindlessDescriptorSet() const;
+
+  const vk::raii::PipelineLayout& GetPipelineLayout() const;
+
+  std::pair<ImGui_ImplVulkan_InitInfo, VkRenderPass> GetVulkanInfoForImgui()
+      const;
 
  private:
   void CreateInstance();
   void CreateSurface();
   void CreatePhysicalDevice();
   void CreateDevice();
-  void CreateQueryPool();
   void CreateSwapchain();
   void CreateRenderPass();
   void CreateFramebuffers();
+  void CreatePipelineCache();
+  void CreateDescriptorObjects();
+  void CreateAllocator();
   void CreateCommandObjects();
   void CreateSyncObjects();
-  void CreatePipelineCache();
-  void CreateDescriptorPool();
-  void CreateAllocator();
 
   void Resize();
 
-  void SetName(vk::ObjectType object_type, u64 handle, const std::string& name,
-               const std::string& suffix = {});
+  void SetObjectName(vk::ObjectType object_type, u64 handle,
+                     const std::string& name, const std::string& suffix = {});
+
   const vk::raii::CommandBuffer& GetCommandBuffer();
+
   static VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(
       VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
       VkDebugUtilsMessageTypeFlagsEXT message_type,
@@ -140,9 +150,6 @@ class Gpu {
   vk::raii::Queue compute_queue_{nullptr};
   vk::raii::Queue present_queue_{nullptr};
 
-  // Query pool
-  vk::raii::QueryPool query_pool_{nullptr};
-
   // Swapchain.
   u32 image_count_;
   vk::Format format_;
@@ -159,6 +166,21 @@ class Gpu {
   // Framebuffers.
   std::vector<vk::raii::Framebuffer> framebuffers_;
 
+  // Pipeline cache.
+  vk::raii::PipelineCache pipeline_cache_{nullptr};
+  vk::raii::PipelineLayout pipeline_layout_{nullptr};
+
+  // Descriptor objects.
+  vk::raii::DescriptorPool descriptor_pool_{nullptr};
+  const u32 kBindlessDescriptorCount{1024};
+  const u32 kBindlessBinding{10};
+  vk::raii::DescriptorPool bindless_descriptor_pool_{nullptr};
+  vk::raii::DescriptorSetLayout bindless_descriptor_set_layout_{nullptr};
+  vk::raii::DescriptorSet bindless_descriptor_set{nullptr};
+
+  // Allocator.
+  VmaAllocator allocator_;
+
   // Command objects.
   const u32 kMaxUsedCommandBufferCountperFrame{8};
   std::vector<u32> used_command_buffer_counts_;
@@ -169,21 +191,6 @@ class Gpu {
   std::vector<vk::raii::Fence> command_executed_fences_;
   std::vector<vk::raii::Semaphore> image_available_semaphores_;
   std::vector<vk::raii::Semaphore> render_finished_semaphores_;
-
-   // Descriptor pool.
-  vk::raii::DescriptorPool descriptor_pool_{nullptr};
-  const u32 kBindlessDescriptorCount{1024};
-  const u32 kBindlessBinding{10};
-  vk::raii::DescriptorPool bindless_descriptor_pool_{nullptr};
-  vk::raii::DescriptorSetLayout bindless_descriptor_set_layout_{nullptr};
-  vk::raii::DescriptorSet bindless_descriptor_set{nullptr};
-
-  // Pipeline.
-  vk::raii::PipelineCache pipeline_cache_{nullptr};
-  vk::raii::PipelineLayout pipeline_layout_{nullptr};
-
-  // Allocator.
-  VmaAllocator allocator_;
 };
 
 }  // namespace luka

@@ -17,15 +17,14 @@ Gpu::Gpu() {
   CreateSurface();
   CreatePhysicalDevice();
   CreateDevice();
-  CreateQueryPool();
   CreateSwapchain();
   CreateRenderPass();
   CreateFramebuffers();
+  CreatePipelineCache();
+  CreateDescriptorObjects();
+  CreateAllocator();
   CreateCommandObjects();
   CreateSyncObjects();
-  CreatePipelineCache();
-  CreateDescriptorPool();
-  CreateAllocator();
 }
 
 Gpu::~Gpu() {
@@ -43,35 +42,14 @@ void Gpu::Tick() {
   }
 }
 
-std::pair<ImGui_ImplVulkan_InitInfo, VkRenderPass> Gpu::GetVulkanInfoForImgui()
-    const {
-  ImGui_ImplVulkan_InitInfo init_info{
-      .Instance = static_cast<VkInstance>(*instance_),
-      .PhysicalDevice = static_cast<VkPhysicalDevice>(*physical_device_),
-      .Device = static_cast<VkDevice>(*device_),
-      .QueueFamily = graphics_queue_index_.value(),
-      .Queue = static_cast<VkQueue>(*graphics_queue_),
-      .PipelineCache = static_cast<VkPipelineCache>(*pipeline_cache_),
-      .DescriptorPool = static_cast<VkDescriptorPool>(*descriptor_pool_),
-      .Subpass = 0,
-      .MinImageCount = image_count_,
-      .ImageCount = image_count_,
-      .MSAASamples = VK_SAMPLE_COUNT_1_BIT,
-  };
-
-  return std::make_pair(init_info, static_cast<VkRenderPass>(*render_pass_));
-}
-
-const vk::Extent2D& Gpu::GetExtent2D() const { return extent_; }
-
 Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
                          const void* data, const std::string& name) {
   Buffer buffer{allocator_, buffer_ci, true};
 
 #ifndef NDEBUG
-  SetName(vk::ObjectType::eBuffer,
-          reinterpret_cast<uint64_t>(static_cast<VkBuffer>(*buffer)), name,
-          "buffer");
+  SetObjectName(vk::ObjectType::eBuffer,
+                reinterpret_cast<uint64_t>(static_cast<VkBuffer>(*buffer)),
+                name, "buffer");
 #endif
 
   void* mapped_data;
@@ -90,9 +68,9 @@ Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
   Buffer buffer{allocator_, buffer_ci};
 
 #ifndef NDEBUG
-  SetName(vk::ObjectType::eBuffer,
-          reinterpret_cast<uint64_t>(static_cast<VkBuffer>(*buffer)), name,
-          "buffer");
+  SetObjectName(vk::ObjectType::eBuffer,
+                reinterpret_cast<uint64_t>(static_cast<VkBuffer>(*buffer)),
+                name, "buffer");
 #endif
   if (*staging_buffer) {
     vk::BufferCopy buffer_copy{0, 0, buffer_ci.size};
@@ -110,8 +88,9 @@ Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
   Image image{allocator_, image_ci};
 
 #ifndef NDEBUG
-  SetName(vk::ObjectType::eImage,
-          reinterpret_cast<u64>(static_cast<VkImage>(*image)), name, "image");
+  SetObjectName(vk::ObjectType::eImage,
+                reinterpret_cast<u64>(static_cast<VkImage>(*image)), name,
+                "image");
 #endif
   vk::ImageAspectFlagBits flag_bits;
   if (image_ci.usage & vk::ImageUsageFlagBits::eDepthStencilAttachment) {
@@ -185,9 +164,9 @@ vk::raii::ImageView Gpu::CreateImageView(
   vk::raii::ImageView image_view{vk::raii::ImageView{device_, image_view_ci}};
 
 #ifndef NDEBUG
-  SetName(vk::ObjectType::eImageView,
-          reinterpret_cast<u64>(static_cast<VkImageView>(*image_view)), name,
-          "image_view");
+  SetObjectName(vk::ObjectType::eImageView,
+                reinterpret_cast<u64>(static_cast<VkImageView>(*image_view)),
+                name, "image_view");
 #endif
 
   return image_view;
@@ -198,9 +177,9 @@ vk::raii::Sampler Gpu::CreateSampler(const vk::SamplerCreateInfo sampler_ci,
   vk::raii::Sampler sampler{device_, sampler_ci};
 
 #ifndef NDEBUG
-  SetName(vk::ObjectType::eSampler,
-          reinterpret_cast<uint64_t>(static_cast<VkSampler>(*sampler)), name,
-          "sampler");
+  SetObjectName(vk::ObjectType::eSampler,
+                reinterpret_cast<uint64_t>(static_cast<VkSampler>(*sampler)),
+                name, "sampler");
 #endif
 
   return sampler;
@@ -213,10 +192,10 @@ vk::raii::DescriptorSetLayout Gpu::CreateDescriptorSetLayout(
                                                       descriptor_set_layout_ci};
 
 #ifndef NDEBUG
-  SetName(vk::ObjectType::eDescriptorSetLayout,
-          reinterpret_cast<uint64_t>(
-              static_cast<VkDescriptorSetLayout>(*descriptor_set_layout)),
-          name, "descriptor_set_layout");
+  SetObjectName(vk::ObjectType::eDescriptorSetLayout,
+                reinterpret_cast<uint64_t>(
+                    static_cast<VkDescriptorSetLayout>(*descriptor_set_layout)),
+                name, "descriptor_set_layout");
 #endif
 
   return descriptor_set_layout;
@@ -228,10 +207,10 @@ vk::raii::PipelineLayout Gpu::CreatePipelineLayout(
   vk::raii::PipelineLayout pipeline_layout{device_, pipeline_layout_ci};
 
 #ifndef NDEBUG
-  SetName(vk::ObjectType::ePipelineLayout,
-          reinterpret_cast<uint64_t>(
-              static_cast<VkPipelineLayout>(*pipeline_layout)),
-          name, "pipeline_layout");
+  SetObjectName(vk::ObjectType::ePipelineLayout,
+                reinterpret_cast<uint64_t>(
+                    static_cast<VkPipelineLayout>(*pipeline_layout)),
+                name, "pipeline_layout");
 #endif
 
   return pipeline_layout;
@@ -366,9 +345,9 @@ vk::raii::Pipeline Gpu::CreatePipeline(
       graphics_pipeline_ci.get<vk::GraphicsPipelineCreateInfo>()};
 
 #ifndef NDEBUG
-  SetName(vk::ObjectType::ePipeline,
-          reinterpret_cast<uint64_t>(static_cast<VkPipeline>(*pipeline)), name,
-          "pipeline");
+  SetObjectName(vk::ObjectType::ePipeline,
+                reinterpret_cast<uint64_t>(static_cast<VkPipeline>(*pipeline)),
+                name, "pipeline");
 #endif
 
   return pipeline;
@@ -382,7 +361,7 @@ vk::raii::DescriptorSet Gpu::AllocateDescriptorSet(
       device_.allocateDescriptorSets(descriptor_set_allocate_info).front())};
 
 #ifndef NDEBUG
-  SetName(
+  SetObjectName(
       vk::ObjectType::eDescriptorSet,
       reinterpret_cast<uint64_t>(static_cast<VkDescriptorSet>(*descriptor_set)),
       name, "descriptor_set");
@@ -437,11 +416,6 @@ const vk::raii::CommandBuffer& Gpu::BeginFrame() {
   command_buffer.reset({});
   command_buffer.begin({});
 
-#ifndef NDEBUG
-  vk::DebugUtilsLabelEXT debug_utils_lable{"frame", {0.0, 0.0, 1.0, 1.0}};
-  command_buffer.beginDebugUtilsLabelEXT(debug_utils_lable);
-#endif
-
   return command_buffer;
 }
 
@@ -470,6 +444,17 @@ void Gpu::EndFrame(const vk::raii::CommandBuffer& command_buffer) {
   back_buffer_index = (back_buffer_index + 1) % kBackBufferCount;
 }
 
+void Gpu::BeginLabel(const vk::raii::CommandBuffer& command_buffer,
+                     const std::string& label,
+                     const std::array<f32, 4>& color) {
+  vk::DebugUtilsLabelEXT debug_utils_label{label.c_str(), color};
+  command_buffer.beginDebugUtilsLabelEXT(debug_utils_label);
+}
+
+void Gpu::EndLabel(const vk::raii::CommandBuffer& command_buffer) {
+  command_buffer.endDebugUtilsLabelEXT();
+}
+
 void Gpu::BeginRenderPass(const vk::raii::CommandBuffer& command_buffer) {
   std::array<vk::ClearValue, 1> clear_values;
   clear_values[0].color = vk::ClearColorValue{0.0f, 0.0f, 0.0f, 1.0f};
@@ -487,6 +472,35 @@ void Gpu::EndRenderPass(const vk::raii::CommandBuffer& command_buffer) {
 }
 
 void Gpu::WaitIdle() { device_.waitIdle(); }
+
+const vk::Extent2D& Gpu::GetExtent2D() const { return extent_; }
+
+const vk::raii::DescriptorSet& Gpu::GetBindlessDescriptorSet() const {
+  return bindless_descriptor_set;
+}
+
+const vk::raii::PipelineLayout& Gpu::GetPipelineLayout() const {
+  return pipeline_layout_;
+}
+
+std::pair<ImGui_ImplVulkan_InitInfo, VkRenderPass> Gpu::GetVulkanInfoForImgui()
+    const {
+  ImGui_ImplVulkan_InitInfo init_info{
+      .Instance = static_cast<VkInstance>(*instance_),
+      .PhysicalDevice = static_cast<VkPhysicalDevice>(*physical_device_),
+      .Device = static_cast<VkDevice>(*device_),
+      .QueueFamily = graphics_queue_index_.value(),
+      .Queue = static_cast<VkQueue>(*graphics_queue_),
+      .PipelineCache = static_cast<VkPipelineCache>(*pipeline_cache_),
+      .DescriptorPool = static_cast<VkDescriptorPool>(*descriptor_pool_),
+      .Subpass = 0,
+      .MinImageCount = image_count_,
+      .ImageCount = image_count_,
+      .MSAASamples = VK_SAMPLE_COUNT_1_BIT,
+  };
+
+  return std::make_pair(init_info, static_cast<VkRenderPass>(*render_pass_));
+}
 
 void Gpu::CreateInstance() {
   vk::InstanceCreateFlags flags;
@@ -761,13 +775,6 @@ void Gpu::CreateDevice() {
   present_queue_ = vk::raii::Queue{device_, present_queue_index_.value(), 0};
 }
 
-void Gpu::CreateQueryPool() {
-  vk::QueryPoolCreateInfo query_pool_ci{
-      {}, vk::QueryType::eTimestamp, 128 * kBackBufferCount};
-
-  query_pool_ = vk::raii::QueryPool{device_, query_pool_ci};
-}
-
 void Gpu::CreateSwapchain() {
   // Image count.
   vk::SurfaceCapabilitiesKHR surface_capabilities{
@@ -928,6 +935,98 @@ void Gpu::CreateFramebuffers() {
   }
 }
 
+void Gpu::CreatePipelineCache() {
+  vk::PipelineCacheCreateInfo pipeline_cache_ci;
+  pipeline_cache_ = vk::raii::PipelineCache{device_, pipeline_cache_ci};
+}
+
+void Gpu::CreateDescriptorObjects() {
+  // Global descriptor pool.
+  {
+    std::vector<vk::DescriptorPoolSize> pool_sizes{
+        {vk::DescriptorType::eSampler, 1000},
+        {vk::DescriptorType::eCombinedImageSampler, 1000},
+        {vk::DescriptorType::eSampledImage, 1000},
+        {vk::DescriptorType::eStorageImage, 1000},
+        {vk::DescriptorType::eUniformTexelBuffer, 1000},
+        {vk::DescriptorType::eStorageTexelBuffer, 1000},
+        {vk::DescriptorType::eUniformBuffer, 1000},
+        {vk::DescriptorType::eStorageBuffer, 1000},
+        {vk::DescriptorType::eUniformBufferDynamic, 1000},
+        {vk::DescriptorType::eStorageBufferDynamic, 1000},
+        {vk::DescriptorType::eInputAttachment, 1000}};
+
+    u32 max_sets{std::accumulate(
+        pool_sizes.begin(), pool_sizes.end(), static_cast<u32>(0),
+        [](u32 sum, const vk::DescriptorPoolSize& dps) {
+          return sum + dps.descriptorCount;
+        })};
+
+    vk::DescriptorPoolCreateInfo descriptor_pool_ci{
+        vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, max_sets,
+        pool_sizes};
+    descriptor_pool_ = vk::raii::DescriptorPool{device_, descriptor_pool_ci};
+  }
+
+  // Bindless descriptor objects.
+  {
+    std::vector<vk::DescriptorPoolSize> bindlessl_pool_sizes{
+        {vk::DescriptorType::eCombinedImageSampler, kBindlessDescriptorCount},
+        {vk::DescriptorType::eStorageImage, kBindlessDescriptorCount}};
+
+    u32 bindless_max_sets{std::accumulate(
+        bindlessl_pool_sizes.begin(), bindlessl_pool_sizes.end(),
+        static_cast<u32>(0), [](u32 sum, const vk::DescriptorPoolSize& dps) {
+          return sum + dps.descriptorCount;
+        })};
+
+    vk::DescriptorPoolCreateInfo bindless_descriptor_pool_ci{
+        vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind |
+            vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
+        bindless_max_sets, bindlessl_pool_sizes};
+    bindless_descriptor_pool_ =
+        vk::raii::DescriptorPool{device_, bindless_descriptor_pool_ci};
+    std::vector<vk::DescriptorSetLayoutBinding> descriptor_set_layout_bindings{
+        {kBindlessBinding, vk::DescriptorType::eCombinedImageSampler,
+         kBindlessDescriptorCount, vk::ShaderStageFlagBits::eAll},
+        {kBindlessBinding + 1, vk::DescriptorType::eCombinedImageSampler,
+         kBindlessDescriptorCount, vk::ShaderStageFlagBits::eAll},
+    };
+
+    std::vector<vk::DescriptorBindingFlags> descriptor_binding_flags(
+        2, vk::DescriptorBindingFlagBits::ePartiallyBound);
+
+    vk::DescriptorSetLayoutBindingFlagsCreateInfo
+        descriptor_set_layout_binding_flags_ci{descriptor_binding_flags};
+
+    vk::DescriptorSetLayoutCreateInfo bindless_descriptor_set_layout_ci{
+        vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool,
+        descriptor_set_layout_bindings,
+        &descriptor_set_layout_binding_flags_ci};
+
+    bindless_descriptor_set_layout_ = vk::raii::DescriptorSetLayout{
+        device_, bindless_descriptor_set_layout_ci};
+
+    vk::DescriptorSetAllocateInfo bindless_descriptor_set_allocate_info{
+        *bindless_descriptor_pool_, *bindless_descriptor_set_layout_};
+
+    bindless_descriptor_set = std::move(
+        device_.allocateDescriptorSets(bindless_descriptor_set_allocate_info)
+            .front());
+  }
+}
+
+void Gpu::CreateAllocator() {
+  VmaAllocatorCreateInfo allocator_ci{
+      .flags = 0,
+      .physicalDevice = static_cast<VkPhysicalDevice>(*physical_device_),
+      .device = static_cast<VkDevice>(*device_),
+      .instance = static_cast<VkInstance>(*instance_),
+      .vulkanApiVersion = VK_API_VERSION_1_3,
+  };
+  vmaCreateAllocator(&allocator_ci, &allocator_);
+}
+
 void Gpu::CreateCommandObjects() {
   used_command_buffer_counts_ = std::vector<u32>(kBackBufferCount, 0);
   command_pools_.reserve(kBackBufferCount);
@@ -962,98 +1061,13 @@ void Gpu::CreateSyncObjects() {
   }
 }
 
-void Gpu::CreatePipelineCache() {
-  vk::PipelineCacheCreateInfo pipeline_cache_ci;
-  pipeline_cache_ = vk::raii::PipelineCache{device_, pipeline_cache_ci};
-}
-
-void Gpu::CreateDescriptorPool() {
-  std::vector<vk::DescriptorPoolSize> pool_sizes{
-      {vk::DescriptorType::eSampler, 1000},
-      {vk::DescriptorType::eCombinedImageSampler, 1000},
-      {vk::DescriptorType::eSampledImage, 1000},
-      {vk::DescriptorType::eUniformTexelBuffer, 1000},
-      {vk::DescriptorType::eStorageTexelBuffer, 1000},
-      {vk::DescriptorType::eUniformBuffer, 1000},
-      {vk::DescriptorType::eStorageBuffer, 1000},
-      {vk::DescriptorType::eUniformBufferDynamic, 1000},
-      {vk::DescriptorType::eStorageBufferDynamic, 1000},
-      {vk::DescriptorType::eInputAttachment, 1000}};
-
-  u32 max_sets{std::accumulate(pool_sizes.begin(), pool_sizes.end(),
-                               static_cast<u32>(0),
-                               [](u32 sum, const vk::DescriptorPoolSize& dps) {
-                                 return sum + dps.descriptorCount;
-                               })};
-
-  vk::DescriptorPoolCreateInfo descriptor_pool_ci{
-      vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, max_sets,
-      pool_sizes};
-  descriptor_pool_ = vk::raii::DescriptorPool{device_, descriptor_pool_ci};
-
-  std::vector<vk::DescriptorPoolSize> bindlessl_pool_sizes{
-      {vk::DescriptorType::eCombinedImageSampler, kBindlessDescriptorCount},
-      {vk::DescriptorType::eStorageImage, kBindlessDescriptorCount}};
-
-  u32 bindless_max_sets{std::accumulate(
-      bindlessl_pool_sizes.begin(), bindlessl_pool_sizes.end(),
-      static_cast<u32>(0), [](u32 sum, const vk::DescriptorPoolSize& dps) {
-        return sum + dps.descriptorCount;
-      })};
-
-  vk::DescriptorPoolCreateInfo bindless_descriptor_pool_ci{
-      vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind |
-          vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
-      bindless_max_sets, bindlessl_pool_sizes};
-  bindless_descriptor_pool_ =
-      vk::raii::DescriptorPool{device_, bindless_descriptor_pool_ci};
-
-  std::vector<vk::DescriptorSetLayoutBinding> descriptor_set_layout_bindings{
-      {kBindlessBinding, vk::DescriptorType::eCombinedImageSampler,
-       kBindlessDescriptorCount, vk::ShaderStageFlagBits::eAll},
-      {kBindlessBinding + 1, vk::DescriptorType::eCombinedImageSampler,
-       kBindlessDescriptorCount, vk::ShaderStageFlagBits::eAll},
-  };
-
-  std::vector<vk::DescriptorBindingFlags> descriptor_binding_flags(
-      2, vk::DescriptorBindingFlagBits::ePartiallyBound);
-
-  vk::DescriptorSetLayoutBindingFlagsCreateInfo
-      descriptor_set_layout_binding_flags_ci{descriptor_binding_flags};
-
-  vk::DescriptorSetLayoutCreateInfo bindless_descriptor_set_layout_ci{
-      vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool,
-      descriptor_set_layout_bindings, &descriptor_set_layout_binding_flags_ci};
-
-  bindless_descriptor_set_layout_ =
-      vk::raii::DescriptorSetLayout{device_, bindless_descriptor_set_layout_ci};
-
-  vk::DescriptorSetAllocateInfo bindless_descriptor_set_allocate_info{
-      *bindless_descriptor_pool_, *bindless_descriptor_set_layout_};
-
-  bindless_descriptor_set = std::move(
-      device_.allocateDescriptorSets(bindless_descriptor_set_allocate_info)
-          .front());
-}
-
-void Gpu::CreateAllocator() {
-  VmaAllocatorCreateInfo allocator_ci{
-      .flags = 0,
-      .physicalDevice = static_cast<VkPhysicalDevice>(*physical_device_),
-      .device = static_cast<VkDevice>(*device_),
-      .instance = static_cast<VkInstance>(*instance_),
-      .vulkanApiVersion = VK_API_VERSION_1_3,
-  };
-  vmaCreateAllocator(&allocator_ci, &allocator_);
-}
-
 void Gpu::Resize() {
   CreateSwapchain();
   CreateFramebuffers();
 }
 
-void Gpu::SetName(vk::ObjectType object_type, u64 handle,
-                  const std::string& name, const std::string& suffix) {
+void Gpu::SetObjectName(vk::ObjectType object_type, u64 handle,
+                        const std::string& name, const std::string& suffix) {
   if (!name.empty()) {
     std::string name_suffix{name + "_" + suffix};
     vk::DebugUtilsObjectNameInfoEXT buffer_name_info{object_type, handle,

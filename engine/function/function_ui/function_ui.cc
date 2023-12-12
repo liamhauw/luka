@@ -37,12 +37,24 @@ void FunctionUi::Tick() {
   }
 
   CreateUi();
-  
+
   const vk::raii::CommandBuffer& command_buffer{gpu_->BeginFrame()};
 
+#ifndef NDEBUG
+  gpu_->BeginLabel(command_buffer, "rendering");
+#endif
   gContext.rendering->Render(command_buffer);
+#ifndef NDEBUG
+  gpu_->EndLabel(command_buffer);
+#endif
 
+#ifndef NDEBUG
+  gpu_->BeginLabel(command_buffer, "ui");
+#endif
   Render(command_buffer);
+#ifndef NDEBUG
+  gpu_->EndLabel(command_buffer);
+#endif
 
   gpu_->EndFrame(command_buffer);
 }
@@ -98,11 +110,9 @@ void FunctionUi::CreateUi() {
   ImGui_ImplGlfw_NewFrame();
   ImGui::NewFrame();
 
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0F, 0.0F));
   ImGui::Begin("viewport");
-  ImGui::Image(descriptor_set_, {1270, 860});
+  ImGui::Image(descriptor_set_, {1280, 760});
   ImGui::End();
-  ImGui::PopStyleVar();
 }
 
 }  // namespace luka

@@ -21,17 +21,17 @@ class Rendering {
 
   void Tick();
 
+  void Render(const vk::raii::CommandBuffer& command_buffer);
+
   std::pair<const vk::raii::Sampler&, const vk::raii::ImageView&>
   GetViewportImage() const;
-
-  void Render(const vk::raii::CommandBuffer& command_buffer);
 
  private:
   void Resize();
 
+  void CreateGBuffer();
   void CreatePipeline();
   void CreateModelResource();
-  void CreateGBuffer();
 
   struct UniformData {
     glm::mat4 vp;
@@ -78,6 +78,14 @@ class Rendering {
   std::shared_ptr<Asset> asset_;
   std::shared_ptr<Gpu> gpu_;
 
+  // GBuffer.
+  vk::Extent2D extent_;
+  std::vector<Image> color_images_;
+  std::vector<vk::raii::ImageView> color_image_views_;
+  Image depth_image_{nullptr};
+  vk::raii::ImageView depth_image_view_{nullptr};
+  vk::raii::Sampler sampler_{nullptr};
+
   // Pipeline.
   std::vector<vk::raii::DescriptorSetLayout> descriptor_set_layouts_;
   vk::raii::PipelineLayout pipeline_layout_{nullptr};
@@ -104,18 +112,6 @@ class Rendering {
   std::vector<vk::raii::ImageView> model_image_views_;
   std::vector<vk::raii::Sampler> model_samplers_;
   std::vector<DrawElement> draw_elements_;
-
-  // Geometry.
-  Buffer vertex_buffer_{nullptr};
-  Buffer index_buffer_{nullptr};
-
-  // GBuffer.
-  vk::Extent2D extent_;
-  std::vector<Image> color_images_;
-  std::vector<vk::raii::ImageView> color_image_views_;
-  Image depth_image_{nullptr};
-  vk::raii::ImageView depth_image_view_{nullptr};
-  vk::raii::Sampler sampler_{nullptr};
 };
 
 }  // namespace luka
