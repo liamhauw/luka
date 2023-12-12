@@ -110,8 +110,10 @@ void FunctionUi::CreateUi() {
   ImGui_ImplGlfw_NewFrame();
   ImGui::NewFrame();
 
+  vk::Extent2D extent2d{gpu_->GetExtent2D()};
+  ImGui::SetNextWindowPos({extent2d.width / 4.0F, extent2d.height / 4.0F});
   ImGui::Begin("viewport");
-  ImGui::Image(descriptor_set_, {1280, 760});
+  ImGui::Image(descriptor_set_, {extent2d.width / 2.0F, extent2d.height / 2.0F});
   ImGui::End();
 }
 

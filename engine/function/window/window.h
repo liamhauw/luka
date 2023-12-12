@@ -12,8 +12,8 @@
 namespace luka {
 
 struct WindowCreateInfo {
-  i32 width{1280};
-  i32 height{720};
+  i32 width{1920};
+  i32 height{1080};
   std::string title{"luka"};
 };
 
