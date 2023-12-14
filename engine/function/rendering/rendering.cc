@@ -166,8 +166,6 @@ void Rendering::CreateSkybox() {}
 void Rendering::CreateEnvrionment() {}
 void Rendering::CreateObject() {}
 
-ModelResource Rendering::CreateGltfModel(const tinygltf::Model& gltf_model) {}
-
 void Rendering::CreateGBuffer() {
   vk::raii::CommandBuffer command_buffer{gpu_->BeginTempCommandBuffer()};
 
@@ -255,9 +253,10 @@ void Rendering::CreateGBuffer() {
 }
 
 void Rendering::CreatePipeline() {
-  const std::vector<u8>& vertex_shader_buffer{asset_->GetVertexShaderBuffer()};
+  const std::vector<u8>& vertex_shader_buffer{
+      asset_->GetAssetInfo().vertext_shader_buffer};
   const std::vector<u8>& fragment_shader_buffer{
-      asset_->GetFragmentShaderBuffer()};
+      asset_->GetAssetInfo().fragment_shader_buffer};
 
   std::vector<std::pair<u32, vk::Format>> vertex_input_stride_format{
       {12, vk::Format::eR32G32B32Sfloat},
@@ -346,7 +345,7 @@ void Rendering::CreateModelResource() {
     dummy_sampler_ = gpu_->CreateSampler(sampler_ci);
   }
 
-  const tinygltf::Model& model{asset_->GetModel()};
+  const tinygltf::Model& model{asset_->GetAssetInfo().object};
 
   // Buffers.
   {

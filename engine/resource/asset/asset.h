@@ -15,15 +15,20 @@
 
 namespace luka {
 
+struct AssetInfo {
+  tinygltf::Model skybox;
+  tinygltf::Model object;
+  std::vector<u8> vertext_shader_buffer;
+  std::vector<u8> fragment_shader_buffer;
+};
+
 class Asset {
  public:
   Asset();
 
   void Tick();
 
-  const tinygltf::Model& GetModel() const;
-  const std::vector<u8>& GetVertexShaderBuffer() const;
-  const std::vector<u8>& GetFragmentShaderBuffer() const;
+  const AssetInfo& GetAssetInfo() const;
 
  private:
   tinygltf::Model LoadModel(const std::filesystem::path& model_path);
@@ -31,9 +36,7 @@ class Asset {
 
   std::shared_ptr<Config> config_;
 
-  tinygltf::Model model_;
-  std::vector<u8> vertext_shader_buffer_;
-  std::vector<u8> fragment_shader_buffer_;
+  AssetInfo asset_info_;
 };
 
 }  // namespace luka

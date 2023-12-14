@@ -46,8 +46,6 @@ class Rendering {
   void CreateEnvrionment();
   void CreateObject();
 
-  ModelResource CreateGltfModel(const tinygltf::Model& gltf_model);
-
   void CreateGBuffer();
   void CreatePipeline();
   void CreateModelResource();

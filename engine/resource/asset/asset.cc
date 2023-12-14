@@ -13,23 +13,18 @@
 namespace luka {
 
 Asset::Asset() : config_{gContext.config} {
-  model_ = LoadModel(config_->GetModelFilePath());
-  vertext_shader_buffer_ = LoadShader(config_->GetVertexShaderFilePath());
-  fragment_shader_buffer_ = LoadShader(config_->GetFragmentShaderFilePath());
+  const ConfigInfo& project_info{config_->GetConfigInfo()};
+  asset_info_.skybox = LoadModel(project_info.skybox_path);
+  asset_info_.object = LoadModel(project_info.object_path);
+  asset_info_.vertext_shader_buffer =
+      LoadShader(project_info.shader_path / "shader.vert.spv");
+  asset_info_.fragment_shader_buffer =
+      LoadShader(project_info.shader_path / "shader.frag.spv");
 }
 
 void Asset::Tick() {}
 
-const tinygltf::Model& Asset::GetModel() const {
-  return model_;
-}
-
-const std::vector<u8>& Asset::GetVertexShaderBuffer() const {
-  return vertext_shader_buffer_;
-}
-const std::vector<u8>& Asset::GetFragmentShaderBuffer() const {
-  return fragment_shader_buffer_;
-}
+const AssetInfo& Asset::GetAssetInfo() const { return asset_info_; }
 
 tinygltf::Model Asset::LoadModel(const std::filesystem::path& model_path) {
   tinygltf::Model model;
