@@ -22,12 +22,11 @@ class Buffer {
   Buffer(Buffer&& rhs) noexcept;
   Buffer& operator=(const Buffer&) = delete;
   Buffer& operator=(Buffer&& rhs) noexcept;
-
   const vk::Buffer& operator*() const noexcept;
   void Clear() noexcept;
 
-  const VmaAllocator& GetAllocator() const;
-  const VmaAllocation& GetAllocation() const;
+  void* Map() const;
+  void Unmap() const;     
 
  private:
   VmaAllocator allocator_{nullptr};

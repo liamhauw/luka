@@ -13,6 +13,8 @@
 namespace luka {
 
 Rendering::Rendering() : asset_{gContext.asset}, gpu_{gContext.gpu} {
+  CreateResource();
+
   CreateGBuffer();
   CreatePipeline();
   CreateModelResource();
@@ -49,12 +51,9 @@ void Rendering::Render(const vk::raii::CommandBuffer& command_buffer) {
   uniform_data_.light_range = 20.0f;
   uniform_data_.light_intensity = 80.0f;
 
-  void* mapped_data;
-  const VmaAllocator& allocator{uniform_buffer_.GetAllocator()};
-  const VmaAllocation& allocation{uniform_buffer_.GetAllocation()};
-  vmaMapMemory(allocator, allocation, &mapped_data);
+  void* mapped_data{uniform_buffer_.Map()};
   memcpy(mapped_data, &uniform_data_, sizeof(uniform_data_));
-  vmaUnmapMemory(allocator, allocation);
+  uniform_buffer_.Unmap();
 
   vk::RenderingAttachmentInfo attachment_info{
       {},
@@ -156,6 +155,18 @@ void Rendering::Resize() {
   sampler_.clear();
   CreateGBuffer();
 }
+
+void Rendering::CreateResource() {
+  CreateSkybox();
+  CreateEnvrionment();
+  CreateObject();
+}
+
+void Rendering::CreateSkybox() {}
+void Rendering::CreateEnvrionment() {}
+void Rendering::CreateObject() {}
+
+ModelResource Rendering::CreateGltfModel(const tinygltf::Model& gltf_model) {}
 
 void Rendering::CreateGBuffer() {
   vk::raii::CommandBuffer command_buffer{gpu_->BeginTempCommandBuffer()};

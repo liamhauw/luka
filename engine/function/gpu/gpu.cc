@@ -17,14 +17,14 @@ Gpu::Gpu() {
   CreateSurface();
   CreatePhysicalDevice();
   CreateDevice();
+  CreateCommandObjects();
+  CreateSyncObjects();
   CreateSwapchain();
   CreateRenderPass();
   CreateFramebuffers();
   CreatePipelineCache();
   CreateDescriptorObjects();
   CreateAllocator();
-  CreateCommandObjects();
-  CreateSyncObjects();
 }
 
 Gpu::~Gpu() {
@@ -52,11 +52,9 @@ Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
                 name, "buffer");
 #endif
 
-  void* mapped_data;
-  VmaAllocation allocation{buffer.GetAllocation()};
-  vmaMapMemory(allocator_, allocation, &mapped_data);
+  void* mapped_data{buffer.Map()};
   memcpy(mapped_data, data, buffer_ci.size);
-  vmaUnmapMemory(allocator_, allocation);
+  buffer.Unmap();
 
   return buffer;
 }
@@ -473,6 +471,10 @@ void Gpu::EndRenderPass(const vk::raii::CommandBuffer& command_buffer) {
 
 void Gpu::WaitIdle() { device_.waitIdle(); }
 
+const u32 Gpu::GetBackBufferCount() const {
+  return kBackBufferCount;
+}
+
 const vk::Extent2D& Gpu::GetExtent2D() const { return extent_; }
 
 const vk::raii::DescriptorSet& Gpu::GetBindlessDescriptorSet() const {
@@ -775,6 +777,40 @@ void Gpu::CreateDevice() {
   present_queue_ = vk::raii::Queue{device_, present_queue_index_.value(), 0};
 }
 
+void Gpu::CreateCommandObjects() {
+  used_command_buffer_counts_ = std::vector<u32>(kBackBufferCount, 0);
+  command_pools_.reserve(kBackBufferCount);
+  command_buffers_.reserve(kBackBufferCount);
+
+  for (u32 i{0}; i < kBackBufferCount; ++i) {
+    command_pools_.emplace_back(vk::raii::CommandPool{
+        device_,
+        {vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+         graphics_queue_index_.value()}});
+
+    vk::CommandBufferAllocateInfo command_buffer_allocate_info{
+        *command_pools_[i], vk::CommandBufferLevel::ePrimary,
+        kMaxUsedCommandBufferCountperFrame};
+    command_buffers_.emplace_back(
+        vk::raii::CommandBuffers{device_, command_buffer_allocate_info});
+  }
+}
+
+void Gpu::CreateSyncObjects() {
+  command_executed_fences_.reserve(kBackBufferCount);
+  image_available_semaphores_.reserve(kBackBufferCount);
+  render_finished_semaphores_.reserve(kBackBufferCount);
+
+  vk::FenceCreateInfo fence_ci{vk::FenceCreateFlagBits::eSignaled};
+  vk::SemaphoreCreateInfo semaphore_ci{};
+
+  for (u32 i{0}; i < kBackBufferCount; ++i) {
+    command_executed_fences_.emplace_back(device_, fence_ci);
+    image_available_semaphores_.emplace_back(device_, semaphore_ci);
+    render_finished_semaphores_.emplace_back(device_, semaphore_ci);
+  }
+}
+
 void Gpu::CreateSwapchain() {
   // Image count.
   vk::SurfaceCapabilitiesKHR surface_capabilities{
@@ -1025,40 +1061,6 @@ void Gpu::CreateAllocator() {
       .vulkanApiVersion = VK_API_VERSION_1_3,
   };
   vmaCreateAllocator(&allocator_ci, &allocator_);
-}
-
-void Gpu::CreateCommandObjects() {
-  used_command_buffer_counts_ = std::vector<u32>(kBackBufferCount, 0);
-  command_pools_.reserve(kBackBufferCount);
-  command_buffers_.reserve(kBackBufferCount);
-
-  for (u32 i{0}; i < kBackBufferCount; ++i) {
-    command_pools_.emplace_back(vk::raii::CommandPool{
-        device_,
-        {vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-         graphics_queue_index_.value()}});
-
-    vk::CommandBufferAllocateInfo command_buffer_allocate_info{
-        *command_pools_[i], vk::CommandBufferLevel::ePrimary,
-        kMaxUsedCommandBufferCountperFrame};
-    command_buffers_.emplace_back(
-        vk::raii::CommandBuffers{device_, command_buffer_allocate_info});
-  }
-}
-
-void Gpu::CreateSyncObjects() {
-  command_executed_fences_.reserve(kBackBufferCount);
-  image_available_semaphores_.reserve(kBackBufferCount);
-  render_finished_semaphores_.reserve(kBackBufferCount);
-
-  vk::FenceCreateInfo fence_ci{vk::FenceCreateFlagBits::eSignaled};
-  vk::SemaphoreCreateInfo semaphore_ci{};
-
-  for (u32 i{0}; i < kBackBufferCount; ++i) {
-    command_executed_fences_.emplace_back(device_, fence_ci);
-    image_available_semaphores_.emplace_back(device_, semaphore_ci);
-    render_finished_semaphores_.emplace_back(device_, semaphore_ci);
-  }
 }
 
 void Gpu::Resize() {

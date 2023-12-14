@@ -21,7 +21,6 @@ class Image {
   Image(Image&& rhs) noexcept;
   Image& operator=(const Image&) = delete;
   Image& operator=(Image&& rhs) noexcept;
-
   const vk::Image& operator*() const noexcept;
   void Clear() noexcept;
 

@@ -52,8 +52,15 @@ void Buffer::Clear() noexcept {
   buffer_ = nullptr;
   allocation_ = nullptr;
 }
-const VmaAllocator& Buffer::GetAllocator() const { return allocator_; }
 
-const VmaAllocation& Buffer::GetAllocation() const { return allocation_; }
+void* Buffer::Map() const {
+  void* mapped_data;
+  vmaMapMemory(allocator_, allocation_, &mapped_data);
+  return mapped_data;
+}
+
+void Buffer::Unmap() const {
+  vmaUnmapMemory(allocator_, allocation_);
+}
 
 }  // namespace luka

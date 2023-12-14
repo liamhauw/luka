@@ -85,6 +85,8 @@ class Gpu {
 
   void WaitIdle();
 
+  const u32 GetBackBufferCount() const;
+
   const vk::Extent2D& GetExtent2D() const;
 
   const vk::raii::DescriptorSet& GetBindlessDescriptorSet() const;
@@ -99,14 +101,14 @@ class Gpu {
   void CreateSurface();
   void CreatePhysicalDevice();
   void CreateDevice();
+  void CreateCommandObjects();
+  void CreateSyncObjects();
   void CreateSwapchain();
   void CreateRenderPass();
   void CreateFramebuffers();
   void CreatePipelineCache();
   void CreateDescriptorObjects();
   void CreateAllocator();
-  void CreateCommandObjects();
-  void CreateSyncObjects();
 
   void Resize();
 
@@ -150,6 +152,17 @@ class Gpu {
   vk::raii::Queue compute_queue_{nullptr};
   vk::raii::Queue present_queue_{nullptr};
 
+  // Command objects.
+  const u32 kMaxUsedCommandBufferCountperFrame{8};
+  std::vector<u32> used_command_buffer_counts_;
+  std::vector<vk::raii::CommandPool> command_pools_;
+  std::vector<vk::raii::CommandBuffers> command_buffers_;
+
+  // Sync objects.
+  std::vector<vk::raii::Fence> command_executed_fences_;
+  std::vector<vk::raii::Semaphore> image_available_semaphores_;
+  std::vector<vk::raii::Semaphore> render_finished_semaphores_;
+
   // Swapchain.
   u32 image_count_;
   vk::Format format_;
@@ -180,17 +193,6 @@ class Gpu {
 
   // Allocator.
   VmaAllocator allocator_;
-
-  // Command objects.
-  const u32 kMaxUsedCommandBufferCountperFrame{8};
-  std::vector<u32> used_command_buffer_counts_;
-  std::vector<vk::raii::CommandPool> command_pools_;
-  std::vector<vk::raii::CommandBuffers> command_buffers_;
-
-  // Sync objects.
-  std::vector<vk::raii::Fence> command_executed_fences_;
-  std::vector<vk::raii::Semaphore> image_available_semaphores_;
-  std::vector<vk::raii::Semaphore> render_finished_semaphores_;
 };
 
 }  // namespace luka

@@ -12,6 +12,17 @@
 
 namespace luka {
 
+struct TextureResource {
+
+};
+
+struct ModelResource {
+  std::vector<Buffer> model_buffers;
+  std::vector<Image> model_images;
+  std::vector<vk::raii::ImageView> model_image_views;
+  std::vector<vk::raii::Sampler> model_samplers;
+};
+
 class Asset;
 
 class Rendering {
@@ -28,6 +39,14 @@ class Rendering {
 
  private:
   void Resize();
+
+  void CreateResource();
+
+  void CreateSkybox();
+  void CreateEnvrionment();
+  void CreateObject();
+
+  ModelResource CreateGltfModel(const tinygltf::Model& gltf_model);
 
   void CreateGBuffer();
   void CreatePipeline();
@@ -95,7 +114,7 @@ class Rendering {
   UniformData uniform_data_;
   Buffer uniform_buffer_{nullptr};
 
-  // Model resource.
+  // Resource.
   u32 image_index_{0};
 
   Buffer dummy_buffer_staging_buffer_{nullptr};
@@ -104,6 +123,10 @@ class Rendering {
   Image dummy_image_{nullptr};
   vk::raii::ImageView dummy_image_view_{nullptr};
   vk::raii::Sampler dummy_sampler_{nullptr};
+
+  ModelResource skybox_;
+  TextureResource environment_;
+  ModelResource object_;
 
   std::vector<Buffer> model_buffer_staging_buffers_;
   std::vector<Buffer> model_buffers_;
