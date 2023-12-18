@@ -23,6 +23,13 @@ set(HEADER_FILES
   function/gpu/image.h
   function/physics/physics.h
   function/rendering/rendering.h
+  function/scene_graph/component/component.h
+  function/scene_graph/component/light.h
+  function/scene_graph/script/free_camera.h
+  function/scene_graph/script/script.h
+  function/scene_graph/node.h
+  function/scene_graph/scene_graph.h
+  function/scene_graph/scene.h
   function/time/time.h
   function/window/window.h
   function/world/world.h
@@ -47,6 +54,13 @@ set(SOURCE_FILES
   function/gpu/image.cc
   function/physics/physics.cc
   function/rendering/rendering.cc
+  function/scene_graph/component/component.cc
+  function/scene_graph/component/light.cc
+  function/scene_graph/script/free_camera.cc
+  function/scene_graph/script/script.cc
+  function/scene_graph/node.cc
+  function/scene_graph/scene_graph.cc
+  function/scene_graph/scene.cc
   function/time/time.cc
   function/window/window.cc
   function/world/world.cc

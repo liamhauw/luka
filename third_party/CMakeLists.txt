@@ -16,7 +16,6 @@ add_subdirectory(glm)
 
 # imgui
 add_library(imgui)
-add_library(imgui::imgui ALIAS imgui)
 target_sources(imgui PRIVATE
   imgui/backends/imgui_impl_glfw.cpp
   imgui/backends/imgui_impl_vulkan.cpp
@@ -45,6 +44,10 @@ add_subdirectory(json)
 # spdlog
 add_subdirectory(spdlog)
 
+# stb
+add_library(stb INTERFACE)
+target_include_directories(stb INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/stb")
+
 # tinygltf
 set(TINYGLTF_BUILD_LOADER_EXAMPLE OFF CACHE INTERNAL "" FORCE)
 set(TINYGLTF_HEADER_ONLY ON CACHE INTERNAL "" FORCE)
@@ -59,12 +62,13 @@ target_sources(${PROJECT_NAME} PRIVATE third_party.cc)
 target_link_libraries(${PROJECT_NAME} PUBLIC
   Vulkan::Vulkan
   glfw
-  imgui::imgui
-  glm::glm
-  nlohmann_json::nlohmann_json
-  spdlog::spdlog_header_only
+  glm
+  imgui
+  nlohmann_json
+  spdlog_header_only
+  stb
   tinygltf
-  GPUOpen::VulkanMemoryAllocator
+  VulkanMemoryAllocator
 )
 
 set(CMAKE_WARN_DEPRECATED TRUE CACHE BOOL "" FORCE)

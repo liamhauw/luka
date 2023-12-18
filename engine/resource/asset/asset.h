@@ -10,6 +10,9 @@
 // If delete this and declare Config, there will be a intellisense error.
 // But if i remove tiny_gltf.h, everything will be ok.
 #include "resource/config/config.h"
+#define TINYGLTF_NO_STB_IMAGE
+#define TINYGLTF_NO_STB_IMAGE_WRITE
+#define TINYGLTF_NO_EXTERNAL_IMAGE
 #include "tiny_gltf.h"
 // I think there is a header containment conflict, which editor can't fix.
 

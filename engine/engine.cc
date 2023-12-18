@@ -23,6 +23,7 @@ void Engine::Run() {
   gContext.world = std::make_shared<World>();
   gContext.camera = std::make_shared<Camera>();
   gContext.gpu = std::make_shared<Gpu>();
+  gContext.scene_graph = std::make_shared<SceneGraph>();
   gContext.rendering = std::make_shared<Rendering>();
   gContext.function_ui = std::make_shared<FunctionUi>();
   gContext.editor_input = std::make_shared<EditorInput>();
@@ -39,6 +40,7 @@ void Engine::Run() {
     gContext.world->Tick();
     gContext.camera->Tick();
     gContext.gpu->Tick();
+    gContext.scene_graph->Tick();
     gContext.rendering->Tick();
     gContext.function_ui->Tick();
     gContext.editor_input->Tick();

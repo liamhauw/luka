@@ -18,6 +18,8 @@
 #include <stdexcept>
 #include <string>
 #include <thread>
+#include <typeindex>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 #include <vulkan/vulkan_raii.hpp>

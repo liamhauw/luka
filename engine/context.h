@@ -16,6 +16,7 @@
 #include "function/gpu/gpu.h"
 #include "function/physics/physics.h"
 #include "function/rendering/rendering.h"
+#include "function/scene_graph/scene_graph.h"
 #include "function/time/time.h"
 #include "function/window/window.h"
 #include "function/world/world.h"
@@ -36,6 +37,7 @@ struct Context {
   std::shared_ptr<World> world;
   std::shared_ptr<Camera> camera;
   std::shared_ptr<Gpu> gpu;
+  std::shared_ptr<SceneGraph> scene_graph;
   std::shared_ptr<Rendering> rendering;
   std::shared_ptr<FunctionUi> function_ui;
   std::shared_ptr<EditorInput> editor_input;
