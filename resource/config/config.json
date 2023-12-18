@@ -3,7 +3,7 @@
   "configs": [
     {
       "enviroment_path": "texture/papermill.ktx",
-      "skybox_path": "model/box/Box.gltf",
+      "skybox_path": "model/cube/cube.gltf",
       "object_path": "model/sponza/Sponza01.gltf",
       "shader_path": "shader/pbr/generated"
     }
