@@ -30,9 +30,9 @@ class Window {
   using OnCharFunc = std::function<void(u32)>;
   using OnCharModFunc = std::function<void(u32, i32)>;
   using OnMouseButtonFunc = std::function<void(i32, i32, i32)>;
-  using OnCursorPosFunc = std::function<void(double, double)>;
+  using OnCursorPosFunc = std::function<void(f64, f64)>;
   using OnCursorEnterFunc = std::function<void(i32)>;
-  using OnScrollFunc = std::function<void(double, double)>;
+  using OnScrollFunc = std::function<void(f64, f64)>;
   using OnDropFunc = std::function<void(i32, const char**)>;
 
   explicit Window(const WindowCreateInfo& window_ci = {});

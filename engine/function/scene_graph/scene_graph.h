@@ -24,10 +24,10 @@ class SceneGraph {
  private:
   std::unique_ptr<sg::Scene> LoadScene(const tinygltf::Model& model);
 
-  vk::Filter ParseMagFilter(int mag_filter);
-  vk::Filter ParseMinFilter(int min_filter);
-  vk::SamplerMipmapMode ParseMipmapMode(int min_filter);
-  vk::SamplerAddressMode ParseAddressMode(int wrap);
+  vk::Filter ParseMagFilter(i32 mag_filter);
+  vk::Filter ParseMinFilter(i32 min_filter);
+  vk::SamplerMipmapMode ParseMipmapMode(i32 min_filter);
+  vk::SamplerAddressMode ParseAddressMode(i32 wrap);
 
   std::unique_ptr<sg::Scene> skybox_;
   std::unique_ptr<sg::Scene> object_;

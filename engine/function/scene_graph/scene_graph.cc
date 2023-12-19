@@ -55,7 +55,7 @@ std::unique_ptr<sg::Scene> SceneGraph::LoadScene(const tinygltf::Model& model) {
           model.extensions.at(KHR_LIGHTS_PUNCTUAL_EXTENSION).Get("lights")};
 
       for (u64 i{0}; i < lights.ArrayLen(); ++i) {
-        const auto& light{lights.Get(static_cast<int>(i))};
+        const auto& light{lights.Get(static_cast<i32>(i))};
 
         sg::LightProperty property;
         if (!light.Has("type")) {
@@ -74,19 +74,19 @@ std::unique_ptr<sg::Scene> SceneGraph::LoadScene(const tinygltf::Model& model) {
 
         if (light.Has("color")) {
           property.color = glm::vec3(
-              static_cast<float>(light.Get("color").Get(0).Get<double>()),
-              static_cast<float>(light.Get("color").Get(1).Get<double>()),
-              static_cast<float>(light.Get("color").Get(2).Get<double>()));
+              static_cast<f32>(light.Get("color").Get(0).Get<f64>()),
+              static_cast<f32>(light.Get("color").Get(1).Get<f64>()),
+              static_cast<f32>(light.Get("color").Get(2).Get<f64>()));
         }
 
         if (light.Has("intensity")) {
           property.intensity =
-              static_cast<float>(light.Get("intensity").Get<double>());
+              static_cast<f32>(light.Get("intensity").Get<f64>());
         }
 
         if (property.type == sg::LightType::kPoint ||
             property.type == sg::LightType::kSpot) {
-          property.range = static_cast<float>(light.Get("range").Get<double>());
+          property.range = static_cast<f32>(light.Get("range").Get<f64>());
         }
 
         if (property.type == sg::LightType::kSpot) {
@@ -94,13 +94,13 @@ std::unique_ptr<sg::Scene> SceneGraph::LoadScene(const tinygltf::Model& model) {
             THROW("Spot light doesn't have spot property.");
           }
           if (light.Get("spot").Has("innerConeAngle")) {
-            property.inner_cone_angle = static_cast<float>(
-                light.Get("spot").Get("innerConeAngle").Get<double>());
+            property.inner_cone_angle = static_cast<f32>(
+                light.Get("spot").Get("innerConeAngle").Get<f64>());
           }
 
           if (light.Get("spot").Has("outerConeAngle")) {
-            property.outer_cone_angle = static_cast<float>(
-                light.Get("spot").Get("outerConeAngle").Get<double>());
+            property.outer_cone_angle = static_cast<f32>(
+                light.Get("spot").Get("outerConeAngle").Get<f64>());
           }
         }
 
@@ -142,7 +142,7 @@ std::unique_ptr<sg::Scene> SceneGraph::LoadScene(const tinygltf::Model& model) {
   return scene;
 }
 
-vk::Filter SceneGraph::ParseMagFilter(int mag_filter) {
+vk::Filter SceneGraph::ParseMagFilter(i32 mag_filter) {
   switch (mag_filter) {
     case TINYGLTF_TEXTURE_FILTER_NEAREST:
       return vk::Filter::eNearest;
@@ -153,7 +153,7 @@ vk::Filter SceneGraph::ParseMagFilter(int mag_filter) {
   }
 }
 
-vk::Filter SceneGraph::ParseMinFilter(int min_filter) {
+vk::Filter SceneGraph::ParseMinFilter(i32 min_filter) {
   switch (min_filter) {
     case TINYGLTF_TEXTURE_FILTER_NEAREST:
     case TINYGLTF_TEXTURE_FILTER_NEAREST_MIPMAP_NEAREST:
@@ -168,7 +168,7 @@ vk::Filter SceneGraph::ParseMinFilter(int min_filter) {
   }
 }
 
-vk::SamplerMipmapMode SceneGraph::ParseMipmapMode(int min_filter) {
+vk::SamplerMipmapMode SceneGraph::ParseMipmapMode(i32 min_filter) {
   switch (min_filter) {
     case TINYGLTF_TEXTURE_FILTER_NEAREST_MIPMAP_NEAREST:
     case TINYGLTF_TEXTURE_FILTER_LINEAR_MIPMAP_NEAREST:
@@ -181,7 +181,7 @@ vk::SamplerMipmapMode SceneGraph::ParseMipmapMode(int min_filter) {
   }
 }
 
-vk::SamplerAddressMode SceneGraph::ParseAddressMode(int wrap) {
+vk::SamplerAddressMode SceneGraph::ParseAddressMode(i32 wrap) {
   switch (wrap) {
     case TINYGLTF_TEXTURE_WRAP_REPEAT:
       return vk::SamplerAddressMode::eRepeat;

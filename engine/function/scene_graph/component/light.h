@@ -19,10 +19,10 @@ struct LightProperty {
   LightType type{LightType::kNone};
   glm::vec3 direction{0.0F, 0.0F, -1.0F};
   glm::vec3 color{1.0F, 1.0F, 1.0F};
-  float intensity{1.0F};
-  float range{0.0F};
-  float inner_cone_angle{0.0F};
-  float outer_cone_angle{glm::quarter_pi<f32>()};
+  f32 intensity{1.0F};
+  f32 range{0.0F};
+  f32 inner_cone_angle{0.0F};
+  f32 outer_cone_angle{glm::quarter_pi<f32>()};
 };
 
 class Light : public Component {

@@ -12,7 +12,7 @@ namespace luka {
 void Time::Tick() {
   auto now{std::chrono::high_resolution_clock::now()};
   auto diff{now - last_};
-  delta_time_ = std::chrono::duration<double>{diff}.count();
+  delta_time_ = std::chrono::duration<f64>{diff}.count();
   last_ = now;
 }
 

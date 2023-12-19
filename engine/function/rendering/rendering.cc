@@ -41,7 +41,7 @@ void Rendering::Render(const vk::raii::CommandBuffer& command_buffer) {
   glm::mat4 view{glm::lookAt(eye, eye + look, glm::vec3(0.0f, 1.0f, 0.0f))};
   glm::mat4 projection{glm::perspective(
       glm::radians(60.0f),
-      static_cast<float>(extent_.width) / static_cast<float>(extent_.height),
+      static_cast<f32>(extent_.width) / static_cast<f32>(extent_.height),
       0.1f, 1000.0f)};
   projection[1][1] *= -1;
 
@@ -91,8 +91,8 @@ void Rendering::Render(const vk::raii::CommandBuffer& command_buffer) {
   command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline_);
 
   command_buffer.setViewport(
-      0, vk::Viewport{0.0F, 0.0F, static_cast<float>(extent_.width),
-                      static_cast<float>(extent_.height), 0.0F, 1.0F});
+      0, vk::Viewport{0.0F, 0.0F, static_cast<f32>(extent_.width),
+                      static_cast<f32>(extent_.height), 0.0F, 1.0F});
   command_buffer.setScissor(0, vk::Rect2D{vk::Offset2D{0, 0}, extent_});
 
   for (u32 i{0}; i < draw_elements_.size(); ++i) {
