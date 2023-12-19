@@ -11,7 +11,7 @@ namespace luka {
 namespace sg {
 
 Light::Light(const LightProperty& property, const std::string& name)
-    : property_{property}, Component{name} {}
+    : Component{name}, property_{property} {}
 
 std::type_index Light::GetType() { return typeid(Light); }
 

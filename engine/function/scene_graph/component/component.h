@@ -19,6 +19,7 @@ class Component {
   const std::string& GetName() const;
 
  private:
+  
   std::string name_;
 };
 

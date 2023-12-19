@@ -25,6 +25,7 @@ set(HEADER_FILES
   function/rendering/rendering.h
   function/scene_graph/component/component.h
   function/scene_graph/component/light.h
+  function/scene_graph/component/sampler.h
   function/scene_graph/script/free_camera.h
   function/scene_graph/script/script.h
   function/scene_graph/node.h
@@ -56,6 +57,7 @@ set(SOURCE_FILES
   function/rendering/rendering.cc
   function/scene_graph/component/component.cc
   function/scene_graph/component/light.cc
+  function/scene_graph/component/sampler.cc
   function/scene_graph/script/free_camera.cc
   function/scene_graph/script/script.cc
   function/scene_graph/node.cc
