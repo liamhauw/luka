@@ -41,12 +41,21 @@ set(JSON_ImplicitConversions OFF)
 set(JSON_Install OFF)
 add_subdirectory(json)
 
+# ktx
+if(WIN32)
+  find_package(Ktx REQUIRED PATHS ktx_4.3.0/windows)
+elseif(APPLE)
+  find_package(Ktx REQUIRED PATHS ktx_4.3.0/macos)
+else()
+  message(FATAL_ERROR "Unsupported platform for ktx library.")
+endif()
+
 # spdlog
 add_subdirectory(spdlog)
 
 # stb
 add_library(stb INTERFACE)
-target_include_directories(stb INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/stb")
+target_include_directories(stb INTERFACE stb)
 
 # tinygltf
 set(TINYGLTF_BUILD_LOADER_EXAMPLE OFF CACHE INTERNAL "" FORCE)
@@ -65,6 +74,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
   glm
   imgui
   nlohmann_json
+  KTX::ktx
   spdlog_header_only
   stb
   tinygltf
