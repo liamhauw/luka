@@ -11,6 +11,7 @@
 
 namespace luka {
 
+namespace gpu {
 class Image {
  public:
   Image() = delete;
@@ -29,5 +30,6 @@ class Image {
   vk::Image image_{nullptr};
   VmaAllocation allocation_{nullptr};
 };
+}  // namespace gpu
 
 }  // namespace  luka

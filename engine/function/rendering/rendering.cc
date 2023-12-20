@@ -13,8 +13,7 @@
 namespace luka {
 
 Rendering::Rendering() : asset_{gContext.asset}, gpu_{gContext.gpu} {
-  CreateResource();
-
+  ;
   CreateGBuffer();
   CreatePipeline();
   CreateModelResource();
@@ -41,8 +40,8 @@ void Rendering::Render(const vk::raii::CommandBuffer& command_buffer) {
   glm::mat4 view{glm::lookAt(eye, eye + look, glm::vec3(0.0f, 1.0f, 0.0f))};
   glm::mat4 projection{glm::perspective(
       glm::radians(60.0f),
-      static_cast<f32>(extent_.width) / static_cast<f32>(extent_.height),
-      0.1f, 1000.0f)};
+      static_cast<f32>(extent_.width) / static_cast<f32>(extent_.height), 0.1f,
+      1000.0f)};
   projection[1][1] *= -1;
 
   uniform_data_.vp = projection * view;
@@ -98,23 +97,23 @@ void Rendering::Render(const vk::raii::CommandBuffer& command_buffer) {
   for (u32 i{0}; i < draw_elements_.size(); ++i) {
     const DrawElement& draw_element{draw_elements_[i]};
 
-    const Buffer& position_buffer{
+    const gpu::Buffer& position_buffer{
         model_buffers_[draw_element.postion_buffer_index]};
     command_buffer.bindVertexBuffers(0, *position_buffer,
                                      draw_element.position_buffer_offset);
 
-    const Buffer& texcoord0_buffer{
+    const gpu::Buffer& texcoord0_buffer{
         model_buffers_[draw_element.texcoord0_buffer_index]};
     command_buffer.bindVertexBuffers(3, *texcoord0_buffer,
                                      draw_element.texcoord0_buffer_offset);
 
-    const Buffer& normal_buffer{
+    const gpu::Buffer& normal_buffer{
         model_buffers_[draw_element.normal_buffer_index]};
     command_buffer.bindVertexBuffers(2, *normal_buffer,
                                      draw_element.normal_buffer_offset);
 
     if (draw_element.tangent_buffer_index != UINT32_MAX) {
-      const Buffer& tangent_buffer{
+      const gpu::Buffer& tangent_buffer{
           model_buffers_[draw_element.tangent_buffer_index]};
       command_buffer.bindVertexBuffers(1, *tangent_buffer,
                                        draw_element.tangent_buffer_offset);
@@ -122,7 +121,8 @@ void Rendering::Render(const vk::raii::CommandBuffer& command_buffer) {
       command_buffer.bindVertexBuffers(1, *dummy_buffer_, {0});
     }
 
-    const Buffer& index_buffer{model_buffers_[draw_element.index_buffer_index]};
+    const gpu::Buffer& index_buffer{
+        model_buffers_[draw_element.index_buffer_index]};
     command_buffer.bindIndexBuffer(*index_buffer,
                                    draw_element.index_buffer_offset,
                                    draw_element.index_type);
@@ -155,16 +155,6 @@ void Rendering::Resize() {
   sampler_.clear();
   CreateGBuffer();
 }
-
-void Rendering::CreateResource() {
-  CreateSkybox();
-  CreateEnvrionment();
-  CreateObject();
-}
-
-void Rendering::CreateSkybox() {}
-void Rendering::CreateEnvrionment() {}
-void Rendering::CreateObject() {}
 
 void Rendering::CreateGBuffer() {
   vk::raii::CommandBuffer command_buffer{gpu_->BeginTempCommandBuffer()};
@@ -345,7 +335,7 @@ void Rendering::CreateModelResource() {
     dummy_sampler_ = gpu_->CreateSampler(sampler_ci);
   }
 
-  const tinygltf::Model& model{asset_->GetAssetInfo().object};
+  const tinygltf::Model& model{asset_->GetAssetInfo().object.GetTinygltfModel()};
 
   // Buffers.
   {
@@ -373,12 +363,12 @@ void Rendering::CreateModelResource() {
       model_buffer_ci.size = buffer_size;
 
       model_buffer_staging_buffer_ci.size = buffer_size;
-      Buffer model_buffer_staging_buffer{
+      gpu::Buffer model_buffer_staging_buffer{
           gpu_->CreateBuffer(model_buffer_staging_buffer_ci, buffer_data)};
       model_buffer_staging_buffers_.push_back(
           std::move(model_buffer_staging_buffer));
 
-      Buffer model_buffer{gpu_->CreateBuffer(
+      gpu::Buffer model_buffer{gpu_->CreateBuffer(
           model_buffer_ci, model_buffer_staging_buffers_[i], command_buffer)};
 
       model_buffers_.push_back(std::move(model_buffer));
@@ -415,12 +405,12 @@ void Rendering::CreateModelResource() {
                              vk::ImageUsageFlagBits::eTransferDst;
 
       model_image_staging_buffer_ci.size = image.image.size();
-      Buffer model_image_staging_buffer{gpu_->CreateBuffer(
+      gpu::Buffer model_image_staging_buffer{gpu_->CreateBuffer(
           model_image_staging_buffer_ci, image.image.data())};
       model_image_staging_buffers_.push_back(
           std::move(model_image_staging_buffer));
 
-      Image model_image{gpu_->CreateImage(
+      gpu::Image model_image{gpu_->CreateImage(
           model_image_ci, vk::ImageLayout::eShaderReadOnlyOptimal,
           model_image_staging_buffers_[i], command_buffer, name)};
 

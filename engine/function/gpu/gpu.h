@@ -22,18 +22,19 @@ class Gpu {
 
   void Tick();
 
-  Buffer CreateBuffer(const vk::BufferCreateInfo& buffer_ci, const void* data,
-                      const std::string& name = {});
+  gpu::Buffer CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
+                           const void* data, const std::string& name = {});
 
-  Buffer CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
-                      const Buffer& staging_buffer = nullptr,
-                      const vk::raii::CommandBuffer& command_buffer = nullptr,
-                      const std::string& name = {});
+  gpu::Buffer CreateBuffer(
+      const vk::BufferCreateInfo& buffer_ci,
+      const gpu::Buffer& staging_buffer = nullptr,
+      const vk::raii::CommandBuffer& command_buffer = nullptr,
+      const std::string& name = {});
 
-  Image CreateImage(
+  gpu::Image CreateImage(
       const vk::ImageCreateInfo& image_ci,
       const vk::ImageLayout new_layout = vk::ImageLayout::eUndefined,
-      const Buffer& staging_buffer = nullptr,
+      const gpu::Buffer& staging_buffer = nullptr,
       const vk::raii::CommandBuffer& command_buffer = nullptr,
       const std::string& name = {});
 

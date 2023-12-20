@@ -1,3 +1,6 @@
+[submodule "third_party/ctpl"]
+	path = third_party/ctpl
+	url = https://github.com/vit-vit/CTPL.git
 [submodule "third_party/glfw"]
 	path = third_party/glfw
 	url = https://github.com/glfw/glfw.git

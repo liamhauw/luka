@@ -8,7 +8,7 @@
 // clang-format on
 
 #include "core/math.h"
-#include "function/scene_graph/component/component.h"
+#include "function/scene_graph/component.h"
 
 namespace luka {
 namespace sg {

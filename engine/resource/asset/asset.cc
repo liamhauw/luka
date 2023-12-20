@@ -26,13 +26,13 @@ void Asset::Tick() {}
 
 const AssetInfo& Asset::GetAssetInfo() const { return asset_info_; }
 
-tinygltf::Model Asset::LoadModel(const std::filesystem::path& model_path) {
-  tinygltf::Model model;
+ast::Model Asset::LoadModel(const std::filesystem::path& model_path) {
+  tinygltf::Model tinygltf_model;
   tinygltf::TinyGLTF tinygltf;
   std::string error;
   std::string warning;
 
-  bool result{tinygltf.LoadASCIIFromFile(&model, &error, &warning,
+  bool result{tinygltf.LoadASCIIFromFile(&tinygltf_model, &error, &warning,
                                          model_path.string())};
   if (!warning.empty()) {
     LOGW("Tinygltf: {}.", warning);
@@ -43,6 +43,10 @@ tinygltf::Model Asset::LoadModel(const std::filesystem::path& model_path) {
   if (!result) {
     THROW("Fail to load {}.", model_path.string());
   }
+
+  std::map<std::string, ast::Texture> url_texture_map;
+
+  ast::Model model{std::move(tinygltf_model), std::move(url_texture_map)};
 
   return model;
 }

@@ -42,9 +42,9 @@ void Gpu::Tick() {
   }
 }
 
-Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
-                         const void* data, const std::string& name) {
-  Buffer buffer{allocator_, buffer_ci, true};
+gpu::Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
+                              const void* data, const std::string& name) {
+  gpu::Buffer buffer{allocator_, buffer_ci, true};
 
 #ifndef NDEBUG
   SetObjectName(vk::ObjectType::eBuffer,
@@ -59,11 +59,11 @@ Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
   return buffer;
 }
 
-Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
-                         const Buffer& staging_buffer,
-                         const vk::raii::CommandBuffer& command_buffer,
-                         const std::string& name) {
-  Buffer buffer{allocator_, buffer_ci};
+gpu::Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
+                              const gpu::Buffer& staging_buffer,
+                              const vk::raii::CommandBuffer& command_buffer,
+                              const std::string& name) {
+  gpu::Buffer buffer{allocator_, buffer_ci};
 
 #ifndef NDEBUG
   SetObjectName(vk::ObjectType::eBuffer,
@@ -78,12 +78,12 @@ Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
   return buffer;
 }
 
-Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
-                       const vk::ImageLayout new_layout,
-                       const Buffer& staging_buffer,
-                       const vk::raii::CommandBuffer& command_buffer,
-                       const std::string& name) {
-  Image image{allocator_, image_ci};
+gpu::Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
+                            const vk::ImageLayout new_layout,
+                            const gpu::Buffer& staging_buffer,
+                            const vk::raii::CommandBuffer& command_buffer,
+                            const std::string& name) {
+  gpu::Image image{allocator_, image_ci};
 
 #ifndef NDEBUG
   SetObjectName(vk::ObjectType::eImage,
@@ -471,9 +471,7 @@ void Gpu::EndRenderPass(const vk::raii::CommandBuffer& command_buffer) {
 
 void Gpu::WaitIdle() { device_.waitIdle(); }
 
-const u32 Gpu::GetBackBufferCount() const {
-  return kBackBufferCount;
-}
+const u32 Gpu::GetBackBufferCount() const { return kBackBufferCount; }
 
 const vk::Extent2D& Gpu::GetExtent2D() const { return extent_; }
 

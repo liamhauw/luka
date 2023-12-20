@@ -11,6 +11,8 @@
 
 namespace luka {
 
+namespace gpu {
+
 class Buffer {
  public:
   Buffer() = delete;
@@ -26,12 +28,14 @@ class Buffer {
   void Clear() noexcept;
 
   void* Map() const;
-  void Unmap() const;     
+  void Unmap() const;
 
  private:
   VmaAllocator allocator_{nullptr};
   vk::Buffer buffer_{nullptr};
   VmaAllocation allocation_{nullptr};
 };
+
+}  // namespace gpu
 
 }  // namespace luka

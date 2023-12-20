@@ -12,17 +12,6 @@
 
 namespace luka {
 
-struct TextureResource {
-
-};
-
-struct ModelResource {
-  std::vector<Buffer> model_buffers;
-  std::vector<Image> model_images;
-  std::vector<vk::raii::ImageView> model_image_views;
-  std::vector<vk::raii::Sampler> model_samplers;
-};
-
 class Asset;
 
 class Rendering {
@@ -89,7 +78,7 @@ class Rendering {
 
     vk::raii::DescriptorSet descriptor_set{nullptr};
     MaterialData material_data;
-    Buffer material_buffer{nullptr};
+    gpu::Buffer material_buffer{nullptr};
   };
 
   std::shared_ptr<Asset> asset_;
@@ -97,9 +86,9 @@ class Rendering {
 
   // GBuffer.
   vk::Extent2D extent_;
-  std::vector<Image> color_images_;
+  std::vector<gpu::Image> color_images_;
   std::vector<vk::raii::ImageView> color_image_views_;
-  Image depth_image_{nullptr};
+  gpu::Image depth_image_{nullptr};
   vk::raii::ImageView depth_image_view_{nullptr};
   vk::raii::Sampler sampler_{nullptr};
 
@@ -110,26 +99,22 @@ class Rendering {
   vk::Format depth_format_{vk::Format::eD32Sfloat};
   vk::raii::Pipeline pipeline_{nullptr};
   UniformData uniform_data_;
-  Buffer uniform_buffer_{nullptr};
+  gpu::Buffer uniform_buffer_{nullptr};
 
   // Resource.
   u32 image_index_{0};
 
-  Buffer dummy_buffer_staging_buffer_{nullptr};
-  Buffer dummy_buffer_{nullptr};
-  Buffer dummy_image_staging_buffer_{nullptr};
-  Image dummy_image_{nullptr};
+  gpu::Buffer dummy_buffer_staging_buffer_{nullptr};
+  gpu::Buffer dummy_buffer_{nullptr};
+  gpu::Buffer dummy_image_staging_buffer_{nullptr};
+  gpu::Image dummy_image_{nullptr};
   vk::raii::ImageView dummy_image_view_{nullptr};
   vk::raii::Sampler dummy_sampler_{nullptr};
 
-  ModelResource skybox_;
-  TextureResource environment_;
-  ModelResource object_;
-
-  std::vector<Buffer> model_buffer_staging_buffers_;
-  std::vector<Buffer> model_buffers_;
-  std::vector<Buffer> model_image_staging_buffers_;
-  std::vector<Image> model_images_;
+  std::vector<gpu::Buffer> model_buffer_staging_buffers_;
+  std::vector<gpu::Buffer> model_buffers_;
+  std::vector<gpu::Buffer> model_image_staging_buffers_;
+  std::vector<gpu::Image> model_images_;
   std::vector<vk::raii::ImageView> model_image_views_;
   std::vector<vk::raii::Sampler> model_samplers_;
   std::vector<DrawElement> draw_elements_;

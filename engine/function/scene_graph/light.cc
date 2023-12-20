@@ -5,7 +5,7 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "function/scene_graph/component/light.h"
+#include "function/scene_graph/light.h"
 
 namespace luka {
 namespace sg {

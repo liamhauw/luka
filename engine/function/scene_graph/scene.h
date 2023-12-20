@@ -7,7 +7,7 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "function/scene_graph/component/component.h"
+#include "function/scene_graph/component.h"
 #include "function/scene_graph/node.h"
 
 namespace luka {

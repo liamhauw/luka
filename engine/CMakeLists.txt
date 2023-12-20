@@ -14,6 +14,8 @@ set(HEADER_FILES
   core/math.h
   core/util.h
   resource/asset/asset.h
+  resource/asset/model.h
+  resource/asset/texture.h
   resource/config/config.h
   function/camera/camera.h
   function/function_input/function_input.h
@@ -23,14 +25,15 @@ set(HEADER_FILES
   function/gpu/image.h
   function/physics/physics.h
   function/rendering/rendering.h
-  function/scene_graph/component/component.h
-  function/scene_graph/component/light.h
-  function/scene_graph/component/sampler.h
-  function/scene_graph/script/free_camera.h
-  function/scene_graph/script/script.h
+  function/scene_graph/component.h
+  function/scene_graph/free_camera.h
+  function/scene_graph/image.h
+  function/scene_graph/light.h
   function/scene_graph/node.h
+  function/scene_graph/sampler.h
   function/scene_graph/scene_graph.h
   function/scene_graph/scene.h
+  function/scene_graph/script.h
   function/time/time.h
   function/window/window.h
   function/world/world.h
@@ -45,6 +48,8 @@ set(SOURCE_FILES
   core/json.cc
   core/util.cc
   resource/asset/asset.cc
+  resource/asset/model.cc
+  resource/asset/texture.cc
   resource/config/generated/source_path.h
   resource/config/config.cc
   function/camera/camera.cc
@@ -55,14 +60,15 @@ set(SOURCE_FILES
   function/gpu/image.cc
   function/physics/physics.cc
   function/rendering/rendering.cc
-  function/scene_graph/component/component.cc
-  function/scene_graph/component/light.cc
-  function/scene_graph/component/sampler.cc
-  function/scene_graph/script/free_camera.cc
-  function/scene_graph/script/script.cc
+  function/scene_graph/component.cc
+  function/scene_graph/free_camera.cc
+  function/scene_graph/image.cc
+  function/scene_graph/light.cc
   function/scene_graph/node.cc
+  function/scene_graph/sampler.cc
   function/scene_graph/scene_graph.cc
   function/scene_graph/scene.cc
+  function/scene_graph/script.cc
   function/time/time.cc
   function/window/window.cc
   function/world/world.cc

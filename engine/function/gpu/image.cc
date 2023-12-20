@@ -11,6 +11,7 @@
 
 namespace luka {
 
+namespace gpu {
 Image::Image(const VmaAllocator& allocator, const vk::ImageCreateInfo& image_ci)
     : allocator_{allocator} {
   VkImageCreateInfo vk_image_ci{static_cast<VkImageCreateInfo>(image_ci)};
@@ -47,5 +48,6 @@ void Image::Clear() noexcept {
   image_ = nullptr;
   allocation_ = nullptr;
 }
+}  // namespace gpu
 
 }  // namespace luka

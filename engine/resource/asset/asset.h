@@ -7,20 +7,15 @@
 #include "platform/pch.h"
 // clang-format on
 
-// If delete this and declare Config, there will be a intellisense error.
-// But if i remove tiny_gltf.h, everything will be ok.
+#include "resource/asset/model.h"
+#include "resource/asset/texture.h"
 #include "resource/config/config.h"
-#define TINYGLTF_NO_STB_IMAGE
-#define TINYGLTF_NO_STB_IMAGE_WRITE
-#define TINYGLTF_NO_EXTERNAL_IMAGE
-#include "tiny_gltf.h"
-// I think there is a header containment conflict, which editor can't fix.
 
 namespace luka {
 
 struct AssetInfo {
-  tinygltf::Model skybox;
-  tinygltf::Model object;
+  ast::Model skybox;
+  ast::Model object;
   std::vector<u8> vertext_shader_buffer;
   std::vector<u8> fragment_shader_buffer;
 };
@@ -34,7 +29,7 @@ class Asset {
   const AssetInfo& GetAssetInfo() const;
 
  private:
-  tinygltf::Model LoadModel(const std::filesystem::path& model_path);
+  ast::Model LoadModel(const std::filesystem::path& model_path);
   std::vector<u8> LoadShader(const std::filesystem::path& shader_path);
 
   std::shared_ptr<Config> config_;

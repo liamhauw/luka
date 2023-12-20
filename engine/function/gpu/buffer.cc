@@ -11,6 +11,8 @@
 
 namespace luka {
 
+namespace gpu {
+
 Buffer::Buffer(const VmaAllocator& allocator,
                const vk::BufferCreateInfo& buffer_ci, bool staging)
     : allocator_{allocator} {
@@ -59,8 +61,8 @@ void* Buffer::Map() const {
   return mapped_data;
 }
 
-void Buffer::Unmap() const {
-  vmaUnmapMemory(allocator_, allocation_);
-}
+void Buffer::Unmap() const { vmaUnmapMemory(allocator_, allocation_); }
+
+}  // namespace gpu
 
 }  // namespace luka

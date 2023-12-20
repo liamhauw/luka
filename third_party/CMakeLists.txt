@@ -6,6 +6,10 @@ set(CMAKE_WARN_DEPRECATED OFF CACHE BOOL "" FORCE)
 # Vulkan SDK
 find_package(Vulkan REQUIRED GLOBAL)
 
+# ctpl
+add_library(ctpl INTERFACE)
+target_include_directories(ctpl INTERFACE ctpl)
+
 # glfw
 set(GLFW_BUILD_DOCS OFF)
 set(GLFW_INSTALL OFF)
@@ -70,6 +74,7 @@ add_library(${PROJECT_NAME})
 target_sources(${PROJECT_NAME} PRIVATE third_party.cc)
 target_link_libraries(${PROJECT_NAME} PUBLIC
   Vulkan::Vulkan
+  ctpl
   glfw
   glm
   imgui

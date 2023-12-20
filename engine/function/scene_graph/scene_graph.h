@@ -7,13 +7,18 @@
 #include "platform/pch.h"
 // clang-format on
 
+#include "function/scene_graph/image.h"
+#include "function/scene_graph/light.h"
+#include "function/scene_graph/sampler.h"
 #include "function/scene_graph/scene.h"
 
-namespace tinygltf {
-class Model;
-}
-
 namespace luka {
+
+namespace ast {
+class Model;
+}  // namespace ast
+
+class Gpu;
 
 class SceneGraph {
  public:
@@ -22,12 +27,18 @@ class SceneGraph {
   void Tick();
 
  private:
-  std::unique_ptr<sg::Scene> LoadScene(const tinygltf::Model& model);
+  std::unique_ptr<sg::Scene> LoadScene(const ast::Model& model);
 
-  vk::Filter ParseMagFilter(i32 mag_filter);
-  vk::Filter ParseMinFilter(i32 min_filter);
-  vk::SamplerMipmapMode ParseMipmapMode(i32 min_filter);
-  vk::SamplerAddressMode ParseAddressMode(i32 wrap);
+  std::unordered_map<std::string, bool> ParseExtensionsUsed(
+      const ast::Model& model);
+  std::vector<std::unique_ptr<sg::Light>> ParseLights(
+      const ast::Model& model,
+      const std::unordered_map<std::string, bool>& supported_extensions);
+  std::vector<std::unique_ptr<sg::Sampler>> ParseSamplers(
+      const ast::Model& model);
+  std::vector<std::unique_ptr<sg::Image>> ParseImages(const ast::Model& model);
+
+  std::shared_ptr<Gpu> gpu_;
 
   std::unique_ptr<sg::Scene> skybox_;
   std::unique_ptr<sg::Scene> object_;
