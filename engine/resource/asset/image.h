@@ -1,14 +1,18 @@
 // SPDX license identifier: MIT.
 // Copyright (C) 2023 Liam Hauw.
 
+#pragma once
+
 // clang-format off
 #include "platform/pch.h"
 // clang-format on
 
-#include "resource/asset/texture.h"
-
 namespace luka {
 
-namespace ast {}  // namespace ast
+namespace ast {
+
+class Image {};
+
+}  // namespace ast
 
 }  // namespace luka

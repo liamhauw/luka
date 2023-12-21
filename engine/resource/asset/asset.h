@@ -8,7 +8,7 @@
 // clang-format on
 
 #include "resource/asset/model.h"
-#include "resource/asset/texture.h"
+#include "resource/asset/image.h"
 #include "resource/config/config.h"
 
 namespace luka {

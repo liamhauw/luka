@@ -7,7 +7,7 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "resource/asset/texture.h"
+#include "resource/asset/image.h"
 
 #define TINYGLTF_NO_STB_IMAGE
 #define TINYGLTF_NO_STB_IMAGE_WRITE
@@ -22,14 +22,14 @@ class Model {
  public:
   Model() = default;
   Model(tinygltf::Model&& tinygltf_model,
-        std::map<std::string, Texture>&& url_texture_map);
+        std::map<std::string, Image>&& url_texture_map);
 
   const tinygltf::Model& GetTinygltfModel() const;
-  const std::map<std::string, Texture>& GetUrlTextureMap() const;
+  const std::map<std::string, Image>& GetUrlTextureMap() const;
 
  private:
   tinygltf::Model tinygltf_model_;
-  std::map<std::string, Texture> url_texture_map_;
+  std::map<std::string, Image> url_texture_map_;
 };
 
 }  // namespace ast

@@ -7,6 +7,8 @@
 
 #include "resource/asset/asset.h"
 
+#include <ctpl_stl.h>
+
 #include "context.h"
 #include "core/log.h"
 
@@ -44,7 +46,24 @@ ast::Model Asset::LoadModel(const std::filesystem::path& model_path) {
     THROW("Fail to load {}.", model_path.string());
   }
 
-  std::map<std::string, ast::Texture> url_texture_map;
+  std::map<std::string, ast::Image> url_texture_map;
+
+  const std::vector<tinygltf::Image>& images{tinygltf_model.images};
+  u64 image_count{images.size()};
+
+  u32 thread_count{std::thread::hardware_concurrency()};
+  thread_count = thread_count == 0 ? 1 : thread_count;
+  ctpl::thread_pool thread_pool{static_cast<i32>(thread_count)};
+
+  std::vector<std::future<std::unique_ptr<ast::Image>>> future_images;
+
+  for (u64 i{0}; i < image_count; ++i) {
+    auto future{thread_pool.push([&images, i](u64) {
+      LOGI("{}", images[i].uri);
+      return std::make_unique<ast::Image>();
+    })};
+    future_images.push_back(std::move(future));
+  }
 
   ast::Model model{std::move(tinygltf_model), std::move(url_texture_map)};
 

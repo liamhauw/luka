@@ -15,7 +15,7 @@ set(HEADER_FILES
   core/util.h
   resource/asset/asset.h
   resource/asset/model.h
-  resource/asset/texture.h
+  resource/asset/image.h
   resource/config/config.h
   function/camera/camera.h
   function/function_input/function_input.h
@@ -49,7 +49,7 @@ set(SOURCE_FILES
   core/util.cc
   resource/asset/asset.cc
   resource/asset/model.cc
-  resource/asset/texture.cc
+  resource/asset/image.cc
   resource/config/generated/source_path.h
   resource/config/config.cc
   function/camera/camera.cc
