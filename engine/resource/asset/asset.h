@@ -7,8 +7,8 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "resource/asset/model.h"
 #include "resource/asset/image.h"
+#include "resource/asset/model.h"
 #include "resource/config/config.h"
 
 namespace luka {
@@ -29,8 +29,14 @@ class Asset {
   const AssetInfo& GetAssetInfo() const;
 
  private:
-  ast::Model LoadModel(const std::filesystem::path& model_path);
-  std::vector<u8> LoadShader(const std::filesystem::path& shader_path);
+  ast::Image LoadAssetImage(const std::filesystem::path& image_path);
+  ast::Model LoadAssetModel(const std::filesystem::path& model_path);
+  std::vector<u8> LoadAssetShader(const std::filesystem::path& shader_path);
+
+  ast::Image LoadKtxImage(const std::filesystem::path& image_path);
+  ast::Image LoadStbImage(const std::filesystem::path& image_path);
+  ast::Model LoadGltfModel(const std::filesystem::path& model_path);
+  std::vector<u8> LoadBinary(const std::filesystem::path& binary_path);
 
   std::shared_ptr<Config> config_;
 
