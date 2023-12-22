@@ -88,10 +88,13 @@ target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 target_link_libraries(${PROJECT_NAME} PRIVATE luka_third_party)
 target_precompile_headers(${PROJECT_NAME} PRIVATE platform/pch.h)
 
-foreach(DLL_FILE ${DLL_FILES})
-  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    ${DLL_FILE}
-    $<TARGET_FILE_DIR:${PROJECT_NAME}>
-  )
-endforeach()
+if(WIN32)
+  set(DLL_FILES ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/ktx_4.3.0/windows/bin/ktx.dll)
+  foreach(DLL_FILE ${DLL_FILES})
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      ${DLL_FILE}
+      $<TARGET_FILE_DIR:${PROJECT_NAME}>
+    )
+  endforeach()
+endif()
