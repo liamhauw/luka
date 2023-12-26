@@ -56,21 +56,97 @@ std::vector<u8> Asset::LoadAssetShader(
   return LoadBinary(shader_path);
 }
 
-ast::Image Asset::LoadKtxImage(const std::filesystem::path& image_path) {
-  std::vector<u8> binary_data{LoadBinary(image_path)};
-
+struct CallbackData {
   ktxTexture* texture;
+  std::vector<ast::Mipmap>* mipmaps;
+};
+
+static ktx_error_code_e KTX_APIENTRY
+IterateLevelsCallback(int mip_level, int face, int width, int height, int depth,
+                      u64 face_lod_size, void* pixels, void* user_data) {
+  auto* callback_data{reinterpret_cast<CallbackData*>(user_data)};
+
+  auto& mipmap{callback_data->mipmaps->at(mip_level)};
+  mipmap.level = mip_level;
+  mipmap.extent.width = width;
+  mipmap.extent.height = height;
+  mipmap.extent.depth = depth;
+
+  return KTX_SUCCESS;
+}
+
+ast::Image Asset::LoadKtxImage(const std::filesystem::path& image_path) {
+  // Ktx texture.
+  ktxTexture* texture;
+  std::vector<u8> binary_data{LoadBinary(image_path)};
   u8* buffer{binary_data.data()};
   u64 size{binary_data.size()};
-
   auto result{ktxTexture_CreateFromMemory(
       buffer, size, KTX_TEXTURE_CREATE_NO_FLAGS, &texture)};
-
   if (result != KTX_SUCCESS) {
-    THROW("Fail to create ktx texture.");
+    THROW("Ktx texture Fail to create from memory.");
   }
 
-  return ast::Image{};
+  // Data.
+  std::vector<u8> image_data;
+  u64 image_size{texture->dataSize};
+  if (texture->pData) {
+    image_data = {texture->pData, texture->pData + image_size};
+  } else {
+    image_data.resize(image_size);
+    auto load_data_result{
+        ktxTexture_LoadImageData(texture, image_data.data(), image_size)};
+    if (load_data_result != KTX_SUCCESS) {
+      THROW("Ktx texture fail to load image data.");
+    }
+  }
+
+  // Format.
+  vk::Format format{ktxTexture_GetVkFormat(texture)};
+
+  // Levels.
+  u32 level_count{texture->numLevels};
+  ast::Mipmap mipmap{
+      0, {texture->baseWidth, texture->baseHeight, texture->baseDepth}};
+  std::vector<ast::Mipmap> mipmaps{mipmap};
+  mipmaps.resize(level_count);
+  CallbackData callback_data{texture, &mipmaps};
+  auto iterate_levels_result{
+      ktxTexture_IterateLevels(texture, IterateLevelsCallback, &callback_data)};
+  if (iterate_levels_result != KTX_SUCCESS) {
+    THROW("Ktx texture fail to iterate levels.");
+  }
+
+  // Layers.
+  u32 layer_count{texture->numLayers};
+
+  // Faces.
+  u32 face_count{texture->numFaces};
+
+  // Offsets.
+  std::vector<std::vector<std::vector<u64>>> offsets;
+  for (u32 level_index{0}; level_index < level_count; ++level_index) {
+    std::vector<std::vector<u64>> level_offsets;
+    for (u32 layer_index{0}; layer_index < layer_count; ++layer_index) {
+      std::vector<u64> layer_offsets;
+      for (u32 face_index{0}; face_index < face_count; ++face_index) {
+        u64 offset;
+        KTX_error_code get_image_offset_result{ktxTexture_GetImageOffset(
+            texture, level_index, layer_index, face_index, &offset)};
+        if (get_image_offset_result != KTX_SUCCESS) {
+          THROW("Ktx texture fail to get image offset.");
+        }
+        layer_offsets.push_back(offset);
+      }
+      level_offsets.push_back(std::move(layer_offsets));
+    }
+    offsets.push_back(std::move(level_offsets));
+  }
+
+  ktxTexture_Destroy(texture);
+
+  return ast::Image{std::move(image_data), format,     std::move(mipmaps),
+                    layer_count,           face_count, std::move(offsets)};
 }
 
 ast::Image Asset::LoadStbImage(const std::filesystem::path& image_path) {
