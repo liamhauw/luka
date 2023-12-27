@@ -34,6 +34,7 @@ set(HEADER_FILES
   function/scene_graph/scene_graph.h
   function/scene_graph/scene.h
   function/scene_graph/script.h
+  function/scene_graph/texture.h
   function/time/time.h
   function/window/window.h
   function/world/world.h
@@ -69,6 +70,7 @@ set(SOURCE_FILES
   function/scene_graph/scene_graph.cc
   function/scene_graph/scene.cc
   function/scene_graph/script.cc
+  function/scene_graph/texture.cc
   function/time/time.cc
   function/window/window.cc
   function/world/world.cc

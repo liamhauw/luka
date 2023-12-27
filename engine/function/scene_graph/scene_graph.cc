@@ -30,31 +30,36 @@ void SceneGraph::Tick() {}
 std::unique_ptr<sg::Scene> SceneGraph::LoadScene(const ast::Model& model) {
   auto scene{std::make_unique<sg::Scene>("gltf_scene")};
 
+  const tinygltf::Model& tinygltf_model{model.GetTinygltfModel()};
+
   std::unordered_map<std::string, bool> supported_extensions{
-      ParseExtensionsUsed(model)};
+      ParseExtensionsUsed(tinygltf_model.extensionsUsed)};
 
   std::vector<std::unique_ptr<sg::Light>> light_components{
-      ParseLightComponents(model, supported_extensions)};
+      ParseLightComponents(tinygltf_model.extensions, supported_extensions)};
   scene->SetComponents(std::move(light_components));
 
   std::vector<std::unique_ptr<sg::Image>> image_components{
-      ParseImageComponents(model)};
+      ParseImageComponents(tinygltf_model.images, model.GetUriTextureMap())};
   scene->SetComponents(std::move(image_components));
 
   std::vector<std::unique_ptr<sg::Sampler>> sampler_components{
-      ParseSamplerComponents(model)};
+      ParseSamplerComponents(tinygltf_model.samplers)};
   scene->SetComponents(std::move(sampler_components));
+
+  std::vector<std::unique_ptr<sg::Texture>> texture_components{
+      ParseTextureComponents(tinygltf_model.textures, scene)};
+  scene->SetComponents(std::move(texture_components));
 
   return scene;
 }
 
 std::unordered_map<std::string, bool> SceneGraph::ParseExtensionsUsed(
-    const ast::Model& model) {
+    const std::vector<std::string>& model_extensions_used) {
   std::unordered_map<std::string, bool> supported_extensions{
       {KHR_LIGHTS_PUNCTUAL_EXTENSION, false}};
 
-  for (const std::string& model_extension_used :
-       model.GetTinygltfModel().extensionsUsed) {
+  for (const std::string& model_extension_used : model_extensions_used) {
     auto iter = supported_extensions.find(model_extension_used);
     if (iter == supported_extensions.end()) {
       THROW("Contain unsupported extension.");
@@ -66,7 +71,7 @@ std::unordered_map<std::string, bool> SceneGraph::ParseExtensionsUsed(
 }
 
 std::vector<std::unique_ptr<sg::Light>> SceneGraph::ParseLightComponents(
-    const ast::Model& model,
+    const tinygltf::ExtensionMap& model_extension_map,
     const std::unordered_map<std::string, bool>& supported_extensions) {
   std::vector<std::unique_ptr<sg::Light>> light_components;
 
@@ -74,15 +79,11 @@ std::vector<std::unique_ptr<sg::Light>> SceneGraph::ParseLightComponents(
       supported_extensions.find(KHR_LIGHTS_PUNCTUAL_EXTENSION)};
   if (khr_lights_punctual_extension != supported_extensions.end() &&
       khr_lights_punctual_extension->second) {
-    if (model.GetTinygltfModel().extensions.find(
-            KHR_LIGHTS_PUNCTUAL_EXTENSION) !=
-            model.GetTinygltfModel().extensions.end() &&
-        model.GetTinygltfModel()
-            .extensions.at(KHR_LIGHTS_PUNCTUAL_EXTENSION)
-            .Has("lights")) {
-      const auto& model_lights{model.GetTinygltfModel()
-                                   .extensions.at(KHR_LIGHTS_PUNCTUAL_EXTENSION)
-                                   .Get("lights")};
+    if (model_extension_map.find(KHR_LIGHTS_PUNCTUAL_EXTENSION) !=
+            model_extension_map.end() &&
+        model_extension_map.at(KHR_LIGHTS_PUNCTUAL_EXTENSION).Has("lights")) {
+      const auto& model_lights{
+          model_extension_map.at(KHR_LIGHTS_PUNCTUAL_EXTENSION).Get("lights")};
 
       for (u64 i{0}; i < model_lights.ArrayLen(); ++i) {
         const auto& model_light{model_lights.Get(static_cast<i32>(i))};
@@ -150,11 +151,9 @@ std::vector<std::unique_ptr<sg::Light>> SceneGraph::ParseLightComponents(
 
 // TODO Cube
 std::vector<std::unique_ptr<sg::Image>> SceneGraph::ParseImageComponents(
-    const ast::Model& model) {
+    const std::vector<tinygltf::Image>& model_images,
+    const std::map<std::string, luka::ast::Image>& model_uri_image_map) {
   std::vector<std::unique_ptr<sg::Image>> image_components;
-
-  const auto& model_images{model.GetTinygltfModel().images};
-  const auto& model_uri_image_map{model.GetUriTextureMap()};
 
   const vk::raii::CommandBuffer& command_buffer{gpu_->BeginTempCommandBuffer()};
 
@@ -275,9 +274,9 @@ std::vector<std::unique_ptr<sg::Image>> SceneGraph::ParseImageComponents(
 }
 
 std::vector<std::unique_ptr<sg::Sampler>> SceneGraph::ParseSamplerComponents(
-    const ast::Model& model) {
+    const std::vector<tinygltf::Sampler>& model_samplers) {
   std::vector<std::unique_ptr<sg::Sampler>> sampler_components;
-  for (const auto& model_sampler : model.GetTinygltfModel().samplers) {
+  for (const auto& model_sampler : model_samplers) {
     vk::Filter mag_filter;
     switch (model_sampler.minFilter) {
       case TINYGLTF_TEXTURE_FILTER_NEAREST:
@@ -368,11 +367,12 @@ std::vector<std::unique_ptr<sg::Sampler>> SceneGraph::ParseSamplerComponents(
 }
 
 std::vector<std::unique_ptr<sg::Texture>> SceneGraph::ParseTextureComponents(
-    const ast::Model& model, const std::unique_ptr<sg::Scene>& scene) {
+    const std::vector<tinygltf::Texture>& model_textures,
+    const std::unique_ptr<sg::Scene>& scene) {
   auto image_components{scene->GetComponents<sg::Image>()};
   auto sampler_components{scene->GetComponents<sg::Sampler>()};
 
-  for (const auto& model_texture : model.GetTinygltfModel().textures) {
+  for (const auto& model_texture : model_textures) {
     sg::Image* image{image_components[model_texture.source]};
     sg::Sampler* sampler{sampler_components[model_texture.sampler]};
   }
