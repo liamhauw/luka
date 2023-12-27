@@ -82,6 +82,7 @@ gpu::Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
                             const vk::ImageLayout new_layout,
                             const gpu::Buffer& staging_buffer,
                             const vk::raii::CommandBuffer& command_buffer,
+                            const ast::Image& asset_image,
                             const std::string& name) {
   gpu::Image image{allocator_, image_ci};
 
@@ -114,14 +115,21 @@ gpu::Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
     }
 
     {
-      vk::BufferImageCopy buffer_image_copy{
-          {},        {},
-          {},        {vk::ImageAspectFlagBits::eColor, 0, 0, 1},
-          {0, 0, 0}, image_ci.extent};
+      const auto& mipmaps{asset_image.GetMipmaps()};
+      u32 mipmap_count{static_cast<u32>(mipmaps.size())};
+      u32 layer_count{asset_image.GetLayerCount()};
+      const auto& offsets{asset_image.GetOffsets()};
 
+      std::vector<vk::BufferImageCopy> buffer_image_copys;
+      for (u32 i{0}; i < mipmap_count; ++i) {
+        vk::BufferImageCopy buffer_image_copy{
+            offsets[i][0][0], {}, {}, {flag_bits, i, 0, layer_count}, {},
+            mipmaps[i].extent};
+        buffer_image_copys.push_back(buffer_image_copy);
+      }
       command_buffer.copyBufferToImage(*staging_buffer, *image,
                                        vk::ImageLayout::eTransferDstOptimal,
-                                       buffer_image_copy);
+                                       buffer_image_copys);
     }
 
     {

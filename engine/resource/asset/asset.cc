@@ -171,41 +171,42 @@ ast::Model Asset::LoadGltfModel(const std::filesystem::path& model_path) {
     THROW("Fail to load {}.", model_path.string());
   }
 
-  std::map<std::string, ast::Image> url_image_map;
+  std::map<std::string, ast::Image> uri_image_map;
 
   const std::vector<tinygltf::Image>& images{tinygltf_model.images};
   u64 image_count{images.size()};
 
-  // // Multithread.
-  // u32 thread_count{std::thread::hardware_concurrency()};
-  // thread_count = thread_count == 0 ? 1 : thread_count;
-  // ctpl::thread_pool thread_pool{static_cast<i32>(thread_count)};
+  // Multithread.
+  u32 thread_count{std::thread::hardware_concurrency()};
+  thread_count = thread_count == 0 ? 1 : thread_count;
+  ctpl::thread_pool thread_pool{static_cast<i32>(thread_count)};
 
-  // std::vector<std::future<std::pair<std::string, ast::Image>>>
-  //     future_url_image_map;
-
-  // for (u64 i{0}; i < image_count; ++i) {
-  //   const std::string& image_url{images[i].uri};
-  //   auto future_image{thread_pool.push([&model_path, &image_url, this](u64) {
-  //     std::filesystem::path image_path{model_path.parent_path() / image_url};
-  //     auto image{LoadAssetImage(image_path)};
-  //     return std::make_pair(image_url, image);
-  //   })};
-  //   future_url_image_map.push_back(std::move(future_image));
-  // }
-
-  // for (u64 i{0}; i < image_count; ++i) {
-  //   url_image_map.insert(future_url_image_map[i].get());
-  // }
+  std::vector<std::future<std::pair<std::string, ast::Image>>>
+      future_uri_image_map;
 
   for (u64 i{0}; i < image_count; ++i) {
-    const std::string& image_url{images[i].uri};
-    std::filesystem::path image_path{model_path.parent_path() / image_url};
-    auto image{LoadAssetImage(image_path)};
-    url_image_map.insert(std::make_pair(image_url, image));
+    const std::string& image_uri{images[i].uri};
+    auto future_image{thread_pool.push([&model_path, &image_uri, this](u64) {
+      std::filesystem::path image_path{model_path.parent_path() / image_uri};
+      auto image{LoadAssetImage(image_path)};
+      return std::make_pair(image_uri, image);
+    })};
+    future_uri_image_map.push_back(std::move(future_image));
   }
 
-  ast::Model model{std::move(tinygltf_model), std::move(url_image_map)};
+  for (u64 i{0}; i < image_count; ++i) {
+    uri_image_map.insert(future_uri_image_map[i].get());
+  }
+
+  // // Single thread.
+  // for (u64 i{0}; i < image_count; ++i) {
+  //   const std::string& image_uri{images[i].uri};
+  //   std::filesystem::path image_path{model_path.parent_path() / image_uri};
+  //   auto image{LoadAssetImage(image_path)};
+  //   uri_image_map.insert(std::make_pair(image_uri, image));
+  // }
+
+  ast::Model model{std::move(tinygltf_model), std::move(uri_image_map)};
 
   return model;
 }

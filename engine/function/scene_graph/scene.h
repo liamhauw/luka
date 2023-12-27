@@ -18,10 +18,7 @@ class Scene {
  public:
   Scene(const std::string& name = {});
 
-  void SetComponents(const std::type_index& type_info,
-                     std::vector<std::unique_ptr<Component>>&& components);
-
-  template <class T>
+  template <typename T>
   void SetComponents(std::vector<std::unique_ptr<T>>&& components) {
     std::vector<std::unique_ptr<Component>> result(components.size());
     std::transform(
@@ -32,7 +29,31 @@ class Scene {
     SetComponents(typeid(T), std::move(result));
   }
 
+  template <typename T>
+  std::vector<T*> GetComponents() const {
+    std::vector<T*> result;
+    if (HasComponent(typeid(T))) {
+      auto& scene_components{GetComponents(typeid(T))};
+
+      result.resize(scene_components.size());
+      std::transform(scene_components.begin(), scene_components.end(),
+                     result.begin(),
+                     [](const std::unique_ptr<Component>& component) -> T* {
+                       return dynamic_cast<T*>(component.get());
+                     });
+    }
+    return result;
+  }
+
  private:
+  void SetComponents(const std::type_index& type_info,
+                     std::vector<std::unique_ptr<Component>>&& components);
+
+  const std::vector<std::unique_ptr<Component>>& GetComponents(
+      const std::type_index& type_info) const;
+
+  bool HasComponent(const std::type_index& type_info) const;
+
   std::string name_;
   std::vector<std::unique_ptr<Node>> nodes_;
   Node* root_{nullptr};

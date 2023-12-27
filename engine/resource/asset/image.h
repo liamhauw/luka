@@ -23,6 +23,13 @@ class Image {
         u32 layer_count, u32 face_count,
         std::vector<std::vector<std::vector<u64>>>&& offsets);
 
+  const std::vector<u8>& GetDate() const;
+  vk::Format GetFormat() const;
+  const std::vector<Mipmap>& GetMipmaps() const;
+  u32 GetLayerCount() const;
+  u32 GetFaceCount() const;
+  const std::vector<std::vector<std::vector<u64>>>& GetOffsets() const;     
+
  private:
   std::vector<u8> data_;
   vk::Format format_;

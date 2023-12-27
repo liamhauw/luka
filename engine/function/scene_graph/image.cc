@@ -9,6 +9,16 @@
 
 namespace luka {
 
-namespace sg {}  // namespace sg
+namespace sg {
+
+Image::Image(gpu::Image&& image, vk::raii::ImageView&& image_view,
+             const std::string& name)
+    : Component{name},
+      image_{std::move(image)},
+      image_view_{std::move(image_view)} {}
+
+std::type_index Image::GetType() { return typeid(Image); }
+
+}  // namespace sg
 
 }  // namespace luka

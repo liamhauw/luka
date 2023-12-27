@@ -12,6 +12,7 @@
 #include "function/gpu/buffer.h"
 #include "function/gpu/image.h"
 #include "imgui_impl_vulkan.h"
+#include "resource/asset/image.h"
 
 namespace luka {
 
@@ -36,7 +37,7 @@ class Gpu {
       const vk::ImageLayout new_layout = vk::ImageLayout::eUndefined,
       const gpu::Buffer& staging_buffer = nullptr,
       const vk::raii::CommandBuffer& command_buffer = nullptr,
-      const std::string& name = {});
+      const ast::Image& asset_image = {}, const std::string& name = {});
 
   vk::raii::ImageView CreateImageView(
       const vk::ImageViewCreateInfo& image_view_ci,

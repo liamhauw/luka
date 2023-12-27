@@ -11,6 +11,7 @@
 #include "function/scene_graph/light.h"
 #include "function/scene_graph/sampler.h"
 #include "function/scene_graph/scene.h"
+#include "function/scene_graph/texture.h"
 
 namespace luka {
 
@@ -31,12 +32,15 @@ class SceneGraph {
 
   std::unordered_map<std::string, bool> ParseExtensionsUsed(
       const ast::Model& model);
-  std::vector<std::unique_ptr<sg::Light>> ParseLights(
+  std::vector<std::unique_ptr<sg::Light>> ParseLightComponents(
       const ast::Model& model,
       const std::unordered_map<std::string, bool>& supported_extensions);
-  std::vector<std::unique_ptr<sg::Sampler>> ParseSamplers(
+  std::vector<std::unique_ptr<sg::Image>> ParseImageComponents(
       const ast::Model& model);
-  std::vector<std::unique_ptr<sg::Image>> ParseImages(const ast::Model& model);
+  std::vector<std::unique_ptr<sg::Sampler>> ParseSamplerComponents(
+      const ast::Model& model);
+  std::vector<std::unique_ptr<sg::Texture>> ParseTextureComponents(
+      const ast::Model& model, const std::unique_ptr<sg::Scene>& scene);
 
   std::shared_ptr<Gpu> gpu_;
 

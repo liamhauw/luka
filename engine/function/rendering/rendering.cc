@@ -13,7 +13,6 @@
 namespace luka {
 
 Rendering::Rendering() : asset_{gContext.asset}, gpu_{gContext.gpu} {
-  ;
   CreateGBuffer();
   CreatePipeline();
   CreateModelResource();
@@ -191,7 +190,7 @@ void Rendering::CreateGBuffer() {
       image_ci.format = color_formats_[i];
       color_images_.push_back(
           std::move(gpu_->CreateImage(image_ci, vk::ImageLayout::eGeneral,
-                                      nullptr, command_buffer, "g_color")));
+                                      nullptr, command_buffer, {}, "g_color")));
 
       image_view_ci.image = *color_images_[i];
       image_view_ci.format = color_formats_[i];
@@ -217,7 +216,7 @@ void Rendering::CreateGBuffer() {
         vk::ImageLayout::eUndefined};
 
     depth_image_ = gpu_->CreateImage(image_ci, vk::ImageLayout::eGeneral,
-                                     nullptr, command_buffer, "g_depth");
+                                     nullptr, command_buffer, {}, "g_depth");
 
     vk::ImageViewCreateInfo image_view_ci{
         {},
@@ -335,7 +334,8 @@ void Rendering::CreateModelResource() {
     dummy_sampler_ = gpu_->CreateSampler(sampler_ci);
   }
 
-  const tinygltf::Model& model{asset_->GetAssetInfo().object.GetTinygltfModel()};
+  const tinygltf::Model& model{
+      asset_->GetAssetInfo().object.GetTinygltfModel()};
 
   // Buffers.
   {
@@ -412,7 +412,7 @@ void Rendering::CreateModelResource() {
 
       gpu::Image model_image{gpu_->CreateImage(
           model_image_ci, vk::ImageLayout::eShaderReadOnlyOptimal,
-          model_image_staging_buffers_[i], command_buffer, name)};
+          model_image_staging_buffers_[i], command_buffer, {}, name)};
 
       model_images_.push_back(std::move(model_image));
 

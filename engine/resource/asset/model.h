@@ -22,14 +22,14 @@ class Model {
  public:
   Model() = default;
   Model(tinygltf::Model&& tinygltf_model,
-        std::map<std::string, Image>&& url_texture_map);
+        std::map<std::string, Image>&& uri_texture_map);
 
   const tinygltf::Model& GetTinygltfModel() const;
-  const std::map<std::string, Image>& GetUrlTextureMap() const;
+  const std::map<std::string, Image>& GetUriTextureMap() const;
 
  private:
   tinygltf::Model tinygltf_model_;
-  std::map<std::string, Image> url_texture_map_;
+  std::map<std::string, Image> uri_image_map_;
 };
 
 }  // namespace ast
