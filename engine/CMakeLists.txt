@@ -25,11 +25,16 @@ set(HEADER_FILES
   function/gpu/image.h
   function/physics/physics.h
   function/rendering/rendering.h
+  function/scene_graph/accessor.h
+  function/scene_graph/buffer_view.h
+  function/scene_graph/buffer.h
+  function/scene_graph/camera.h
   function/scene_graph/component.h
   function/scene_graph/free_camera.h
   function/scene_graph/image.h
   function/scene_graph/light.h
   function/scene_graph/material.h
+  function/scene_graph/mesh.h
   function/scene_graph/node.h
   function/scene_graph/sampler.h
   function/scene_graph/scene_graph.h
@@ -62,11 +67,16 @@ set(SOURCE_FILES
   function/gpu/image.cc
   function/physics/physics.cc
   function/rendering/rendering.cc
+  function/scene_graph/accessor.cc
+  function/scene_graph/buffer_view.cc
+  function/scene_graph/buffer.cc
+  function/scene_graph/camera.cc
   function/scene_graph/component.cc
   function/scene_graph/free_camera.cc
   function/scene_graph/image.cc
   function/scene_graph/light.cc
   function/scene_graph/material.cc
+  function/scene_graph/mesh.cc
   function/scene_graph/node.cc
   function/scene_graph/sampler.cc
   function/scene_graph/scene_graph.cc

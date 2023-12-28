@@ -7,6 +7,10 @@
 #include "platform/pch.h"
 // clang-format on
 
+#include "function/scene_graph/accessor.h"
+#include "function/scene_graph/buffer.h"
+#include "function/scene_graph/buffer_view.h"
+#include "function/scene_graph/camera.h"
 #include "function/scene_graph/image.h"
 #include "function/scene_graph/light.h"
 #include "function/scene_graph/material.h"
@@ -43,6 +47,9 @@ class SceneGraph {
       const tinygltf::ExtensionMap& model_extension_map,
       const std::unordered_map<std::string, bool>& supported_extensions);
 
+  std::vector<std::unique_ptr<sg::Camera>> ParseCameraComponents(
+      const std::vector<tinygltf::Camera>& model_cameras);
+
   std::vector<std::unique_ptr<sg::Image>> ParseImageComponents(
       const std::vector<tinygltf::Image>& tinygltf_images,
       const std::map<std::string, luka::ast::Image>& model_uri_image_map);
@@ -58,8 +65,22 @@ class SceneGraph {
       const std::vector<tinygltf::Material>& model_materials,
       const std::unique_ptr<sg::Scene>& scene);
 
+  std::vector<std::unique_ptr<sg::Buffer>> ParseBufferComponents(
+      const std::vector<tinygltf::Buffer>& model_buffers);
+
+  std::vector<std::unique_ptr<sg::BufferView>> ParseBufferViewComponents(
+      const std::vector<tinygltf::BufferView>& model_buffer_views,
+      const std::unique_ptr<sg::Scene>& scene);
+
+  std::vector<std::unique_ptr<sg::Accessor>> ParseAccessorComponents(
+      const std::vector<tinygltf::Accessor>& model_accessors,
+      const std::unique_ptr<sg::Scene>& scene);
+
   std::unique_ptr<sg::Light> ParseLightComponent(
       const tinygltf::Value& model_light);
+
+  std::unique_ptr<sg::Camera> ParseCameraComponent(
+      const tinygltf::Camera& model_camera);
 
   std::unique_ptr<sg::Image> ParseImageComponent(
       const ast::Image& model_image,
@@ -75,6 +96,17 @@ class SceneGraph {
 
   std::unique_ptr<sg::Material> ParseMaterialComponent(
       const tinygltf::Material& model_material,
+      const std::unique_ptr<sg::Scene>& scene);
+
+  std::unique_ptr<sg::Buffer> ParseBufferComponent(
+      const tinygltf::Buffer& model_buffer);
+
+  std::unique_ptr<sg::BufferView> ParseBufferViewComponent(
+      const tinygltf::BufferView& model_buffer_view,
+      const std::unique_ptr<sg::Scene>& scene);
+
+  std::unique_ptr<sg::Accessor> ParseAccessorComponent(
+      const tinygltf::Accessor& model_accessor,
       const std::unique_ptr<sg::Scene>& scene);
 
   std::shared_ptr<Gpu> gpu_;

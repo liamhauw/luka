@@ -40,6 +40,10 @@ std::unique_ptr<sg::Scene> SceneGraph::LoadScene(const ast::Model& model) {
       ParseLightComponents(tinygltf_model.extensions, supported_extensions)};
   scene->SetComponents(std::move(light_components));
 
+  std::vector<std::unique_ptr<sg::Camera>> camera_components{
+      ParseCameraComponents(tinygltf_model.cameras)};
+  scene->SetComponents(std::move(camera_components));
+
   std::vector<std::unique_ptr<sg::Image>> image_components{
       ParseImageComponents(tinygltf_model.images, model.GetUriTextureMap())};
   scene->SetComponents(std::move(image_components));
@@ -55,6 +59,18 @@ std::unique_ptr<sg::Scene> SceneGraph::LoadScene(const ast::Model& model) {
   std::vector<std::unique_ptr<sg::Material>> material_components{
       ParseMaterialComponents(tinygltf_model.materials, scene)};
   scene->SetComponents(std::move(material_components));
+
+  std::vector<std::unique_ptr<sg::Buffer>> buffer_components{
+      ParseBufferComponents(tinygltf_model.buffers)};
+  scene->SetComponents(std::move(buffer_components));
+
+  std::vector<std::unique_ptr<sg::BufferView>> buffer_view_components{
+      ParseBufferViewComponents(tinygltf_model.bufferViews, scene)};
+  scene->SetComponents(std::move(buffer_view_components));
+
+  std::vector<std::unique_ptr<sg::Accessor>> accesor_components{
+      ParseAccessorComponents(tinygltf_model.accessors, scene)};
+  scene->SetComponents(std::move(accesor_components));
 
   return scene;
 }
@@ -98,6 +114,18 @@ std::vector<std::unique_ptr<sg::Light>> SceneGraph::ParseLightComponents(
     }
   }
   return light_components;
+}
+
+std::vector<std::unique_ptr<sg::Camera>> SceneGraph::ParseCameraComponents(
+    const std::vector<tinygltf::Camera>& model_cameras) {
+  std::vector<std::unique_ptr<sg::Camera>> camera_components;
+
+  for (const auto& model_camera : model_cameras) {
+    auto camera_component{ParseCameraComponent(model_camera)};
+    camera_components.push_back(std::move(camera_component));
+  }
+
+  return camera_components;
 }
 
 std::vector<std::unique_ptr<sg::Image>> SceneGraph::ParseImageComponents(
@@ -193,10 +221,56 @@ std::vector<std::unique_ptr<sg::Material>> SceneGraph::ParseMaterialComponents(
 
   tinygltf::Material default_model_material;
   default_model_material.name = "default";
-  auto default_material_component{ParseMaterialComponent(default_model_material, scene)};
+  auto default_material_component{
+      ParseMaterialComponent(default_model_material, scene)};
   material_components.push_back(std::move(default_material_component));
 
   return material_components;
+}
+
+std::vector<std::unique_ptr<sg::Buffer>> SceneGraph::ParseBufferComponents(
+    const std::vector<tinygltf::Buffer>& model_buffers) {
+  std::vector<std::unique_ptr<sg::Buffer>> buffer_components;
+
+  for (const auto& model_buffer : model_buffers) {
+    std::unique_ptr<sg::Buffer> buffer_component{
+        ParseBufferComponent(model_buffer)};
+
+    buffer_components.push_back(std::move(buffer_component));
+  }
+
+  return buffer_components;
+}
+
+std::vector<std::unique_ptr<sg::BufferView>>
+SceneGraph::ParseBufferViewComponents(
+    const std::vector<tinygltf::BufferView>& model_buffer_views,
+    const std::unique_ptr<sg::Scene>& scene) {
+  std::vector<std::unique_ptr<sg::BufferView>> buffer_view_components;
+
+  for (const auto& model_buffer_view : model_buffer_views) {
+    std::unique_ptr<sg::BufferView> buffer_view_component{
+        ParseBufferViewComponent(model_buffer_view, scene)};
+
+    buffer_view_components.push_back(std::move(buffer_view_component));
+  }
+
+  return buffer_view_components;
+}
+
+std::vector<std::unique_ptr<sg::Accessor>> SceneGraph::ParseAccessorComponents(
+    const std::vector<tinygltf::Accessor>& model_accessors,
+    const std::unique_ptr<sg::Scene>& scene) {
+  std::vector<std::unique_ptr<sg::Accessor>> accessor_compoents;
+
+  for (const auto& model_accessor : model_accessors) {
+    std::unique_ptr<sg::Accessor> accessor_compoent{
+        ParseAccessorComponent(model_accessor, scene)};
+
+    accessor_compoents.push_back(std::move(accessor_compoent));
+  }
+
+  return accessor_compoents;
 }
 
 std::unique_ptr<sg::Light> SceneGraph::ParseLightComponent(
@@ -255,6 +329,30 @@ std::unique_ptr<sg::Light> SceneGraph::ParseLightComponent(
   auto light_component{std::make_unique<sg::Light>(property, name)};
 
   return light_component;
+}
+
+std::unique_ptr<sg::Camera> SceneGraph::ParseCameraComponent(
+    const tinygltf::Camera& model_camera) {
+  std::unique_ptr<sg::Camera> camera;
+
+  const std::string& type{model_camera.type};
+  const std::string& name{model_camera.name};
+
+  if (type == "perspective") {
+    const tinygltf::PerspectiveCamera& perspective{model_camera.perspective};
+    f32 aspect_ratio{static_cast<f32>(perspective.aspectRatio)};
+    f32 yfov{static_cast<f32>(perspective.yfov)};
+    f32 znear{static_cast<f32>(perspective.znear)};
+    f32 zfar{static_cast<f32>(perspective.zfar)};
+
+    camera = std::make_unique<sg::PerspectiveCamera>(aspect_ratio, yfov, znear,
+                                                     zfar, name);
+
+  } else {
+    THROW("Unsupport camera type");
+  }
+
+  return camera;
 }
 
 std::unique_ptr<sg::Image> SceneGraph::ParseImageComponent(
@@ -573,6 +671,54 @@ std::unique_ptr<sg::Material> SceneGraph::ParseMaterialComponent(
       name)};
 
   return material_component;
+}
+
+std::unique_ptr<sg::Buffer> SceneGraph::ParseBufferComponent(
+    const tinygltf::Buffer& model_buffer) {
+  const std::string& name{model_buffer.name};
+  const auto* data{&(model_buffer.data)};
+
+  auto buffer_component{std::make_unique<sg::Buffer>(data, name)};
+  return buffer_component;
+}
+
+std::unique_ptr<sg::BufferView> SceneGraph::ParseBufferViewComponent(
+    const tinygltf::BufferView& model_buffer_view,
+    const std::unique_ptr<sg::Scene>& scene) {
+  auto buffer_componens{scene->GetComponents<sg::Buffer>()};
+
+  sg::Buffer* buffer{buffer_componens[model_buffer_view.buffer]};
+
+  u64 byte_offset{model_buffer_view.byteOffset};
+
+  u64 byte_length{model_buffer_view.byteLength};
+
+  u64 byte_stride{model_buffer_view.byteStride};
+
+  const std::string& name{model_buffer_view.name};
+
+  auto buffer_view_component{std::make_unique<sg::BufferView>(
+      buffer, byte_offset, byte_length, byte_stride, name)};
+
+  return buffer_view_component;
+}
+
+std::unique_ptr<sg::Accessor> SceneGraph::ParseAccessorComponent(
+    const tinygltf::Accessor& model_accessor,
+    const std::unique_ptr<sg::Scene>& scene) {
+  auto buffer_view_components{scene->GetComponents<sg::BufferView>()};
+
+  sg::BufferView* buffer_view{
+      buffer_view_components[model_accessor.bufferView]};
+
+  u64 byte_offset{model_accessor.byteOffset};
+
+  u64 count{model_accessor.count};
+
+  auto accessor_component{
+      std::make_unique<sg::Accessor>(buffer_view, byte_offset, count)};
+
+  return accessor_component;
 }
 
 }  // namespace luka
