@@ -19,4 +19,9 @@ std::string ReplacePathSlash(const std::string& str) {
   return res;
 }
 
+std::vector<f32> D2FVector(const std::vector<f64>& dvector) {
+  std::vector<f32> fvector(dvector.begin(), dvector.end());
+  return fvector;
+}
+
 }  // namespace luka

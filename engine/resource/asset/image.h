@@ -21,14 +21,16 @@ class Image {
   Image() = default;
   Image(std::vector<u8>&& data, vk::Format format, std::vector<Mipmap>&& mipmap,
         u32 layer_count, u32 face_count,
-        std::vector<std::vector<std::vector<u64>>>&& offsets);
+        std::vector<std::vector<std::vector<u64>>>&& offsets,
+        const std::string& name);
 
   const std::vector<u8>& GetDate() const;
   vk::Format GetFormat() const;
   const std::vector<Mipmap>& GetMipmaps() const;
   u32 GetLayerCount() const;
   u32 GetFaceCount() const;
-  const std::vector<std::vector<std::vector<u64>>>& GetOffsets() const;     
+  const std::vector<std::vector<std::vector<u64>>>& GetOffsets() const;
+  const std::string& GetName() const;
 
  private:
   std::vector<u8> data_;
@@ -39,6 +41,8 @@ class Image {
 
   // offsets[level_index][layer_index][face_index]
   std::vector<std::vector<std::vector<u64>>> offsets_;
+
+  std::string name_;
 };
 
 }  // namespace ast

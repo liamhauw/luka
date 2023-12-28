@@ -16,4 +16,7 @@ inline T AlignUp(T val, T alignment) {
 }
 
 std::string ReplacePathSlash(const std::string& str);
+
+std::vector<f32> D2FVector(const std::vector<f64>& dvector);
+
 }  // namespace luka

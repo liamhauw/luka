@@ -143,10 +143,18 @@ ast::Image Asset::LoadKtxImage(const std::filesystem::path& image_path) {
     offsets.push_back(std::move(level_offsets));
   }
 
+  // Name.
+  std::string name{image_path.filename().string()};
+
   ktxTexture_Destroy(texture);
 
-  return ast::Image{std::move(image_data), format,     std::move(mipmaps),
-                    layer_count,           face_count, std::move(offsets)};
+  return ast::Image{std::move(image_data),
+                    format,
+                    std::move(mipmaps),
+                    layer_count,
+                    face_count,
+                    std::move(offsets),
+                    name};
 }
 
 ast::Image Asset::LoadStbImage(const std::filesystem::path& image_path) {
