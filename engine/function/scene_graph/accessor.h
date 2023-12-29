@@ -24,7 +24,11 @@ class Accessor : public Component {
   virtual ~Accessor() = default;
   std::type_index GetType() override;
 
+
+  u64 GetCount() const;
   std::pair<const u8*, u64> GetBuffer() const;
+  vk::Format GetFormat() const;
+  u32 GetStride() const;
 
  private:
   u32 GetByteStride(u32 buffer_view_byte_stride);
@@ -36,6 +40,7 @@ class Accessor : public Component {
   u64 count_;
   u32 type_;
 
+  u32 buffer_stride_;
   const u8* buffer_data_;
   u64 buffer_size_;
 };

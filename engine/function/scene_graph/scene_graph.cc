@@ -28,8 +28,8 @@ SceneGraph::SceneGraph() : gpu_{gContext.gpu} {
 
 void SceneGraph::Tick() {}
 
-std::unique_ptr<sg::Scene> SceneGraph::LoadScene(const ast::Model& model) {
-  auto scene{std::make_unique<sg::Scene>("gltf_scene")};
+std::unique_ptr<sg::Map> SceneGraph::LoadScene(const ast::Model& model) {
+  auto map{std::make_unique<sg::Map>("map")};
 
   const tinygltf::Model& tinygltf_model{model.GetTinygltfModel()};
 
@@ -38,45 +38,45 @@ std::unique_ptr<sg::Scene> SceneGraph::LoadScene(const ast::Model& model) {
 
   std::vector<std::unique_ptr<sg::Light>> light_components{
       ParseLightComponents(tinygltf_model.extensions, supported_extensions)};
-  scene->SetComponents(std::move(light_components));
+  map->SetComponents(std::move(light_components));
 
   std::vector<std::unique_ptr<sg::Camera>> camera_components{
       ParseCameraComponents(tinygltf_model.cameras)};
-  scene->SetComponents(std::move(camera_components));
+  map->SetComponents(std::move(camera_components));
 
   std::vector<std::unique_ptr<sg::Image>> image_components{
       ParseImageComponents(tinygltf_model.images, model.GetUriTextureMap())};
-  scene->SetComponents(std::move(image_components));
+  map->SetComponents(std::move(image_components));
 
   std::vector<std::unique_ptr<sg::Sampler>> sampler_components{
       ParseSamplerComponents(tinygltf_model.samplers)};
-  scene->SetComponents(std::move(sampler_components));
+  map->SetComponents(std::move(sampler_components));
 
   std::vector<std::unique_ptr<sg::Texture>> texture_components{
-      ParseTextureComponents(tinygltf_model.textures, scene)};
-  scene->SetComponents(std::move(texture_components));
+      ParseTextureComponents(tinygltf_model.textures, map)};
+  map->SetComponents(std::move(texture_components));
 
   std::vector<std::unique_ptr<sg::Material>> material_components{
-      ParseMaterialComponents(tinygltf_model.materials, scene)};
-  scene->SetComponents(std::move(material_components));
+      ParseMaterialComponents(tinygltf_model.materials, map)};
+  map->SetComponents(std::move(material_components));
 
   std::vector<std::unique_ptr<sg::Buffer>> buffer_components{
       ParseBufferComponents(tinygltf_model.buffers)};
-  scene->SetComponents(std::move(buffer_components));
+  map->SetComponents(std::move(buffer_components));
 
   std::vector<std::unique_ptr<sg::BufferView>> buffer_view_components{
-      ParseBufferViewComponents(tinygltf_model.bufferViews, scene)};
-  scene->SetComponents(std::move(buffer_view_components));
+      ParseBufferViewComponents(tinygltf_model.bufferViews, map)};
+  map->SetComponents(std::move(buffer_view_components));
 
   std::vector<std::unique_ptr<sg::Accessor>> accesor_components{
-      ParseAccessorComponents(tinygltf_model.accessors, scene)};
-  scene->SetComponents(std::move(accesor_components));
+      ParseAccessorComponents(tinygltf_model.accessors, map)};
+  map->SetComponents(std::move(accesor_components));
 
   std::vector<std::unique_ptr<sg::Mesh>> mesh_components{
-      ParseMeshComponents(tinygltf_model.meshes, scene)};
-  scene->SetComponents(std::move(mesh_components));
+      ParseMeshComponents(tinygltf_model.meshes, map)};
+  map->SetComponents(std::move(mesh_components));
 
-  return scene;
+  return map;
 }
 
 std::unordered_map<std::string, bool> SceneGraph::ParseExtensionsUsed(
@@ -196,18 +196,18 @@ std::vector<std::unique_ptr<sg::Sampler>> SceneGraph::ParseSamplerComponents(
 
 std::vector<std::unique_ptr<sg::Texture>> SceneGraph::ParseTextureComponents(
     const std::vector<tinygltf::Texture>& model_textures,
-    const std::unique_ptr<sg::Scene>& scene) {
+    const std::unique_ptr<sg::Map>& map) {
   std::vector<std::unique_ptr<sg::Texture>> texture_components;
 
   for (const auto& model_texture : model_textures) {
-    auto texture_component{ParseTextureComponent(model_texture, scene)};
+    auto texture_component{ParseTextureComponent(model_texture, map)};
     texture_components.push_back(std::move(texture_component));
   }
 
   tinygltf::Texture default_model_texture;
   default_model_texture.name = "default";
   auto default_texture_component{
-      ParseTextureComponent(default_model_texture, scene)};
+      ParseTextureComponent(default_model_texture, map)};
   texture_components.push_back(std::move(default_texture_component));
 
   return texture_components;
@@ -215,18 +215,18 @@ std::vector<std::unique_ptr<sg::Texture>> SceneGraph::ParseTextureComponents(
 
 std::vector<std::unique_ptr<sg::Material>> SceneGraph::ParseMaterialComponents(
     const std::vector<tinygltf::Material>& model_materials,
-    const std::unique_ptr<sg::Scene>& scene) {
+    const std::unique_ptr<sg::Map>& map) {
   std::vector<std::unique_ptr<sg::Material>> material_components;
 
   for (const auto& model_material : model_materials) {
-    auto material_component{ParseMaterialComponent(model_material, scene)};
+    auto material_component{ParseMaterialComponent(model_material, map)};
     material_components.push_back(std::move(material_component));
   }
 
   tinygltf::Material default_model_material;
   default_model_material.name = "default";
   auto default_material_component{
-      ParseMaterialComponent(default_model_material, scene)};
+      ParseMaterialComponent(default_model_material, map)};
   material_components.push_back(std::move(default_material_component));
 
   return material_components;
@@ -249,12 +249,12 @@ std::vector<std::unique_ptr<sg::Buffer>> SceneGraph::ParseBufferComponents(
 std::vector<std::unique_ptr<sg::BufferView>>
 SceneGraph::ParseBufferViewComponents(
     const std::vector<tinygltf::BufferView>& model_buffer_views,
-    const std::unique_ptr<sg::Scene>& scene) {
+    const std::unique_ptr<sg::Map>& map) {
   std::vector<std::unique_ptr<sg::BufferView>> buffer_view_components;
 
   for (const auto& model_buffer_view : model_buffer_views) {
     std::unique_ptr<sg::BufferView> buffer_view_component{
-        ParseBufferViewComponent(model_buffer_view, scene)};
+        ParseBufferViewComponent(model_buffer_view, map)};
 
     buffer_view_components.push_back(std::move(buffer_view_component));
   }
@@ -264,12 +264,12 @@ SceneGraph::ParseBufferViewComponents(
 
 std::vector<std::unique_ptr<sg::Accessor>> SceneGraph::ParseAccessorComponents(
     const std::vector<tinygltf::Accessor>& model_accessors,
-    const std::unique_ptr<sg::Scene>& scene) {
+    const std::unique_ptr<sg::Map>& map) {
   std::vector<std::unique_ptr<sg::Accessor>> accessor_compoents;
 
   for (const auto& model_accessor : model_accessors) {
     std::unique_ptr<sg::Accessor> accessor_compoent{
-        ParseAccessorComponent(model_accessor, scene)};
+        ParseAccessorComponent(model_accessor, map)};
 
     accessor_compoents.push_back(std::move(accessor_compoent));
   }
@@ -279,7 +279,7 @@ std::vector<std::unique_ptr<sg::Accessor>> SceneGraph::ParseAccessorComponents(
 
 std::vector<std::unique_ptr<sg::Mesh>> SceneGraph::ParseMeshComponents(
     const std::vector<tinygltf::Mesh>& model_meshs,
-    const std::unique_ptr<sg::Scene>& scene) {
+    const std::unique_ptr<sg::Map>& map) {
   std::vector<std::unique_ptr<sg::Mesh>> mesh_components;
 
   const vk::raii::CommandBuffer& command_buffer{gpu_->BeginTempCommandBuffer()};
@@ -288,13 +288,41 @@ std::vector<std::unique_ptr<sg::Mesh>> SceneGraph::ParseMeshComponents(
 
   for (const auto& model_mesh : model_meshs) {
     std::unique_ptr<sg::Mesh> mesh_component{
-        ParseMeshComponent(model_mesh, scene, command_buffer, staging_buffers)};
+        ParseMeshComponent(model_mesh, map, command_buffer, staging_buffers)};
     mesh_components.push_back(std::move(mesh_component));
   }
 
   gpu_->EndTempCommandBuffer(command_buffer);
 
   return mesh_components;
+}
+
+std::vector<std::unique_ptr<sg::Node>> SceneGraph::ParseNodeComponents(
+    const std::vector<tinygltf::Node>& model_nodes,
+    const std::unique_ptr<sg::Map>& map) {
+  std::vector<std::unique_ptr<sg::Node>> node_components;
+
+  for (const auto& model_node : model_nodes) {
+    std::unique_ptr<sg::Node> node_component{
+        ParseNodeComponent(model_node, map)};
+    node_components.push_back(std::move(node_component));
+  }
+
+  return node_components;
+}
+
+std::vector<std::unique_ptr<sg::Scene>> SceneGraph::ParseSceneComponents(
+    const std::vector<tinygltf::Scene>& model_scenes,
+    const std::unique_ptr<sg::Map>& map) {
+  std::vector<std::unique_ptr<sg::Scene>> scene_components;
+
+  for (const auto& model_scene : model_scenes) {
+    std::unique_ptr<sg::Scene> scene_component{
+        ParseSceneComponent(model_scene, map)};
+    scene_components.push_back(std::move(scene_component));
+  }
+
+  return scene_components;
 }
 
 std::unique_ptr<sg::Light> SceneGraph::ParseLightComponent(
@@ -570,9 +598,9 @@ std::unique_ptr<sg::Sampler> SceneGraph::ParseSamplerComponent(
 
 std::unique_ptr<sg::Texture> SceneGraph::ParseTextureComponent(
     const tinygltf::Texture& model_texture,
-    const std::unique_ptr<sg::Scene>& scene) {
-  auto image_components{scene->GetComponents<sg::Image>()};
-  auto sampler_components{scene->GetComponents<sg::Sampler>()};
+    const std::unique_ptr<sg::Map>& map) {
+  auto image_components{map->GetComponents<sg::Image>()};
+  auto sampler_components{map->GetComponents<sg::Sampler>()};
 
   sg::Image* image;
   if (model_texture.source != -1) {
@@ -597,8 +625,8 @@ std::unique_ptr<sg::Texture> SceneGraph::ParseTextureComponent(
 
 std::unique_ptr<sg::Material> SceneGraph::ParseMaterialComponent(
     const tinygltf::Material& model_material,
-    const std::unique_ptr<sg::Scene>& scene) {
-  auto texture_components{scene->GetComponents<sg::Texture>()};
+    const std::unique_ptr<sg::Map>& map) {
+  auto texture_components{map->GetComponents<sg::Texture>()};
 
   // Pbr.
   const tinygltf::PbrMetallicRoughness& metallic_roughness{
@@ -708,8 +736,8 @@ std::unique_ptr<sg::Buffer> SceneGraph::ParseBufferComponent(
 
 std::unique_ptr<sg::BufferView> SceneGraph::ParseBufferViewComponent(
     const tinygltf::BufferView& model_buffer_view,
-    const std::unique_ptr<sg::Scene>& scene) {
-  auto buffer_componens{scene->GetComponents<sg::Buffer>()};
+    const std::unique_ptr<sg::Map>& map) {
+  auto buffer_componens{map->GetComponents<sg::Buffer>()};
 
   sg::Buffer* buffer{buffer_componens[model_buffer_view.buffer]};
 
@@ -729,8 +757,8 @@ std::unique_ptr<sg::BufferView> SceneGraph::ParseBufferViewComponent(
 
 std::unique_ptr<sg::Accessor> SceneGraph::ParseAccessorComponent(
     const tinygltf::Accessor& model_accessor,
-    const std::unique_ptr<sg::Scene>& scene) {
-  auto buffer_view_components{scene->GetComponents<sg::BufferView>()};
+    const std::unique_ptr<sg::Map>& map) {
+  auto buffer_view_components{map->GetComponents<sg::BufferView>()};
 
   sg::BufferView* buffer_view{
       buffer_view_components[model_accessor.bufferView]};
@@ -754,14 +782,15 @@ std::unique_ptr<sg::Accessor> SceneGraph::ParseAccessorComponent(
 }
 
 std::unique_ptr<sg::Mesh> SceneGraph::ParseMeshComponent(
-    const tinygltf::Mesh& model_mesh, const std::unique_ptr<sg::Scene>& scene,
+    const tinygltf::Mesh& model_mesh, const std::unique_ptr<sg::Map>& map,
     const vk::raii::CommandBuffer& command_buffer,
     std::vector<gpu::Buffer>& staging_buffers) {
   const std::string& name{model_mesh.name};
   const std::vector<tinygltf::Primitive> model_primitives{
       model_mesh.primitives};
 
-  auto accessor_components{scene->GetComponents<sg::Accessor>()};
+  auto accessor_components{map->GetComponents<sg::Accessor>()};
+  auto material_components{map->GetComponents<sg::Material>()};
 
   std::vector<sg::Primitive> primitives;
 
@@ -770,6 +799,7 @@ std::unique_ptr<sg::Mesh> SceneGraph::ParseMeshComponent(
   for (const auto& model_primitive : model_primitives) {
     sg::Primitive primitive;
 
+    // Vertex.
     for (const auto& attribute : model_primitive.attributes) {
       const std::string& attribute_name{attribute.first};
       u32 attribute_accessor_index{static_cast<u32>(attribute.second)};
@@ -784,8 +814,7 @@ std::unique_ptr<sg::Mesh> SceneGraph::ParseMeshComponent(
 
       vk::BufferCreateInfo buffer_ci{{},
                                      buffer_size,
-                                     vk::BufferUsageFlagBits::eVertexBuffer |
-                                         vk::BufferUsageFlagBits::eIndexBuffer |
+                                     vk::BufferUsageFlagBits::eIndexBuffer |
                                          vk::BufferUsageFlagBits::eTransferDst,
                                      vk::SharingMode::eExclusive};
 
@@ -797,6 +826,75 @@ std::unique_ptr<sg::Mesh> SceneGraph::ParseMeshComponent(
                                             command_buffer)};
       primitive.vertex_buffers.insert(
           std::make_pair(attribute_name, std::move(buffer)));
+
+      vk::Format format{accessor->GetFormat()};
+      u32 stride{accessor->GetStride()};
+      sg::VertexAttribute vertex_attribute{format, stride, 0};
+
+      primitive.vertex_attributes.insert(
+          std::make_pair(attribute_name, std::move(vertex_attribute)));
+
+      primitive.vertex_count = accessor->GetCount();
+    }
+
+    // Index.
+    if (model_primitive.indices != -1) {
+      primitive.has_index = true;
+
+      u32 attribute_accessor_index{static_cast<u32>(model_primitive.indices)};
+      sg::Accessor* accessor{accessor_components[attribute_accessor_index]};
+
+      auto accessor_buffer{accessor->GetBuffer()};
+      const u8* buffer_data{accessor_buffer.first};
+      u64 buffer_size{accessor_buffer.second};
+
+      vk::Format format{accessor->GetFormat()};
+
+      vk::IndexType index_type;
+      switch (format) {
+        case vk::Format::eR8Uint:
+          index_type = vk::IndexType::eUint8EXT;
+          break;
+        case vk::Format::eR16Uint:
+          index_type = vk::IndexType::eUint16;
+          break;
+        case vk::Format::eR32Uint:
+          index_type = vk::IndexType::eUint32;
+          break;
+        default:
+          THROW("Unsupport format");
+          break;
+      }
+
+      vk::BufferCreateInfo staging_buffer_ci{
+          {}, buffer_size, vk::BufferUsageFlagBits::eTransferSrc};
+
+      vk::BufferCreateInfo buffer_ci{{},
+                                     buffer_size,
+                                     vk::BufferUsageFlagBits::eIndexBuffer |
+                                         vk::BufferUsageFlagBits::eTransferDst,
+                                     vk::SharingMode::eExclusive};
+
+      gpu::Buffer staging_buffer{
+          gpu_->CreateBuffer(staging_buffer_ci, buffer_data)};
+      staging_buffers.push_back(std::move(staging_buffer));
+
+      gpu::Buffer buffer{gpu_->CreateBuffer(buffer_ci, staging_buffers.back(),
+                                            command_buffer)};
+
+      u64 index_count{accessor->GetCount()};
+
+      sg::IndexAttribute index_attribute{index_type, index_count};
+
+      primitive.index_buffer = std::move(buffer);
+      primitive.index_attribute = std::move(index_attribute);
+    }
+
+    // Material.
+    if (model_primitive.material != -1) {
+      primitive.material = material_components[model_primitive.material];
+    } else {
+      primitive.material = material_components.back();
     }
 
     primitives.emplace_back(std::move(primitive));
@@ -804,6 +902,16 @@ std::unique_ptr<sg::Mesh> SceneGraph::ParseMeshComponent(
 
   auto mesh_component{std::make_unique<sg::Mesh>(std::move(primitives))};
   return mesh_component;
+}
+
+std::unique_ptr<sg::Node> SceneGraph::ParseNodeComponent(
+    const tinygltf::Node& model_node, const std::unique_ptr<sg::Map>& map) {
+  return {};
+}
+
+std::unique_ptr<sg::Scene> SceneGraph::ParseSceneComponent(
+    const tinygltf::Scene& model_scene, const std::unique_ptr<sg::Map>& map) {
+  return {};
 }
 
 }  // namespace luka

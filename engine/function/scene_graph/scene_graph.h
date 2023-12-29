@@ -13,8 +13,10 @@
 #include "function/scene_graph/camera.h"
 #include "function/scene_graph/image.h"
 #include "function/scene_graph/light.h"
+#include "function/scene_graph/map.h"
 #include "function/scene_graph/material.h"
 #include "function/scene_graph/mesh.h"
+#include "function/scene_graph/node.h"
 #include "function/scene_graph/sampler.h"
 #include "function/scene_graph/scene.h"
 #include "function/scene_graph/texture.h"
@@ -39,7 +41,7 @@ class SceneGraph {
   void Tick();
 
  private:
-  std::unique_ptr<sg::Scene> LoadScene(const ast::Model& model);
+  std::unique_ptr<sg::Map> LoadScene(const ast::Model& model);
 
   std::unordered_map<std::string, bool> ParseExtensionsUsed(
       const std::vector<std::string>& model_extensions_used);
@@ -60,26 +62,34 @@ class SceneGraph {
 
   std::vector<std::unique_ptr<sg::Texture>> ParseTextureComponents(
       const std::vector<tinygltf::Texture>& model_textures,
-      const std::unique_ptr<sg::Scene>& scene);
+      const std::unique_ptr<sg::Map>& map);
 
   std::vector<std::unique_ptr<sg::Material>> ParseMaterialComponents(
       const std::vector<tinygltf::Material>& model_materials,
-      const std::unique_ptr<sg::Scene>& scene);
+      const std::unique_ptr<sg::Map>& map);
 
   std::vector<std::unique_ptr<sg::Buffer>> ParseBufferComponents(
       const std::vector<tinygltf::Buffer>& model_buffers);
 
   std::vector<std::unique_ptr<sg::BufferView>> ParseBufferViewComponents(
       const std::vector<tinygltf::BufferView>& model_buffer_views,
-      const std::unique_ptr<sg::Scene>& scene);
+      const std::unique_ptr<sg::Map>& map);
 
   std::vector<std::unique_ptr<sg::Accessor>> ParseAccessorComponents(
       const std::vector<tinygltf::Accessor>& model_accessors,
-      const std::unique_ptr<sg::Scene>& scene);
+      const std::unique_ptr<sg::Map>& map);
 
   std::vector<std::unique_ptr<sg::Mesh>> ParseMeshComponents(
       const std::vector<tinygltf::Mesh>& model_meshs,
-      const std::unique_ptr<sg::Scene>& scene);
+      const std::unique_ptr<sg::Map>& map);
+
+  std::vector<std::unique_ptr<sg::Node>> ParseNodeComponents(
+      const std::vector<tinygltf::Node>& model_nodes,
+      const std::unique_ptr<sg::Map>& map);
+
+  std::vector<std::unique_ptr<sg::Scene>> ParseSceneComponents(
+      const std::vector<tinygltf::Scene>& model_scenes,
+      const std::unique_ptr<sg::Map>& map);
 
   std::unique_ptr<sg::Light> ParseLightComponent(
       const tinygltf::Value& model_light);
@@ -97,33 +107,38 @@ class SceneGraph {
 
   std::unique_ptr<sg::Texture> ParseTextureComponent(
       const tinygltf::Texture& model_texture,
-      const std::unique_ptr<sg::Scene>& scene);
+      const std::unique_ptr<sg::Map>& map);
 
   std::unique_ptr<sg::Material> ParseMaterialComponent(
       const tinygltf::Material& model_material,
-      const std::unique_ptr<sg::Scene>& scene);
+      const std::unique_ptr<sg::Map>& map);
 
   std::unique_ptr<sg::Buffer> ParseBufferComponent(
       const tinygltf::Buffer& model_buffer);
 
   std::unique_ptr<sg::BufferView> ParseBufferViewComponent(
       const tinygltf::BufferView& model_buffer_view,
-      const std::unique_ptr<sg::Scene>& scene);
+      const std::unique_ptr<sg::Map>& map);
 
   std::unique_ptr<sg::Accessor> ParseAccessorComponent(
       const tinygltf::Accessor& model_accessor,
-      const std::unique_ptr<sg::Scene>& scene);
+      const std::unique_ptr<sg::Map>& map);
 
   std::unique_ptr<sg::Mesh> ParseMeshComponent(
-      const tinygltf::Mesh& model_meshs,
-      const std::unique_ptr<sg::Scene>& scene,
+      const tinygltf::Mesh& model_mesh, const std::unique_ptr<sg::Map>& map,
       const vk::raii::CommandBuffer& command_buffer,
       std::vector<gpu::Buffer>& staging_buffers);
 
+  std::unique_ptr<sg::Node> ParseNodeComponent(
+      const tinygltf::Node& model_node, const std::unique_ptr<sg::Map>& map);
+
+  std::unique_ptr<sg::Scene> ParseSceneComponent(
+      const tinygltf::Scene& model_scene, const std::unique_ptr<sg::Map>& map);
+
   std::shared_ptr<Gpu> gpu_;
 
-  std::unique_ptr<sg::Scene> skybox_;
-  std::unique_ptr<sg::Scene> object_;
+  std::unique_ptr<sg::Map> skybox_;
+  std::unique_ptr<sg::Map> object_;
 };
 
 }  // namespace luka

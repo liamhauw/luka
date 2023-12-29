@@ -33,6 +33,7 @@ set(HEADER_FILES
   function/scene_graph/free_camera.h
   function/scene_graph/image.h
   function/scene_graph/light.h
+  function/scene_graph/map.h
   function/scene_graph/material.h
   function/scene_graph/mesh.h
   function/scene_graph/node.h
@@ -75,6 +76,7 @@ set(SOURCE_FILES
   function/scene_graph/free_camera.cc
   function/scene_graph/image.cc
   function/scene_graph/light.cc
+  function/scene_graph/map.cc
   function/scene_graph/material.cc
   function/scene_graph/mesh.cc
   function/scene_graph/node.cc
