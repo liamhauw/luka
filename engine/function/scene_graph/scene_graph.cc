@@ -72,6 +72,10 @@ std::unique_ptr<sg::Scene> SceneGraph::LoadScene(const ast::Model& model) {
       ParseAccessorComponents(tinygltf_model.accessors, scene)};
   scene->SetComponents(std::move(accesor_components));
 
+  std::vector<std::unique_ptr<sg::Mesh>> mesh_components{
+      ParseMeshComponents(tinygltf_model.meshes, scene)};
+  scene->SetComponents(std::move(mesh_components));
+
   return scene;
 }
 
@@ -271,6 +275,26 @@ std::vector<std::unique_ptr<sg::Accessor>> SceneGraph::ParseAccessorComponents(
   }
 
   return accessor_compoents;
+}
+
+std::vector<std::unique_ptr<sg::Mesh>> SceneGraph::ParseMeshComponents(
+    const std::vector<tinygltf::Mesh>& model_meshs,
+    const std::unique_ptr<sg::Scene>& scene) {
+  std::vector<std::unique_ptr<sg::Mesh>> mesh_components;
+
+  const vk::raii::CommandBuffer& command_buffer{gpu_->BeginTempCommandBuffer()};
+
+  std::vector<gpu::Buffer> staging_buffers;
+
+  for (const auto& model_mesh : model_meshs) {
+    std::unique_ptr<sg::Mesh> mesh_component{
+        ParseMeshComponent(model_mesh, scene, command_buffer, staging_buffers)};
+    mesh_components.push_back(std::move(mesh_component));
+  }
+
+  gpu_->EndTempCommandBuffer(command_buffer);
+
+  return mesh_components;
 }
 
 std::unique_ptr<sg::Light> SceneGraph::ParseLightComponent(
@@ -713,12 +737,73 @@ std::unique_ptr<sg::Accessor> SceneGraph::ParseAccessorComponent(
 
   u64 byte_offset{model_accessor.byteOffset};
 
+  bool normalized{model_accessor.normalized};
+
+  u32 component_type{static_cast<u32>(model_accessor.componentType)};
+
   u64 count{model_accessor.count};
 
-  auto accessor_component{
-      std::make_unique<sg::Accessor>(buffer_view, byte_offset, count)};
+  u32 type{static_cast<u32>(model_accessor.type)};
+
+  const std::string& name{model_accessor.name};
+
+  auto accessor_component{std::make_unique<sg::Accessor>(
+      buffer_view, byte_offset, normalized, component_type, count, type, name)};
 
   return accessor_component;
+}
+
+std::unique_ptr<sg::Mesh> SceneGraph::ParseMeshComponent(
+    const tinygltf::Mesh& model_mesh, const std::unique_ptr<sg::Scene>& scene,
+    const vk::raii::CommandBuffer& command_buffer,
+    std::vector<gpu::Buffer>& staging_buffers) {
+  const std::string& name{model_mesh.name};
+  const std::vector<tinygltf::Primitive> model_primitives{
+      model_mesh.primitives};
+
+  auto accessor_components{scene->GetComponents<sg::Accessor>()};
+
+  std::vector<sg::Primitive> primitives;
+
+  std::vector<gpu::Buffer> buffers;
+
+  for (const auto& model_primitive : model_primitives) {
+    sg::Primitive primitive;
+
+    for (const auto& attribute : model_primitive.attributes) {
+      const std::string& attribute_name{attribute.first};
+      u32 attribute_accessor_index{static_cast<u32>(attribute.second)};
+      sg::Accessor* accessor{accessor_components[attribute_accessor_index]};
+
+      auto accessor_buffer{accessor->GetBuffer()};
+      const u8* buffer_data{accessor_buffer.first};
+      u64 buffer_size{accessor_buffer.second};
+
+      vk::BufferCreateInfo staging_buffer_ci{
+          {}, buffer_size, vk::BufferUsageFlagBits::eTransferSrc};
+
+      vk::BufferCreateInfo buffer_ci{{},
+                                     buffer_size,
+                                     vk::BufferUsageFlagBits::eVertexBuffer |
+                                         vk::BufferUsageFlagBits::eIndexBuffer |
+                                         vk::BufferUsageFlagBits::eTransferDst,
+                                     vk::SharingMode::eExclusive};
+
+      gpu::Buffer staging_buffer{
+          gpu_->CreateBuffer(staging_buffer_ci, buffer_data)};
+      staging_buffers.push_back(std::move(staging_buffer));
+
+      gpu::Buffer buffer{gpu_->CreateBuffer(buffer_ci, staging_buffers.back(),
+                                            command_buffer)};
+      primitive.vertex_buffers.insert(
+          std::make_pair(attribute_name, std::move(buffer)));
+    }
+
+    primitives.emplace_back(std::move(primitive));
+  }
+
+  auto mesh_component{std::make_unique<sg::Mesh>(std::move(primitives))};
+  return mesh_component;
 }
 
 }  // namespace luka

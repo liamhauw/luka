@@ -14,6 +14,7 @@
 #include "function/scene_graph/image.h"
 #include "function/scene_graph/light.h"
 #include "function/scene_graph/material.h"
+#include "function/scene_graph/mesh.h"
 #include "function/scene_graph/sampler.h"
 #include "function/scene_graph/scene.h"
 #include "function/scene_graph/texture.h"
@@ -76,6 +77,10 @@ class SceneGraph {
       const std::vector<tinygltf::Accessor>& model_accessors,
       const std::unique_ptr<sg::Scene>& scene);
 
+  std::vector<std::unique_ptr<sg::Mesh>> ParseMeshComponents(
+      const std::vector<tinygltf::Mesh>& model_meshs,
+      const std::unique_ptr<sg::Scene>& scene);
+
   std::unique_ptr<sg::Light> ParseLightComponent(
       const tinygltf::Value& model_light);
 
@@ -108,6 +113,12 @@ class SceneGraph {
   std::unique_ptr<sg::Accessor> ParseAccessorComponent(
       const tinygltf::Accessor& model_accessor,
       const std::unique_ptr<sg::Scene>& scene);
+
+  std::unique_ptr<sg::Mesh> ParseMeshComponent(
+      const tinygltf::Mesh& model_meshs,
+      const std::unique_ptr<sg::Scene>& scene,
+      const vk::raii::CommandBuffer& command_buffer,
+      std::vector<gpu::Buffer>& staging_buffers);
 
   std::shared_ptr<Gpu> gpu_;
 

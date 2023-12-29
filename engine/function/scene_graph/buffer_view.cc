@@ -21,6 +21,14 @@ BufferView::BufferView(Buffer* buffer, u64 byte_offset, u64 byte_length,
 
 std::type_index BufferView::GetType() { return typeid(BufferView); }
 
+Buffer* BufferView::GetBuffer() const { return buffer_; }
+
+u64 BufferView::GetByteOffset() const { return byte_offset_; }
+
+u64 BufferView::GetByteLength() const { return byte_length_; }
+
+u64 BufferView::GetByteStride() const { return byte_stride_; }
+
 }  // namespace sg
 
 }  // namespace luka

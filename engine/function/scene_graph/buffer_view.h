@@ -22,6 +22,11 @@ class BufferView : public Component {
   virtual ~BufferView() = default;
   std::type_index GetType() override;
 
+  Buffer* GetBuffer() const;
+  u64 GetByteOffset() const;
+  u64 GetByteLength() const;
+  u64 GetByteStride() const;
+
  private:
   Buffer* buffer_;
   u64 byte_offset_;
