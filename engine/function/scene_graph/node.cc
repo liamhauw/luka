@@ -9,6 +9,37 @@
 
 namespace luka {
 
-namespace sg {}  // namespace sg
+namespace sg {
+
+Node::Node(glm::mat4&& matrix, Mesh* mesh, Light* light, Camera* camera,
+           const std::vector<i32>& child_indices, const std::string& name)
+    : Component{name},
+      matrix_{matrix},
+      mesh_{mesh},
+      light_{light},
+      camera_{camera},
+      child_indices_{child_indices} {}
+
+std::type_index Node::GetType() { return typeid(Node); }
+
+const std::vector<i32>& Node::GetChildIndices() const { return child_indices_; }
+
+void Node::SetChildren(std::vector<Node*>&& children) { children_ = children; }
+
+void Node::SetParent(Node* parent) { parent_ = parent; }
+
+void Node::ClearParent() {
+  parent_ = nullptr;
+}
+
+const std::vector<Node*>& Node::GetChildren() const {
+  return children_;
+}
+
+Node* Node::GetParent() const {
+  return parent_;
+}
+
+}  // namespace sg
 
 }  // namespace luka

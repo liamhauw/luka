@@ -41,14 +41,14 @@ class SceneGraph {
   void Tick();
 
  private:
-  std::unique_ptr<sg::Map> LoadScene(const ast::Model& model);
+  std::unique_ptr<sg::Map> ParseMap(const ast::Model& model);
 
   std::unordered_map<std::string, bool> ParseExtensionsUsed(
       const std::vector<std::string>& model_extensions_used);
 
   std::vector<std::unique_ptr<sg::Light>> ParseLightComponents(
       const tinygltf::ExtensionMap& model_extension_map,
-      const std::unordered_map<std::string, bool>& supported_extensions);
+      const std::unique_ptr<sg::Map>& map);
 
   std::vector<std::unique_ptr<sg::Camera>> ParseCameraComponents(
       const std::vector<tinygltf::Camera>& model_cameras);
@@ -86,10 +86,13 @@ class SceneGraph {
   std::vector<std::unique_ptr<sg::Node>> ParseNodeComponents(
       const std::vector<tinygltf::Node>& model_nodes,
       const std::unique_ptr<sg::Map>& map);
+  void InitNodeChildren(const std::unique_ptr<sg::Map>& map);
 
   std::vector<std::unique_ptr<sg::Scene>> ParseSceneComponents(
       const std::vector<tinygltf::Scene>& model_scenes,
       const std::unique_ptr<sg::Map>& map);
+
+  i32 ParseDefaultScene(i32 model_scene, const std::unique_ptr<sg::Map>& map);
 
   std::unique_ptr<sg::Light> ParseLightComponent(
       const tinygltf::Value& model_light);

@@ -15,6 +15,11 @@ inline T AlignUp(T val, T alignment) {
          ~(alignment - static_cast<T>(1));
 }
 
+template <class T, class Y>
+struct TypeCast {
+  Y operator()(T value) const noexcept { return static_cast<Y>(value); }
+};
+
 std::string ReplacePathSlash(const std::string& str);
 
 std::vector<f32> D2FVector(const std::vector<f64>& dvector);

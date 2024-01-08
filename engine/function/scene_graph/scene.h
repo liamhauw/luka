@@ -13,13 +13,18 @@ namespace luka {
 
 namespace sg {
 
+class Node;
+
 class Scene : public Component {
  public:
-  Scene(const std::string& name ={});
+  Scene(std::vector<Node*>&& nodes, const std::string& name = {});
   virtual ~Scene() = default;
   std::type_index GetType() override;
 
+  const std::vector<Node*>& GetNodes() const;
+
  private:
+  std::vector<Node*> nodes_;
 };
 
 }  // namespace sg

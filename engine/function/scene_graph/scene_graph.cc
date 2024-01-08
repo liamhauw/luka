@@ -22,22 +22,27 @@ SceneGraph::SceneGraph() : gpu_{gContext.gpu} {
   const ast::Model& skybox{asset_info.skybox};
   const ast::Model& object{asset_info.object};
 
-  // skybox_ = LoadScene(skybox);
-  object_ = LoadScene(object);
+  //skybox_ = ParseMap(skybox);
+  object_ = ParseMap(object);
+
+  //skybox_->LoadScene();
+  object_->LoadScene();
+
 }
 
 void SceneGraph::Tick() {}
 
-std::unique_ptr<sg::Map> SceneGraph::LoadScene(const ast::Model& model) {
+std::unique_ptr<sg::Map> SceneGraph::ParseMap(const ast::Model& model) {
   auto map{std::make_unique<sg::Map>("map")};
 
   const tinygltf::Model& tinygltf_model{model.GetTinygltfModel()};
 
   std::unordered_map<std::string, bool> supported_extensions{
       ParseExtensionsUsed(tinygltf_model.extensionsUsed)};
+  map->SetSupportedExtensions(std::move(supported_extensions));
 
   std::vector<std::unique_ptr<sg::Light>> light_components{
-      ParseLightComponents(tinygltf_model.extensions, supported_extensions)};
+      ParseLightComponents(tinygltf_model.extensions, map)};
   map->SetComponents(std::move(light_components));
 
   std::vector<std::unique_ptr<sg::Camera>> camera_components{
@@ -76,6 +81,18 @@ std::unique_ptr<sg::Map> SceneGraph::LoadScene(const ast::Model& model) {
       ParseMeshComponents(tinygltf_model.meshes, map)};
   map->SetComponents(std::move(mesh_components));
 
+  std::vector<std::unique_ptr<sg::Node>> node_components{
+      ParseNodeComponents(tinygltf_model.nodes, map)};
+  map->SetComponents(std::move(node_components));
+  
+
+  std::vector<std::unique_ptr<sg::Scene>> scene_components{
+      ParseSceneComponents(tinygltf_model.scenes, map)};
+  map->SetComponents(std::move(scene_components));
+
+  i32 default_scene{ParseDefaultScene(tinygltf_model.defaultScene, map)};
+  map->SetDefaultScene(default_scene);
+
   return map;
 }
 
@@ -97,8 +114,11 @@ std::unordered_map<std::string, bool> SceneGraph::ParseExtensionsUsed(
 
 std::vector<std::unique_ptr<sg::Light>> SceneGraph::ParseLightComponents(
     const tinygltf::ExtensionMap& model_extension_map,
-    const std::unordered_map<std::string, bool>& supported_extensions) {
+    const std::unique_ptr<sg::Map>& map) {
   std::vector<std::unique_ptr<sg::Light>> light_components;
+
+  const std::unordered_map<std::string, bool>& supported_extensions{
+      map->GetSupportedExtensions()};
 
   auto khr_lights_punctual_extension{
       supported_extensions.find(KHR_LIGHTS_PUNCTUAL_EXTENSION)};
@@ -311,6 +331,19 @@ std::vector<std::unique_ptr<sg::Node>> SceneGraph::ParseNodeComponents(
   return node_components;
 }
 
+void SceneGraph::InitNodeChildren(const std::unique_ptr<sg::Map>& map) {
+  auto node_components{map->GetComponents<sg::Node>()};
+
+  for (sg::Node* node : node_components) {
+    const std::vector<i32>& child_indices{node->GetChildIndices()};
+    std::vector<sg::Node*> children_node;
+    for (i32 child_index : child_indices) {
+      children_node.push_back(node_components[child_index]);
+    }
+    node->SetChildren(std::move(children_node));
+  }
+}
+
 std::vector<std::unique_ptr<sg::Scene>> SceneGraph::ParseSceneComponents(
     const std::vector<tinygltf::Scene>& model_scenes,
     const std::unique_ptr<sg::Map>& map) {
@@ -323,6 +356,22 @@ std::vector<std::unique_ptr<sg::Scene>> SceneGraph::ParseSceneComponents(
   }
 
   return scene_components;
+}
+
+i32 SceneGraph::ParseDefaultScene(i32 model_default_scene,
+                                  const std::unique_ptr<sg::Map>& map) {
+  i32 default_scene{-1};
+
+  i32 scene_count{static_cast<i32>(map->GetComponents<sg::Scene>().size())};
+  if (model_default_scene != -1 && model_default_scene < scene_count) {
+    default_scene = model_default_scene;
+  } else if (scene_count > 0) {
+    default_scene = 0;
+  } else {
+    LOGW("gltf doesn't have default scene.");
+  }
+
+  return default_scene;
 }
 
 std::unique_ptr<sg::Light> SceneGraph::ParseLightComponent(
@@ -906,12 +955,87 @@ std::unique_ptr<sg::Mesh> SceneGraph::ParseMeshComponent(
 
 std::unique_ptr<sg::Node> SceneGraph::ParseNodeComponent(
     const tinygltf::Node& model_node, const std::unique_ptr<sg::Map>& map) {
-  return {};
+  // Matrix.
+  glm::mat4 matrix{1.0F};
+
+  if (!model_node.matrix.empty()) {
+    std::transform(model_node.matrix.begin(), model_node.matrix.end(),
+                   glm::value_ptr(matrix), TypeCast<f64, f32>{});
+  } else {
+    glm::vec3 scale{1.0F, 1.0F, 1.0F};
+    glm::quat rotation{0.0F, 0.0F, 0.0F, 1.0F};
+    glm::vec3 translation{0.0F, 0.0F, 0.0F};
+
+    if (!model_node.scale.empty()) {
+      std::transform(model_node.scale.begin(), model_node.scale.end(),
+                     glm::value_ptr(scale), TypeCast<f64, f32>{});
+    }
+    if (!model_node.rotation.empty()) {
+      std::transform(model_node.rotation.begin(), model_node.rotation.end(),
+                     glm::value_ptr(rotation), TypeCast<f64, f32>{});
+    }
+    if (!model_node.translation.empty()) {
+      std::transform(model_node.translation.begin(),
+                     model_node.translation.end(), glm::value_ptr(translation),
+                     TypeCast<f64, f32>{});
+    }
+
+    matrix = glm::translate(glm::mat4(1.0F), translation) *
+             glm::mat4_cast(rotation) * glm::scale(glm::mat4(1.0F), scale);
+  }
+
+  // Mesh.
+  sg::Mesh* mesh{nullptr};
+
+  if (model_node.mesh != -1) {
+    auto mesh_components{map->GetComponents<sg::Mesh>()};
+    mesh = mesh_components[model_node.mesh];
+  }
+
+  // Light.
+  sg::Light* light{nullptr};
+
+  auto light_iter{model_node.extensions.find(KHR_LIGHTS_PUNCTUAL_EXTENSION)};
+  if (light_iter != model_node.extensions.end()) {
+    auto light_components{map->GetComponents<sg::Light>()};
+    i32 light_index{light_iter->second.Get("light").Get<i32>()};
+    light = light_components[light_index];
+  }
+
+  // Camera.
+  sg::Camera* camera{nullptr};
+
+  if (model_node.camera != -1) {
+    auto camera_components{map->GetComponents<sg::Camera>()};
+    camera = camera_components[model_node.camera];
+  }
+
+  // Children.
+  const std::vector<i32>& children{model_node.children};
+
+  // Name.
+  const std::string& name{model_node.name};
+
+  auto node_component{std::make_unique<sg::Node>(std::move(matrix), mesh, light,
+                                                 camera, children, name)};
+  return node_component;
 }
 
 std::unique_ptr<sg::Scene> SceneGraph::ParseSceneComponent(
     const tinygltf::Scene& model_scene, const std::unique_ptr<sg::Map>& map) {
-  return {};
+  std::vector<sg::Node*> scene_nodes;
+  const std::vector<int>& nodes{model_scene.nodes};
+  auto node_components{map->GetComponents<sg::Node>()};
+  for (u32 i{0}; i < nodes.size(); ++i) {
+    sg::Node* node{node_components[nodes[i]]};
+    scene_nodes.push_back(node);
+  }
+
+  const std::string& name{model_scene.name};
+
+  auto scene_component{
+      std::make_unique<sg::Scene>(std::move(scene_nodes), name)};
+  return scene_component;
 }
 
 }  // namespace luka

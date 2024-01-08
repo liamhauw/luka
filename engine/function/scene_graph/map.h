@@ -44,6 +44,15 @@ class Map {
     return result;
   }
 
+  void SetSupportedExtensions(
+      std::unordered_map<std::string, bool>&& supported_extensions);
+
+  const std::unordered_map<std::string, bool>& GetSupportedExtensions() const;
+
+  void SetDefaultScene(i32 default_scene);
+
+  void LoadScene(i32 scene = -1);
+
  private:
   void SetComponents(const std::type_index& type_info,
                      std::vector<std::unique_ptr<Component>>&& components);
@@ -56,6 +65,9 @@ class Map {
   std::string name_;
   std::unordered_map<std::type_index, std::vector<std::unique_ptr<Component>>>
       components_;
+  std::unordered_map<std::string, bool> supported_extensions_;
+
+  i32 default_scene_{-1};
 };
 }  // namespace sg
 

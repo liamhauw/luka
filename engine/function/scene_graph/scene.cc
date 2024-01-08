@@ -11,9 +11,12 @@ namespace luka {
 
 namespace sg {
 
-Scene::Scene(const std::string& name) : Component{name} {}
+Scene::Scene(std::vector<Node*>&& nodes, const std::string& name)
+    : Component{name}, nodes_{nodes} {}
 
 std::type_index Scene::GetType() { return typeid(Scene); }
+
+const std::vector<Node*>& Scene::GetNodes() const { return nodes_; }
 
 }  // namespace sg
 
