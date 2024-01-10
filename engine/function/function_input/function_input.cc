@@ -7,12 +7,13 @@
 
 #include "function/function_input/function_input.h"
 
-#include "context.h"
 #include "core/log.h"
 
 namespace luka {
 
-FunctionInput::FunctionInput() : window_{gContext.window} {
+FunctionInput::FunctionInput(std::shared_ptr<Context> context,
+                             std::shared_ptr<Window> window)
+    : context_{context}, window_{window} {
   window_->RegisterOnWindowSizeFunc([this](auto&& ph1, auto&& ph2) {
     OnWindowSize(std::forward<decltype(ph1)>(ph1),
                  std::forward<decltype(ph2)>(ph2));
@@ -54,7 +55,7 @@ void FunctionInput::OnFramebufferSize(i32 /*width*/, i32 /*height*/) {
 }
 
 void FunctionInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mods*/) {
-  if (gContext.is_editor_mode) {
+  if (context_->GetEditorMode()) {
     return;
   }
 
@@ -67,7 +68,7 @@ void FunctionInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mods*/) {
         window_->SetWindowShouldClose();
         break;
       case GLFW_KEY_E:
-        gContext.is_editor_mode = true;
+        context_->SetEditorMode(true);
         window_->SetFocusMode(true);
         break;
       case GLFW_KEY_W:

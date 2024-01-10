@@ -7,7 +7,6 @@
 
 #include "function/scene_graph/map.h"
 
-#include "context.h"
 #include "core/log.h"
 #include "core/util.h"
 #include "function/gpu/gpu.h"

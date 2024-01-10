@@ -7,12 +7,12 @@
 
 #include "function/window/window.h"
 
-#include "context.h"
 #include "core/log.h"
 
 namespace luka {
 
-Window::Window(const WindowCreateInfo& window_ci) {
+Window::Window(std::shared_ptr<Time> time, const WindowCreateInfo& window_ci)
+    : time_{time} {
   if (!static_cast<bool>(glfwInit())) {
     THROW("Fail to init glfw.");
   }
@@ -52,7 +52,7 @@ void Window::Tick() {
     framebuffer_resized_ = false;
   }
 
-  f64 delta_time{gContext.time->GetDeltaTime()};
+  f64 delta_time{time_->GetDeltaTime()};
   std::string title{std::string{"luka "} +
                     std::to_string(static_cast<i32>(1.0 / delta_time)) +
                     " fps"};

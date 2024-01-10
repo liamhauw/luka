@@ -17,6 +17,7 @@ set(HEADER_FILES
   resource/asset/model.h
   resource/asset/image.h
   resource/config/config.h
+  resource/context/context.h
   function/camera/camera.h
   function/function_input/function_input.h
   function/function_ui/function_ui.h
@@ -51,7 +52,6 @@ set(HEADER_FILES
   editor/editor_input/editor_input.h
   editor/editor_ui/editor_ui.h
   editor/scene/scene.h
-  context.h
   engine.h
 )
 
@@ -63,6 +63,7 @@ set(SOURCE_FILES
   resource/asset/image.cc
   resource/config/generated/source_path.h
   resource/config/config.cc
+  resource/context/context.cc
   function/camera/camera.cc
   function/function_input/function_input.cc
   function/function_ui/function_ui.cc
@@ -96,7 +97,6 @@ set(SOURCE_FILES
   editor/editor_input/editor_input.cc
   editor/editor_ui/editor_ui.cc
   editor/scene/scene.cc
-  context.cc
   engine.cc
   main.cc
 )

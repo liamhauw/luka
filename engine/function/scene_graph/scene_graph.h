@@ -7,19 +7,20 @@
 #include "platform/pch.h"
 // clang-format on
 
+#include "function/gpu/gpu.h"
 #include "function/scene_graph/map.h"
+#include "resource/asset/asset.h"
 
 namespace luka {
 
-class Gpu;
-
 class SceneGraph {
  public:
-  SceneGraph();
+  SceneGraph(std::shared_ptr<Asset> asset, std::shared_ptr<Gpu> gpu);
 
   void Tick();
 
  private:
+  std::shared_ptr<Asset> asset_;
   std::shared_ptr<Gpu> gpu_;
 
   std::unique_ptr<sg::Map> skybox_;

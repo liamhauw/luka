@@ -7,9 +7,10 @@
 #include "platform/pch.h"
 // clang-format on
 
-namespace luka {
+#include "function/window/window.h"
+#include "resource/context/context.h"
 
-class Window;
+namespace luka {
 
 enum class FunctionCommand : u32 {
   FORWARD = 1 << 0,                    // W
@@ -24,7 +25,8 @@ enum class FunctionCommand : u32 {
 
 class FunctionInput {
  public:
-  FunctionInput();
+  FunctionInput(std::shared_ptr<Context> context,
+                std::shared_ptr<Window> window);
 
   void Tick();
 
@@ -35,10 +37,11 @@ class FunctionInput {
   void OnCursorPos(f64 xpos, f64 ypos);
 
  private:
+  std::shared_ptr<Context> context_;
+  std::shared_ptr<Window> window_;
+
   u32 control_command_{0xFFFFFFFF};
   u32 function_command_{0};
-
-  std::shared_ptr<Window> window_;
 };
 
 }  // namespace luka

@@ -7,7 +7,6 @@
 
 #include "resource/config/config.h"
 
-#include "context.h"
 #include "core/log.h"
 
 namespace luka {

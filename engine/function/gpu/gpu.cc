@@ -7,12 +7,11 @@
 
 #include "function/gpu/gpu.h"
 
-#include "context.h"
 #include "core/log.h"
 
 namespace luka {
 
-Gpu::Gpu() {
+Gpu::Gpu(std::shared_ptr<Window> window) : window_{window} {
   CreateInstance();
   CreateSurface();
   CreatePhysicalDevice();
@@ -33,11 +32,11 @@ Gpu::~Gpu() {
 }
 
 void Gpu::Tick() {
-  if (gContext.window->GetIconified()) {
+  if (window_->GetIconified()) {
     return;
   }
 
-  if (gContext.window->GetFramebufferResized()) {
+  if (window_->GetFramebufferResized()) {
     Resize();
   }
 }
@@ -559,7 +558,7 @@ void Gpu::CreateInstance() {
   std::vector<const char*> required_instance_extensions;
 
   std::vector<const char*> window_required_instance_extensions{
-      gContext.window->GetRequiredInstanceExtensions()};
+      window_->GetRequiredInstanceExtensions()};
   required_instance_extensions.insert(
       required_instance_extensions.end(),
       window_required_instance_extensions.begin(),
@@ -665,7 +664,7 @@ void Gpu::CreateInstance() {
 
 void Gpu::CreateSurface() {
   VkSurfaceKHR surface;
-  gContext.window->CreateWindowSurface(instance_, &surface);
+  window_->CreateWindowSurface(instance_, &surface);
   surface_ = vk::raii::SurfaceKHR{instance_, surface};
 }
 
@@ -896,7 +895,7 @@ void Gpu::CreateSwapchain() {
       std::numeric_limits<u32>::max()) {
     i32 width{0};
     i32 height{0};
-    gContext.window->GetFramebufferSize(&width, &height);
+    window_->GetFramebufferSize(&width, &height);
 
     extent_.width = std::clamp(static_cast<u32>(width),
                                surface_capabilities.minImageExtent.width,

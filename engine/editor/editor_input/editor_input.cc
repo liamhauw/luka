@@ -7,11 +7,11 @@
 
 #include "editor/editor_input/editor_input.h"
 
-#include "context.h"
-
 namespace luka {
 
-EditorInput::EditorInput() : window_{gContext.window} {
+EditorInput::EditorInput(std::shared_ptr<Context> context,
+                         std::shared_ptr<Window> window)
+    : context_{context}, window_{window} {
   window_->RegisterOnKeyFunc([this](auto&& ph1, auto&& ph2, auto&& ph3,
                                     auto&& ph4) {
     OnKey(std::forward<decltype(ph1)>(ph1), std::forward<decltype(ph2)>(ph2),
@@ -22,7 +22,7 @@ EditorInput::EditorInput() : window_{gContext.window} {
 void EditorInput::Tick() {}
 
 void EditorInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mod*/) {
-  if (!gContext.is_editor_mode) {
+  if (!context_->GetEditorMode()) {
     return;
   }
 
@@ -32,7 +32,7 @@ void EditorInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mod*/) {
         window_->SetWindowShouldClose();
         break;
       case GLFW_KEY_F:
-        gContext.is_editor_mode = false;
+        context_->SetEditorMode(false);
         window_->focus_mode_ = false;
         break;
       default:

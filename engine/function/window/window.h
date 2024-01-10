@@ -9,6 +9,8 @@
 #include <GLFW/glfw3.h>
 // clang-format on
 
+#include "function/time/time.h"
+
 namespace luka {
 
 struct WindowCreateInfo {
@@ -35,7 +37,7 @@ class Window {
   using OnScrollFunc = std::function<void(f64, f64)>;
   using OnDropFunc = std::function<void(i32, const char**)>;
 
-  explicit Window(const WindowCreateInfo& window_ci = {});
+  Window(std::shared_ptr<Time> time, const WindowCreateInfo& window_ci = {});
   ~Window();
 
   void Tick();
@@ -116,6 +118,8 @@ class Window {
   std::vector<OnCursorEnterFunc> on_cursor_enter_func_;
   std::vector<OnScrollFunc> on_scroll_func_;
   std::vector<OnDropFunc> on_drop_func_;
+
+  std::shared_ptr<Time> time_;
 
   GLFWwindow* glfw_window_{nullptr};
   bool window_resized_{false};

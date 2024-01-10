@@ -10,7 +10,8 @@
 
 luka::i32 main() {
   try {
-    luka::Engine::Run();
+    luka::Engine engine;
+    engine.Run();
   } catch (const luka::Exception& e) {
     return -1;
   } catch (const std::exception& e) {

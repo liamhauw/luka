@@ -11,6 +11,7 @@
 
 #include "function/gpu/buffer.h"
 #include "function/gpu/image.h"
+#include "function/window/window.h"
 #include "imgui_impl_vulkan.h"
 #include "resource/asset/image.h"
 
@@ -18,7 +19,7 @@ namespace luka {
 
 class Gpu {
  public:
-  Gpu();
+  Gpu(std::shared_ptr<Window> window);
   ~Gpu();
 
   void Tick();
@@ -137,6 +138,8 @@ class Gpu {
       VkDebugUtilsMessageTypeFlagsEXT message_type,
       const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
       void* user_data);
+
+  std::shared_ptr<Window> window_;
 
   // Parameters.
   const u32 kBackBufferCount{1};

@@ -22,7 +22,7 @@ struct AssetInfo {
 
 class Asset {
  public:
-  Asset();
+  Asset(std::shared_ptr<Config> config);
 
   void Tick();
 

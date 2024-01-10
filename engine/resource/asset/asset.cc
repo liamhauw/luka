@@ -10,12 +10,11 @@
 #include <ctpl_stl.h>
 #include <ktxvulkan.h>
 
-#include "context.h"
 #include "core/log.h"
 
 namespace luka {
 
-Asset::Asset() : config_{gContext.config} {
+Asset::Asset(std::shared_ptr<Config> config) : config_{config} {
   const ConfigInfo& project_info{config_->GetConfigInfo()};
   asset_info_.skybox = LoadAssetModel(project_info.skybox_path);
   asset_info_.object = LoadAssetModel(project_info.object_path);

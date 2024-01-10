@@ -5,12 +5,12 @@
 #include "platform/pch.h"
 // clang-swapchain_info.format on
 
-#include "context.h"
 #include "function/rendering/rendering.h"
 
 namespace luka {
 
-Rendering::Rendering() : gpu_{gContext.gpu} {
+Rendering::Rendering(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu)
+    : window_{window}, gpu_{gpu} {
   CreateContext();
   CreatePipeline();
 }
@@ -61,7 +61,7 @@ void Rendering::CreateContext() {
       std::numeric_limits<u32>::max()) {
     i32 width{0};
     i32 height{0};
-    gContext.window->GetFramebufferSize(&width, &height);
+    window_->GetFramebufferSize(&width, &height);
 
     swapchain_info.extent.width = std::clamp(
         static_cast<u32>(width), surface_capabilities.minImageExtent.width,
@@ -129,7 +129,7 @@ void Rendering::CreateContext() {
   // Create rendering frame.
   std::vector<std::unique_ptr<rd::Frame>> frames;
 
-    std::vector<vk::Image> swapchain_images;
+  std::vector<vk::Image> swapchain_images;
   swapchain_images = swapchain.getImages();
 
   vk::ImageViewCreateInfo swapchain_image_view_ci{

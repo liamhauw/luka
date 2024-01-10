@@ -7,19 +7,21 @@
 #include "platform/pch.h"
 // clang-format on
 
-namespace luka {
+#include "function/window/window.h"
+#include "resource/context/context.h"
 
-class Window;
+namespace luka {
 
 class EditorInput {
  public:
-  EditorInput();
+  EditorInput(std::shared_ptr<Context> context, std::shared_ptr<Window> window);
 
   void Tick();
 
   void OnKey(i32 key, i32 scancode, i32 action, i32 mod);
 
  private:
+  std::shared_ptr<Context> context_;
   std::shared_ptr<Window> window_;
 };
 
