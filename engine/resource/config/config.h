@@ -8,15 +8,12 @@
 // clang-format on
 
 #include "core/json.h"
-#include "core/math.h"
 #include "core/util.h"
 #include "resource/config/generated/source_path.h"
 
 namespace luka {
 
 struct ConfigInfo {
-  std::filesystem::path enviroment_path;
-  std::filesystem::path skybox_path;
   std::filesystem::path object_path;
   std::filesystem::path shader_path;
 };

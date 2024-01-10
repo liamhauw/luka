@@ -8,7 +8,6 @@
 #include "resource/asset/asset.h"
 
 #include <ctpl_stl.h>
-#include <ktxvulkan.h>
 
 #include "core/log.h"
 
@@ -16,7 +15,7 @@ namespace luka {
 
 Asset::Asset(std::shared_ptr<Config> config) : config_{config} {
   const ConfigInfo& project_info{config_->GetConfigInfo()};
-  asset_info_.skybox = LoadAssetModel(project_info.skybox_path);
+  
   asset_info_.object = LoadAssetModel(project_info.object_path);
   asset_info_.vertext_shader_buffer =
       LoadAssetShader(project_info.shader_path / "shader.vert.spv");

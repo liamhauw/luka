@@ -14,7 +14,6 @@
 namespace luka {
 
 struct AssetInfo {
-  ast::Model skybox;
   ast::Model object;
   std::vector<u8> vertext_shader_buffer;
   std::vector<u8> fragment_shader_buffer;

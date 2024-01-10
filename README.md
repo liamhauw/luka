@@ -47,7 +47,6 @@ git submodule update --remote
 - [glm](https://github.com/g-truc/glm)
 - [imgui](https://github.com/ocornut/imgui)
 - [json](https://github.com/nlohmann/json)
-- [ktx](https://github.com/KhronosGroup/KTX-Software)
 - [spdlog](https://github.com/gabime/spdlog)
 - [stb](https://github.com/nothings/stb)
 - [tinygltf](https://github.com/syoyo/tinygltf)

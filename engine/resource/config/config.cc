@@ -25,18 +25,6 @@ Config::Config() {
     for (u32 i{0}; i < configs_j.size(); ++i) {
       json config_j{configs_j[i]};
       ConfigInfo config_info;
-      if (config_j.contains("enviroment_path")) {
-        config_info.enviroment_path =
-            asset_path_ /
-            ReplacePathSlash(
-                config_j["enviroment_path"].template get<std::string>());
-      }
-      if (config_j.contains("skybox_path")) {
-        config_info.skybox_path =
-            asset_path_ /
-            ReplacePathSlash(
-                config_j["skybox_path"].template get<std::string>());
-      }
       if (config_j.contains("object_path")) {
         config_info.object_path =
             asset_path_ /

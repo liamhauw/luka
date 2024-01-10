@@ -8,16 +8,20 @@ configure_file(
 )
 
 set(HEADER_FILES
+  # platform
   platform/common.h
+  # core
   core/json.h
   core/log.h
   core/math.h
   core/util.h
+  # resource
   resource/asset/asset.h
   resource/asset/model.h
   resource/asset/image.h
   resource/config/config.h
   resource/context/context.h
+  # function
   function/camera/camera.h
   function/function_input/function_input.h
   function/function_ui/function_ui.h
@@ -49,21 +53,26 @@ set(HEADER_FILES
   function/time/time.h
   function/window/window.h
   function/world/world.h
+  # editor
   editor/editor_input/editor_input.h
   editor/editor_ui/editor_ui.h
   editor/scene/scene.h
+  # engine
   engine.h
 )
 
 set(SOURCE_FILES
+  # core
   core/json.cc
   core/util.cc
+  # resource
   resource/asset/asset.cc
   resource/asset/model.cc
   resource/asset/image.cc
   resource/config/generated/source_path.h
   resource/config/config.cc
   resource/context/context.cc
+  # function
   function/camera/camera.cc
   function/function_input/function_input.cc
   function/function_ui/function_ui.cc
@@ -94,9 +103,11 @@ set(SOURCE_FILES
   function/time/time.cc
   function/window/window.cc
   function/world/world.cc
+  # editor
   editor/editor_input/editor_input.cc
   editor/editor_ui/editor_ui.cc
   editor/scene/scene.cc
+  # engine
   engine.cc
   main.cc
 )
@@ -108,14 +119,3 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 target_link_libraries(${PROJECT_NAME} PRIVATE luka_third_party)
 target_precompile_headers(${PROJECT_NAME} PRIVATE platform/pch.h)
-
-if(WIN32)
-  set(DLL_FILES ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/ktx_4.3.0/windows/bin/ktx.dll)
-  foreach(DLL_FILE ${DLL_FILES})
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-      ${DLL_FILE}
-      $<TARGET_FILE_DIR:${PROJECT_NAME}>
-    )
-  endforeach()
-endif()
