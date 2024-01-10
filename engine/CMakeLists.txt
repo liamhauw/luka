@@ -34,7 +34,6 @@ set(HEADER_FILES
   function/scene_graph/buffer.h
   function/scene_graph/camera.h
   function/scene_graph/component.h
-  function/scene_graph/free_camera.h
   function/scene_graph/image.h
   function/scene_graph/light.h
   function/scene_graph/map.h
@@ -44,7 +43,7 @@ set(HEADER_FILES
   function/scene_graph/sampler.h
   function/scene_graph/scene_graph.h
   function/scene_graph/scene.h
-  function/scene_graph/script.h
+  function/scene_graph/script.
   function/scene_graph/texture.h
   function/time/time.h
   function/window/window.h
@@ -81,7 +80,6 @@ set(SOURCE_FILES
   function/scene_graph/buffer.cc
   function/scene_graph/camera.cc
   function/scene_graph/component.cc
-  function/scene_graph/free_camera.cc
   function/scene_graph/image.cc
   function/scene_graph/light.cc
   function/scene_graph/map.cc
@@ -91,7 +89,6 @@ set(SOURCE_FILES
   function/scene_graph/sampler.cc
   function/scene_graph/scene_graph.cc
   function/scene_graph/scene.cc
-  function/scene_graph/script.cc
   function/scene_graph/texture.cc
   function/time/time.cc
   function/window/window.cc
