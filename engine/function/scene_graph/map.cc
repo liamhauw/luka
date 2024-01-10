@@ -462,6 +462,11 @@ std::unique_ptr<sg::Camera> Map::ParseCameraComponent(
   return camera;
 }
 
+/// @brief 
+/// @param model_image 
+/// @param command_buffer 
+/// @param staging_buffers 
+/// @return 
 std::unique_ptr<sg::Image> Map::ParseImageComponent(
     const ast::Image& model_image,
     const vk::raii::CommandBuffer& command_buffer,
