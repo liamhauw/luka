@@ -27,36 +27,36 @@ FunctionUi::~FunctionUi() {
 }
 
 void FunctionUi::Tick() {
-  if (gContext.window->GetIconified()) {
-    return;
-  }
+//   if (gContext.window->GetIconified()) {
+//     return;
+//   }
 
-  if (gContext.window->GetFramebufferResized()) {
-    Resize();
-    return;
-  }
+//   if (gContext.window->GetFramebufferResized()) {
+//     Resize();
+//     return;
+//   }
 
-  CreateUi();
+//   CreateUi();
 
-  const vk::raii::CommandBuffer& command_buffer{gpu_->BeginFrame()};
+//   const vk::raii::CommandBuffer& command_buffer{gpu_->BeginFrame()};
 
-#ifndef NDEBUG
-  gpu_->BeginLabel(command_buffer, "rendering");
-#endif
-  gContext.rendering->Render(command_buffer);
-#ifndef NDEBUG
-  gpu_->EndLabel(command_buffer);
-#endif
+// #ifndef NDEBUG
+//   gpu_->BeginLabel(command_buffer, "rendering");
+// #endif
+//   gContext.rendering->Render(command_buffer);
+// #ifndef NDEBUG
+//   gpu_->EndLabel(command_buffer);
+// #endif
 
-#ifndef NDEBUG
-  gpu_->BeginLabel(command_buffer, "ui");
-#endif
-  Render(command_buffer);
-#ifndef NDEBUG
-  gpu_->EndLabel(command_buffer);
-#endif
+// #ifndef NDEBUG
+//   gpu_->BeginLabel(command_buffer, "ui");
+// #endif
+//   Render(command_buffer);
+// #ifndef NDEBUG
+//   gpu_->EndLabel(command_buffer);
+// #endif
 
-  gpu_->EndFrame(command_buffer);
+//   gpu_->EndFrame(command_buffer);
 }
 
 void FunctionUi::Render(const vk::raii::CommandBuffer& command_buffer) {
@@ -90,13 +90,13 @@ void FunctionUi::CreateImgui() {
 }
 
 void FunctionUi::AddViewportImage() {
-  auto image{gContext.rendering->GetViewportImage()};
-  const vk::raii::Sampler& sampler = image.first;
-  const vk::raii::ImageView& image_view = image.second;
+  // auto image{gContext.rendering->GetViewportImage()};
+  // const vk::raii::Sampler& sampler = image.first;
+  // const vk::raii::ImageView& image_view = image.second;
 
-  descriptor_set_ = ImGui_ImplVulkan_AddTexture(
-      *sampler, *image_view,
-      static_cast<VkImageLayout>(vk::ImageLayout::eGeneral));
+  // descriptor_set_ = ImGui_ImplVulkan_AddTexture(
+  //     *sampler, *image_view,
+  //     static_cast<VkImageLayout>(vk::ImageLayout::eGeneral));
 }
 
 void FunctionUi::DestroyImgui() {

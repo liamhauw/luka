@@ -19,7 +19,7 @@ Map::Map(const std::string& name) { name_ = name; }
 
 void Map::SetSupportedExtensions(
     std::unordered_map<std::string, bool>&& supported_extensions) {
-  supported_extensions_ = supported_extensions;
+  supported_extensions_ = std::move(supported_extensions);
 }
 
 const std::unordered_map<std::string, bool>& Map::GetSupportedExtensions()

@@ -19,11 +19,11 @@ Gpu::Gpu() {
   CreateDevice();
   CreateCommandObjects();
   CreateSyncObjects();
-  CreateSwapchain();
-  CreateRenderPass();
-  CreateFramebuffers();
-  CreatePipelineCache();
-  CreateDescriptorObjects();
+  // CreateSwapchain();
+  // CreateRenderPass();
+  // CreateFramebuffers();
+  // CreatePipelineCache();
+  // CreateDescriptorObjects();
   CreateAllocator();
 }
 
@@ -147,7 +147,7 @@ gpu::Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
                                      {}, {}, {}, barrier);
     }
 
-  } else {
+  } else if (*command_buffer) {
     vk::ImageMemoryBarrier barrier{
         {},
         vk::AccessFlagBits::eShaderRead,
@@ -359,6 +359,21 @@ vk::raii::Pipeline Gpu::CreatePipeline(
   return pipeline;
 }
 
+vk::raii::SwapchainKHR Gpu::CreateSwapchain(
+    vk::SwapchainCreateInfoKHR swapchain_ci, const std::string& name) {
+  swapchain_ci.surface = *surface_;
+  vk::raii::SwapchainKHR swapchain{device_, swapchain_ci};
+
+#ifndef NDEBUG
+  SetObjectName(
+      vk::ObjectType::eSwapchainKHR,
+      reinterpret_cast<uint64_t>(static_cast<VkSwapchainKHR>(*swapchain)), name,
+      "swapchain");
+#endif
+
+  return swapchain;
+}
+
 vk::raii::DescriptorSet Gpu::AllocateDescriptorSet(
     vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
     const std::string& name) {
@@ -508,6 +523,26 @@ std::pair<ImGui_ImplVulkan_InitInfo, VkRenderPass> Gpu::GetVulkanInfoForImgui()
   };
 
   return std::make_pair(init_info, static_cast<VkRenderPass>(*render_pass_));
+}
+
+const std::optional<u32>& Gpu::GetGraphicsQueueIndex() const {
+  return graphics_queue_index_;
+}
+
+const std::optional<u32>& Gpu::GetPresentQueueIndex() const {
+  return present_queue_index_;
+}
+
+const vk::SurfaceCapabilitiesKHR& Gpu::GetSurfaceCapabilities() const {
+  return surface_capabilities_;
+}
+
+const std::vector<vk::SurfaceFormatKHR>& Gpu::GetSurfaceFormats() const {
+  return surface_formats_;
+}
+
+const std::vector<vk::PresentModeKHR>& Gpu::GetSurfacePresentModes() const {
+  return present_modes_;
 }
 
 void Gpu::CreateInstance() {
@@ -669,6 +704,10 @@ void Gpu::CreatePhysicalDevice() {
   if (!(*physical_device_)) {
     THROW("Fail to find physical device.");
   }
+
+  surface_capabilities_ = physical_device_.getSurfaceCapabilitiesKHR(*surface_);
+  surface_formats_ = physical_device_.getSurfaceFormatsKHR(*surface_);
+  present_modes_ = physical_device_.getSurfacePresentModesKHR(*surface_);
 }
 
 void Gpu::CreateDevice() {
@@ -833,12 +872,8 @@ void Gpu::CreateSwapchain() {
 
   vk::SurfaceFormatKHR picked_format{surface_formats[0]};
 
-  std::vector<vk::Format> requested_formats{
-      vk::Format::eB8G8R8A8Unorm
-      // ,
-      // vk::Format::eR8G8B8A8Srgb,
-      // vk::Format::eB8G8R8Srgb, vk::Format::eR8G8B8Srgb
-  };
+  std::vector<vk::Format> requested_formats{vk::Format::eR8G8B8A8Srgb,
+                                            vk::Format::eB8G8R8A8Srgb};
   vk::ColorSpaceKHR requested_color_space{vk::ColorSpaceKHR::eSrgbNonlinear};
   for (const auto& requested_format : requested_formats) {
     auto it{std::find_if(surface_formats.begin(), surface_formats.end(),
@@ -877,15 +912,19 @@ void Gpu::CreateSwapchain() {
   std::vector<vk::PresentModeKHR> present_modes{
       physical_device_.getSurfacePresentModesKHR(*surface_)};
 
-  vk::PresentModeKHR picked_mode{vk::PresentModeKHR::eFifo};
-  for (const auto& present_mode : present_modes) {
-    if (present_mode == vk::PresentModeKHR::eMailbox) {
-      picked_mode = present_mode;
-      break;
-    }
+  std::vector<vk::PresentModeKHR> requested_present_modes{
+      vk::PresentModeKHR::eMailbox, vk::PresentModeKHR::eFifo,
+      vk::PresentModeKHR::eImmediate};
 
-    if (present_mode == vk::PresentModeKHR::eImmediate) {
-      picked_mode = present_mode;
+  vk::PresentModeKHR picked_mode{vk::PresentModeKHR::eImmediate};
+  for (const auto& requested_present_mode : requested_present_modes) {
+    auto it{std::find_if(present_modes.begin(), present_modes.end(),
+                         [requested_present_mode](const vk::PresentModeKHR& p) {
+                           return p == requested_present_mode;
+                         })};
+    if (it != present_modes.end()) {
+      picked_mode = *it;
+      break;
     }
   }
   present_mode_ = picked_mode;

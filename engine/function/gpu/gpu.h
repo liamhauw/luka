@@ -62,6 +62,9 @@ class Gpu {
       const vk::PipelineRenderingCreateInfo& pipeline_rendering_ci,
       const std::string& name = {});
 
+  vk::raii::SwapchainKHR CreateSwapchain(
+      vk::SwapchainCreateInfoKHR swapchain_ci, const std::string& name = {});
+
   vk::raii::DescriptorSet AllocateDescriptorSet(
       vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
       const std::string& name = {});
@@ -97,6 +100,16 @@ class Gpu {
 
   std::pair<ImGui_ImplVulkan_InitInfo, VkRenderPass> GetVulkanInfoForImgui()
       const;
+
+  const std::optional<u32>& GetGraphicsQueueIndex() const;
+
+  const std::optional<u32>& GetPresentQueueIndex() const;
+
+  const vk::SurfaceCapabilitiesKHR& GetSurfaceCapabilities() const;
+
+  const std::vector<vk::SurfaceFormatKHR>& GetSurfaceFormats() const;
+
+  const std::vector<vk::PresentModeKHR>& GetSurfacePresentModes() const;
 
  private:
   void CreateInstance();
@@ -142,6 +155,9 @@ class Gpu {
 
   // Physical device.
   vk::raii::PhysicalDevice physical_device_{nullptr};
+  vk::SurfaceCapabilitiesKHR surface_capabilities_;
+  std::vector<vk::SurfaceFormatKHR> surface_formats_;
+  std::vector<vk::PresentModeKHR> present_modes_;
 
   // Device.
   vk::SampleCountFlagBits sample_count_{vk::SampleCountFlagBits::e1};

@@ -12,7 +12,7 @@ namespace luka {
 namespace sg {
 
 Scene::Scene(std::vector<Node*>&& nodes, const std::string& name)
-    : Component{name}, nodes_{nodes} {}
+    : Component{name}, nodes_{std::move(nodes)} {}
 
 std::type_index Scene::GetType() { return typeid(Scene); }
 

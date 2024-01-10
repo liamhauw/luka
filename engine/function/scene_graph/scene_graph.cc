@@ -22,10 +22,10 @@ SceneGraph::SceneGraph() : gpu_{gContext.gpu} {
   const ast::Model& skybox{asset_info.skybox};
   const ast::Model& object{asset_info.object};
 
-  //skybox_ = ParseMap(skybox);
+  skybox_ = ParseMap(skybox);
   object_ = ParseMap(object);
 
-  //skybox_->LoadScene();
+  skybox_->LoadScene();
   object_->LoadScene();
 
 }

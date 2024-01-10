@@ -15,12 +15,12 @@ Image::Image(std::vector<u8>&& data, vk::Format format,
              std::vector<Mipmap>&& mipmap, u32 layer_count, u32 face_count,
              std::vector<std::vector<std::vector<u64>>>&& offsets,
              const std::string& name)
-    : data_{data},
+    : data_{std::move(data)},
       format_{format},
-      mipmaps_{mipmap},
+      mipmaps_{std::move(mipmap)},
       layer_count_{layer_count},
       face_count_{face_count},
-      offsets_{offsets},
+      offsets_{std::move(offsets)},
       name_{name} {}
 
 const std::vector<u8>& Image::Image::GetDate() const { return data_; }

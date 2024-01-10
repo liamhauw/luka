@@ -24,7 +24,11 @@ set(HEADER_FILES
   function/gpu/gpu.h
   function/gpu/image.h
   function/physics/physics.h
+  function/rendering/frame.h
+  function/rendering/pipeline.h
+  function/rendering/rd_context.h
   function/rendering/rendering.h
+  function/rendering/target.h
   function/scene_graph/accessor.h
   function/scene_graph/buffer_view.h
   function/scene_graph/buffer.h
@@ -67,7 +71,11 @@ set(SOURCE_FILES
   function/gpu/gpu.cc
   function/gpu/image.cc
   function/physics/physics.cc
+  function/rendering/frame.cc
+  function/rendering/pipeline.cc
+  function/rendering/rd_context.cc
   function/rendering/rendering.cc
+  function/rendering/target.cc
   function/scene_graph/accessor.cc
   function/scene_graph/buffer_view.cc
   function/scene_graph/buffer.cc

@@ -14,7 +14,7 @@ namespace sg {
 Node::Node(glm::mat4&& matrix, Mesh* mesh, Light* light, Camera* camera,
            const std::vector<i32>& child_indices, const std::string& name)
     : Component{name},
-      matrix_{matrix},
+      matrix_{std::move(matrix)},
       mesh_{mesh},
       light_{light},
       camera_{camera},
@@ -24,7 +24,7 @@ std::type_index Node::GetType() { return typeid(Node); }
 
 const std::vector<i32>& Node::GetChildIndices() const { return child_indices_; }
 
-void Node::SetChildren(std::vector<Node*>&& children) { children_ = children; }
+void Node::SetChildren(std::vector<Node*>&& children) { children_ = std::move(children); }
 
 void Node::SetParent(Node* parent) { parent_ = parent; }
 
