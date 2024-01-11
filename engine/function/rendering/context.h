@@ -25,6 +25,8 @@ struct SwapchainInfo {
 
 class Context {
  public:
+  Context() = default;
+
   Context(std::shared_ptr<Gpu> gpu, SwapchainInfo swapchain_info,
           vk::raii::SwapchainKHR&& swapchain,
           std::vector<std::unique_ptr<Frame>>&& frames_);

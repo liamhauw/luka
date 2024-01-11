@@ -9,7 +9,7 @@
 
 #include "function/gpu/gpu.h"
 #include "function/rendering/pipeline.h"
-#include "function/rendering/rd_context.h"
+#include "function/rendering/context.h"
 #include "function/window/window.h"
 
 namespace luka {
@@ -28,8 +28,8 @@ class Rendering {
   std::shared_ptr<Window> window_;
   std::shared_ptr<Gpu> gpu_;
 
-  std::unique_ptr<rd::Context> context_;
-  std::unique_ptr<rd::Pipeline> pipeline_;
+  rd::Context context_;
+  rd::Pipeline pipeline_;
 };
 
 }  // namespace luka

@@ -184,8 +184,8 @@ void Rendering::CreateContext() {
   }
 
   // Create rendering context.
-  context_ = std::make_unique<rd::Context>(
-      gpu_, swapchain_info, std::move(swapchain), std::move(frames));
+  context_ = std::move(rd::Context{gpu_, swapchain_info, std::move(swapchain),
+                                   std::move(frames)});
 }
 
 void Rendering::CreatePipeline() {}

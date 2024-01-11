@@ -7,18 +7,11 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "core/math.h"
-
 namespace luka {
 
 class Camera {
  public:
-  Camera();
-
   void Tick();
-
- private:
-  void LookAt(const glm::vec4& from, const glm::vec4& to);
 };
 
 }  // namespace luka

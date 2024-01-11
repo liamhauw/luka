@@ -22,6 +22,8 @@ struct TypeCast {
 
 std::string ReplacePathSlash(const std::string& str);
 
+std::vector<u8> LoadBinary(const std::filesystem::path& binary_path);
+
 std::vector<f32> D2FVector(const std::vector<f64>& dvector);
 
 }  // namespace luka

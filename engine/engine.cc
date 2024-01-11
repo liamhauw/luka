@@ -10,9 +10,9 @@
 namespace luka {
 
 Engine::Engine()
-    : context_{std::make_shared<Context>(false, true)},
-      config_{std::make_shared<Config>()},
+    : config_{std::make_shared<Config>()},
       asset_{std::make_shared<Asset>(config_)},
+      context_{std::make_shared<Context>(false, true)},
       time_{std::make_shared<Time>()},
       window_{std::make_shared<Window>(time_)},
       function_input_{std::make_shared<FunctionInput>(context_, window_)},
@@ -31,6 +31,7 @@ void Engine::Run() {
   while (!window_->WindowShouldClose()) {
     config_->Tick();
     asset_->Tick();
+    context_->Tick();
     time_->Tick();
     window_->Tick();
     function_input_->Tick();

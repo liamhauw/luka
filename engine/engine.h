@@ -11,6 +11,7 @@
 #include "editor/editor_ui/editor_ui.h"
 #include "editor/scene/scene.h"
 #include "function/camera/camera.h"
+#include "function/context/context.h"
 #include "function/function_input/function_input.h"
 #include "function/function_ui/function_ui.h"
 #include "function/gpu/gpu.h"
@@ -22,20 +23,19 @@
 #include "function/world/world.h"
 #include "resource/asset/asset.h"
 #include "resource/config/config.h"
-#include "resource/context/context.h"
 
 namespace luka {
 
 class Engine {
  public:
   Engine();
-  
+
   void Run();
 
  private:
-  std::shared_ptr<Context> context_;
   std::shared_ptr<Config> config_;
   std::shared_ptr<Asset> asset_;
+  std::shared_ptr<Context> context_;
   std::shared_ptr<Time> time_;
   std::shared_ptr<Window> window_;
   std::shared_ptr<FunctionInput> function_input_;

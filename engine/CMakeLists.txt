@@ -19,10 +19,11 @@ set(HEADER_FILES
   resource/asset/asset.h
   resource/asset/model.h
   resource/asset/image.h
+  resource/asset/shader.h
   resource/config/config.h
-  resource/context/context.h
   # function
   function/camera/camera.h
+  function/context/context.h
   function/function_input/function_input.h
   function/function_ui/function_ui.h
   function/gpu/buffer.h
@@ -31,7 +32,7 @@ set(HEADER_FILES
   function/physics/physics.h
   function/rendering/frame.h
   function/rendering/pipeline.h
-  function/rendering/rd_context.h
+  function/rendering/context.h
   function/rendering/rendering.h
   function/rendering/target.h
   function/scene_graph/accessor.h
@@ -69,11 +70,12 @@ set(SOURCE_FILES
   resource/asset/asset.cc
   resource/asset/model.cc
   resource/asset/image.cc
+  resource/asset/shader.cc
   resource/config/generated/source_path.h
   resource/config/config.cc
-  resource/context/context.cc
   # function
   function/camera/camera.cc
+  function/context/context.cc
   function/function_input/function_input.cc
   function/function_ui/function_ui.cc
   function/gpu/buffer.cc
@@ -82,7 +84,7 @@ set(SOURCE_FILES
   function/physics/physics.cc
   function/rendering/frame.cc
   function/rendering/pipeline.cc
-  function/rendering/rd_context.cc
+  function/rendering/context.cc
   function/rendering/rendering.cc
   function/rendering/target.cc
   function/scene_graph/accessor.cc

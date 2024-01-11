@@ -14,8 +14,8 @@ SceneGraph::SceneGraph(std::shared_ptr<Asset> asset, std::shared_ptr<Gpu> gpu)
   const AssetInfo& asset_info{asset_->GetAssetInfo()};
   const ast::Model& object{asset_info.object};
 
-  object_ = std::make_unique<sg::Map>(gpu_, object);
-  object_->LoadScene();
+  object_ = std::move(sg::Map{gpu_, object});
+  object_.LoadScene();
 }
 
 void SceneGraph::Tick() {}

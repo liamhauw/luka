@@ -33,7 +33,7 @@ void EditorInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mod*/) {
         break;
       case GLFW_KEY_F:
         context_->SetEditorMode(false);
-        window_->focus_mode_ = false;
+        window_->SetFocusMode(false);
         break;
       default:
         break;

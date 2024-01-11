@@ -20,6 +20,7 @@
 #include "function/scene_graph/sampler.h"
 #include "function/scene_graph/scene.h"
 #include "function/scene_graph/texture.h"
+#include "resource/asset/image.h"
 #include "resource/asset/model.h"
 
 namespace luka {
@@ -30,6 +31,8 @@ namespace sg {
 
 class Map {
  public:
+  Map() = default;
+
   Map(std::shared_ptr<Gpu> gpu, const ast::Model& model,
       const std::string& name = {});
 
@@ -89,8 +92,7 @@ class Map {
       const std::vector<tinygltf::Camera>& model_cameras);
 
   void ParseImageComponents(
-      const std::vector<tinygltf::Image>& tinygltf_images,
-      const std::map<std::string, luka::ast::Image>& model_uri_image_map);
+      const std::vector<tinygltf::Image>& tinygltf_images);
 
   void ParseSamplerComponents(
       const std::vector<tinygltf::Sampler>& model_samplers);

@@ -9,14 +9,19 @@
 
 namespace luka {
 
-namespace rd {
+namespace ast {
 
-class Pipeline {
+class Shader {
  public:
-  Pipeline() = default;
+  Shader() = default;
+  Shader(const std::filesystem::path& shader_path);
+
+  const std::vector<u8>& GetBuffer() const;
+
  private:
+  std::vector<u8> buffer_;
 };
 
-}  // namespace rd
+}  // namespace ast
 
 }  // namespace luka

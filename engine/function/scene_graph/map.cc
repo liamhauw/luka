@@ -95,13 +95,11 @@ void Map::LoadScene(i32 scene) {
 
 void Map::ParseModel(const ast::Model& model) {
   const tinygltf::Model& tinygltf_model{model.GetTinygltfModel()};
-  const std::map<std::string, luka::ast::Image>& uri_texture_map{
-      model.GetUriTextureMap()};
 
   ParseExtensionsUsed(tinygltf_model.extensionsUsed);
   ParseLightComponents(tinygltf_model.extensions);
   ParseCameraComponents(tinygltf_model.cameras);
-  ParseImageComponents(tinygltf_model.images, uri_texture_map);
+  ParseImageComponents(tinygltf_model.images);
   ParseSamplerComponents(tinygltf_model.samplers);
   ParseTextureComponents(tinygltf_model.textures);
   ParseMaterialComponents(tinygltf_model.materials);
@@ -171,45 +169,44 @@ void Map::ParseCameraComponents(
 }
 
 void Map::ParseImageComponents(
-    const std::vector<tinygltf::Image>& tinygltf_images,
-    const std::map<std::string, luka::ast::Image>& model_uri_image_map) {
-  std::vector<std::unique_ptr<sg::Image>> image_components;
+     const std::vector<tinygltf::Image>& tinygltf_images) {
+  // std::vector<std::unique_ptr<sg::Image>> image_components;
 
-  const vk::raii::CommandBuffer& command_buffer{gpu_->BeginTempCommandBuffer()};
+  // const vk::raii::CommandBuffer& command_buffer{gpu_->BeginTempCommandBuffer()};
 
-  u64 model_image_count{tinygltf_images.size()};
+  // u64 model_image_count{tinygltf_images.size()};
 
-  std::vector<gpu::Buffer> staging_buffers;
+  // std::vector<gpu::Buffer> staging_buffers;
 
-  for (u64 i{0}; i < model_image_count; ++i) {
-    const tinygltf::Image& tinygltf_image{tinygltf_images[i]};
+  // for (u64 i{0}; i < model_image_count; ++i) {
+  //   const tinygltf::Image& tinygltf_image{tinygltf_images[i]};
 
-    const std::string& model_image_uri{tinygltf_image.uri};
-    auto u2i{model_uri_image_map.find(model_image_uri)};
-    if (u2i == model_uri_image_map.end()) {
-      THROW("Fail to find image uri");
-    }
-    const ast::Image& model_image{u2i->second};
-    auto image_component{
-        ParseImageComponent(model_image, command_buffer, staging_buffers)};
-    image_components.push_back(std::move(image_component));
-  }
+  //   const std::string& model_image_uri{tinygltf_image.uri};
+  //   auto u2i{model_uri_image_map.find(model_image_uri)};
+  //   if (u2i == model_uri_image_map.end()) {
+  //     THROW("Fail to find image uri");
+  //   }
+  //   const ast::Image& model_image{u2i->second};
+  //   auto image_component{
+  //       ParseImageComponent(model_image, command_buffer, staging_buffers)};
+  //   image_components.push_back(std::move(image_component));
+  // }
 
-  ast::Image default_model_image{
-      std::vector<u8>(4, 0),
-      vk::Format::eR8G8B8A8Unorm,
-      std::vector<ast::Mipmap>{{0, vk::Extent3D{1, 1, 1}}},
-      1,
-      1,
-      {{{0}}},
-      "default"};
-  auto default_image_component{ParseImageComponent(
-      default_model_image, command_buffer, staging_buffers)};
-  image_components.push_back(std::move(default_image_component));
+  // ast::Image default_model_image{
+  //     std::vector<u8>(4, 0),
+  //     vk::Format::eR8G8B8A8Unorm,
+  //     std::vector<ast::Mipmap>{{0, vk::Extent3D{1, 1, 1}}},
+  //     1,
+  //     1,
+  //     {{{0}}},
+  //     "default"};
+  // auto default_image_component{ParseImageComponent(
+  //     default_model_image, command_buffer, staging_buffers)};
+  // image_components.push_back(std::move(default_image_component));
 
-  gpu_->EndTempCommandBuffer(command_buffer);
+  // gpu_->EndTempCommandBuffer(command_buffer);
 
-  SetComponents(std::move(image_components));
+  // SetComponents(std::move(image_components));
 }
 
 void Map::ParseSamplerComponents(
@@ -462,11 +459,6 @@ std::unique_ptr<sg::Camera> Map::ParseCameraComponent(
   return camera;
 }
 
-/// @brief 
-/// @param model_image 
-/// @param command_buffer 
-/// @param staging_buffers 
-/// @return 
 std::unique_ptr<sg::Image> Map::ParseImageComponent(
     const ast::Image& model_image,
     const vk::raii::CommandBuffer& command_buffer,
