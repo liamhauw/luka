@@ -18,8 +18,9 @@ class Image {
   Image() = default;
 
   Image(std::vector<u8>&& data, std::vector<vk::Extent3D>&& mipmap_extents,
-        vk::Format format, u32 level_count, u32 layer_count, u32 face_count,
-        std::vector<std::vector<std::vector<u64>>>&& offsets,
+        vk::Format format, u32 level_count = 1, u32 layer_count = 1,
+        u32 face_count = 1,
+        std::vector<std::vector<std::vector<u64>>>&& offsets = {},
         const std::string& name = {});
 
   Image(tinygltf::Image& tinygltf_image);

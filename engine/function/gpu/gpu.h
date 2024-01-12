@@ -27,18 +27,20 @@ class Gpu {
   gpu::Buffer CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
                            const void* data, const std::string& name = {});
 
-  gpu::Buffer CreateBuffer(
-      const vk::BufferCreateInfo& buffer_ci,
-      const gpu::Buffer& staging_buffer = nullptr,
-      const vk::raii::CommandBuffer& command_buffer = nullptr,
-      const std::string& name = {});
+  gpu::Buffer CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
+                           const gpu::Buffer& staging_buffer,
+                           const vk::raii::CommandBuffer& command_buffer,
+                           const std::string& name = {});
 
-  gpu::Image CreateImage(
-      const vk::ImageCreateInfo& image_ci,
-      const vk::ImageLayout new_layout = vk::ImageLayout::eUndefined,
-      const gpu::Buffer& staging_buffer = nullptr,
-      const vk::raii::CommandBuffer& command_buffer = nullptr,
-      const ast::Image& asset_image = {}, const std::string& name = {});
+  gpu::Image CreateImage(const vk::ImageCreateInfo& image_ci,
+                         const std::string& name = {});
+
+  gpu::Image CreateImage(const vk::ImageCreateInfo& image_ci,
+                         const vk::ImageLayout new_layout,
+                         const gpu::Buffer& staging_buffer,
+                         const vk::raii::CommandBuffer& command_buffer,
+                         const ast::Image& asset_image,
+                         const std::string& name = {});
 
   vk::raii::ImageView CreateImageView(
       const vk::ImageViewCreateInfo& image_view_ci,
@@ -69,7 +71,7 @@ class Gpu {
   vk::raii::DescriptorSet AllocateDescriptorSet(
       vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
       const std::string& name = {});
-      
+
   void UpdateDescriptorSets(const std::vector<vk::WriteDescriptorSet>& writes);
 
   vk::raii::CommandBuffer BeginTempCommandBuffer();

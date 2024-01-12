@@ -14,7 +14,7 @@ SceneGraph::SceneGraph(std::shared_ptr<Asset> asset, std::shared_ptr<Gpu> gpu)
   const AssetInfo& asset_info{asset_->GetAssetInfo()};
   const ast::Model& object{asset_info.object};
 
-  object_ = std::move(sg::Map{gpu_, object});
+  object_ = std::move(sg::Map{gpu_, object, "object"});
   object_.LoadScene();
 }
 

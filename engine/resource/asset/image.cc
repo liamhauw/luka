@@ -34,7 +34,8 @@ Image::Image(tinygltf::Image& tinygltf_image)
       level_count_{1},
       layer_count_{1},
       face_count_{1},
-      name_{tinygltf_image.name} {
+      name_{!tinygltf_image.name.empty() ? tinygltf_image.name
+                                         : tinygltf_image.uri} {
   if (tinygltf_image.component == 4 && tinygltf_image.bits == 8) {
     format_ = vk::Format::eR8G8B8A8Unorm;
   } else {

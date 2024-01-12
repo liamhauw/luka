@@ -92,7 +92,7 @@ Sampler::Sampler(std::shared_ptr<Gpu> gpu,
   vk::SamplerCreateInfo sampler_ci{{},          mag_filter,     min_filter,
                                    mipmap_mode, address_mode_u, address_mode_v};
 
-  sampler_ = gpu->CreateSampler(sampler_ci, name_);
+  sampler_ = gpu->CreateSampler(sampler_ci, GetName());
 }
 
 std::type_index Sampler::GetType() { return typeid(Sampler); }

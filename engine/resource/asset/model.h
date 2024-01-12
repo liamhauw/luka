@@ -24,7 +24,6 @@ class Model {
   const std::map<std::string, Image>& GetUriImageMap() const;
 
  private:
-
   tinygltf::Model tinygltf_model_;
   std::map<std::string, Image> uri_image_map_;
 };

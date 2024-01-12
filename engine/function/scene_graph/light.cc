@@ -24,11 +24,10 @@ Light::Light(LightType type, glm::vec3 direction, glm::vec3 color,
       inner_cone_angle_{inner_cone_angle},
       outer_cone_angle_{outer_cone_angle} {}
 
-Light::Light(const tinygltf::Value& model_light) {
-  if (model_light.Has("name")) {
-    name_ = model_light.Get("name").Get<std::string>();
-  }
-
+Light::Light(const tinygltf::Value& model_light)
+    : Component{model_light.Has("name")
+                    ? model_light.Get("name").Get<std::string>()
+                    : ""} {
   if (!model_light.Has("type")) {
     THROW("Light doesn't have type.");
   }

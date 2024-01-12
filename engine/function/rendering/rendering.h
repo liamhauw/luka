@@ -17,14 +17,12 @@ namespace luka {
 class Rendering {
  public:
   Rendering(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu);
+  
   ~Rendering();
 
   void Tick();
 
  private:
-  void CreateContext();
-  void CreatePipeline();
-
   std::shared_ptr<Window> window_;
   std::shared_ptr<Gpu> gpu_;
 

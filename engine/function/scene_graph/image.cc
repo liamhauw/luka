@@ -83,7 +83,7 @@ Image::Image(std::shared_ptr<Gpu> gpu, const ast::Image& model_image,
 
   image_ = gpu->CreateImage(image_ci, vk::ImageLayout::eShaderReadOnlyOptimal,
                             staging_buffers.back(), command_buffer, model_image,
-                            name_);
+                            GetName());
 
   // Image view.
   vk::ImageViewType image_view_type;
@@ -111,7 +111,7 @@ Image::Image(std::shared_ptr<Gpu> gpu, const ast::Image& model_image,
       {vk::ImageAspectFlagBits::eColor, 0, VK_REMAINING_MIP_LEVELS, 0,
        VK_REMAINING_ARRAY_LAYERS}};
 
-  image_view_ = gpu->CreateImageView(image_view_ci, name_);
+  image_view_ = gpu->CreateImageView(image_view_ci, GetName());
 }
 
 std::type_index Image::GetType() { return typeid(Image); }

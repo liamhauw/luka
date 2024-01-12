@@ -7,11 +7,11 @@
 #include "platform/pch.h"
 // clang-format on
 
+#include "function/gpu/gpu.h"
 #include "function/rendering/frame.h"
+#include "function/window/window.h"
 
 namespace luka {
-
-class Gpu;
 
 namespace rd {
 
@@ -29,7 +29,9 @@ class Context {
 
   Context(std::shared_ptr<Gpu> gpu, SwapchainInfo swapchain_info,
           vk::raii::SwapchainKHR&& swapchain,
-          std::vector<std::unique_ptr<Frame>>&& frames_);
+          std::vector<std::unique_ptr<Frame>>&& frames);
+
+  Context(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu);
 
  private:
   std::shared_ptr<Gpu> gpu_;

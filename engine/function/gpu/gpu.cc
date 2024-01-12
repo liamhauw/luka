@@ -78,6 +78,19 @@ gpu::Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
 }
 
 gpu::Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
+                             const std::string& name) {
+  gpu::Image image{allocator_, image_ci};
+
+#ifndef NDEBUG
+  SetObjectName(vk::ObjectType::eImage,
+                reinterpret_cast<u64>(static_cast<VkImage>(*image)), name,
+                "image");
+#endif
+
+  return image;
+}
+
+gpu::Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
                             const vk::ImageLayout new_layout,
                             const gpu::Buffer& staging_buffer,
                             const vk::raii::CommandBuffer& command_buffer,
