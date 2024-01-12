@@ -8,9 +8,7 @@
 #include "function/scene_graph/accessor.h"
 
 #include "core/log.h"
-#include "function/scene_graph/buffer.h"
 #include "function/scene_graph/buffer_view.h"
-#include "resource/asset/model.h"
 
 namespace luka {
 
@@ -26,24 +24,72 @@ Accessor::Accessor(BufferView* buffer_view, u64 byte_offset, bool normalized,
       component_type_{component_type},
       count_{count},
       type_{type} {
-  const u8* whole_data_begin{buffer_view_->GetBuffer()->GetData()->data()};
-  buffer_stride_ = GetByteStride(buffer_view_->GetByteStride());
-  buffer_data_ =
-      whole_data_begin + byte_offset_ + buffer_view_->GetByteOffset();
-  buffer_size_ = count_ * buffer_stride_;
+  CalculateBufferData();
+}
+
+Accessor::Accessor(const std::vector<BufferView*>& buffer_view_components,
+                   const tinygltf::Accessor& model_accessor)
+    : Component{model_accessor.name},
+      buffer_view_{buffer_view_components[model_accessor.bufferView]},
+      byte_offset_{model_accessor.byteOffset},
+      normalized_{model_accessor.normalized},
+      component_type_{static_cast<u32>(model_accessor.componentType)},
+      count_{model_accessor.count},
+      type_{static_cast<u32>(model_accessor.type)} {
+  CalculateBufferData();
 }
 
 std::type_index Accessor::GetType() { return typeid(Accessor); }
 
-u64 Accessor::GetCount() const {
-  return count_;
-}
+u64 Accessor::GetCount() const { return count_; }
 
 std::pair<const u8*, u64> Accessor::GetBuffer() const {
   return std::make_pair(buffer_data_, buffer_size_);
 }
 
-vk::Format Accessor::GetFormat() const {
+u32 Accessor::GetStride() const { return buffer_stride_; }
+
+vk::Format Accessor::GetFormat() const { return format_; }
+
+void Accessor::CalculateBufferData() {
+  const u8* whole_data_begin{buffer_view_->GetBuffer()->GetData()->data()};
+  buffer_stride_ = GetByteStride(buffer_view_->GetByteStride());
+  buffer_data_ =
+      whole_data_begin + byte_offset_ + buffer_view_->GetByteOffset();
+  buffer_size_ = count_ * buffer_stride_;
+  format_ = ParseFormat();
+}
+
+u32 Accessor::GetByteStride(u32 buffer_view_byte_stride) {
+  if (buffer_view_byte_stride == 0) {
+    i32 component_size_in_byte{
+        tinygltf::GetComponentSizeInBytes(component_type_)};
+    if (component_size_in_byte <= 0) {
+      THROW("Unsupport component type");
+    }
+
+    i32 component_count{tinygltf::GetNumComponentsInType(type_)};
+    if (component_count <= 0) {
+      THROW("Unsupport type");
+    }
+
+    return static_cast<u32>(component_size_in_byte * component_count);
+  } else {
+    i32 component_size_in_byte{
+        tinygltf::GetComponentSizeInBytes(component_type_)};
+    if (component_size_in_byte <= 0) {
+      THROW("Unsupport component type");
+    }
+
+    if (buffer_view_byte_stride % static_cast<u32>(component_size_in_byte) !=
+        0) {
+      THROW("Unsupport component type");
+    }
+    return static_cast<u32>(buffer_view_byte_stride);
+  }
+}
+
+vk::Format Accessor::ParseFormat() {
   vk::Format format;
 
   switch (component_type_) {
@@ -266,37 +312,6 @@ vk::Format Accessor::GetFormat() const {
   }
 
   return format;
-}
-
-u32 Accessor::GetStride() const { return buffer_stride_; }
-
-u32 Accessor::GetByteStride(u32 buffer_view_byte_stride) {
-  if (buffer_view_byte_stride == 0) {
-    i32 component_size_in_byte{
-        tinygltf::GetComponentSizeInBytes(component_type_)};
-    if (component_size_in_byte <= 0) {
-      THROW("Unsupport component type");
-    }
-
-    i32 component_count{tinygltf::GetNumComponentsInType(type_)};
-    if (component_count <= 0) {
-      THROW("Unsupport type");
-    }
-
-    return static_cast<u32>(component_size_in_byte * component_count);
-  } else {
-    i32 component_size_in_byte{
-        tinygltf::GetComponentSizeInBytes(component_type_)};
-    if (component_size_in_byte <= 0) {
-      THROW("Unsupport component type");
-    }
-
-    if (buffer_view_byte_stride % static_cast<u32>(component_size_in_byte) !=
-        0) {
-      THROW("Unsupport component type");
-    }
-    return static_cast<u32>(buffer_view_byte_stride);
-  }
 }
 
 }  // namespace sg

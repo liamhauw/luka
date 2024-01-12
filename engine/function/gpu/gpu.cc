@@ -114,16 +114,16 @@ gpu::Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
     }
 
     {
-      const auto& mipmaps{asset_image.GetMipmaps()};
-      u32 mipmap_count{static_cast<u32>(mipmaps.size())};
+      const std::vector<vk::Extent3D>& mipmap_extents{
+          asset_image.GetMipmapExtents()};
       u32 layer_count{asset_image.GetLayerCount()};
       const auto& offsets{asset_image.GetOffsets()};
 
       std::vector<vk::BufferImageCopy> buffer_image_copys;
-      for (u32 i{0}; i < mipmap_count; ++i) {
+      for (u32 i{0}; i < layer_count; ++i) {
         vk::BufferImageCopy buffer_image_copy{
-            offsets[i][0][0], {}, {}, {flag_bits, i, 0, layer_count}, {},
-            mipmaps[i].extent};
+            offsets.empty() ? 0 : offsets[i][0][0], {}, {},
+            {flag_bits, i, 0, layer_count},         {}, mipmap_extents[i]};
         buffer_image_copys.push_back(buffer_image_copy);
       }
       command_buffer.copyBufferToImage(*staging_buffer, *image,

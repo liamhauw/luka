@@ -7,26 +7,27 @@
 #include "platform/pch.h"
 // clang-format on
 
+#include <tiny_gltf.h>
+
 namespace luka {
 
 namespace ast {
 
-struct Mipmap {
-  u32 level{0};
-  vk::Extent3D extent{0, 0, 0};
-};
-
 class Image {
  public:
   Image() = default;
-  Image(std::vector<u8>&& data, vk::Format format, std::vector<Mipmap>&& mipmap,
-        u32 layer_count, u32 face_count,
+
+  Image(std::vector<u8>&& data, std::vector<vk::Extent3D>&& mipmap_extents,
+        vk::Format format, u32 level_count, u32 layer_count, u32 face_count,
         std::vector<std::vector<std::vector<u64>>>&& offsets,
-        const std::string& name);
+        const std::string& name = {});
+
+  Image(tinygltf::Image& tinygltf_image);
 
   const std::vector<u8>& GetDate() const;
+  const std::vector<vk::Extent3D>& GetMipmapExtents() const;
   vk::Format GetFormat() const;
-  const std::vector<Mipmap>& GetMipmaps() const;
+  u32 GetLevelCount() const;
   u32 GetLayerCount() const;
   u32 GetFaceCount() const;
   const std::vector<std::vector<std::vector<u64>>>& GetOffsets() const;
@@ -34,11 +35,11 @@ class Image {
 
  private:
   std::vector<u8> data_;
+  std::vector<vk::Extent3D> mipmap_extents_;
   vk::Format format_;
-  std::vector<Mipmap> mipmaps_;
+  u32 level_count_;
   u32 layer_count_;
   u32 face_count_;
-
   // offsets[level_index][layer_index][face_index]
   std::vector<std::vector<std::vector<u64>>> offsets_;
 

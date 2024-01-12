@@ -14,6 +14,7 @@ namespace ast {
 class Shader {
  public:
   Shader() = default;
+  
   Shader(const std::filesystem::path& shader_path);
 
   const std::vector<u8>& GetBuffer() const;

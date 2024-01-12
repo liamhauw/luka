@@ -7,26 +7,28 @@
 #include "platform/pch.h"
 // clang-format on
 
+#include <tiny_gltf.h>
+
+#include "core/math.h"
 #include "function/scene_graph/component.h"
 
 namespace luka {
 
 namespace sg {
 
+enum class CameraType { kNone = -1, kPerspective, kCount };
+
 class Camera : public Component {
  public:
-  Camera(const std::string& name);
+  Camera(CameraType type, f32 aspect_ratioF, f32 yfov, f32 znear, f32 zfar,
+         const std::string& name = {});
+  Camera(const tinygltf::Camera& model_camera);
+
   virtual ~Camera() = default;
   std::type_index GetType() override;
-};
-
-class PerspectiveCamera : public Camera {
- public:
-  PerspectiveCamera(f32 aspect_ratio, f32 yfov, f32 znear, f32 zfar,
-                    const std::string& name);
-  virtual ~PerspectiveCamera() = default;
 
  private:
+  CameraType type_;
   f32 aspect_ratio_;
   f32 yfov_;
   f32 znear_;

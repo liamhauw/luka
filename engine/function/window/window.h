@@ -13,7 +13,7 @@
 
 namespace luka {
 
-struct WindowCreateInfo {
+struct WindowInfo {
   i32 width{1920};
   i32 height{1080};
   std::string title{"luka"};
@@ -37,7 +37,7 @@ class Window {
   using OnScrollFunc = std::function<void(f64, f64)>;
   using OnDropFunc = std::function<void(i32, const char**)>;
 
-  Window(std::shared_ptr<Time> time, const WindowCreateInfo& window_ci = {});
+  Window(std::shared_ptr<Time> time, const WindowInfo& window_info = {});
   ~Window();
 
   void Tick();

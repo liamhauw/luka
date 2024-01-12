@@ -19,6 +19,14 @@ BufferView::BufferView(Buffer* buffer, u64 byte_offset, u64 byte_length,
       byte_length_{byte_length},
       byte_stride_{byte_stride} {}
 
+BufferView::BufferView(const std::vector<sg::Buffer*>& buffer_components,
+                       const tinygltf::BufferView& model_buffer_view)
+    : Component{model_buffer_view.name},
+      buffer_{buffer_components[model_buffer_view.buffer]},
+      byte_offset_{model_buffer_view.byteOffset},
+      byte_length_{model_buffer_view.byteLength},
+      byte_stride_{model_buffer_view.byteStride} {}
+
 std::type_index BufferView::GetType() { return typeid(BufferView); }
 
 Buffer* BufferView::GetBuffer() const { return buffer_; }

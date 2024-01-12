@@ -18,8 +18,7 @@ class Component {
   virtual std::type_index GetType() = 0;
   const std::string& GetName() const;
 
- private:
-  
+ protected:
   std::string name_;
 };
 

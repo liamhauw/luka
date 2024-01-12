@@ -7,32 +7,38 @@
 #include "platform/pch.h"
 // clang-format on
 
+#include <tiny_gltf.h>
+
 #include "core/math.h"
 #include "function/scene_graph/component.h"
 
+#define KHR_LIGHTS_PUNCTUAL_EXTENSION "KHR_lights_punctual"
+
 namespace luka {
+
 namespace sg {
 
 enum class LightType { kNone = -1, kDirectional, kPoint, kSpot, kCount };
 
-struct LightProperty {
-  LightType type{LightType::kNone};
-  glm::vec3 direction{0.0F, 0.0F, -1.0F};
-  glm::vec3 color{1.0F, 1.0F, 1.0F};
-  f32 intensity{1.0F};
-  f32 range{0.0F};
-  f32 inner_cone_angle{0.0F};
-  f32 outer_cone_angle{glm::quarter_pi<f32>()};
-};
-
 class Light : public Component {
  public:
-  Light(const LightProperty& property, const std::string& name = {});
+  Light(LightType type, glm::vec3 direction, glm::vec3 color, f32 intensity,
+        f32 range, f32 inner_cone_angle, f32 outer_cone_angle,
+        const std::string& name = {});
+
+  Light(const tinygltf::Value& model_light);
+
   virtual ~Light() = default;
   std::type_index GetType() override;
 
  private:
-  LightProperty property_;
+  LightType type_;
+  glm::vec3 direction_;
+  glm::vec3 color_;
+  f32 intensity_;
+  f32 range_;
+  f32 inner_cone_angle_;
+  f32 outer_cone_angle_;
 };
 
 }  // namespace sg

@@ -69,6 +69,7 @@ class Gpu {
   vk::raii::DescriptorSet AllocateDescriptorSet(
       vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
       const std::string& name = {});
+      
   void UpdateDescriptorSets(const std::vector<vk::WriteDescriptorSet>& writes);
 
   vk::raii::CommandBuffer BeginTempCommandBuffer();

@@ -7,14 +7,17 @@
 #include "platform/pch.h"
 // clang-format on
 
+#include <tiny_gltf.h>
+
 #include "function/gpu/buffer.h"
+#include "function/gpu/gpu.h"
+#include "function/scene_graph/accessor.h"
 #include "function/scene_graph/component.h"
+#include "function/scene_graph/material.h"
 
 namespace luka {
 
 namespace sg {
-
-class Material;
 
 struct VertexAttribute {
   vk::Format format{vk::Format::eUndefined};
@@ -43,13 +46,21 @@ struct Primitive {
   u64 vertex_count{0};
   bool has_index{false};
   IndexAttribute index_attribute;
-  
+
   Material* material;
 };
 
 class Mesh : public Component {
  public:
   Mesh(std::vector<Primitive>&& primitives, const std::string& name = {});
+
+  Mesh(std::shared_ptr<Gpu> gpu,
+       const std::vector<Material*> material_components,
+       const std::vector<Accessor*> accessor_components,
+       const tinygltf::Mesh& model_mesh,
+       const vk::raii::CommandBuffer& command_buffer,
+       std::vector<gpu::Buffer>& staging_buffers);
+
   virtual ~Mesh() = default;
   std::type_index GetType() override;
 

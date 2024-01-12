@@ -7,6 +7,7 @@
 #include "platform/pch.h"
 // clang-format on
 
+#include "function/gpu/gpu.h"
 #include "function/scene_graph/accessor.h"
 #include "function/scene_graph/buffer.h"
 #include "function/scene_graph/buffer_view.h"
@@ -25,8 +26,6 @@
 
 namespace luka {
 
-class Gpu;
-
 namespace sg {
 
 class Map {
@@ -37,14 +36,9 @@ class Map {
       const std::string& name = {});
 
   template <typename T>
-  void SetComponents(std::vector<std::unique_ptr<T>>&& components) {
-    std::vector<std::unique_ptr<Component>> result(components.size());
-    std::transform(
-        components.begin(), components.end(), result.begin(),
-        [](std::unique_ptr<T>& component) -> std::unique_ptr<Component> {
-          return std::unique_ptr<Component>(std::move(component));
-        });
-    SetComponents(typeid(T), std::move(result));
+  void AddComponent(std::unique_ptr<T>&& component) {
+    std::unique_ptr<Component> result{std::move(component)};
+    AddComponent(typeid(T), std::move(result));
   }
 
   template <typename T>
@@ -63,8 +57,8 @@ class Map {
     return result;
   }
 
-  void SetComponents(const std::type_index& type_info,
-                     std::vector<std::unique_ptr<Component>>&& components);
+  void AddComponent(const std::type_index& type_info,
+                    std::unique_ptr<Component>&& component);
 
   const std::vector<std::unique_ptr<Component>>& GetComponents(
       const std::type_index& type_info) const;
@@ -81,8 +75,6 @@ class Map {
   void LoadScene(i32 scene = -1);
 
  private:
-  void ParseModel(const ast::Model& model);
-
   void ParseExtensionsUsed(
       const std::vector<std::string>& model_extensions_used);
 
@@ -91,8 +83,8 @@ class Map {
   void ParseCameraComponents(
       const std::vector<tinygltf::Camera>& model_cameras);
 
-  void ParseImageComponents(
-      const std::vector<tinygltf::Image>& tinygltf_images);
+  void ParseImageComponents(const std::vector<tinygltf::Image>& tinygltf_images,
+                            const std::map<std::string, ast::Image>&);
 
   void ParseSamplerComponents(
       const std::vector<tinygltf::Sampler>& model_samplers);
@@ -121,52 +113,12 @@ class Map {
 
   void ParseDefaultScene(i32 model_scene);
 
-  std::unique_ptr<sg::Light> ParseLightComponent(
-      const tinygltf::Value& model_light);
-
-  std::unique_ptr<sg::Camera> ParseCameraComponent(
-      const tinygltf::Camera& model_camera);
-
-  std::unique_ptr<sg::Image> ParseImageComponent(
-      const ast::Image& model_image,
-      const vk::raii::CommandBuffer& command_buffer,
-      std::vector<gpu::Buffer>& staging_buffers);
-
-  std::unique_ptr<sg::Sampler> ParseSamplerComponent(
-      const tinygltf::Sampler& model_sampler);
-
-  std::unique_ptr<sg::Texture> ParseTextureComponent(
-      const tinygltf::Texture& model_texture);
-
-  std::unique_ptr<sg::Material> ParseMaterialComponent(
-      const tinygltf::Material& model_material);
-
-  std::unique_ptr<sg::Buffer> ParseBufferComponent(
-      const tinygltf::Buffer& model_buffer);
-
-  std::unique_ptr<sg::BufferView> ParseBufferViewComponent(
-      const tinygltf::BufferView& model_buffer_view);
-
-  std::unique_ptr<sg::Accessor> ParseAccessorComponent(
-      const tinygltf::Accessor& model_accessor);
-
-  std::unique_ptr<sg::Mesh> ParseMeshComponent(
-      const tinygltf::Mesh& model_mesh,
-      const vk::raii::CommandBuffer& command_buffer,
-      std::vector<gpu::Buffer>& staging_buffers);
-
-  std::unique_ptr<sg::Node> ParseNodeComponent(
-      const tinygltf::Node& model_node);
-
-  std::unique_ptr<sg::Scene> ParseSceneComponent(
-      const tinygltf::Scene& model_scene);
-
   std::shared_ptr<Gpu> gpu_;
   std::string name_;
   std::unordered_map<std::type_index, std::vector<std::unique_ptr<Component>>>
       components_;
   std::unordered_map<std::string, bool> supported_extensions_;
-  i32 default_scene_{-1};
+  i32 default_scene_;
 };
 }  // namespace sg
 

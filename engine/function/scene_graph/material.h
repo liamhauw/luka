@@ -7,14 +7,15 @@
 #include "platform/pch.h"
 // clang-format on
 
+#include <tiny_gltf.h>
+
 #include "core/math.h"
 #include "function/scene_graph/component.h"
+#include "function/scene_graph/texture.h"
 
 namespace luka {
 
 namespace sg {
-
-class Texture;
 
 enum class AlphaMode { kOpaque, kMask, kBlend };
 
@@ -25,6 +26,10 @@ class Material : public Component {
            f32 roughness_factor, f32 scale, f32 strength,
            glm::vec3&& emissive_factor, AlphaMode alpha_mode, f32 alpha_cutoff,
            bool double_sided, const std::string& name = {});
+
+  Material(const std::vector<Texture*> texture_components,
+           const tinygltf::Material& model_material);
+
   virtual ~Material() = default;
   std::type_index GetType() override;
 

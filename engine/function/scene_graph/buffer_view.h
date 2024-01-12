@@ -7,18 +7,23 @@
 #include "platform/pch.h"
 // clang-format on
 
+#include <tiny_gltf.h>
+
+#include "function/scene_graph/buffer.h"
 #include "function/scene_graph/component.h"
 
 namespace luka {
 
 namespace sg {
 
-class Buffer;
-
 class BufferView : public Component {
  public:
   BufferView(Buffer* buffer, u64 byte_offset, u64 byte_length, u64 byte_stride,
-             const std::string& name);
+             const std::string& name = {});
+
+  BufferView(const std::vector<sg::Buffer*>& buffer_components,
+             const tinygltf::BufferView& model_buffer_view);
+
   virtual ~BufferView() = default;
   std::type_index GetType() override;
 

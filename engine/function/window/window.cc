@@ -11,7 +11,7 @@
 
 namespace luka {
 
-Window::Window(std::shared_ptr<Time> time, const WindowCreateInfo& window_ci)
+Window::Window(std::shared_ptr<Time> time, const WindowInfo& window_info)
     : time_{time} {
   if (!static_cast<bool>(glfwInit())) {
     THROW("Fail to init glfw.");
@@ -20,8 +20,8 @@ Window::Window(std::shared_ptr<Time> time, const WindowCreateInfo& window_ci)
   glfwSetErrorCallback(ErrorCallback);
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-  glfw_window_ = glfwCreateWindow(window_ci.width, window_ci.height,
-                                  window_ci.title.c_str(), nullptr, nullptr);
+  glfw_window_ = glfwCreateWindow(window_info.width, window_info.height,
+                                  window_info.title.c_str(), nullptr, nullptr);
   if (!static_cast<bool>(glfw_window_)) {
     THROW("Fail to create glfw window.");
   }
