@@ -161,19 +161,9 @@ Context::Context(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu)
       {vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1}};
 
   for (auto swapchain_image : swapchain_images) {
-    swapchain_image_view_ci.image = swapchain_image;
-    vk::raii::ImageView swapchain_image_view{
-        gpu_->CreateImageView(swapchain_image_view_ci, "swapchain")};
-
-    gpu::Image depth_image{gpu_->CreateImage(depth_image_ci, "depth")};
-
-    depth_image_view_ci.image = *depth_image;
-    vk::raii::ImageView depth_image_view{
-        gpu_->CreateImageView(depth_image_view_ci, "depth")};
-
     auto target{std::make_unique<rd::Target>(
-        swapchain_image, std::move(swapchain_image_view),
-        std::move(depth_image), std::move(depth_image_view))};
+        gpu_, swapchain_image, swapchain_image_view_ci, depth_image_ci,
+        depth_image_view_ci)};
 
     auto frame{std::make_unique<rd::Frame>(std::move(target))};
 
