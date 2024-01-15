@@ -22,14 +22,13 @@ set(HEADER_FILES
   resource/asset/shader.h
   resource/config/config.h
   # function
-  function/camera/camera.h
   function/context/context.h
   function/function_input/function_input.h
   function/function_ui/function_ui.h
   function/gpu/buffer.h
   function/gpu/gpu.h
   function/gpu/image.h
-  function/physics/physics.h
+  function/physics/physics.
   function/rendering/frame.h
   function/rendering/pipeline.h
   function/rendering/context.h
@@ -53,11 +52,9 @@ set(HEADER_FILES
   function/scene_graph/texture.h
   function/time/time.h
   function/window/window.h
-  function/world/world.h
   # editor
   editor/editor_input/editor_input.h
   editor/editor_ui/editor_ui.h
-  editor/scene/scene.h
   # engine
   engine.h
 )
@@ -74,14 +71,12 @@ set(SOURCE_FILES
   resource/config/generated/source_path.h
   resource/config/config.cc
   # function
-  function/camera/camera.cc
   function/context/context.cc
   function/function_input/function_input.cc
   function/function_ui/function_ui.cc
   function/gpu/buffer.cc
   function/gpu/gpu.cc
   function/gpu/image.cc
-  function/physics/physics.cc
   function/rendering/frame.cc
   function/rendering/pipeline.cc
   function/rendering/context.cc
@@ -104,11 +99,9 @@ set(SOURCE_FILES
   function/scene_graph/texture.cc
   function/time/time.cc
   function/window/window.cc
-  function/world/world.cc
   # editor
   editor/editor_input/editor_input.cc
   editor/editor_ui/editor_ui.cc
-  editor/scene/scene.cc
   # engine
   engine.cc
   main.cc
