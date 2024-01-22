@@ -22,20 +22,20 @@ Rendering::Rendering(std::shared_ptr<Asset> asset,
 Rendering::~Rendering() { gpu_.reset(); }
 
 void Rendering::Tick() {
-  if (window_->GetIconified()) {
-    return;
-  }
+  // if (window_->GetIconified()) {
+  //   return;
+  // }
 
-  if (window_->GetFramebufferResized()) {
-    window_->SetFramebufferResized(false);
-    context_.Resize();
-  }
+  // if (window_->GetFramebufferResized()) {
+  //   window_->SetFramebufferResized(false);
+  //   context_.Resize();
+  // }
 
-  const vk::raii::CommandBuffer& command_buffer{context_.Begin()};
+  // const vk::raii::CommandBuffer& command_buffer{context_.Begin()};
 
-  pipeline_.Draw(command_buffer, context_.GetActiveFrame().GetTarget());
+  // pipeline_.Draw(command_buffer, context_.GetActiveFrame().GetTarget());
 
-  context_.End(command_buffer);
+  // context_.End(command_buffer);
 }
 
 }  // namespace luka
