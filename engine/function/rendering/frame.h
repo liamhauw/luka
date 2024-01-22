@@ -7,6 +7,8 @@
 #include "platform/pch.h"
 // clang-format on
 
+#include "function/gpu/gpu.h"
+#include "function/gpu/image.h"
 #include "function/rendering/target.h"
 
 namespace luka {
@@ -15,10 +17,17 @@ namespace rd {
 
 class Frame {
  public:
-  Frame(std::unique_ptr<Target>&& target);
+  Frame(Target&& target);
+
+  Frame(std::shared_ptr<Gpu> gpu, vk::Image swapchain_image,
+        vk::ImageViewCreateInfo& swapchain_image_view_ci,
+        const vk::ImageCreateInfo& depth_image_ci,
+        vk::ImageViewCreateInfo depth_image_view_ci);
+
+  Target& GetTarget();
 
  private:
-  std::unique_ptr<Target> target_;
+  Target target_;
 };
 
 }  // namespace rd

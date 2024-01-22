@@ -16,17 +16,14 @@ namespace luka {
 
 namespace rd {
 
-class Pipeline {
+class GeometrySubpass : public Subpass {
  public:
-  Pipeline(std::vector<std::unique_ptr<rd::Subpass>>&& subpasses);
-
-  Pipeline(std::shared_ptr<Asset> asset,
-           std::shared_ptr<SceneGraph> scene_graph, Context& context);
-
-  void Draw(const vk::raii::CommandBuffer& command_buffer, Target& context);
+  GeometrySubpass(std::shared_ptr<Asset> asset,
+                  std::shared_ptr<SceneGraph> scene_graph,
+                  Context& context);
 
  private:
-  std::vector<std::unique_ptr<rd::Subpass>> subpasses_;
+  std::vector<sg::Mesh* > meshes_;
 };
 
 }  // namespace rd

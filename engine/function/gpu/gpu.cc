@@ -16,14 +16,14 @@ Gpu::Gpu(std::shared_ptr<Window> window) : window_{window} {
   CreateSurface();
   CreatePhysicalDevice();
   CreateDevice();
-  CreateCommandObjects();
-  CreateSyncObjects();
+  CreateAllocator();
+  // CreateCommandObjects();
+  // CreateSyncObjects();
   // CreateSwapchain();
   // CreateRenderPass();
   // CreateFramebuffers();
   // CreatePipelineCache();
   // CreateDescriptorObjects();
-  CreateAllocator();
 }
 
 Gpu::~Gpu() {
@@ -78,7 +78,7 @@ gpu::Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
 }
 
 gpu::Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
-                             const std::string& name) {
+                            const std::string& name) {
   gpu::Image image{allocator_, image_ci};
 
 #ifndef NDEBUG
@@ -436,16 +436,23 @@ const vk::raii::CommandBuffer& Gpu::BeginFrame() {
     THROW("Fail to wait for fences.");
   }
 
-  vk::Result result;
-  std::tie(result, image_index_) = swapchain_.acquireNextImage(
-      UINT64_MAX, *image_available_semaphores_[back_buffer_index], nullptr);
-  if (result != vk::Result::eSuccess) {
-    THROW("Fail to acqurie next image.");
-  }
+  // vk::Result result;
+  // std::tie(result, image_index_) = swapchain_.acquireNextImage(
+  //     UINT64_MAX, *image_available_semaphores_[back_buffer_index], nullptr);
+  // if (result != vk::Result::eSuccess) {
+  //   THROW("Fail to acqurie next image.");
+  // }
 
   device_.resetFences(*(command_executed_fences_[back_buffer_index]));
 
-  const vk::raii::CommandBuffer& command_buffer{GetCommandBuffer()};
+  u32 index{used_command_buffer_counts_[back_buffer_index]};
+  if (index >= kMaxUsedCommandBufferCountperFrame) {
+    THROW("Fail to get command buffer.");
+  }
+  ++used_command_buffer_counts_[back_buffer_index];
+
+  const vk::raii::CommandBuffer& command_buffer{
+      command_buffers_[back_buffer_index][index]};
   command_buffer.reset({});
   command_buffer.begin({});
 
@@ -1136,13 +1143,13 @@ void Gpu::SetObjectName(vk::ObjectType object_type, u64 handle,
 }
 
 const vk::raii::CommandBuffer& Gpu::GetCommandBuffer() {
-  u32 index{used_command_buffer_counts_[back_buffer_index]};
-  if (index >= kMaxUsedCommandBufferCountperFrame) {
-    THROW("Fail to get command buffer.");
-  }
-  ++used_command_buffer_counts_[back_buffer_index];
+  // u32 index{used_command_buffer_counts_[back_buffer_index]};
+  // if (index >= kMaxUsedCommandBufferCountperFrame) {
+  //   THROW("Fail to get command buffer.");
+  // }
+  // ++used_command_buffer_counts_[back_buffer_index];
 
-  return command_buffers_[back_buffer_index][index];
+  // return command_buffers_[back_buffer_index][index];
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL Gpu::DebugUtilsMessengerCallback(

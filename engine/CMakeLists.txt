@@ -28,12 +28,16 @@ set(HEADER_FILES
   function/gpu/buffer.h
   function/gpu/gpu.h
   function/gpu/image.h
-  function/physics/physics.
-  function/rendering/frame.h
-  function/rendering/pipeline.h
+
   function/rendering/context.h
+  function/rendering/forward_subpass.h
+  function/rendering/frame.h
+  function/rendering/geometry_subpass.h
+  function/rendering/pipeline.h
   function/rendering/rendering.h
+  function/rendering/subpass.h
   function/rendering/target.h
+
   function/scene_graph/accessor.h
   function/scene_graph/buffer_view.h
   function/scene_graph/buffer.h
@@ -77,11 +81,16 @@ set(SOURCE_FILES
   function/gpu/buffer.cc
   function/gpu/gpu.cc
   function/gpu/image.cc
-  function/rendering/frame.cc
-  function/rendering/pipeline.cc
+
   function/rendering/context.cc
+  function/rendering/forward_subpass.cc
+  function/rendering/frame.cc
+  function/rendering/geometry_subpass.cc
+  function/rendering/pipeline.cc
   function/rendering/rendering.cc
+  function/rendering/subpass.cc
   function/rendering/target.cc
+
   function/scene_graph/accessor.cc
   function/scene_graph/buffer_view.cc
   function/scene_graph/buffer.cc

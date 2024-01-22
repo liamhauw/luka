@@ -13,9 +13,9 @@ namespace luka {
 
 namespace rd {
 
-Context::Context(std::shared_ptr<Gpu> gpu, SwapchainInfo swapchain_info_,
+Context::Context(std::shared_ptr<Gpu> gpu, const SwapchainInfo& swapchain_info_,
                  vk::raii::SwapchainKHR&& swapchain,
-                 std::vector<std::unique_ptr<Frame>>&& frames)
+                 std::vector<Frame>&& frames)
     : gpu_{gpu},
       swapchain_info_{swapchain_info_},
       swapchain_{std::move(swapchain)},
@@ -161,15 +161,12 @@ Context::Context(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu)
       {vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1}};
 
   for (auto swapchain_image : swapchain_images) {
-    auto target{std::make_unique<rd::Target>(
-        gpu_, swapchain_image, swapchain_image_view_ci, depth_image_ci,
-        depth_image_view_ci)};
-
-    auto frame{std::make_unique<rd::Frame>(std::move(target))};
-
+    rd::Frame frame{gpu_, swapchain_image, swapchain_image_view_ci,
+                    depth_image_ci, depth_image_view_ci};
     frames_.push_back(std::move(frame));
   }
 }
+
 
 }  // namespace rd
 

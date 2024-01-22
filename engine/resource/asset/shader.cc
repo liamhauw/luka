@@ -14,10 +14,10 @@ namespace luka {
 namespace ast {
 
 Shader::Shader(const std::filesystem::path& shader_path) {
-  buffer_ = LoadBinary(shader_path);
+  source_ = LoadText(shader_path);
 }
 
-const std::vector<u8>& Shader::GetBuffer() const { return buffer_; }
+const std::string& Shader::GetSource() const { return source_; }
 
 }  // namespace ast
 

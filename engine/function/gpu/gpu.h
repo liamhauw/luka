@@ -120,6 +120,8 @@ class Gpu {
   void CreateSurface();
   void CreatePhysicalDevice();
   void CreateDevice();
+  void CreateAllocator();
+
   void CreateCommandObjects();
   void CreateSyncObjects();
   void CreateSwapchain();
@@ -127,7 +129,6 @@ class Gpu {
   void CreateFramebuffers();
   void CreatePipelineCache();
   void CreateDescriptorObjects();
-  void CreateAllocator();
 
   void Resize();
 
@@ -187,6 +188,9 @@ class Gpu {
   std::vector<vk::raii::Semaphore> image_available_semaphores_;
   std::vector<vk::raii::Semaphore> render_finished_semaphores_;
 
+  // Allocator.
+  VmaAllocator allocator_;
+
   // Swapchain.
   u32 image_count_;
   vk::Format format_;
@@ -214,9 +218,6 @@ class Gpu {
   vk::raii::DescriptorPool bindless_descriptor_pool_{nullptr};
   vk::raii::DescriptorSetLayout bindless_descriptor_set_layout_{nullptr};
   vk::raii::DescriptorSet bindless_descriptor_set{nullptr};
-
-  // Allocator.
-  VmaAllocator allocator_;
 };
 
 }  // namespace luka

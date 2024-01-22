@@ -20,4 +20,6 @@ SceneGraph::SceneGraph(std::shared_ptr<Asset> asset, std::shared_ptr<Gpu> gpu)
 
 void SceneGraph::Tick() {}
 
+const sg::Map& SceneGraph::GetObject() const { return object_; }
+
 }  // namespace luka

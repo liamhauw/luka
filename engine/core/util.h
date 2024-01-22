@@ -24,6 +24,8 @@ std::string ReplacePathSlash(const std::string& str);
 
 std::vector<u8> LoadBinary(const std::filesystem::path& binary_path);
 
+std::string LoadText(const std::filesystem::path& text_path);
+
 std::vector<f32> D2FVector(const std::vector<f64>& dvector);
 
 }  // namespace luka

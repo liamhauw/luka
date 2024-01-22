@@ -18,7 +18,8 @@ Engine::Engine()
       function_input_{std::make_shared<FunctionInput>(context_, window_)},
       gpu_{std::make_shared<Gpu>(window_)},
       scene_graph_{std::make_shared<SceneGraph>(asset_, gpu_)},
-      rendering_{std::make_shared<Rendering>(window_, gpu_)},
+      rendering_{
+          std::make_shared<Rendering>(asset_, window_, gpu_, scene_graph_)},
       function_ui_{std::make_shared<FunctionUi>()},
       editor_input_{std::make_shared<EditorInput>(context_, window_)},
       editor_ui_{std::make_shared<EditorUi>()} {}

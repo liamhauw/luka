@@ -39,6 +39,21 @@ std::vector<u8> LoadBinary(const std::filesystem::path& binary_path) {
   return binary_data;
 }
 
+std::string LoadText(const std::filesystem::path& text_path) {
+  std::string text_data;
+
+  std::ifstream text_file(text_path.string(), std::ios::in);
+
+  if (!text_file) {
+    THROW("Fail to open {}", text_path.string());
+  }
+
+  text_data = {std::istreambuf_iterator<char>{text_file},
+               std::istreambuf_iterator<char>{}};
+
+  return text_data;
+}
+
 std::vector<f32> D2FVector(const std::vector<f64>& dvector) {
   std::vector<f32> fvector(dvector.begin(), dvector.end());
   return fvector;

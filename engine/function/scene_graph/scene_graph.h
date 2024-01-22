@@ -19,6 +19,8 @@ class SceneGraph {
 
   void Tick();
 
+  const sg::Map& GetObject() const;
+
  private:
   std::shared_ptr<Asset> asset_;
   std::shared_ptr<Gpu> gpu_;

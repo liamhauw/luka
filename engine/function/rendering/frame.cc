@@ -11,7 +11,14 @@ namespace luka {
 
 namespace rd {
 
-Frame::Frame(std::unique_ptr<Target>&& target) : target_{std::move(target)} {}
+Frame::Frame(Target&& target) : target_{std::move(target)} {}
+
+Frame::Frame(std::shared_ptr<Gpu> gpu, vk::Image swapchain_image,
+             vk::ImageViewCreateInfo& swapchain_image_view_ci,
+             const vk::ImageCreateInfo& depth_image_ci,
+             vk::ImageViewCreateInfo depth_image_view_ci)
+    : target_{gpu, swapchain_image, swapchain_image_view_ci, depth_image_ci,
+              depth_image_view_ci} {}
 
 }  // namespace rd
 
