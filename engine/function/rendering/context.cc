@@ -13,16 +13,34 @@ namespace luka {
 
 namespace rd {
 
-Context::Context(std::shared_ptr<Gpu> gpu, const SwapchainInfo& swapchain_info_,
+Context::Context(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu,
+                 const SwapchainInfo& swapchain_info_,
                  vk::raii::SwapchainKHR&& swapchain,
                  std::vector<Frame>&& frames)
-    : gpu_{gpu},
+    : window_{window},
+      gpu_{gpu},
       swapchain_info_{swapchain_info_},
       swapchain_{std::move(swapchain)},
       frames_{std::move(frames)} {}
 
 Context::Context(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu)
-    : gpu_{gpu} {
+    : window_{window}, gpu_{gpu} {
+  CreateSwapchain();
+  CreateFrames();
+}
+
+void Context::Resize() {
+  CreateSwapchain();
+  CreateFrames();
+}
+
+const vk::raii::CommandBuffer& Context::Begin() {}
+
+Frame& Context::GetActiveFrame() {}
+
+void Context::End(const vk::raii::CommandBuffer& command_buffer) {}
+
+void Context::CreateSwapchain() {
   // Image count.
   const vk::SurfaceCapabilitiesKHR& surface_capabilities{
       gpu_->GetSurfaceCapabilities()};
@@ -62,7 +80,7 @@ Context::Context(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu)
       std::numeric_limits<u32>::max()) {
     i32 width{0};
     i32 height{0};
-    window->GetFramebufferSize(&width, &height);
+    window_->GetFramebufferSize(&width, &height);
 
     swapchain_info_.extent.width = std::clamp(
         static_cast<u32>(width), surface_capabilities.minImageExtent.width,
@@ -112,19 +130,20 @@ Context::Context(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu)
       VK_TRUE,
       {}};
 
-  const std::optional<u32>& graphics_queue_index{gpu_->GetGraphicsQueueIndex()};
-  const std::optional<u32>& present_queue_index{gpu_->GetPresentQueueIndex()};
+  u32 graphics_queue_index{gpu_->GetGraphicsQueueIndex()};
+  u32 present_queue_index{gpu_->GetPresentQueueIndex()};
 
-  if (graphics_queue_index.value() != present_queue_index.value()) {
-    u32 queue_family_indices[2]{graphics_queue_index.value(),
-                                present_queue_index.value()};
+  if (graphics_queue_index != present_queue_index) {
+    u32 queue_family_indices[2]{graphics_queue_index, present_queue_index};
     swapchain_ci.imageSharingMode = vk::SharingMode::eConcurrent;
     swapchain_ci.queueFamilyIndexCount = 2;
     swapchain_ci.pQueueFamilyIndices = queue_family_indices;
   }
 
   swapchain_ = gpu_->CreateSwapchain(swapchain_ci);
+}
 
+void Context::CreateFrames() {
   // Create rendering frame.
   std::vector<vk::Image> swapchain_images;
   swapchain_images = swapchain_.getImages();
@@ -160,13 +179,13 @@ Context::Context(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu)
       {},
       {vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1}};
 
+  frames_.clear();
   for (auto swapchain_image : swapchain_images) {
     rd::Frame frame{gpu_, swapchain_image, swapchain_image_view_ci,
                     depth_image_ci, depth_image_view_ci};
     frames_.push_back(std::move(frame));
   }
 }
-
 
 }  // namespace rd
 

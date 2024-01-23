@@ -52,9 +52,24 @@ class Gpu {
   vk::raii::SwapchainKHR CreateSwapchain(
       vk::SwapchainCreateInfoKHR swapchain_ci, const std::string& name = {});
 
-  const std::optional<u32>& GetGraphicsQueueIndex() const;
+  vk::raii::CommandPool CreateCommandPool(
+      const vk::CommandPoolCreateInfo& command_pool_ci,
+      const std::string& name = {});
 
-  const std::optional<u32>& GetPresentQueueIndex() const;
+  vk::raii::CommandBuffers AllocateCommandBuffers(
+      const vk::CommandBufferAllocateInfo& command_buffer_ai,
+      const std::string& name = {});
+
+  vk::raii::Fence CreateFence(const vk::FenceCreateInfo& fence_ci,
+                              const std::string& name = {});
+
+  vk::raii::Semaphore CreateSemaphore0(
+      const vk::SemaphoreCreateInfo& semaphore_ci,
+      const std::string& name = {});
+
+  u32 GetGraphicsQueueIndex() const;
+
+  u32 GetPresentQueueIndex() const;
 
   const vk::SurfaceCapabilitiesKHR& GetSurfaceCapabilities() const;
 

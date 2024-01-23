@@ -25,7 +25,8 @@ struct SwapchainInfo {
 
 class Context {
  public:
-  Context(std::shared_ptr<Gpu> gpu, const SwapchainInfo& swapchain_info,
+  Context(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu,
+          const SwapchainInfo& swapchain_info,
           vk::raii::SwapchainKHR&& swapchain, std::vector<Frame>&& frames);
 
   Context(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu);
@@ -39,6 +40,10 @@ class Context {
   void End(const vk::raii::CommandBuffer& command_buffer);
 
  private:
+  void CreateSwapchain();
+  void CreateFrames();
+
+  std::shared_ptr<Window> window_;
   std::shared_ptr<Gpu> gpu_;
 
   SwapchainInfo swapchain_info_;

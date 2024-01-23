@@ -214,13 +214,67 @@ vk::raii::SwapchainKHR Gpu::CreateSwapchain(
   return swapchain;
 }
 
-const std::optional<u32>& Gpu::GetGraphicsQueueIndex() const {
-  return graphics_queue_index_;
+vk::raii::CommandPool Gpu::CreateCommandPool(
+    const vk::CommandPoolCreateInfo& command_pool_ci, const std::string& name) {
+  vk::raii::CommandPool command_pool{device_, command_pool_ci};
+
+#ifndef NDEBUG
+  SetObjectName(
+      vk::ObjectType::eCommandPool,
+      reinterpret_cast<uint64_t>(static_cast<VkCommandPool>(*command_pool)),
+      name, "command_pool");
+#endif
+
+  return command_pool;
 }
 
-const std::optional<u32>& Gpu::GetPresentQueueIndex() const {
-  return present_queue_index_;
+vk::raii::CommandBuffers Gpu::AllocateCommandBuffers(
+    const vk::CommandBufferAllocateInfo& command_buffer_ai,
+    const std::string& name) {
+  vk::raii::CommandBuffers command_buffers{device_, command_buffer_ai};
+
+#ifndef NDEBUG
+  for (u32 i{0}; i < command_buffers.size(); ++i) {
+    SetObjectName(vk::ObjectType::eCommandBuffer,
+                  reinterpret_cast<uint64_t>(
+                      static_cast<VkCommandBuffer>(*command_buffers[i])),
+                  name, "command_buffer" + std::to_string(i));
+  }
+#endif
+
+  return command_buffers;
 }
+
+vk::raii::Fence Gpu::CreateFence(const vk::FenceCreateInfo& fence_ci,
+                                 const std::string& name) {
+  vk::raii::Fence fence{device_, fence_ci};
+
+#ifndef NDEBUG
+  SetObjectName(vk::ObjectType::eFence,
+                reinterpret_cast<uint64_t>(static_cast<VkFence>(*fence)), name,
+                "fence");
+#endif
+
+  return fence;
+}
+
+vk::raii::Semaphore Gpu::CreateSemaphore0(
+    const vk::SemaphoreCreateInfo& semaphore_ci, const std::string& name) {
+  vk::raii::Semaphore semaphore{device_, semaphore_ci};
+
+#ifndef NDEBUG
+  SetObjectName(
+      vk::ObjectType::eSemaphore,
+      reinterpret_cast<uint64_t>(static_cast<VkSemaphore>(*semaphore)), name,
+      "semaphore");
+#endif
+
+  return semaphore;
+}
+
+u32 Gpu::GetGraphicsQueueIndex() const { return graphics_queue_index_.value(); }
+
+u32 Gpu::GetPresentQueueIndex() const { return present_queue_index_.value(); }
 
 const vk::SurfaceCapabilitiesKHR& Gpu::GetSurfaceCapabilities() const {
   return surface_capabilities_;

@@ -17,17 +17,28 @@ namespace rd {
 
 class Frame {
  public:
-  Frame(Target&& target);
-
   Frame(std::shared_ptr<Gpu> gpu, vk::Image swapchain_image,
         vk::ImageViewCreateInfo& swapchain_image_view_ci,
         const vk::ImageCreateInfo& depth_image_ci,
         vk::ImageViewCreateInfo depth_image_view_ci);
 
-  Target& GetTarget();
+  const Target& GetTarget();
 
  private:
+  void CreateCommandObjects();
+  void CreateSyncObjects();
+  void CreateDescriptorObjects();
+
+  std::shared_ptr<Gpu> gpu_;
+
   Target target_;
+
+  vk::raii::CommandPool command_pool_{nullptr};
+  vk::raii::CommandBuffers command_buffers_{nullptr};
+
+  vk::raii::Fence fence_{nullptr};
+  vk::raii::Semaphore image_available_semaphore_{nullptr};
+  vk::raii::Semaphore render_finished_semaphore_{nullptr};
 };
 
 }  // namespace rd
