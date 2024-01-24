@@ -7,6 +7,8 @@
 
 #include "function/rendering/frame.h"
 
+#include "core/log.h"
+
 namespace luka {
 
 namespace rd {
@@ -18,13 +20,31 @@ Frame::Frame(std::shared_ptr<Gpu> gpu, vk::Image swapchain_image,
     : gpu_{gpu},
       target_{gpu_, swapchain_image, swapchain_image_view_ci, depth_image_ci,
               depth_image_view_ci} {
-  CreateCommandObjects();
   CreateSyncObjects();
+  CreateCommandObjects();
   CreateDescriptorObjects();
 }
 
-const Target& Frame::GetTarget() {
-  return target_;
+const Target& Frame::GetTarget() { return target_; }
+
+const vk::raii::Semaphore& Frame::GetRenderFinishedSemphore() const {
+  return render_finished_semaphore_;
+}
+
+const vk::raii::Fence& Frame::GetCommandFinishedFence() const {
+  return command_finished_fence_;
+}
+
+const vk::raii::CommandBuffer& Frame::GetActiveCommandBuffer() {
+  return command_buffers_[0];
+}
+
+void Frame::CreateSyncObjects() {
+  vk::SemaphoreCreateInfo semaphore_ci;
+  render_finished_semaphore_ = gpu_->CreateSemaphore0(semaphore_ci);
+
+  vk::FenceCreateInfo fence_ci{vk::FenceCreateFlagBits::eSignaled};
+  command_finished_fence_ = gpu_->CreateFence(fence_ci);
 }
 
 void Frame::CreateCommandObjects() {
@@ -35,18 +55,9 @@ void Frame::CreateCommandObjects() {
   command_pool_ = gpu_->CreateCommandPool(command_pool_ci);
 
   vk::CommandBufferAllocateInfo command_buffer_ai{
-      *command_pool_, vk::CommandBufferLevel::ePrimary, 8};
+      *command_pool_, vk::CommandBufferLevel::ePrimary, 1};
 
   command_buffers_ = gpu_->AllocateCommandBuffers(command_buffer_ai);
-}
-
-void Frame::CreateSyncObjects() {
-  vk::FenceCreateInfo fence_ci{vk::FenceCreateFlagBits::eSignaled};
-  fence_ = gpu_->CreateFence(fence_ci);
-
-  vk::SemaphoreCreateInfo semaphore_ci;
-  image_available_semaphore_ = gpu_->CreateSemaphore0(semaphore_ci);
-  render_finished_semaphore_ = gpu_->CreateSemaphore0(semaphore_ci);
 }
 
 void Frame::CreateDescriptorObjects() {}

@@ -24,21 +24,30 @@ class Frame {
 
   const Target& GetTarget();
 
+  const vk::raii::Semaphore& GetRenderFinishedSemphore() const;
+  const vk::raii::Fence& GetCommandFinishedFence() const;
+
+  const vk::raii::CommandBuffer& GetActiveCommandBuffer();
+
  private:
-  void CreateCommandObjects();
   void CreateSyncObjects();
+  void CreateCommandObjects();
   void CreateDescriptorObjects();
 
   std::shared_ptr<Gpu> gpu_;
 
   Target target_;
 
+  vk::raii::Semaphore render_finished_semaphore_{nullptr};
+  vk::raii::Fence command_finished_fence_{nullptr};
+
   vk::raii::CommandPool command_pool_{nullptr};
   vk::raii::CommandBuffers command_buffers_{nullptr};
 
-  vk::raii::Fence fence_{nullptr};
-  vk::raii::Semaphore image_available_semaphore_{nullptr};
-  vk::raii::Semaphore render_finished_semaphore_{nullptr};
+  vk::raii::DescriptorPool normal_descriptor_pool_{nullptr};
+  vk::raii::DescriptorSets normal_descriptor_sets_{nullptr};
+  vk::raii::DescriptorPool bindless_descriptor_pool_{nullptr};
+  vk::raii::DescriptorSet bindless_descriptor_set_{nullptr};
 };
 
 }  // namespace rd

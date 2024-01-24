@@ -272,6 +272,18 @@ vk::raii::Semaphore Gpu::CreateSemaphore0(
   return semaphore;
 }
 
+vk::Result Gpu::WaitForFence(const vk::raii::Fence& fence) {
+  return device_.waitForFences(*fence, VK_TRUE, UINT64_MAX);
+}
+
+void Gpu::ResetFence(const vk::raii::Fence& fence) {
+  device_.resetFences(*fence);
+}
+
+const vk::raii::Queue& Gpu::GetGraphicsQueue() const { return graphics_queue_; }
+
+const vk::raii::Queue& Gpu::GetPresentQueue() const { return present_queue_; }
+
 u32 Gpu::GetGraphicsQueueIndex() const { return graphics_queue_index_.value(); }
 
 u32 Gpu::GetPresentQueueIndex() const { return present_queue_index_.value(); }

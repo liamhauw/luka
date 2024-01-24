@@ -7,38 +7,79 @@
 
 #include "function/rendering/context.h"
 
+#include "core/log.h"
 #include "function/gpu/gpu.h"
 
 namespace luka {
 
 namespace rd {
 
-Context::Context(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu,
-                 const SwapchainInfo& swapchain_info_,
-                 vk::raii::SwapchainKHR&& swapchain,
-                 std::vector<Frame>&& frames)
-    : window_{window},
-      gpu_{gpu},
-      swapchain_info_{swapchain_info_},
-      swapchain_{std::move(swapchain)},
-      frames_{std::move(frames)} {}
-
 Context::Context(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu)
     : window_{window}, gpu_{gpu} {
   CreateSwapchain();
   CreateFrames();
+  CreateAcquiredSemphores();
 }
+
+Context::~Context() { gpu_->WaitIdle(); }
 
 void Context::Resize() {
   CreateSwapchain();
   CreateFrames();
 }
 
-const vk::raii::CommandBuffer& Context::Begin() {}
+Frame& Context::GetActiveFrame() { return frames_[active_frame_index_]; }
 
-Frame& Context::GetActiveFrame() {}
+const vk::raii::CommandBuffer& Context::Begin() {
+  vk::Result result;
+  std::tie(result, active_frame_index_) = swapchain_.acquireNextImage(
+      UINT64_MAX, *(acquired_semaphores_[acquired_semaphore_index]), nullptr);
+  if (result != vk::Result::eSuccess) {
+    THROW("Fail to acqurie next image.");
+  }
 
-void Context::End(const vk::raii::CommandBuffer& command_buffer) {}
+  auto& cur_frame{GetActiveFrame()};
+  const vk::raii::Fence& command_finished_fense(
+      cur_frame.GetCommandFinishedFence());
+  if (gpu_->WaitForFence(command_finished_fense) != vk::Result::eSuccess) {
+    THROW("Fail to wait for fences.");
+  }
+  gpu_->ResetFence(command_finished_fense);
+
+  const vk::raii::CommandBuffer& command_buffer{
+      cur_frame.GetActiveCommandBuffer()};
+  command_buffer.reset({});
+  command_buffer.begin({});
+
+  return command_buffer;
+}
+
+void Context::End(const vk::raii::CommandBuffer& command_buffer) {
+  command_buffer.end();
+
+  auto& cur_frame{GetActiveFrame()};
+  vk::PipelineStageFlags wait_pipeline_stage{
+      vk::PipelineStageFlagBits::eColorAttachmentOutput};
+  vk::SubmitInfo submit_info{*(acquired_semaphores_[acquired_semaphore_index]),
+                             wait_pipeline_stage, *command_buffer,
+                             *(cur_frame.GetRenderFinishedSemphore())};
+
+  const vk::raii::Queue& graphics_queue{gpu_->GetGraphicsQueue()};
+  graphics_queue.submit(submit_info, *(cur_frame.GetCommandFinishedFence()));
+
+  vk::PresentInfoKHR present_info{*(cur_frame.GetRenderFinishedSemphore()),
+                                  *(swapchain_), active_frame_index_};
+
+  const vk::raii::Queue& present_queue{gpu_->GetPresentQueue()};
+
+  vk::Result result{present_queue.presentKHR(present_info)};
+  if (result != vk::Result::eSuccess) {
+    THROW("Fail to present.");
+  }
+
+  acquired_semaphore_index =
+      (acquired_semaphore_index + 1) % acquired_semaphores_.size();
+}
 
 void Context::CreateSwapchain() {
   // Image count.
@@ -184,6 +225,15 @@ void Context::CreateFrames() {
     rd::Frame frame{gpu_, swapchain_image, swapchain_image_view_ci,
                     depth_image_ci, depth_image_view_ci};
     frames_.push_back(std::move(frame));
+  }
+}
+
+void Context::CreateAcquiredSemphores() {
+  u32 acquired_semaphore_count{static_cast<u32>(frames_.size())};
+  acquired_semaphores_.reserve(acquired_semaphore_count);
+  vk::SemaphoreCreateInfo semaphore_ci;
+  for (u32 i = 0; i < acquired_semaphore_count; ++i) {
+    acquired_semaphores_.emplace_back(gpu_->CreateSemaphore0(semaphore_ci));
   }
 }
 

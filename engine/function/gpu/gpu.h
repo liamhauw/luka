@@ -67,6 +67,14 @@ class Gpu {
       const vk::SemaphoreCreateInfo& semaphore_ci,
       const std::string& name = {});
 
+  vk::Result WaitForFence(const vk::raii::Fence& fence);
+
+  void ResetFence(const vk::raii::Fence& fence);
+
+  const vk::raii::Queue& GetGraphicsQueue() const;
+
+  const vk::raii::Queue& GetPresentQueue() const;
+
   u32 GetGraphicsQueueIndex() const;
 
   u32 GetPresentQueueIndex() const;

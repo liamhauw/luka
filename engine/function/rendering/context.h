@@ -25,30 +25,33 @@ struct SwapchainInfo {
 
 class Context {
  public:
-  Context(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu,
-          const SwapchainInfo& swapchain_info,
-          vk::raii::SwapchainKHR&& swapchain, std::vector<Frame>&& frames);
-
   Context(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu);
+  ~Context();
 
   void Resize();
 
-  const vk::raii::CommandBuffer& Begin();
-
   Frame& GetActiveFrame();
+
+  const vk::raii::CommandBuffer& Begin();
 
   void End(const vk::raii::CommandBuffer& command_buffer);
 
  private:
   void CreateSwapchain();
   void CreateFrames();
+  void CreateAcquiredSemphores();
 
   std::shared_ptr<Window> window_;
   std::shared_ptr<Gpu> gpu_;
 
   SwapchainInfo swapchain_info_;
   vk::raii::SwapchainKHR swapchain_{nullptr};
+
   std::vector<Frame> frames_;
+  u32 active_frame_index_{0};
+
+  std::vector<vk::raii::Semaphore> acquired_semaphores_;
+  u32 acquired_semaphore_index{0};
 };
 
 }  // namespace rd
