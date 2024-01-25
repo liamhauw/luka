@@ -21,6 +21,10 @@ class GeometrySubpass : public Subpass {
   GeometrySubpass(std::shared_ptr<Asset> asset,
                   std::shared_ptr<SceneGraph> scene_graph,
                   Context& context);
+  ~GeometrySubpass() = default;
+
+
+  void Draw(const vk::raii::CommandBuffer& command_buffer) override;
 
  private:
   std::vector<sg::Mesh* > meshes_;

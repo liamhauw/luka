@@ -17,6 +17,7 @@ class Image {
   Image() = delete;
   Image(std::nullptr_t) {}
   Image(const VmaAllocator& allocator, const vk::ImageCreateInfo& image_ci);
+  Image(vk::Image image);
   ~Image();
   Image(const Image&) = delete;
   Image(Image&& rhs) noexcept;

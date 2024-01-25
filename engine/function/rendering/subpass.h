@@ -17,11 +17,19 @@ namespace rd {
 class Subpass {
  public:
   Subpass(std::shared_ptr<Asset> asset, Context& context);
+  virtual ~Subpass() = default;
+
+  virtual void Draw(const vk::raii::CommandBuffer& command_buffer) = 0;
 
  private:
   const ast::Shader* vertex_;
   const ast::Shader* fragment_;
+
   Context* context_;
+
+  std::vector<u32> input_attachments_;
+  std::vector<u32> output_attachments_{0};
+  std::vector<u32> color_resolve_attachments_;
 };
 
 }  // namespace rd

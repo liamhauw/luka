@@ -186,8 +186,7 @@ void Context::CreateSwapchain() {
 
 void Context::CreateFrames() {
   // Create rendering frame.
-  std::vector<vk::Image> swapchain_images;
-  swapchain_images = swapchain_.getImages();
+  std::vector<vk::Image> swapchain_images{swapchain_.getImages()};
 
   vk::ImageViewCreateInfo swapchain_image_view_ci{
       {},

@@ -16,6 +16,8 @@ ForwardSubpass::ForwardSubpass(std::shared_ptr<Asset> asset,
                                rd::Context& context)
     : GeometrySubpass{asset, scene_graph, context} {}
 
+void ForwardSubpass::Draw(const vk::raii::CommandBuffer& command_buffer) {}
+
 }  // namespace rd
 
 }  // namespace luka

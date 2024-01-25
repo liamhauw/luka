@@ -31,12 +31,7 @@ void Rendering::Tick() {
     context_.Resize();
   }
 
-  const vk::raii::CommandBuffer& command_buffer{context_.Begin()};
-
-  const rd::Target& target = context_.GetActiveFrame().GetTarget();
-  // pipeline_.Draw(command_buffer, target);
-
-  context_.End(command_buffer);
+  pipeline_.Draw(context_);
 }
 
 }  // namespace luka
