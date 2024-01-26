@@ -39,8 +39,8 @@ const vk::raii::CommandBuffer& Frame::GetActiveCommandBuffer() {
   return command_buffers_[0];
 }
 
-const std::vector<vk::raii::Framebuffer> Frame::GetFramebuffers() const {
-  return framebuffers_;
+const vk::raii::Framebuffer& Frame::GetFramebuffer(u32 i) const {
+  return framebuffers_[i];
 }
 
 void Frame::CreateSyncObjects() {

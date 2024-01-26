@@ -7,7 +7,6 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "function/rendering/context.h"
 #include "resource/asset/asset.h"
 
 namespace luka {
@@ -16,7 +15,7 @@ namespace rd {
 
 class Subpass {
  public:
-  Subpass(std::shared_ptr<Asset> asset, Context& context);
+  Subpass(std::shared_ptr<Asset> asset);
   virtual ~Subpass() = default;
 
   virtual void Draw(const vk::raii::CommandBuffer& command_buffer) = 0;
@@ -28,8 +27,6 @@ class Subpass {
  private:
   const ast::Shader* vertex_;
   const ast::Shader* fragment_;
-
-  Context* context_;
 
   std::vector<u32> input_attachments_;
   std::vector<u32> output_attachments_{0};

@@ -11,10 +11,9 @@ namespace luka {
 
 namespace rd {
 
-Subpass::Subpass(std::shared_ptr<Asset> asset, Context& context)
+Subpass::Subpass(std::shared_ptr<Asset> asset)
     : vertex_{&(asset->GetAssetInfo().vertex)},
-      fragment_{&(asset->GetAssetInfo().fragment)},
-      context_{&context} {}
+      fragment_{&(asset->GetAssetInfo().fragment)} {}
 
 const vk::raii::Pipeline& Subpass::GetPipeline() const { return pipeline_; }
 

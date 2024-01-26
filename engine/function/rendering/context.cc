@@ -17,20 +17,14 @@ namespace rd {
 Context::Context(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu)
     : window_{window}, gpu_{gpu} {
   CreateSwapchain();
+  CreatePasses();
   CreateFrames();
   CreateAcquiredSemphores();
 }
 
 Context::~Context() { gpu_->WaitIdle(); }
 
-void Context::Resize() {
-  CreateSwapchain();
-  CreateFrames();
-}
-
-Frame& Context::GetActiveFrame() { return frames_[active_frame_index_]; }
-
-const std::vector<std::unique_ptr<Pass>> & Context::GetPasses() const { return passes; }
+void Context::Resize() { CreateFrames(); }
 
 const vk::raii::CommandBuffer& Context::Begin() {
   vk::Result result;
@@ -70,7 +64,7 @@ void Context::End(const vk::raii::CommandBuffer& command_buffer) {
   graphics_queue.submit(submit_info, *(cur_frame.GetCommandFinishedFence()));
 
   vk::PresentInfoKHR present_info{*(cur_frame.GetRenderFinishedSemphore()),
-                                  *(swapchain_), active_frame_index_};
+                                  *swapchain_, active_frame_index_};
 
   const vk::raii::Queue& present_queue{gpu_->GetPresentQueue()};
 
@@ -81,6 +75,12 @@ void Context::End(const vk::raii::CommandBuffer& command_buffer) {
 
   acquired_semaphore_index =
       (acquired_semaphore_index + 1) % acquired_semaphores_.size();
+}
+
+Frame& Context::GetActiveFrame() { return frames_[active_frame_index_]; }
+
+const std::vector<std::unique_ptr<Pass>>& Context::GetPasses() const {
+  return passes_;
 }
 
 void Context::CreateSwapchain() {
@@ -115,7 +115,7 @@ void Context::CreateSwapchain() {
     }
   }
 
-  swapchain_info_.format = picked_format.format;
+  swapchain_info_.color_format = picked_format.format;
   swapchain_info_.color_space = picked_format.colorSpace;
 
   // Extent.
@@ -160,7 +160,7 @@ void Context::CreateSwapchain() {
       {},
       {},
       swapchain_info_.image_count,
-      swapchain_info_.format,
+      swapchain_info_.color_format,
       swapchain_info_.color_space,
       swapchain_info_.extent,
       1,
@@ -186,6 +186,12 @@ void Context::CreateSwapchain() {
   swapchain_ = gpu_->CreateSwapchain(swapchain_ci);
 }
 
+void Context::CreatePasses() {
+  std::unique_ptr<Pass> swapchain_pass{
+      std::make_unique<SwapchainPass>(gpu_, swapchain_info_)};
+  passes_.push_back(std::move(swapchain_pass));
+}
+
 void Context::CreateFrames() {
   // Create rendering frame.
   std::vector<vk::Image> swapchain_images{swapchain_.getImages()};
@@ -194,7 +200,7 @@ void Context::CreateFrames() {
       {},
       {},
       vk::ImageViewType::e2D,
-      swapchain_info_.format,
+      swapchain_info_.color_format,
       {},
       {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}};
 

@@ -29,7 +29,7 @@ class Frame {
 
   const vk::raii::CommandBuffer& GetActiveCommandBuffer();
 
-  const std::vector<vk::raii::Framebuffer> GetFramebuffers() const;
+  const vk::raii::Framebuffer& GetFramebuffer(u32 i) const;
 
  private:
   void CreateSyncObjects();

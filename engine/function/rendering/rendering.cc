@@ -16,8 +16,7 @@ Rendering::Rendering(std::shared_ptr<Asset> asset,
       window_{window},
       gpu_{gpu},
       scene_graph_{scene_graph},
-      context_{window_, gpu_},
-      pipeline_{asset_, scene_graph_, context_} {}
+      context_{window_, gpu_} {}
 
 Rendering::~Rendering() { gpu_.reset(); }
 
@@ -30,20 +29,20 @@ void Rendering::Tick() {
   // Resize.
   if (window_->GetFramebufferResized()) {
     window_->SetFramebufferResized(false);
+    context_.Resize();
   }
 
   // Begin frame.
   const vk::raii::CommandBuffer& command_buffer{context_.Begin()};
   const rd::Frame& frame{context_.GetActiveFrame()};
-  const std::vector<vk::raii::Framebuffer>& framebuffers{
-      frame.GetFramebuffers()};
 
-  const std::vector<std::unique_ptr<rd::Pass>> & passes{context_.GetPasses()};
+  // Tarverse passes.
+  const std::vector<std::unique_ptr<rd::Pass>>& passes{context_.GetPasses()};
   for (u32 i{0}; i < passes.size(); ++i) {
     // Begin render pass.
     const std::unique_ptr<rd::Pass>& pass{passes[i]};
     const vk::raii::RenderPass& render_pass{pass->GetRenderPass()};
-    const vk::raii::Framebuffer& framebuffer{framebuffers[i]};
+    const vk::raii::Framebuffer& framebuffer{frame.GetFramebuffer(i)};
     const vk::Rect2D& render_area{pass->GetRenderArea()};
     const std::vector<vk::ClearValue> clear_values{pass->GetClearValues()};
 

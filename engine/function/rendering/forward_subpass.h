@@ -19,7 +19,7 @@ namespace rd {
 class ForwardSubpass : public GeometrySubpass {
  public:
   ForwardSubpass(std::shared_ptr<Asset> asset,
-                 std::shared_ptr<SceneGraph> scene_graph, rd::Context& context);
+                 std::shared_ptr<SceneGraph> scene_graph);
   ~ForwardSubpass() = default;
 
   void Draw(const vk::raii::CommandBuffer& command_buffer) override;

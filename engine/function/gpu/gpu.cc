@@ -272,6 +272,20 @@ vk::raii::Semaphore Gpu::CreateSemaphore0(
   return semaphore;
 }
 
+vk::raii::RenderPass Gpu::CreateRenderPass(
+    const vk::RenderPassCreateInfo& render_pass_ci, const std::string& name) {
+  vk::raii::RenderPass render_pass{device_, render_pass_ci};
+
+#ifndef NDEBUG
+  SetObjectName(
+      vk::ObjectType::eRenderPass,
+      reinterpret_cast<uint64_t>(static_cast<VkRenderPass>(*render_pass)), name,
+      "render_pass");
+#endif
+
+  return render_pass;
+}
+
 vk::Result Gpu::WaitForFence(const vk::raii::Fence& fence) {
   return device_.waitForFences(*fence, VK_TRUE, UINT64_MAX);
 }

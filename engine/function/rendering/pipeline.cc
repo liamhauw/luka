@@ -20,7 +20,7 @@ Pipeline::Pipeline(std::shared_ptr<Asset> asset,
                    std::shared_ptr<SceneGraph> scene_graph,
                    rd::Context& context) {
   auto forward_subpass{
-      std::make_unique<rd::ForwardSubpass>(asset, scene_graph, context)};
+      std::make_unique<rd::ForwardSubpass>(asset, scene_graph)};
   subpasses_.push_back(std::move(forward_subpass));
 }
 

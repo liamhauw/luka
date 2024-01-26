@@ -32,7 +32,6 @@ class Rendering {
   std::shared_ptr<SceneGraph> scene_graph_;
 
   rd::Context context_;
-  rd::Pipeline pipeline_;
 };
 
 }  // namespace luka

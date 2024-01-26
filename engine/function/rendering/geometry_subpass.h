@@ -19,8 +19,7 @@ namespace rd {
 class GeometrySubpass : public Subpass {
  public:
   GeometrySubpass(std::shared_ptr<Asset> asset,
-                  std::shared_ptr<SceneGraph> scene_graph,
-                  Context& context);
+                  std::shared_ptr<SceneGraph> scene_graph);
   ~GeometrySubpass() = default;
 
 

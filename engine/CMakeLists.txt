@@ -33,9 +33,11 @@ set(HEADER_FILES
   function/rendering/forward_subpass.h
   function/rendering/frame.h
   function/rendering/geometry_subpass.h
+  function/rendering/pass.h
   function/rendering/pipeline.h
   function/rendering/rendering.h
   function/rendering/subpass.h
+  function/rendering/swapchain_pass.h
   function/rendering/target.h
 
   function/scene_graph/accessor.h
@@ -86,9 +88,11 @@ set(SOURCE_FILES
   function/rendering/forward_subpass.cc
   function/rendering/frame.cc
   function/rendering/geometry_subpass.cc
+  function/rendering/pass.cc
   function/rendering/pipeline.cc
   function/rendering/rendering.cc
   function/rendering/subpass.cc
+  function/rendering/swapchain_pass.cc
   function/rendering/target.cc
 
   function/scene_graph/accessor.cc
