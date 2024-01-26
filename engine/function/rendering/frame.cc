@@ -39,6 +39,10 @@ const vk::raii::CommandBuffer& Frame::GetActiveCommandBuffer() {
   return command_buffers_[0];
 }
 
+const std::vector<vk::raii::Framebuffer> Frame::GetFramebuffers() const {
+  return framebuffers_;
+}
+
 void Frame::CreateSyncObjects() {
   vk::SemaphoreCreateInfo semaphore_ci;
   render_finished_semaphore_ = gpu_->CreateSemaphore0(semaphore_ci);

@@ -30,6 +30,8 @@ void Context::Resize() {
 
 Frame& Context::GetActiveFrame() { return frames_[active_frame_index_]; }
 
+const std::vector<std::unique_ptr<Pass>> & Context::GetPasses() const { return passes; }
+
 const vk::raii::CommandBuffer& Context::Begin() {
   vk::Result result;
   std::tie(result, active_frame_index_) = swapchain_.acquireNextImage(

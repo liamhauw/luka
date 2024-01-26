@@ -16,6 +16,12 @@ Subpass::Subpass(std::shared_ptr<Asset> asset, Context& context)
       fragment_{&(asset->GetAssetInfo().fragment)},
       context_{&context} {}
 
+const vk::raii::Pipeline& Subpass::GetPipeline() const { return pipeline_; }
+
+const vk::Viewport& Subpass::GetViewport() const { return viewport_; }
+
+const vk::Rect2D& Subpass::GetScissor() const { return scissor_; }
+
 }  // namespace rd
 
 }  // namespace luka

@@ -29,6 +29,8 @@ class Frame {
 
   const vk::raii::CommandBuffer& GetActiveCommandBuffer();
 
+  const std::vector<vk::raii::Framebuffer> GetFramebuffers() const;
+
  private:
   void CreateSyncObjects();
   void CreateCommandObjects();
@@ -48,6 +50,8 @@ class Frame {
   vk::raii::DescriptorSets normal_descriptor_sets_{nullptr};
   vk::raii::DescriptorPool bindless_descriptor_pool_{nullptr};
   vk::raii::DescriptorSet bindless_descriptor_set_{nullptr};
+
+  std::vector<vk::raii::Framebuffer> framebuffers_;
 };
 
 }  // namespace rd

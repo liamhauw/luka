@@ -10,6 +10,7 @@
 #include "function/gpu/gpu.h"
 #include "function/rendering/frame.h"
 #include "function/window/window.h"
+#include "function/rendering/pass.h"
 
 namespace luka {
 
@@ -31,10 +32,13 @@ class Context {
   void Resize();
 
   Frame& GetActiveFrame();
+  
+  const std::vector<std::unique_ptr<Pass>> & GetPasses() const;
 
   const vk::raii::CommandBuffer& Begin();
 
   void End(const vk::raii::CommandBuffer& command_buffer);
+
 
  private:
   void CreateSwapchain();
@@ -52,6 +56,8 @@ class Context {
 
   std::vector<vk::raii::Semaphore> acquired_semaphores_;
   u32 acquired_semaphore_index{0};
+
+  std::vector<std::unique_ptr<Pass>> passes;
 };
 
 }  // namespace rd

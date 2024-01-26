@@ -22,16 +22,66 @@ Rendering::Rendering(std::shared_ptr<Asset> asset,
 Rendering::~Rendering() { gpu_.reset(); }
 
 void Rendering::Tick() {
+  // Iconify.
   if (window_->GetIconified()) {
     return;
   }
 
+  // Resize.
   if (window_->GetFramebufferResized()) {
     window_->SetFramebufferResized(false);
-    context_.Resize();
   }
 
-  pipeline_.Draw(context_);
+  // Begin frame.
+  const vk::raii::CommandBuffer& command_buffer{context_.Begin()};
+  const rd::Frame& frame{context_.GetActiveFrame()};
+  const std::vector<vk::raii::Framebuffer>& framebuffers{
+      frame.GetFramebuffers()};
+
+  const std::vector<std::unique_ptr<rd::Pass>> & passes{context_.GetPasses()};
+  for (u32 i{0}; i < passes.size(); ++i) {
+    // Begin render pass.
+    const std::unique_ptr<rd::Pass>& pass{passes[i]};
+    const vk::raii::RenderPass& render_pass{pass->GetRenderPass()};
+    const vk::raii::Framebuffer& framebuffer{framebuffers[i]};
+    const vk::Rect2D& render_area{pass->GetRenderArea()};
+    const std::vector<vk::ClearValue> clear_values{pass->GetClearValues()};
+
+    vk::RenderPassBeginInfo render_pass_bi{*render_pass, *framebuffer,
+                                           render_area, clear_values};
+    command_buffer.beginRenderPass(render_pass_bi,
+                                   vk::SubpassContents::eInline);
+
+    // Tarverse subpasses.
+    const std::vector<std::unique_ptr<rd::Subpass>>& subpasses{
+        pass->GetSubpasses()};
+    for (u32 j{0}; j < subpasses.size(); ++j) {
+      const std::unique_ptr<rd::Subpass>& subpass{subpasses[j]};
+
+      // Next subpass.
+      if (j > 0) {
+        command_buffer.nextSubpass({});
+      }
+
+      // Bind pipeline.
+      const vk::raii::Pipeline& pipeline{subpass->GetPipeline()};
+      command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline);
+
+      // Set viewport and scissor.
+      const vk::Viewport& viewport{subpass->GetViewport()};
+      const vk::Rect2D& scissor{subpass->GetScissor()};
+      command_buffer.setViewport(0, viewport);
+      command_buffer.setScissor(0, scissor);
+
+      // Draw.
+    }
+
+    // End render pass.
+    command_buffer.endRenderPass();
+  }
+
+  // End frame.
+  context_.End(command_buffer);
 }
 
 }  // namespace luka
