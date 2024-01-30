@@ -17,14 +17,14 @@ namespace rd {
 Context::Context(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu)
     : window_{window}, gpu_{gpu} {
   CreateSwapchain();
-  CreatePasses();
   CreateFrames();
   CreateAcquiredSemphores();
+  CreatePasses();
 }
 
 Context::~Context() { gpu_->WaitIdle(); }
 
-void Context::Resize() { CreateFrames(); }
+void Context::Resize() {}
 
 const vk::raii::CommandBuffer& Context::Begin() {
   vk::Result result;
@@ -34,7 +34,7 @@ const vk::raii::CommandBuffer& Context::Begin() {
     THROW("Fail to acqurie next image.");
   }
 
-  auto& cur_frame{GetActiveFrame()};
+  auto& cur_frame{frames_[active_frame_index_]};
   const vk::raii::Fence& command_finished_fense(
       cur_frame.GetCommandFinishedFence());
   if (gpu_->WaitForFence(command_finished_fense) != vk::Result::eSuccess) {
@@ -53,7 +53,7 @@ const vk::raii::CommandBuffer& Context::Begin() {
 void Context::End(const vk::raii::CommandBuffer& command_buffer) {
   command_buffer.end();
 
-  auto& cur_frame{GetActiveFrame()};
+  auto& cur_frame{frames_[active_frame_index_]};
   vk::PipelineStageFlags wait_pipeline_stage{
       vk::PipelineStageFlagBits::eColorAttachmentOutput};
   vk::SubmitInfo submit_info{*(acquired_semaphores_[acquired_semaphore_index]),
@@ -77,7 +77,7 @@ void Context::End(const vk::raii::CommandBuffer& command_buffer) {
       (acquired_semaphore_index + 1) % acquired_semaphores_.size();
 }
 
-Frame& Context::GetActiveFrame() { return frames_[active_frame_index_]; }
+u32 Context::GetActiveFrameIndex() { return active_frame_index_; }
 
 const std::vector<std::unique_ptr<Pass>>& Context::GetPasses() const {
   return passes_;
@@ -184,64 +184,31 @@ void Context::CreateSwapchain() {
   }
 
   swapchain_ = gpu_->CreateSwapchain(swapchain_ci);
-}
 
-void Context::CreatePasses() {
-  std::unique_ptr<Pass> swapchain_pass{
-      std::make_unique<SwapchainPass>(gpu_, swapchain_info_)};
-  passes_.push_back(std::move(swapchain_pass));
+  swapchain_images_ = swapchain_.getImages();
 }
 
 void Context::CreateFrames() {
-  // Create rendering frame.
-  std::vector<vk::Image> swapchain_images{swapchain_.getImages()};
-
-  vk::ImageViewCreateInfo swapchain_image_view_ci{
-      {},
-      {},
-      vk::ImageViewType::e2D,
-      swapchain_info_.color_format,
-      {},
-      {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}};
-
-  vk::ImageCreateInfo depth_image_ci{
-      {},
-      vk::ImageType::e2D,
-      vk::Format::eD32Sfloat,
-      {swapchain_info_.extent.width, swapchain_info_.extent.height, 1},
-      1,
-      1,
-      vk::SampleCountFlagBits::e1,
-      vk::ImageTiling::eOptimal,
-      vk::ImageUsageFlagBits::eDepthStencilAttachment |
-          vk::ImageUsageFlagBits::eTransientAttachment,
-      vk::SharingMode::eExclusive,
-      {},
-      vk::ImageLayout::eUndefined};
-
-  vk::ImageViewCreateInfo depth_image_view_ci{
-      {},
-      {},
-      vk::ImageViewType::e2D,
-      vk::Format::eD32Sfloat,
-      {},
-      {vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1}};
-
-  frames_.clear();
-  for (auto swapchain_image : swapchain_images) {
-    rd::Frame frame{gpu_, swapchain_image, swapchain_image_view_ci,
-                    depth_image_ci, depth_image_view_ci};
-    frames_.push_back(std::move(frame));
+  frame_count_ = swapchain_images_.size();
+  for (u32 i{0}; i < frame_count_; ++i) {
+    frames_.emplace_back(gpu_);
   }
 }
 
 void Context::CreateAcquiredSemphores() {
-  u32 acquired_semaphore_count{static_cast<u32>(frames_.size())};
-  acquired_semaphores_.reserve(acquired_semaphore_count);
+  acquired_semaphores_.reserve(frame_count_);
   vk::SemaphoreCreateInfo semaphore_ci;
-  for (u32 i = 0; i < acquired_semaphore_count; ++i) {
+  for (u32 i = 0; i < frame_count_; ++i) {
     acquired_semaphores_.emplace_back(gpu_->CreateSemaphore0(semaphore_ci));
   }
+}
+
+void Context::CreatePasses() {
+  // Swapchain pass.
+  std::unique_ptr<Pass> swapchain_pass{std::make_unique<SwapchainPass>(
+      gpu_, frames_, swapchain_info_, swapchain_images_)};
+
+  passes_.push_back(std::move(swapchain_pass));
 }
 
 }  // namespace rd

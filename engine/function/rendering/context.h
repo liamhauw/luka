@@ -27,14 +27,14 @@ class Context {
   const vk::raii::CommandBuffer& Begin();
   void End(const vk::raii::CommandBuffer& command_buffer);
 
-  Frame& GetActiveFrame();
+  u32 GetActiveFrameIndex();
 
   const std::vector<std::unique_ptr<Pass>>& GetPasses() const;
 
  private:
   void CreateSwapchain();
-  void CreatePasses();
   void CreateFrames();
+  void CreatePasses();
   void CreateAcquiredSemphores();
 
   std::shared_ptr<Window> window_;
@@ -42,14 +42,16 @@ class Context {
 
   SwapchainInfo swapchain_info_;
   vk::raii::SwapchainKHR swapchain_{nullptr};
+  std::vector<vk::Image> swapchain_images_;
 
-  std::vector<std::unique_ptr<Pass>> passes_;
-
+  u32 frame_count_{0};
   std::vector<Frame> frames_;
   u32 active_frame_index_{0};
 
   std::vector<vk::raii::Semaphore> acquired_semaphores_;
   u32 acquired_semaphore_index{0};
+
+  std::vector<std::unique_ptr<Pass>> passes_;
 };
 
 }  // namespace rd

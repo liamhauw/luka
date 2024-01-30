@@ -286,6 +286,20 @@ vk::raii::RenderPass Gpu::CreateRenderPass(
   return render_pass;
 }
 
+vk::raii::Framebuffer Gpu::CreateFramebuffer(
+    const vk::FramebufferCreateInfo& framebuffer_ci, const std::string& name) {
+  vk::raii::Framebuffer framebuffer{device_, framebuffer_ci};
+
+#ifndef NDEBUG
+  SetObjectName(
+      vk::ObjectType::eFramebuffer,
+      reinterpret_cast<uint64_t>(static_cast<VkFramebuffer>(*framebuffer)),
+      name, "framebuffer");
+#endif
+
+  return framebuffer;
+}
+
 vk::Result Gpu::WaitForFence(const vk::raii::Fence& fence) {
   return device_.waitForFences(*fence, VK_TRUE, UINT64_MAX);
 }

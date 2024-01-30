@@ -9,7 +9,6 @@
 
 #include "function/gpu/gpu.h"
 #include "function/gpu/image.h"
-#include "function/rendering/target.h"
 
 namespace luka {
 
@@ -17,12 +16,11 @@ namespace rd {
 
 class Frame {
  public:
-  Frame(std::shared_ptr<Gpu> gpu, vk::Image swapchain_image,
-        vk::ImageViewCreateInfo& swapchain_image_view_ci,
-        const vk::ImageCreateInfo& depth_image_ci,
-        vk::ImageViewCreateInfo depth_image_view_ci);
+  Frame(std::shared_ptr<Gpu> gpu);
 
-  const Target& GetTarget();
+  u32 AddImages(std::vector<gpu::Image>&& images);    
+  u32 AddImageViews(std::vector<vk::raii::ImageView>&& image_views);    
+  u32 AddFramebuffer(vk::raii::Framebuffer&& framebuffer);    
 
   const vk::raii::Semaphore& GetRenderFinishedSemphore() const;
   const vk::raii::Fence& GetCommandFinishedFence() const;
@@ -38,7 +36,11 @@ class Frame {
 
   std::shared_ptr<Gpu> gpu_;
 
-  Target target_;
+  // [pass_index][attchment_index]
+  std::vector<std::vector<gpu::Image>> images_;
+  std::vector<std::vector<vk::raii::ImageView>> image_views_;
+  // [pass_index]
+  std::vector<vk::raii::Framebuffer> framebuffers_;   
 
   vk::raii::Semaphore render_finished_semaphore_{nullptr};
   vk::raii::Fence command_finished_fence_{nullptr};
@@ -51,7 +53,6 @@ class Frame {
   vk::raii::DescriptorPool bindless_descriptor_pool_{nullptr};
   vk::raii::DescriptorSet bindless_descriptor_set_{nullptr};
 
-  std::vector<vk::raii::Framebuffer> framebuffers_;
 };
 
 }  // namespace rd

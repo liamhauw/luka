@@ -9,7 +9,6 @@
 
 #include "function/gpu/gpu.h"
 #include "function/rendering/context.h"
-#include "function/rendering/pipeline.h"
 #include "function/scene_graph/scene_graph.h"
 #include "function/window/window.h"
 #include "resource/asset/asset.h"

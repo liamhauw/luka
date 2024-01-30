@@ -71,6 +71,10 @@ class Gpu {
       const vk::RenderPassCreateInfo& render_pass_ci,
       const std::string& name = {});
 
+  vk::raii::Framebuffer CreateFramebuffer(
+      const vk::FramebufferCreateInfo& framebuffer_ci,
+      const std::string& name = {});
+
   vk::Result WaitForFence(const vk::raii::Fence& fence);
 
   void ResetFence(const vk::raii::Fence& fence);

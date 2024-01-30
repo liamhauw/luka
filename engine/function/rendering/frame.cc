@@ -13,19 +13,28 @@ namespace luka {
 
 namespace rd {
 
-Frame::Frame(std::shared_ptr<Gpu> gpu, vk::Image swapchain_image,
-             vk::ImageViewCreateInfo& swapchain_image_view_ci,
-             const vk::ImageCreateInfo& depth_image_ci,
-             vk::ImageViewCreateInfo depth_image_view_ci)
-    : gpu_{gpu},
-      target_{gpu_, swapchain_image, swapchain_image_view_ci, depth_image_ci,
-              depth_image_view_ci} {
+Frame::Frame(std::shared_ptr<Gpu> gpu) : gpu_{gpu} {
   CreateSyncObjects();
   CreateCommandObjects();
   CreateDescriptorObjects();
 }
+u32 Frame::AddImages(std::vector<gpu::Image>&& images) {
+  u32 images_index{static_cast<u32>(images_.size())};
+  images_.push_back(std::move(images));
+  return images_index;
+}
 
-const Target& Frame::GetTarget() { return target_; }
+u32 Frame::AddImageViews(std::vector<vk::raii::ImageView>&& image_views) {
+  u32 image_views_index{static_cast<u32>(image_views_.size())};
+  image_views_.push_back(std::move(image_views));
+  return image_views_index;
+}
+
+u32 Frame::AddFramebuffer(vk::raii::Framebuffer&& framebuffer) {
+  u32 framebuffer_index{static_cast<u32>(framebuffers_.size())};
+  framebuffers_.push_back(std::move(framebuffer));
+  return framebuffer_index;
+}
 
 const vk::raii::Semaphore& Frame::GetRenderFinishedSemphore() const {
   return render_finished_semaphore_;

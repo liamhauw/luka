@@ -34,7 +34,7 @@ void Rendering::Tick() {
 
   // Begin frame.
   const vk::raii::CommandBuffer& command_buffer{context_.Begin()};
-  const rd::Frame& frame{context_.GetActiveFrame()};
+  u32 active_frame_index{context_.GetActiveFrameIndex()};
 
   // Tarverse passes.
   const std::vector<std::unique_ptr<rd::Pass>>& passes{context_.GetPasses()};
@@ -42,7 +42,8 @@ void Rendering::Tick() {
     // Begin render pass.
     const std::unique_ptr<rd::Pass>& pass{passes[i]};
     const vk::raii::RenderPass& render_pass{pass->GetRenderPass()};
-    const vk::raii::Framebuffer& framebuffer{frame.GetFramebuffer(i)};
+    const vk::raii::Framebuffer& framebuffer{
+        pass->GetFramebuffer(active_frame_index)};
     const vk::Rect2D& render_area{pass->GetRenderArea()};
     const std::vector<vk::ClearValue> clear_values{pass->GetClearValues()};
 
