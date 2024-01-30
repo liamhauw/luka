@@ -24,18 +24,16 @@ class Context {
 
   void Resize();
 
-  const vk::raii::CommandBuffer& Begin();
-  void End(const vk::raii::CommandBuffer& command_buffer);
-
-  u32 GetActiveFrameIndex();
-
-  const std::vector<std::unique_ptr<Pass>>& GetPasses() const;
+  void Draw();
 
  private:
   void CreateSwapchain();
   void CreateFrames();
   void CreatePasses();
   void CreateAcquiredSemphores();
+
+  const vk::raii::CommandBuffer& Begin();
+  void End(const vk::raii::CommandBuffer& command_buffer);
 
   std::shared_ptr<Window> window_;
   std::shared_ptr<Gpu> gpu_;

@@ -26,6 +26,57 @@ Context::~Context() { gpu_->WaitIdle(); }
 
 void Context::Resize() {}
 
+void Context::Draw() {
+  // Begin frame.
+  const vk::raii::CommandBuffer& command_buffer{Begin()};
+
+  // Tarverse passes.
+  for (u32 i{0}; i < passes_.size(); ++i) {
+    // Begin render pass.
+    const std::unique_ptr<rd::Pass>& pass{passes_[i]};
+    const vk::raii::RenderPass& render_pass{pass->GetRenderPass()};
+    const vk::raii::Framebuffer& framebuffer{
+        pass->GetFramebuffer(active_frame_index_)};
+    const vk::Rect2D& render_area{pass->GetRenderArea()};
+    const std::vector<vk::ClearValue> clear_values{pass->GetClearValues()};
+
+    vk::RenderPassBeginInfo render_pass_bi{*render_pass, *framebuffer,
+                                           render_area, clear_values};
+    command_buffer.beginRenderPass(render_pass_bi,
+                                   vk::SubpassContents::eInline);
+
+    // Tarverse subpasses.
+    const std::vector<std::unique_ptr<rd::Subpass>>& subpasses{
+        pass->GetSubpasses()};
+    for (u32 j{0}; j < subpasses.size(); ++j) {
+      const std::unique_ptr<rd::Subpass>& subpass{subpasses[j]};
+
+      // Next subpass.
+      if (j > 0) {
+        command_buffer.nextSubpass({});
+      }
+
+      // Set viewport and scissor.
+      const vk::Viewport& viewport{subpass->GetViewport()};
+      const vk::Rect2D& scissor{subpass->GetScissor()};
+      command_buffer.setViewport(0, viewport);
+      command_buffer.setScissor(0, scissor);
+
+      // Bind pipeline.
+      const vk::raii::Pipeline& pipeline{subpass->GetPipeline()};
+      command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline);
+
+      // Draw.
+    }
+
+    // End render pass.
+    command_buffer.endRenderPass();
+  }
+
+  // End frame.
+  End(command_buffer);
+}
+
 const vk::raii::CommandBuffer& Context::Begin() {
   vk::Result result;
   std::tie(result, active_frame_index_) = swapchain_.acquireNextImage(
@@ -75,12 +126,6 @@ void Context::End(const vk::raii::CommandBuffer& command_buffer) {
 
   acquired_semaphore_index =
       (acquired_semaphore_index + 1) % acquired_semaphores_.size();
-}
-
-u32 Context::GetActiveFrameIndex() { return active_frame_index_; }
-
-const std::vector<std::unique_ptr<Pass>>& Context::GetPasses() const {
-  return passes_;
 }
 
 void Context::CreateSwapchain() {
