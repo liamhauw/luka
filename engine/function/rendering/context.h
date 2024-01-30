@@ -33,6 +33,7 @@ class Context {
   void CreateAcquiredSemphores();
 
   const vk::raii::CommandBuffer& Begin();
+  void TarversePasses(const vk::raii::CommandBuffer& command_buffer);
   void End(const vk::raii::CommandBuffer& command_buffer);
 
   std::shared_ptr<Window> window_;

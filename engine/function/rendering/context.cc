@@ -31,6 +31,37 @@ void Context::Draw() {
   const vk::raii::CommandBuffer& command_buffer{Begin()};
 
   // Tarverse passes.
+  TarversePasses(command_buffer);
+
+  // End frame.
+  End(command_buffer);
+}
+
+const vk::raii::CommandBuffer& Context::Begin() {
+  vk::Result result;
+  std::tie(result, active_frame_index_) = swapchain_.acquireNextImage(
+      UINT64_MAX, *(acquired_semaphores_[acquired_semaphore_index]), nullptr);
+  if (result != vk::Result::eSuccess) {
+    THROW("Fail to acqurie next image.");
+  }
+
+  auto& cur_frame{frames_[active_frame_index_]};
+  const vk::raii::Fence& command_finished_fense(
+      cur_frame.GetCommandFinishedFence());
+  if (gpu_->WaitForFence(command_finished_fense) != vk::Result::eSuccess) {
+    THROW("Fail to wait for fences.");
+  }
+  gpu_->ResetFence(command_finished_fense);
+
+  const vk::raii::CommandBuffer& command_buffer{
+      cur_frame.GetActiveCommandBuffer()};
+  command_buffer.reset({});
+  command_buffer.begin({});
+
+  return command_buffer;
+}
+
+void Context::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
   for (u32 i{0}; i < passes_.size(); ++i) {
     // Begin render pass.
     const std::unique_ptr<rd::Pass>& pass{passes_[i]};
@@ -72,33 +103,6 @@ void Context::Draw() {
     // End render pass.
     command_buffer.endRenderPass();
   }
-
-  // End frame.
-  End(command_buffer);
-}
-
-const vk::raii::CommandBuffer& Context::Begin() {
-  vk::Result result;
-  std::tie(result, active_frame_index_) = swapchain_.acquireNextImage(
-      UINT64_MAX, *(acquired_semaphores_[acquired_semaphore_index]), nullptr);
-  if (result != vk::Result::eSuccess) {
-    THROW("Fail to acqurie next image.");
-  }
-
-  auto& cur_frame{frames_[active_frame_index_]};
-  const vk::raii::Fence& command_finished_fense(
-      cur_frame.GetCommandFinishedFence());
-  if (gpu_->WaitForFence(command_finished_fense) != vk::Result::eSuccess) {
-    THROW("Fail to wait for fences.");
-  }
-  gpu_->ResetFence(command_finished_fense);
-
-  const vk::raii::CommandBuffer& command_buffer{
-      cur_frame.GetActiveCommandBuffer()};
-  command_buffer.reset({});
-  command_buffer.begin({});
-
-  return command_buffer;
 }
 
 void Context::End(const vk::raii::CommandBuffer& command_buffer) {
