@@ -16,6 +16,8 @@ set(GLFW_INSTALL OFF)
 add_subdirectory(glfw)
 
 # glm
+set(GLM_ENABLE_CXX_20 ON)
+set(GLM_DISABLE_AUTO_DETECTION ON)
 add_subdirectory(glm)
 
 # imgui
