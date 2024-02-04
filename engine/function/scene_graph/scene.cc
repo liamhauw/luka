@@ -17,7 +17,7 @@ Scene::Scene(std::vector<Node*>&& nodes, const std::string& name)
 Scene::Scene(const std::vector<Node*> node_components,
              const tinygltf::Scene& model_scene)
     : Component{model_scene.name} {
-  const std::vector<int>& model_nodes{model_scene.nodes};
+  const std::vector<i32>& model_nodes{model_scene.nodes};
   for (u32 i{0}; i < model_nodes.size(); ++i) {
     Node* node{node_components[model_nodes[i]]};
     nodes_.push_back(node);
