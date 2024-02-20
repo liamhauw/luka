@@ -16,14 +16,14 @@
   ],
   "buildPresets": [
     {
-      "name": "Release",
-      "configurePreset": "Base",
-      "configuration": "Release"
-    },
-    {
       "name": "Debug",
       "configurePreset": "Base",
       "configuration": "Debug"
+    },
+    {
+      "name": "Release",
+      "configurePreset": "Base",
+      "configuration": "Release"
     },
     {
       "name": "RelWithDebInfo",

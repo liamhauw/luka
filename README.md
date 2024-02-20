@@ -48,6 +48,7 @@ git submodule update --remote
 - [imgui](https://github.com/ocornut/imgui)
 - [json](https://github.com/nlohmann/json)
 - [spdlog](https://github.com/gabime/spdlog)
+- [spirv-cross](https://github.com/KhronosGroup/SPIRV-Cross)
 - [stb](https://github.com/nothings/stb)
 - [tinygltf](https://github.com/syoyo/tinygltf)
 - [vma](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator)
