@@ -15,16 +15,14 @@
 ## Use
 
 ```shell
-# Clone
+# Prepare source code
 git clone --recurse-submodules https://github.com/liamhauw/luka.git
-
-# Pull 
 git pull --recurse-submodules
-
-# Config
-cmake --preset=Base
+cd luka
+python.exe third_party/shaderc/utils/git-sync-deps
 
 # Build
+cmake --preset=Base
 cmake --build --preset=[Debug/Release/RelWithDebInfo]
 
 # Run
@@ -47,6 +45,7 @@ git submodule update --remote
 - [glm](https://github.com/g-truc/glm)
 - [imgui](https://github.com/ocornut/imgui)
 - [json](https://github.com/nlohmann/json)
+- [shaderc](https://github.com/google/shaderc)
 - [spdlog](https://github.com/gabime/spdlog)
 - [spirv-cross](https://github.com/KhronosGroup/SPIRV-Cross)
 - [stb](https://github.com/nothings/stb)
