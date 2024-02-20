@@ -80,6 +80,7 @@ add_subdirectory(vma SYSTEM)
 
 add_library(${PROJECT_NAME})
 target_sources(${PROJECT_NAME} PRIVATE third_party.cc)
+target_compile_features(imgui PRIVATE cxx_std_20)
 target_link_libraries(${PROJECT_NAME} PUBLIC
   Vulkan::Vulkan
   ctpl
