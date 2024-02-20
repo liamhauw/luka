@@ -19,7 +19,7 @@
 git clone --recurse-submodules https://github.com/liamhauw/luka.git
 git pull --recurse-submodules
 cd luka
-python.exe third_party/shaderc/utils/git-sync-deps
+python third_party/shaderc/utils/git-sync-deps
 
 # Build
 cmake --preset=Base
