@@ -44,7 +44,7 @@ std::vector<u32> Shader::Compile(
       source_text_, shader_kind_, input_file_name_.c_str(), options)};
 
   if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
-    THROW("Fail to compile {} to spirv", source_text_);
+    THROW("Fail to compile {} to spirv", input_file_name_);
   }
 
   return std::vector<u32>{result.cbegin(), result.cend()};

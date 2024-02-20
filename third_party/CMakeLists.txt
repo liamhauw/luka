@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.24)
 project(luka_third_party)
 
-set(CMAKE_WARN_DEPRECATED OFF CACHE BOOL "" FORCE)
+
 
 # Vulkan SDK
-find_package(Vulkan REQUIRED COMPONENTS shaderc_combined GLOBAL)
+find_package(Vulkan REQUIRED GLOBAL)
 
 # ctpl
 add_library(ctpl INTERFACE)
@@ -47,6 +47,14 @@ set(JSON_ImplicitConversions OFF CACHE INTERNAL "" FORCE)
 set(JSON_Install OFF CACHE INTERNAL "" FORCE)
 add_subdirectory(json)
 
+# shaderc
+set(SHADERC_SKIP_INSTALL ON)
+set(SHADERC_SKIP_TESTS ON)
+set(SHADERC_SKIP_EXAMPLES ON)
+set(SHADERC_SKIP_COPYRIGHT_CHECK ON)
+set(SHADERC_ENABLE_WERROR_COMPILE OFF)
+add_subdirectory(shaderc)
+
 # spdlog
 add_subdirectory(spdlog)
 
@@ -73,17 +81,15 @@ add_library(${PROJECT_NAME})
 target_sources(${PROJECT_NAME} PRIVATE third_party.cc)
 target_link_libraries(${PROJECT_NAME} PUBLIC
   Vulkan::Vulkan
-  Vulkan::shaderc_combined
   ctpl
   glfw
   glm
   imgui
   nlohmann_json
+  shaderc
   spdlog_header_only
   spirv-cross-glsl
   stb
   tinygltf
   VulkanMemoryAllocator
 )
-
-set(CMAKE_WARN_DEPRECATED TRUE CACHE BOOL "" FORCE)
