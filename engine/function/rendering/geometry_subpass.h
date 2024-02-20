@@ -7,10 +7,7 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "function/rendering/context.h"
 #include "function/rendering/subpass.h"
-#include "function/scene_graph/scene_graph.h"
-#include "resource/asset/asset.h"
 
 namespace luka {
 
@@ -18,15 +15,13 @@ namespace rd {
 
 class GeometrySubpass : public Subpass {
  public:
-  GeometrySubpass(std::shared_ptr<Asset> asset,
+  GeometrySubpass(std::shared_ptr<Asset> asset, std::shared_ptr<Gpu> gpu,
                   std::shared_ptr<SceneGraph> scene_graph);
   ~GeometrySubpass() = default;
 
-
-  void Draw(const vk::raii::CommandBuffer& command_buffer) override;
-
  private:
-  std::vector<sg::Mesh* > meshes_;
+  void CreatePipeline() override;
+  void CreateDrawElements() override;
 };
 
 }  // namespace rd

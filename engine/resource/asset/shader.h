@@ -17,10 +17,10 @@ class Shader {
   
   Shader(const std::filesystem::path& shader_path);
 
-  const std::string& GetSource() const;
+  const std::vector<u8>& GetSource() const;
 
  private:
-  std::string source_;
+  std::vector<u8> source_;
 };
 
 }  // namespace ast

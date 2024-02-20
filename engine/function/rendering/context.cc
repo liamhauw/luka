@@ -14,11 +14,14 @@ namespace luka {
 
 namespace rd {
 
-Context::Context(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu)
-    : window_{window}, gpu_{gpu} {
+Context::Context(std::shared_ptr<Asset> asset, std::shared_ptr<Window> window,
+                 std::shared_ptr<Gpu> gpu,
+                 std::shared_ptr<SceneGraph> scene_graph)
+    : asset_{asset}, window_{window}, gpu_{gpu}, scene_graph_{scene_graph} {
   CreateSwapchain();
   CreateFrames();
   CreateAcquiredSemphores();
+  CreateViewportAndScissor();
   CreatePasses();
 }
 
@@ -27,13 +30,10 @@ Context::~Context() { gpu_->WaitIdle(); }
 void Context::Resize() {}
 
 void Context::Draw() {
-  // Begin frame.
   const vk::raii::CommandBuffer& command_buffer{Begin()};
 
-  // Tarverse passes.
   TarversePasses(command_buffer);
 
-  // End frame.
   End(command_buffer);
 }
 
@@ -62,6 +62,10 @@ const vk::raii::CommandBuffer& Context::Begin() {
 }
 
 void Context::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
+  // Set viewport and scissor.
+  command_buffer.setViewport(0, viewport_);
+  command_buffer.setScissor(0, scissor_);
+
   for (u32 i{0}; i < passes_.size(); ++i) {
     // Begin render pass.
     const std::unique_ptr<rd::Pass>& pass{passes_[i]};
@@ -87,17 +91,14 @@ void Context::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
         command_buffer.nextSubpass({});
       }
 
-      // Set viewport and scissor.
-      const vk::Viewport& viewport{subpass->GetViewport()};
-      const vk::Rect2D& scissor{subpass->GetScissor()};
-      command_buffer.setViewport(0, viewport);
-      command_buffer.setScissor(0, scissor);
-
       // Bind pipeline.
       const vk::raii::Pipeline& pipeline{subpass->GetPipeline()};
       command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline);
 
       // Draw.
+      const std::vector<DrawElement>& draw_elements{subpass->GetDrawElements()};
+      for (const DrawElement& draw_element : draw_elements) {
+      }
     }
 
     // End render pass.
@@ -252,10 +253,24 @@ void Context::CreateAcquiredSemphores() {
   }
 }
 
+void Context::CreateViewportAndScissor() {
+  u32 target_width{swapchain_info_.extent.width};
+  u32 target_height{swapchain_info_.extent.height};
+
+  viewport_ = vk::Viewport{0.0f,
+                           0.0f,
+                           static_cast<f32>(target_width),
+                           static_cast<f32>(target_height),
+                           0.0f,
+                           1.0f};
+  scissor_ =
+      vk::Rect2D{vk::Offset2D{0, 0}, vk::Extent2D{target_width, target_height}};
+}
+
 void Context::CreatePasses() {
   // Swapchain pass.
   std::unique_ptr<Pass> swapchain_pass{std::make_unique<SwapchainPass>(
-      gpu_, frames_, swapchain_info_, swapchain_images_)};
+      asset_, gpu_, scene_graph_, frames_, swapchain_info_, swapchain_images_)};
 
   passes_.push_back(std::move(swapchain_pass));
 }

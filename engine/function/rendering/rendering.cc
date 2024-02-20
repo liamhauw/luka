@@ -16,7 +16,7 @@ Rendering::Rendering(std::shared_ptr<Asset> asset,
       window_{window},
       gpu_{gpu},
       scene_graph_{scene_graph},
-      context_{window_, gpu_} {}
+      context_{asset_, window_, gpu_, scene_graph_} {}
 
 Rendering::~Rendering() { gpu_.reset(); }
 

@@ -11,15 +11,15 @@ namespace luka {
 
 namespace rd {
 
-Subpass::Subpass(std::shared_ptr<Asset> asset)
-    : vertex_{&(asset->GetAssetInfo().vertex)},
-      fragment_{&(asset->GetAssetInfo().fragment)} {}
+Subpass::Subpass(std::shared_ptr<Asset> asset, std::shared_ptr<Gpu> gpu,
+                 std::shared_ptr<SceneGraph> scene_graph)
+    : asset_{asset}, gpu_{gpu}, scene_graph_{scene_graph} {}
 
 const vk::raii::Pipeline& Subpass::GetPipeline() const { return pipeline_; }
 
-const vk::Viewport& Subpass::GetViewport() const { return viewport_; }
-
-const vk::Rect2D& Subpass::GetScissor() const { return scissor_; }
+const std::vector<DrawElement>& Subpass::GetDrawElements() const {
+  return draw_elements_;
+}
 
 }  // namespace rd
 

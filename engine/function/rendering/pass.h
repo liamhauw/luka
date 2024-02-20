@@ -10,6 +10,8 @@
 #include "function/gpu/gpu.h"
 #include "function/rendering/frame.h"
 #include "function/rendering/subpass.h"
+#include "function/scene_graph/scene_graph.h"
+#include "resource/asset/asset.h"
 
 namespace luka {
 
@@ -17,7 +19,8 @@ namespace rd {
 
 class Pass {
  public:
-  Pass(std::shared_ptr<Gpu> gpu, std::vector<Frame>& frames,
+  Pass(std::shared_ptr<Asset> asset, std::shared_ptr<Gpu> gpu,
+       std::shared_ptr<SceneGraph> scene_graph, std::vector<Frame>& frames,
        u32 attachment_count, const std::vector<u32>& color_attachment_indices,
        const std::vector<u32>& resolve_attachment_indices,
        u32 depth_stencil_attachment_index);
@@ -35,7 +38,15 @@ class Pass {
   const std::vector<std::unique_ptr<Subpass>>& GetSubpasses() const;
 
  protected:
+  virtual void CreateRenderPass() = 0;
+  virtual void CreateFramebuffers() = 0;
+  virtual void CreateRenderArea() = 0;
+  virtual void CreateClearValues() = 0;
+  virtual void CreateSubpasses() = 0;
+
+  std::shared_ptr<Asset> asset_;
   std::shared_ptr<Gpu> gpu_;
+  std::shared_ptr<SceneGraph> scene_graph_;
   std::vector<Frame>* frames_;
 
   u32 attachment_count_;

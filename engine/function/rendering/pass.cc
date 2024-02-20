@@ -11,12 +11,15 @@ namespace luka {
 
 namespace rd {
 
-Pass::Pass(std::shared_ptr<Gpu> gpu, std::vector<Frame>& frames,
+Pass::Pass(std::shared_ptr<Asset> asset, std::shared_ptr<Gpu> gpu,
+           std::shared_ptr<SceneGraph> scene_graph, std::vector<Frame>& frames,
            u32 attachment_count,
            const std::vector<u32>& color_attachment_indices,
            const std::vector<u32>& resolve_attachment_indices,
            u32 depth_stencil_attachment_index)
-    : gpu_{gpu},
+    : asset_{asset},
+      gpu_{gpu},
+      scene_graph_{scene_graph},
       frames_{&frames},
       attachment_count_{attachment_count},
       color_attachment_indices_{color_attachment_indices},

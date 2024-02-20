@@ -25,17 +25,18 @@ struct SwapchainInfo {
 
 class SwapchainPass : public Pass {
  public:
-  SwapchainPass(std::shared_ptr<Gpu> gpu, std::vector<Frame>& frames,
-                const SwapchainInfo& swapchain_info,
+  SwapchainPass(std::shared_ptr<Asset> asset, std::shared_ptr<Gpu> gpu,
+                std::shared_ptr<SceneGraph> scene_graph,
+                std::vector<Frame>& frames, const SwapchainInfo& swapchain_info,
                 const std::vector<vk::Image>& swapchain_images);
   ~SwapchainPass() = default;
 
  private:
-  void CreateRenderPass();
-  void CreateFramebuffers();
-  void CreateRenderArea();
-  void CreateClearValues();
-  void CreateSubpasses();
+  void CreateRenderPass() override;
+  void CreateFramebuffers() override;
+  void CreateRenderArea() override;
+  void CreateClearValues() override;
+  void CreateSubpasses() override;
 
   SwapchainInfo swapchain_info_;
   std::vector<vk::Image> swapchain_images_;

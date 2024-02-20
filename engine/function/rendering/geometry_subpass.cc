@@ -12,11 +12,15 @@ namespace luka {
 namespace rd {
 
 GeometrySubpass::GeometrySubpass(std::shared_ptr<Asset> asset,
+                                 std::shared_ptr<Gpu> gpu,
                                  std::shared_ptr<SceneGraph> scene_graph)
-    : Subpass{asset},
-      meshes_{scene_graph->GetObject().GetComponents<sg::Mesh>()} {}
+    : Subpass{asset, gpu, scene_graph} {}
 
-void GeometrySubpass::Draw(const vk::raii::CommandBuffer& command_buffer) {}
+void GeometrySubpass::CreatePipeline() {
+  
+}
+
+void GeometrySubpass::CreateDrawElements() {}
 
 }  // namespace rd
 

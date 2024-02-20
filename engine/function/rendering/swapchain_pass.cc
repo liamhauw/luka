@@ -7,14 +7,18 @@
 
 #include "function/rendering/swapchain_pass.h"
 
+#include "function/rendering/geometry_subpass.h"
+
 namespace luka {
 
 namespace rd {
-SwapchainPass::SwapchainPass(std::shared_ptr<Gpu> gpu,
+SwapchainPass::SwapchainPass(std::shared_ptr<Asset> asset,
+                             std::shared_ptr<Gpu> gpu,
+                             std::shared_ptr<SceneGraph> scene_graph,
                              std::vector<Frame>& frames,
                              const SwapchainInfo& swapchain_info,
                              const std::vector<vk::Image>& swapchain_images)
-    : Pass{gpu, frames, 2, {0}, {}, 1},
+    : Pass{asset, gpu, scene_graph, frames, 2, {0}, {}, 1},
       swapchain_info_{swapchain_info},
       swapchain_images_{swapchain_images} {
   CreateRenderPass();
@@ -109,7 +113,8 @@ void SwapchainPass::CreateFramebuffers() {
     vk::raii::ImageView depth_image_view{
         gpu_->CreateImageView(depth_image_view_ci, "depth")};
 
-    std::vector<vk::ImageView> framebuffer_image_views{*swapchain_image_view, *depth_image_view};
+    std::vector<vk::ImageView> framebuffer_image_views{*swapchain_image_view,
+                                                       *depth_image_view};
     vk::FramebufferCreateInfo framebuffer_ci{{},
                                              *render_pass_,
                                              framebuffer_image_views,
@@ -148,7 +153,11 @@ void SwapchainPass::CreateClearValues() {
       vk::ClearDepthStencilValue{1.0f, 0};
 }
 
-void SwapchainPass::CreateSubpasses() {}
+void SwapchainPass::CreateSubpasses() {
+  std::unique_ptr<Subpass> forward_subpass{
+      std::make_unique<GeometrySubpass>(asset_, gpu_, scene_graph_)};
+  subpasses_.push_back(std::move(forward_subpass));
+}
 
 }  // namespace rd
 
