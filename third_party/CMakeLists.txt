@@ -35,6 +35,7 @@ target_include_directories(imgui PUBLIC
   imgui
   imgui/backends
 )
+target_compile_features(imgui PRIVATE cxx_std_20)
 target_link_libraries(imgui PRIVATE
   Vulkan::Vulkan
   glfw

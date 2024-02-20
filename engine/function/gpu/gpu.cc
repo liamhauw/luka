@@ -914,7 +914,6 @@ void Gpu::CreateDevice() {
   indexing_features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
 
   vk::PhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features;
-  dynamic_rendering_features.pNext = &indexing_features;
   dynamic_rendering_features.dynamicRendering = VK_TRUE;
 
   vk::StructureChain<vk::PhysicalDeviceFeatures2,
