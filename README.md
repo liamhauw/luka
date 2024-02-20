@@ -45,7 +45,7 @@ git submodule update --remote
 - [glm](https://github.com/g-truc/glm)
 - [imgui](https://github.com/ocornut/imgui)
 - [json](https://github.com/nlohmann/json)
-- [shaderc](https://github.com/google/shaderc)
+- [shaderc](https://github.com/liamhauw/shaderc)
 - [spdlog](https://github.com/gabime/spdlog)
 - [spirv-cross](https://github.com/KhronosGroup/SPIRV-Cross)
 - [stb](https://github.com/nothings/stb)
