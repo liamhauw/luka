@@ -3,7 +3,7 @@
   "configs": [
     {
       "object_path": "model/sponza/Sponza.gltf",
-      "shader_path": "shader/pbr/generated"
+      "shader_path": "shader/base"
     }
   ]
 }

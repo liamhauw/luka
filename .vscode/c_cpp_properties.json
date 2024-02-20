@@ -4,6 +4,7 @@
       "name": "Windows0",
       "includePath": [
         "${workspaceFolder}/**",
+        "${workspaceFolder}/third_party/spirv-cross",
         "C:/Program Files/VulkanSDK/1.3.268.0/Include"
       ],
       "defines": [],
@@ -17,6 +18,7 @@
       "name": "Windows1",
       "includePath": [
         "${workspaceFolder}/**",
+        "${workspaceFolder}/third_party/spirv-cross",
         "D:/VulkanSDK/1.3.268.0/Include"
       ],
       "defines": [],
@@ -30,6 +32,7 @@
       "name": "macOS",
       "includePath": [
         "${workspaceFolder}/**",
+        "${workspaceFolder}/third_party/spirv-cross",
         "/usr/local/include"
       ],
       "defines": [],

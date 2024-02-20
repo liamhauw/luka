@@ -22,7 +22,7 @@ struct TypeCast {
 
 std::string ReplacePathSlash(const std::string& str);
 
-std::vector<u8> LoadBinary(const std::filesystem::path& binary_path);
+std::vector<u32> LoadBinary(const std::filesystem::path& binary_path);
 
 std::string LoadText(const std::filesystem::path& text_path);
 

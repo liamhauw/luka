@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.24)
 project(luka_third_party)
 
 set(CMAKE_WARN_DEPRECATED OFF CACHE BOOL "" FORCE)
-cmake_policy(SET CMP0077 NEW)
 
 # Vulkan SDK
 find_package(Vulkan REQUIRED GLOBAL)
@@ -12,13 +11,13 @@ add_library(ctpl INTERFACE)
 target_include_directories(ctpl INTERFACE ctpl)
 
 # glfw
-set(GLFW_BUILD_DOCS OFF)
-set(GLFW_INSTALL OFF)
+set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "" FORCE)
+set(GLFW_INSTALL OFF CACHE INTERNAL "" FORCE)
 add_subdirectory(glfw)
 
 # glm
-set(GLM_ENABLE_CXX_20 ON)
-set(GLM_DISABLE_AUTO_DETECTION ON)
+set(GLM_ENABLE_CXX_20 ON CACHE INTERNAL "" FORCE)
+set(GLM_DISABLE_AUTO_DETECTION ON CACHE INTERNAL "" FORCE)
 add_subdirectory(glm)
 
 # imgui
@@ -42,14 +41,27 @@ target_link_libraries(imgui PRIVATE
 )
 
 # json
-set(JSON_BuildTests OFF)
-set(JSON_GlobalUDLs OFF)
-set(JSON_ImplicitConversions OFF)
-set(JSON_Install OFF)
+set(JSON_BuildTests OFF CACHE INTERNAL "" FORCE)
+set(JSON_GlobalUDLs OFF CACHE INTERNAL "" FORCE)
+set(JSON_ImplicitConversions OFF CACHE INTERNAL "" FORCE)
+set(JSON_Install OFF CACHE INTERNAL "" FORCE)
 add_subdirectory(json)
+
+# shaderc
+set(SHADERC_SKIP_INSTALL ON)
+set(SHADERC_SKIP_TESTS ON)
+set(SHADERC_SKIP_EXAMPLES ON)
+set(SHADERC_SKIP_COPYRIGHT_CHECK ON)
+add_subdirectory(shaderc)
 
 # spdlog
 add_subdirectory(spdlog)
+
+# spirv cross
+set(SPIRV_CROSS_CLI OFF CACHE INTERNAL "" FORCE)
+set(SPIRV_CROSS_ENABLE_TESTS OFF CACHE INTERNAL "" FORCE)
+set(SPIRV_CROSS_SKIP_INSTALL ON CACHE INTERNAL "" FORCE)
+add_subdirectory(spirv-cross)
 
 # stb
 add_library(stb INTERFACE)
@@ -74,6 +86,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
   imgui
   nlohmann_json
   spdlog_header_only
+  spirv-cross-glsl
   stb
   tinygltf
   VulkanMemoryAllocator

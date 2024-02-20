@@ -115,7 +115,6 @@ set(SOURCE_FILES
 )
 
 add_executable(${PROJECT_NAME})
-add_dependencies(${PROJECT_NAME} luka_resource)
 target_sources(${PROJECT_NAME} PRIVATE ${SOURCE_FILES})
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
