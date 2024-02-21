@@ -42,7 +42,7 @@ void GeometrySubpass::CreatePipeline() {
 }
 
 void GeometrySubpass::CreateDrawElements() {
-  const sg::Map object{scene_graph_->GetObject()};
+  const sg::Map& object{scene_graph_->GetObject()};
   const sg::Scene* scene{object.GetScene()};
   const std::vector<sg::Node*>& nodes{scene->GetNodes()};
 

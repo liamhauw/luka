@@ -17,9 +17,7 @@
 ```shell
 # Prepare source code
 git clone --recurse-submodules https://github.com/liamhauw/luka.git
-git pull --recurse-submodules
 cd luka
-python third_party/shaderc/utils/git-sync-deps
 
 # Build
 cmake --preset=Base
@@ -36,6 +34,7 @@ Click Run and Debug in the sidebar, and select Windows Debug or macOS Debug. Cli
 
 ### Update submodule
 ```shell
+git pull --recurse-submodules
 git submodule update --remote
 ```
 
