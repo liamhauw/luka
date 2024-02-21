@@ -40,6 +40,9 @@ class Node : public Component {
   const std::vector<Node*>& GetChildren() const;
   Node* GetParent() const;
 
+  const glm::mat4& GetMarix() const;
+  const Mesh* GetMesh() const;
+
  private:
   glm::mat4 matrix_;
   Mesh* mesh_;

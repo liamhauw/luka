@@ -64,6 +64,8 @@ class Mesh : public Component {
   virtual ~Mesh() = default;
   std::type_index GetType() override;
 
+  const std::vector<Primitive>& GetPrimitives() const;
+
  private:
   std::vector<Primitive> primitives_;
 };

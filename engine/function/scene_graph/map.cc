@@ -62,19 +62,11 @@ const std::unordered_map<std::string, bool>& Map::GetSupportedExtensions()
   return supported_extensions_;
 }
 
-void Map::SetDefaultScene(i32 default_scene) { default_scene_ = default_scene; }
-
 void Map::LoadScene(i32 scene) {
-  i32 scene_index{-1};
-
   auto scene_components{GetComponents<Scene>()};
-  i32 scene_cunt{static_cast<i32>(scene_components.size())};
-  if (scene >= 0 && scene < scene_cunt) {
-    scene_index = scene;
-  } else if (default_scene_ != -1) {
-    scene_index = default_scene_;
-  } else {
-    THROW("Fail to load scene.");
+  i32 scene_count{static_cast<i32>(scene_components.size())};
+  if (scene >= 0 && scene < scene_count) {
+    scene_ = scene;
   }
 
   auto node_components{GetComponents<Node>()};
@@ -82,7 +74,7 @@ void Map::LoadScene(i32 scene) {
     node->ClearParent();
   }
 
-  Scene* cur_scene{scene_components[scene_index]};
+  Scene* cur_scene{scene_components[scene_]};
   const std::vector<Node*>& nodes{cur_scene->GetNodes()};
 
   Node* root_node{nullptr};
@@ -105,6 +97,11 @@ void Map::LoadScene(i32 scene) {
       traverse_nodes.push(std::make_pair(child, child_child));
     }
   }
+}
+
+const sg::Scene* Map::GetScene() const {
+  auto scene_components{GetComponents<sg::Scene>()};
+  return scene_components[scene_];
 }
 
 void Map::ParseExtensionsUsed(
@@ -330,18 +327,14 @@ void Map::ParseSceneComponents(
 }
 
 void Map::ParseDefaultScene(i32 model_default_scene) {
-  i32 default_scene{-1};
-
   i32 scene_count{static_cast<i32>(GetComponents<Scene>().size())};
   if (model_default_scene != -1 && model_default_scene < scene_count) {
-    default_scene = model_default_scene;
+    scene_ = model_default_scene;
   } else if (scene_count > 0) {
-    default_scene = 0;
+    scene_ = 0;
   } else {
-    LOGW("gltf doesn't have default scene.");
+    LOGW("gltf doesn't have scene.");
   }
-
-  SetDefaultScene(default_scene);
 }
 
 }  // namespace sg

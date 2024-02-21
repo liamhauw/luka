@@ -96,6 +96,10 @@ const std::vector<Node*>& Node::GetChildren() const { return children_; }
 
 Node* Node::GetParent() const { return parent_; }
 
+const glm::mat4& Node::GetMarix() const { return matrix_; }
+
+const Mesh* Node::GetMesh() const { return mesh_; }
+
 }  // namespace sg
 
 }  // namespace luka

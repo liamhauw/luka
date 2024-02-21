@@ -16,7 +16,7 @@ namespace luka {
 namespace rd {
 
 struct DrawElement {
-
+  glm::mat4 model;
 };
 
 class Subpass {

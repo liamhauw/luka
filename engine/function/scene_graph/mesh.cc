@@ -133,6 +133,10 @@ Mesh::Mesh(std::shared_ptr<Gpu> gpu,
 
 std::type_index Mesh::GetType() { return typeid(Mesh); }
 
+const std::vector<Primitive>& Mesh::GetPrimitives() const {
+  return primitives_;
+}
+
 }  // namespace sg
 
 }  // namespace luka

@@ -70,9 +70,9 @@ class Map {
 
   const std::unordered_map<std::string, bool>& GetSupportedExtensions() const;
 
-  void SetDefaultScene(i32 default_scene);
-
   void LoadScene(i32 scene = -1);
+
+  const sg::Scene* GetScene() const;
 
  private:
   void ParseExtensionsUsed(
@@ -111,14 +111,14 @@ class Map {
 
   void ParseSceneComponents(const std::vector<tinygltf::Scene>& model_scenes);
 
-  void ParseDefaultScene(i32 model_scene);
+  void ParseDefaultScene(i32 model_default_scene);
 
   std::shared_ptr<Gpu> gpu_;
   std::string name_;
   std::unordered_map<std::type_index, std::vector<std::unique_ptr<Component>>>
       components_;
   std::unordered_map<std::string, bool> supported_extensions_;
-  i32 default_scene_;
+  i32 scene_;
 };
 }  // namespace sg
 
