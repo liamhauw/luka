@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 project(luka_third_party)
 
-
-
 # Vulkan SDK
 find_package(Vulkan REQUIRED GLOBAL)
 
@@ -19,6 +17,14 @@ add_subdirectory(glfw)
 set(GLM_ENABLE_CXX_20 ON CACHE INTERNAL "" FORCE)
 set(GLM_DISABLE_AUTO_DETECTION ON CACHE INTERNAL "" FORCE)
 add_subdirectory(glm)
+
+# glslang
+set(BUILD_EXTERNAL OFF CACHE INTERNAL "" FORCE)
+set(ENABLE_SPVREMAPPER OFF CACHE INTERNAL "" FORCE)
+set(ENABLE_GLSLANG_BINARIES OFF CACHE INTERNAL "" FORCE)
+set(ENABLE_GLSLANG_JS OFF CACHE INTERNAL "" FORCE)
+set(ENABLE_OPT OFF CACHE INTERNAL "" FORCE)
+add_subdirectory(glslang)
 
 # imgui
 add_library(imgui)
@@ -47,14 +53,6 @@ set(JSON_GlobalUDLs OFF CACHE INTERNAL "" FORCE)
 set(JSON_ImplicitConversions OFF CACHE INTERNAL "" FORCE)
 set(JSON_Install OFF CACHE INTERNAL "" FORCE)
 add_subdirectory(json)
-
-# shaderc
-set(SHADERC_SKIP_INSTALL ON)
-set(SHADERC_SKIP_TESTS ON)
-set(SHADERC_SKIP_EXAMPLES ON)
-set(SHADERC_SKIP_COPYRIGHT_CHECK ON)
-set(SHADERC_ENABLE_WERROR_COMPILE OFF)
-add_subdirectory(shaderc)
 
 # spdlog
 add_subdirectory(spdlog)
@@ -86,9 +84,9 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
   ctpl
   glfw
   glm
+  glslang glslang-default-resource-limits SPIRV 
   imgui
   nlohmann_json
-  shaderc
   spdlog_header_only
   spirv-cross-glsl
   stb

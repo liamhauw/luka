@@ -21,13 +21,13 @@ GeometrySubpass::GeometrySubpass(std::shared_ptr<Asset> asset,
 }
 
 void GeometrySubpass::CreatePipeline() {
-  std::vector<u32> vert_spirv{asset_->GetAssetInfo().vertex.Compile()};
-  std::vector<u32> frag_spirv{asset_->GetAssetInfo().fragment.Compile()};
+  std::vector<u32> vert_spirv{asset_->GetAssetInfo().vertex.CompileToSpirv()};
+  std::vector<u32> frag_spirv{asset_->GetAssetInfo().fragment.CompileToSpirv()};
 
   spirv_cross::CompilerGLSL vert_compiler{std::move(vert_spirv)};
   spirv_cross::CompilerGLSL frag_compiler{std::move(frag_spirv)};
 
-  spirv_cross::ShaderResources vert_resources{
+   spirv_cross::ShaderResources vert_resources{
       vert_compiler.get_shader_resources()};
   spirv_cross::ShaderResources frag_resources{
       frag_compiler.get_shader_resources()};

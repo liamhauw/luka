@@ -7,6 +7,10 @@
 
 #include "resource/asset/shader.h"
 
+#include <SPIRV/GlslangToSpv.h>
+#include <SPIRV/Logger.h>
+#include <glslang/Public/ResourceLimits.h>
+
 #include "core/log.h"
 #include "core/util.h"
 
@@ -15,39 +19,52 @@ namespace luka {
 namespace ast {
 
 Shader::Shader(const std::filesystem::path& input_file_name,
-               shaderc_shader_kind shader_kind)
+               EShLanguage language)
     : input_file_name_{input_file_name.string()},
-      shader_kind_{shader_kind},
+      language_{language},
       source_text_{LoadText(input_file_name_)} {}
 
-std::vector<u32> Shader::Compile(
-    std::vector<std::pair<std::string, std::string>> macro_definaitons,
-    bool optimize) const {
-  shaderc::Compiler compiler;
-  shaderc::CompileOptions options;
+std::vector<u32> Shader::CompileToSpirv() const {
+  std::string info_log;
 
-  for (const auto& macro_definaiton : macro_definaitons) {
-    const std::string& name{macro_definaiton.first};
-    const std::string& value{macro_definaiton.second};
-    if (value.empty()) {
-      options.AddMacroDefinition(name);
-    } else {
-      options.AddMacroDefinition(name, value);
-    }
+  glslang::InitializeProcess();
+
+  const char* source_string{source_text_.c_str()};
+  EShMessages messages{static_cast<EShMessages>(
+      EShMsgDefault | EShMsgVulkanRules | EShMsgSpvRules)};
+
+  glslang::TShader shader{language_};
+  shader.setStrings(&source_string, 1);
+  shader.setPreamble("");
+  shader.setEntryPoint("main");
+  shader.setSourceEntryPoint("main");
+  shader.addProcesses({});
+  if (!shader.parse(GetDefaultResources(), 100, false, messages)) {
+    info_log = std::string{shader.getInfoLog()} + "\n" +
+               std::string{shader.getInfoDebugLog()};
+    THROW("{}", info_log);
   }
 
-  if (optimize) {
-    options.SetOptimizationLevel(shaderc_optimization_level_size);
+  glslang::TProgram program;
+  program.addShader(&shader);
+  if (!program.link(messages)) {
+    info_log = std::string{program.getInfoLog()} + "\n" +
+               std::string{program.getInfoDebugLog()};
+    THROW("{}", info_log);
   }
 
-  shaderc::SpvCompilationResult result{compiler.CompileGlslToSpv(
-      source_text_, shader_kind_, input_file_name_.c_str(), options)};
+  glslang::TIntermediate* intermediate{program.getIntermediate(language_)};
 
-  if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
-    THROW("Fail to compile {} to spirv", input_file_name_);
-  }
+  std::vector<std::uint32_t> spirv;
+  spv::SpvBuildLogger logger;
+  glslang::GlslangToSpv(*intermediate, spirv, &logger);
 
-  return std::vector<u32>{result.cbegin(), result.cend()};
+  info_log = logger.getAllMessages();
+  LOGI("{}", info_log);
+
+  glslang::FinalizeProcess();
+
+  return spirv;
 }
 
 }  // namespace ast

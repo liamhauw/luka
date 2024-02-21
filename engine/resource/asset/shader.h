@@ -7,7 +7,7 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include <shaderc/shaderc.hpp>
+#include "glslang/Public/ShaderLang.h"
 
 namespace luka {
 
@@ -17,16 +17,13 @@ class Shader {
  public:
   Shader() = default;
 
-  Shader(const std::filesystem::path& input_file_name,
-         shaderc_shader_kind shader_kind);
+  Shader(const std::filesystem::path& input_file_name, EShLanguage language);
 
-  std::vector<u32> Compile(
-      std::vector<std::pair<std::string, std::string>> macro_definaitons = {},
-      bool optimize = false) const;
+  std::vector<u32> CompileToSpirv() const;
 
  private:
   std::string input_file_name_;
-  shaderc_shader_kind shader_kind_;
+  EShLanguage language_;
   std::string source_text_;
 };
 

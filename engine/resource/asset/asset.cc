@@ -15,10 +15,11 @@ Asset::Asset(std::shared_ptr<Config> config) : config_{config} {
   const ConfigInfo& config_info{config_->GetConfigInfo()};
 
   asset_info_.object = std::move(ast::Model{config_info.object_path});
-  asset_info_.vertex = std::move(ast::Shader{
-      config_info.shader_path / "shader.vert", shaderc_glsl_vertex_shader});
-  asset_info_.fragment = std::move(ast::Shader{
-      config_info.shader_path / "shader.frag", shaderc_glsl_fragment_shader});
+
+  asset_info_.vertex = std::move(
+      ast::Shader{config_info.shader_path / "shader.vert", EShLangVertex});
+  asset_info_.fragment = std::move(
+      ast::Shader{config_info.shader_path / "shader.frag", EShLangFragment});
 }
 
 void Asset::Tick() {}
