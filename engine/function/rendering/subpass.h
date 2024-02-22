@@ -8,6 +8,7 @@
 // clang-format on
 
 #include "function/gpu/gpu.h"
+#include "function/rendering/spirv.h"
 #include "function/scene_graph/scene_graph.h"
 #include "resource/asset/asset.h"
 
@@ -38,6 +39,8 @@ class Subpass {
 
   vk::raii::Pipeline pipeline_{nullptr};
   std::vector<DrawElement> draw_elements_;
+
+  std::map<u64, SPIRV> spirv_shaders_;
 };
 
 }  // namespace rd

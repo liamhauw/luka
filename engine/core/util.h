@@ -20,6 +20,12 @@ struct TypeCast {
   Y operator()(T value) const noexcept { return static_cast<Y>(value); }
 };
 
+template <typename T>
+void HashCombine(u64& seed, const T& value) {
+  std::hash<T> hasher;
+  seed ^= hasher(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+}
+
 std::string ReplacePathSlash(const std::string& str);
 
 std::vector<u32> LoadBinary(const std::filesystem::path& binary_path);

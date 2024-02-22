@@ -39,6 +39,7 @@ struct Primitive {
   Primitive& operator=(const Primitive&) = delete;
   Primitive& operator=(Primitive&& rhs) = default;
 
+
   std::map<std::string, gpu::Buffer> vertex_buffers;
   gpu::Buffer index_buffer{nullptr};
 

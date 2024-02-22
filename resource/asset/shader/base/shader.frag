@@ -16,9 +16,6 @@
  * limitations under the License.
  */
 
-#define MAX_LIGHT_COUNT 8
-#define HAS_BASE_COLOR_TEXTURE
-
 precision highp float;
 
 #ifdef HAS_BASE_COLOR_TEXTURE

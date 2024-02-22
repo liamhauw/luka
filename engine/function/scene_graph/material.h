@@ -21,7 +21,7 @@ enum class AlphaMode { kOpaque, kMask, kBlend };
 
 class Material : public Component {
  public:
-  Material(std::array<sg::Texture*, 5>&& textures,
+  Material(std::map<std::string, Texture*>&& textures,
            glm::vec4&& base_color_factor, f32 metallic_factor,
            f32 roughness_factor, f32 scale, f32 strength,
            glm::vec3&& emissive_factor, AlphaMode alpha_mode, f32 alpha_cutoff,
@@ -33,8 +33,11 @@ class Material : public Component {
   virtual ~Material() = default;
   std::type_index GetType() override;
 
+  const std::map<std::string, Texture*>& GetTextures() const;
+
  private:
-  std::array<sg::Texture*, 5> textures_;
+  std::map<std::string, Texture*> textures_;
+  
   glm::vec4 base_color_factor_;
   f32 metallic_factor_;
   f32 roughness_factor_;

@@ -15,7 +15,23 @@
 #include "imgui_impl_vulkan.h"
 #include "resource/asset/image.h"
 
+namespace std {
+    template <>
+    struct hash<vk::DescriptorSetLayoutCreateInfo> {
+        std::size_t operator()(const vk::DescriptorSetLayoutCreateInfo& info) const {
+            std::size_t seed = 0;
+            // 计算哈希值的逻辑
+            // ...
+            return seed;
+        }
+    };
+}
 namespace luka {
+
+struct ResourceCache {
+  std::unordered_map<u64, vk::raii::DescriptorSetLayout>
+      descriptor_set_layouts_;
+};
 
 class Gpu {
  public:
@@ -99,9 +115,9 @@ class Gpu {
 
   void WaitIdle();
 
-  //   vk::raii::DescriptorSetLayout CreateDescriptorSetLayout(
-  //       const vk::DescriptorSetLayoutCreateInfo& descriptor_set_layout_ci,
-  //       const std::string& name = {});
+  const vk::raii::DescriptorSetLayout& RequestDescriptorSetLayout(
+      const vk::DescriptorSetLayoutCreateInfo& descriptor_set_layout_ci,
+      const std::string& name = {});
 
   //   vk::raii::PipelineLayout CreatePipelineLayout(
   //       const vk::PipelineLayoutCreateInfo& pipeline_layout_ci,
@@ -218,6 +234,8 @@ class Gpu {
   std::vector<u32> used_command_buffer_counts_;
   std::vector<vk::raii::CommandPool> command_pools_;
   std::vector<vk::raii::CommandBuffers> command_buffers_;
+
+  ResourceCache resource_cache_;
 
   //   // Sync objects.
   //   std::vector<vk::raii::Fence> command_executed_fences_;

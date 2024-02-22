@@ -8,6 +8,7 @@
 #include "function/gpu/gpu.h"
 
 #include "core/log.h"
+#include "core/util.h"
 
 namespace luka {
 
@@ -350,21 +351,33 @@ void Gpu::EndTempCommandBuffer(const vk::raii::CommandBuffer& command_buffer) {
 
 void Gpu::WaitIdle() { device_.waitIdle(); }
 
-// vk::raii::DescriptorSetLayout Gpu::CreateDescriptorSetLayout(
-//     const vk::DescriptorSetLayoutCreateInfo& descriptor_set_layout_ci,
-//     const std::string& name) {
-//   vk::raii::DescriptorSetLayout descriptor_set_layout{device_,
-//                                                       descriptor_set_layout_ci};
+const vk::raii::DescriptorSetLayout& Gpu::RequestDescriptorSetLayout(
+    const vk::DescriptorSetLayoutCreateInfo& descriptor_set_layout_ci,
+    const std::string& name) {
+  u64 hash_value{0};
+  HashCombine(hash_value, descriptor_set_layout_ci);
 
-// #ifndef NDEBUG
-//   SetObjectName(vk::ObjectType::eDescriptorSetLayout,
-//                 reinterpret_cast<uint64_t>(
-//                     static_cast<VkDescriptorSetLayout>(*descriptor_set_layout)),
-//                 name, "descriptor_set_layout");
-// #endif
+  std::unordered_map<u64, vk::raii::DescriptorSetLayout>&
+      descriptor_set_layouts_{resource_cache_.descriptor_set_layouts_};
 
-//   return descriptor_set_layout;
-// }
+  auto it{descriptor_set_layouts_.find(hash_value)};
+  if (it != descriptor_set_layouts_.end()) {
+    return it->second;
+  }
+
+  vk::raii::DescriptorSetLayout descriptor_set_layout{device_,
+                                                      descriptor_set_layout_ci};
+#ifndef NDEBUG
+  SetObjectName(vk::ObjectType::eDescriptorSetLayout,
+                reinterpret_cast<uint64_t>(
+                    static_cast<VkDescriptorSetLayout>(*descriptor_set_layout)),
+                name, "descriptor_set_layout");
+#endif
+
+  descriptor_set_layouts_.emplace(hash_value, std::move(descriptor_set_layout));
+
+  return descriptor_set_layouts_[hash_value];
+}
 
 // vk::raii::PipelineLayout Gpu::CreatePipelineLayout(
 //     const vk::PipelineLayoutCreateInfo& pipeline_layout_ci,

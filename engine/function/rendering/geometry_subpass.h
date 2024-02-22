@@ -7,6 +7,7 @@
 #include "platform/pch.h"
 // clang-format on
 
+#include "function/rendering/spirv.h"
 #include "function/rendering/subpass.h"
 
 namespace luka {

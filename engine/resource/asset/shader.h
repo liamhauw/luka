@@ -19,7 +19,10 @@ class Shader {
 
   Shader(const std::filesystem::path& input_file_name, EShLanguage language);
 
-  std::vector<u32> CompileToSpirv() const;
+  u64 GetHashValue(const std::vector<std::string>& processes) const;
+
+  std::vector<u32> CompileToSpirv(
+      const std::vector<std::string>& processes) const;
 
  private:
   std::string input_file_name_;

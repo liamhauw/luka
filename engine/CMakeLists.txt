@@ -21,6 +21,7 @@ set(HEADER_FILES
   resource/asset/image.h
   resource/asset/shader.h
   resource/config/config.h
+  resource/config/generated/source_path.h
   # function
   function/context/context.h
   function/function_input/function_input.h
@@ -34,6 +35,7 @@ set(HEADER_FILES
   function/rendering/geometry_subpass.h
   function/rendering/pass.h
   function/rendering/rendering.h
+  function/rendering/spirv.h
   function/rendering/subpass.h
   function/rendering/swapchain_pass.h
 
@@ -71,7 +73,6 @@ set(SOURCE_FILES
   resource/asset/model.cc
   resource/asset/image.cc
   resource/asset/shader.cc
-  resource/config/generated/source_path.h
   resource/config/config.cc
   # function
   function/context/context.cc
@@ -86,6 +87,7 @@ set(SOURCE_FILES
   function/rendering/geometry_subpass.cc
   function/rendering/pass.cc
   function/rendering/rendering.cc
+  function/rendering/spirv.cc
   function/rendering/subpass.cc
   function/rendering/swapchain_pass.cc
 

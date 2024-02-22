@@ -24,7 +24,20 @@ Shader::Shader(const std::filesystem::path& input_file_name,
       language_{language},
       source_text_{LoadText(input_file_name_)} {}
 
-std::vector<u32> Shader::CompileToSpirv() const {
+u64 Shader::GetHashValue(const std::vector<std::string>& processes) const {
+  std::vector<std::string> svec{processes};
+  svec.push_back(input_file_name_);
+  svec.push_back(source_text_);
+
+  u64 hash_value{0};
+  for (const std::string& str : svec) {
+    HashCombine(hash_value, str);
+  }
+  return hash_value;
+}
+
+std::vector<u32> Shader::CompileToSpirv(
+    const std::vector<std::string>& processes) const {
   std::string info_log;
 
   glslang::InitializeProcess();
@@ -38,7 +51,7 @@ std::vector<u32> Shader::CompileToSpirv() const {
   shader.setPreamble("");
   shader.setEntryPoint("main");
   shader.setSourceEntryPoint("main");
-  shader.addProcesses({});
+  shader.addProcesses(processes);
   if (!shader.parse(GetDefaultResources(), 100, false, messages)) {
     info_log = std::string{shader.getInfoLog()} + "\n" +
                std::string{shader.getInfoDebugLog()};
@@ -60,7 +73,9 @@ std::vector<u32> Shader::CompileToSpirv() const {
   glslang::GlslangToSpv(*intermediate, spirv, &logger);
 
   info_log = logger.getAllMessages();
-  LOGI("{}", info_log);
+  if (!info_log.empty()) {
+    LOGW("{}", info_log);
+  }
 
   glslang::FinalizeProcess();
 
