@@ -104,7 +104,6 @@ void GeometrySubpass::CreateDrawElements() {
       std::vector<const SPIRV*> spirv_shaders{&spirv_vert, &spirv_frag};
 
       std::unordered_map<std::string, ShaderResource> name_shader_resources;
-      std::unordered_map<u32, std::vector<ShaderResource>> set_shader_resources;
 
       for (const auto* spirv_shader : spirv_shaders) {
         const auto& shader_resources{spirv_shader->GetShaderResources()};
@@ -120,18 +119,32 @@ void GeometrySubpass::CreateDrawElements() {
         }
       }
 
+      std::unordered_map<u32, std::vector<ShaderResource>> set_shader_resources;
+
+      std::vector<vk::PushConstantRange> push_constant_ranges;
+
       for (const auto& name_shader_resource : name_shader_resources) {
         const auto& shader_resource{name_shader_resource.second};
 
-        auto it{set_shader_resources.find(shader_resource.set)};
-        if (it != set_shader_resources.end()) {
-          it->second.push_back(shader_resource);
-        } else {
-          set_shader_resources.emplace(
-              shader_resource.set,
-              std::vector<ShaderResource>{shader_resource});
+        if (shader_resource.type == ShaderResourceType::kUniformBuffer ||
+            shader_resource.type == ShaderResourceType::kSampledImage) {
+          auto it{set_shader_resources.find(shader_resource.set)};
+          if (it != set_shader_resources.end()) {
+            it->second.push_back(shader_resource);
+          } else {
+            set_shader_resources.emplace(
+                shader_resource.set,
+                std::vector<ShaderResource>{shader_resource});
+          }
+        } else if (shader_resource.type ==
+                   ShaderResourceType::kPushConstantBuffer) {
+          push_constant_ranges.emplace_back(shader_resource.stage,
+                                            shader_resource.offset,
+                                            shader_resource.size);
         }
       }
+
+      std::vector<vk::DescriptorSetLayout> set_layouts;
 
       for (const auto& set_shader_resource : set_shader_resources) {
         u32 set{set_shader_resource.first};
@@ -162,11 +175,20 @@ void GeometrySubpass::CreateDrawElements() {
 
         const vk::raii::DescriptorSetLayout& descriptor_set_layout{
             gpu_->RequestDescriptorSetLayout(descriptor_set_layout_ci)};
+
+        set_layouts.push_back(*descriptor_set_layout);
       }
+
+      vk::PipelineLayoutCreateInfo pipeline_layout_ci{
+          {}, set_layouts, push_constant_ranges};
+
+      const vk::raii::PipelineLayout& pipeline_layout{
+          gpu_->RequestPipelineLayout(pipeline_layout_ci)};
 
       draw_elements_.push_back(std::move(draw_element));
     }
   }
+
 }
 
 }  // namespace rd

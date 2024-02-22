@@ -357,7 +357,9 @@ const vk::raii::DescriptorSetLayout& Gpu::RequestDescriptorSetLayout(
     const vk::DescriptorSetLayoutCreateInfo& descriptor_set_layout_ci,
     const std::string& name) {
   u64 hash_value{0};
-  HashCombine(hash_value, descriptor_set_layout_ci);
+  for (u32 i{0}; i < descriptor_set_layout_ci.bindingCount; ++i) {
+    HashCombine(hash_value, descriptor_set_layout_ci.pBindings[i]);
+  }
 
   std::unordered_map<u64, vk::raii::DescriptorSetLayout>&
       descriptor_set_layouts_{resource_cache_.descriptor_set_layouts_};
@@ -376,11 +378,44 @@ const vk::raii::DescriptorSetLayout& Gpu::RequestDescriptorSetLayout(
                 name, "descriptor_set_layout");
 #endif
 
-  descriptor_set_layouts_.emplace(hash_value, std::move(descriptor_set_layout));
+  auto it1{descriptor_set_layouts_.emplace(hash_value,
+                                           std::move(descriptor_set_layout))};
 
-  auto it1{descriptor_set_layouts_.find(hash_value)};
+  return it1.first->second;
+}
 
-  return it1->second;
+const vk::raii::PipelineLayout& Gpu::RequestPipelineLayout(
+    const vk::PipelineLayoutCreateInfo& pipeline_layout_ci,
+    const std::string& name) {
+  u64 hash_value{0};
+  HashCombine(hash_value, pipeline_layout_ci.flags);
+  for (u32 i{0}; i < pipeline_layout_ci.setLayoutCount; ++i) {
+    HashCombine(hash_value, pipeline_layout_ci.pSetLayouts[i]);
+  }
+  for (u32 i{0}; i < pipeline_layout_ci.pushConstantRangeCount; ++i) {
+    HashCombine(hash_value, pipeline_layout_ci.pPushConstantRanges[i]);
+  }
+
+  std::unordered_map<u64, vk::raii::PipelineLayout>& pipeline_layouts{
+      resource_cache_.pipeline_layouts_};
+
+  auto it{pipeline_layouts.find(hash_value)};
+  if (it != pipeline_layouts.end()) {
+    return it->second;
+  }
+
+  vk::raii::PipelineLayout pipeline_layout{device_, pipeline_layout_ci};
+
+#ifndef NDEBUG
+  SetObjectName(vk::ObjectType::ePipelineLayout,
+                reinterpret_cast<uint64_t>(
+                    static_cast<VkPipelineLayout>(*pipeline_layout)),
+                name, "pipeline_layout");
+#endif
+
+  auto it1{pipeline_layouts.emplace(hash_value, std::move(pipeline_layout))};
+
+  return it1.first->second;
 }
 
 // vk::raii::PipelineLayout Gpu::CreatePipelineLayout(

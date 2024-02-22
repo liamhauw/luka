@@ -18,7 +18,10 @@ SPIRV::SPIRV(const ast::Shader& shader,
       processes_{processes},
       stage_{stage},
       spirv_{shader_.CompileToSpirv(processes_)} {
-  ParseShaderResource();
+  spirv_cross::CompilerGLSL compiler{spirv_};
+
+  ParseShaderResource(compiler);
+  ParseSpecialization(compiler);
 }
 
 const std::vector<u32>& SPIRV::GetSpirv() const { return spirv_; }
@@ -27,8 +30,7 @@ const std::vector<ShaderResource>& SPIRV::GetShaderResources() const {
   return shader_resources_;
 }
 
-void SPIRV::ParseShaderResource() {
-  spirv_cross::CompilerGLSL compiler{spirv_};
+void SPIRV::ParseShaderResource(const spirv_cross::CompilerGLSL& compiler) {
   spirv_cross::ShaderResources resources{compiler.get_shader_resources()};
 
   // Uniform buffers.
@@ -43,7 +45,7 @@ void SPIRV::ParseShaderResource() {
     shader_resource.array_size = ParseArraySize(compiler, uniform_buffer);
     shader_resource.size = ParseSize(compiler, uniform_buffer);
 
-    shader_resources_.push_back(shader_resource);
+    shader_resources_.push_back(std::move(shader_resource));
   }
 
   // Sampled images.
@@ -57,7 +59,7 @@ void SPIRV::ParseShaderResource() {
     shader_resource.binding = ParseBinding(compiler, sampled_image);
     shader_resource.array_size = ParseArraySize(compiler, sampled_image);
 
-    shader_resources_.push_back(shader_resource);
+    shader_resources_.push_back(std::move(shader_resource));
   }
 
   // Push constant buffers.
@@ -71,40 +73,18 @@ void SPIRV::ParseShaderResource() {
     shader_resource.size =
         ParseSize(compiler, push_constant_buffer) - shader_resource.offset;
 
-    shader_resources_.push_back(shader_resource);
+    shader_resources_.push_back(std::move(shader_resource));
   }
+}
 
-  // Specializtion constants.
+void SPIRV::ParseSpecialization(const spirv_cross::CompilerGLSL& compiler) {
   const auto& specialization_constants{compiler.get_specialization_constants()};
   for (const auto& specialization_constant : specialization_constants) {
-    ShaderResource shader_resource;
-    shader_resource.name = compiler.get_name(specialization_constant.id);
-    shader_resource.type = ShaderResourceType::kSpecializationConstant;
-    shader_resource.stage = stage_;
-    shader_resource.offset = 0;
-    shader_resource.constant_id = specialization_constant.constant_id;
+    SpecializationConstant sc;
+    sc.name = compiler.get_name(specialization_constant.id);
+    sc.constant_id = specialization_constant.constant_id;
 
-    const auto& spirv_type{compiler.get_type(
-        compiler.get_constant(specialization_constant.id).constant_type)};
-    switch (spirv_type.basetype) {
-      case spirv_cross::SPIRType::BaseType::Boolean:
-      case spirv_cross::SPIRType::BaseType::Char:
-      case spirv_cross::SPIRType::BaseType::Int:
-      case spirv_cross::SPIRType::BaseType::UInt:
-      case spirv_cross::SPIRType::BaseType::Float:
-        shader_resource.size = 4;
-        break;
-      case spirv_cross::SPIRType::BaseType::Int64:
-      case spirv_cross::SPIRType::BaseType::UInt64:
-      case spirv_cross::SPIRType::BaseType::Double:
-        shader_resource.size = 8;
-        break;
-      default:
-        shader_resource.size = 0;
-        break;
-    }
-
-    shader_resources_.push_back(shader_resource);
+    specialization_constants_.push_back(sc);
   }
 }
 

@@ -19,8 +19,7 @@ enum class ShaderResourceType {
   kNone,
   kUniformBuffer,
   kSampledImage,
-  kPushConstantBuffer,
-  kSpecializationConstant
+  kPushConstantBuffer
 };
 
 struct ShaderResource {
@@ -32,6 +31,10 @@ struct ShaderResource {
   u32 array_size{UINT32_MAX};
   u64 size{UINT64_MAX};
   u32 offset{UINT32_MAX};
+};
+
+struct SpecializationConstant {
+  std::string name{""};
   u32 constant_id{UINT32_MAX};
 };
 
@@ -46,7 +49,8 @@ class SPIRV {
   const std::vector<ShaderResource>& GetShaderResources() const;
 
  private:
-  void ParseShaderResource();
+  void ParseShaderResource(const spirv_cross::CompilerGLSL& compiler);
+  void ParseSpecialization(const spirv_cross::CompilerGLSL& compiler);
 
   u32 ParseSet(const spirv_cross::CompilerGLSL& compiler,
                const spirv_cross::Resource& resource);
@@ -62,8 +66,11 @@ class SPIRV {
   ast::Shader shader_;
   std::vector<std::string> processes_;
   vk::ShaderStageFlagBits stage_;
+
   std::vector<u32> spirv_;
+
   std::vector<ShaderResource> shader_resources_;
+  std::vector<SpecializationConstant> specialization_constants_;
 };
 
 }  // namespace rd

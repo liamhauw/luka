@@ -48,7 +48,14 @@ std::vector<u32> Shader::CompileToSpirv(
 
   glslang::TShader shader{language_};
   shader.setStrings(&source_string, 1);
-  shader.setPreamble("");
+
+  std::string preamble;
+  for(const std::string& process : processes) {
+    std::string line{"#define " + process.substr(1) + "\n"};
+    preamble += line;
+  }
+  shader.setPreamble(preamble.c_str());
+
   shader.setEntryPoint("main");
   shader.setSourceEntryPoint("main");
   shader.addProcesses(processes);
