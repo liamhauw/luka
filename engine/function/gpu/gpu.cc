@@ -7,6 +7,8 @@
 
 #include "function/gpu/gpu.h"
 
+#include <vulkan/vulkan_hash.hpp>
+
 #include "core/log.h"
 #include "core/util.h"
 
@@ -376,7 +378,9 @@ const vk::raii::DescriptorSetLayout& Gpu::RequestDescriptorSetLayout(
 
   descriptor_set_layouts_.emplace(hash_value, std::move(descriptor_set_layout));
 
-  return descriptor_set_layouts_[hash_value];
+  auto it1{descriptor_set_layouts_.find(hash_value)};
+
+  return it1->second;
 }
 
 // vk::raii::PipelineLayout Gpu::CreatePipelineLayout(

@@ -84,9 +84,9 @@ vec3 apply_spot_light(Light light, vec3 pos, vec3 normal)
 
 layout(set = 0, binding = 4) uniform LightsInfo
 {
-	Light directional_lights[MAX_LIGHT_COUNT];
-	Light point_lights[MAX_LIGHT_COUNT];
-	Light spot_lights[MAX_LIGHT_COUNT];
+	Light directional_lights[8];
+	Light point_lights[8];
+	Light spot_lights[8];
 }
 lights_info;
 

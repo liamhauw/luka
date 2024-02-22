@@ -15,17 +15,6 @@
 #include "imgui_impl_vulkan.h"
 #include "resource/asset/image.h"
 
-namespace std {
-    template <>
-    struct hash<vk::DescriptorSetLayoutCreateInfo> {
-        std::size_t operator()(const vk::DescriptorSetLayoutCreateInfo& info) const {
-            std::size_t seed = 0;
-            // 计算哈希值的逻辑
-            // ...
-            return seed;
-        }
-    };
-}
 namespace luka {
 
 struct ResourceCache {
