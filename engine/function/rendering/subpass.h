@@ -18,6 +18,14 @@ namespace rd {
 
 struct DrawElement {
   glm::mat4 model;
+  vk::Pipeline pipeline;
+  vk::PipelineLayout pipeline_layout;
+  std::vector<vk::DescriptorSet> descriptor_sets;
+
+  std::map<vk::Buffer, sg::VertexAttribute> vertex_buffer_attributes;
+  std::pair<vk::Buffer, sg::IndexAttribute> index_buffer_attribute;
+  u64 vertex_count;
+  bool has_index;
 };
 
 class Subpass {

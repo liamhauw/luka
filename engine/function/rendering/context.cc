@@ -91,13 +91,53 @@ void Context::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
         command_buffer.nextSubpass({});
       }
 
-      // Bind pipeline.
-      const vk::raii::Pipeline& pipeline{subpass->GetPipeline()};
-      command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline);
-
-      // Draw.
+      // Traverse draw elements.
       const std::vector<DrawElement>& draw_elements{subpass->GetDrawElements()};
+
+      vk::Pipeline prev_pipeline{nullptr};
       for (const DrawElement& draw_element : draw_elements) {
+        // Bind pipeline.
+        vk::Pipeline pipeline{draw_element.pipeline};
+        if (prev_pipeline != pipeline) {
+          command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
+                                      pipeline);
+          prev_pipeline = pipeline;
+        }
+
+        // Bind descriptor sets.
+        command_buffer.bindDescriptorSets(
+            vk::PipelineBindPoint::eGraphics, draw_element.pipeline_layout, 0,
+            draw_element.descriptor_sets, nullptr);
+
+        // Bind vertex buffers.
+        const auto& vertex_buffer_attributes{
+            draw_element.vertex_buffer_attributes};
+        for (const auto& location_vertex_buffer : vertex_buffer_attributes) {
+          vk::Buffer vertex_buffer{location_vertex_buffer.first};
+          const sg::VertexAttribute& vertex_attribute{
+              location_vertex_buffer.second};
+
+          command_buffer.bindVertexBuffers(vertex_attribute.location,
+                                           vertex_buffer,
+                                           vertex_attribute.offset);
+        }
+
+        // Bind index buffer and draw indexed.
+        if (!draw_element.has_index) {
+          command_buffer.draw(draw_element.vertex_count, 1, 0, 0);
+        } else {
+          const auto& index_buffer_attribute{
+              draw_element.index_buffer_attribute};
+
+          vk::Buffer index_buffer{index_buffer_attribute.first};
+          const sg::IndexAttribute& index_attribute{
+              index_buffer_attribute.second};
+
+          command_buffer.bindIndexBuffer(index_buffer, index_attribute.offset,
+                                         index_attribute.index_type);
+
+          command_buffer.drawIndexed(index_attribute.count, 1, 0, 0, 0);
+        }
       }
     }
 

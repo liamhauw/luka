@@ -23,6 +23,8 @@ class GeometrySubpass : public Subpass {
  private:
   void CreatePipeline() override;
   void CreateDrawElements() override;
+
+  DrawElement CreateDrawElement(const sg::Primitive& primitive);
 };
 
 }  // namespace rd

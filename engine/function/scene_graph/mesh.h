@@ -23,10 +23,12 @@ struct VertexAttribute {
   vk::Format format{vk::Format::eUndefined};
   u32 stride{0};
   u32 offset{0};
+  u32 location{0};
 };
 
 struct IndexAttribute {
   vk::IndexType index_type{vk::IndexType::eUint16};
+  u64 offset{0};
   u64 count{0};
 };
 
