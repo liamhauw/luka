@@ -54,7 +54,7 @@ const vk::raii::Framebuffer& Frame::GetFramebuffer(u32 i) const {
 
 void Frame::CreateSyncObjects() {
   vk::SemaphoreCreateInfo semaphore_ci;
-  render_finished_semaphore_ = gpu_->CreateSemaphore0(semaphore_ci);
+  render_finished_semaphore_ = gpu_->CreateSemaphoreLuka(semaphore_ci);
 
   vk::FenceCreateInfo fence_ci{vk::FenceCreateFlagBits::eSignaled};
   command_finished_fence_ = gpu_->CreateFence(fence_ci);

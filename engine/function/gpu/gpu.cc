@@ -21,12 +21,7 @@ Gpu::Gpu(std::shared_ptr<Window> window) : window_{window} {
   CreateDevice();
   CreateAllocator();
   CreateCommandObjects();
-  // CreateSyncObjects();
-  // CreateSwapchain();
-  // CreateRenderPass();
-  // CreateFramebuffers();
-  // CreatePipelineCache();
-  // CreateDescriptorObjects();
+  CreateDescriptorObjects();
 }
 
 Gpu::~Gpu() {
@@ -261,7 +256,7 @@ vk::raii::Fence Gpu::CreateFence(const vk::FenceCreateInfo& fence_ci,
   return fence;
 }
 
-vk::raii::Semaphore Gpu::CreateSemaphore0(
+vk::raii::Semaphore Gpu::CreateSemaphoreLuka(
     const vk::SemaphoreCreateInfo& semaphore_ci, const std::string& name) {
   vk::raii::Semaphore semaphore{device_, semaphore_ci};
 
@@ -302,56 +297,6 @@ vk::raii::Framebuffer Gpu::CreateFramebuffer(
 
   return framebuffer;
 }
-
-vk::Result Gpu::WaitForFence(const vk::raii::Fence& fence) {
-  return device_.waitForFences(*fence, VK_TRUE, UINT64_MAX);
-}
-
-void Gpu::ResetFence(const vk::raii::Fence& fence) {
-  device_.resetFences(*fence);
-}
-
-const vk::raii::Queue& Gpu::GetGraphicsQueue() const { return graphics_queue_; }
-
-const vk::raii::Queue& Gpu::GetPresentQueue() const { return present_queue_; }
-
-u32 Gpu::GetGraphicsQueueIndex() const { return graphics_queue_index_.value(); }
-
-u32 Gpu::GetPresentQueueIndex() const { return present_queue_index_.value(); }
-
-const vk::SurfaceCapabilitiesKHR& Gpu::GetSurfaceCapabilities() const {
-  return surface_capabilities_;
-}
-
-const std::vector<vk::SurfaceFormatKHR>& Gpu::GetSurfaceFormats() const {
-  return surface_formats_;
-}
-
-const std::vector<vk::PresentModeKHR>& Gpu::GetSurfacePresentModes() const {
-  return present_modes_;
-}
-
-vk::raii::CommandBuffer Gpu::BeginTempCommandBuffer() {
-  vk::CommandBufferAllocateInfo command_buffer_allocate_info{
-      *command_pools_[back_buffer_index], vk::CommandBufferLevel::ePrimary, 1};
-
-  vk::raii::CommandBuffer command_buffer{std::move(
-      vk::raii::CommandBuffers{device_, command_buffer_allocate_info}.front())};
-
-  vk::CommandBufferBeginInfo command_buffer_begin_info{
-      vk::CommandBufferUsageFlagBits::eOneTimeSubmit};
-  command_buffer.begin(command_buffer_begin_info);
-  return command_buffer;
-}
-
-void Gpu::EndTempCommandBuffer(const vk::raii::CommandBuffer& command_buffer) {
-  command_buffer.end();
-  vk::SubmitInfo submit_info{nullptr, nullptr, *command_buffer};
-  graphics_queue_.submit(submit_info, nullptr);
-  graphics_queue_.waitIdle();
-}
-
-void Gpu::WaitIdle() { device_.waitIdle(); }
 
 const vk::raii::DescriptorSetLayout& Gpu::RequestDescriptorSetLayout(
     const vk::DescriptorSetLayoutCreateInfo& descriptor_set_layout_ci,
@@ -475,298 +420,88 @@ const vk::raii::Pipeline& Gpu::RequestPipeline(
   return it1.first->second;
 }
 
-// vk::raii::PipelineLayout Gpu::CreatePipelineLayout(
-//     const vk::PipelineLayoutCreateInfo& pipeline_layout_ci,
-//     const std::string& name) {
-//   vk::raii::PipelineLayout pipeline_layout{device_, pipeline_layout_ci};
+vk::raii::DescriptorSet Gpu::AllocateDescriptorSet(
+    vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
+    const std::string& name) {
+  descriptor_set_allocate_info.descriptorPool = *descriptor_pool_;
+  vk::raii::DescriptorSet descriptor_set{std::move(
+      device_.allocateDescriptorSets(descriptor_set_allocate_info).front())};
 
-// #ifndef NDEBUG
-//   SetObjectName(vk::ObjectType::ePipelineLayout,
-//                 reinterpret_cast<uint64_t>(
-//                     static_cast<VkPipelineLayout>(*pipeline_layout)),
-//                 name, "pipeline_layout");
-// #endif
+#ifndef NDEBUG
+  SetObjectName(
+      vk::ObjectType::eDescriptorSet,
+      reinterpret_cast<uint64_t>(static_cast<VkDescriptorSet>(*descriptor_set)),
+      name, "descriptor_set");
+#endif
 
-//   return pipeline_layout;
-// }
+  return descriptor_set;
+}
 
-// vk::raii::Pipeline Gpu::CreatePipeline(
-//     const std::vector<u8>& vertex_shader_buffer,
-//     const std::vector<u8>& fragment_shader_buffer,
-//     const std::vector<std::pair<u32, vk::Format>>&
-//     vertex_input_stride_format, const
-//     std::vector<vk::raii::DescriptorSetLayout>& descriptor_set_layout, const
-//     vk::PipelineRenderingCreateInfo& pipeline_rendering_ci, const
-//     std::string& name) {
-//   vk::ShaderModuleCreateInfo vertex_shader_module_ci{
-//       {},
-//       vertex_shader_buffer.size(),
-//       reinterpret_cast<const u32*>(vertex_shader_buffer.data())};
-//   vk::ShaderModuleCreateInfo fragment_shader_module_ci{
-//       {},
-//       fragment_shader_buffer.size(),
-//       reinterpret_cast<const u32*>(fragment_shader_buffer.data())};
+void Gpu::UpdateDescriptorSets(
+    const std::vector<vk::WriteDescriptorSet>& writes) {
+  device_.updateDescriptorSets(writes, nullptr);
+}
 
-//   vk::raii::ShaderModule vertex_shader_module{device_,
-//   vertex_shader_module_ci}; vk::raii::ShaderModule
-//   fragment_shader_module{device_,
-//                                                 fragment_shader_module_ci};
+vk::Result Gpu::WaitForFence(const vk::raii::Fence& fence) {
+  return device_.waitForFences(*fence, VK_TRUE, UINT64_MAX);
+}
 
-//   std::vector<vk::PipelineShaderStageCreateInfo> shader_stage_cis{
-//       {{},
-//        vk::ShaderStageFlagBits::eVertex,
-//        *vertex_shader_module,
-//        "main",
-//        nullptr},
-//       {{},
-//        vk::ShaderStageFlagBits::eFragment,
-//        *fragment_shader_module,
-//        "main",
-//        nullptr}};
+void Gpu::ResetFence(const vk::raii::Fence& fence) {
+  device_.resetFences(*fence);
+}
 
-//   vk::PipelineVertexInputStateCreateInfo vertex_input_state_ci;
+const vk::raii::Queue& Gpu::GetGraphicsQueue() const { return graphics_queue_; }
 
-//   std::vector<vk::VertexInputBindingDescription>
-//       vertex_input_binding_descriptions;
-//   std::vector<vk::VertexInputAttributeDescription>
-//       vertex_input_attribute_descriptions;
+const vk::raii::Queue& Gpu::GetPresentQueue() const { return present_queue_; }
 
-//   for (u32 i = 0; i < vertex_input_stride_format.size(); ++i) {
-//     vertex_input_binding_descriptions.emplace_back(
-//         i, vertex_input_stride_format[i].first);
-//     vertex_input_attribute_descriptions.emplace_back(
-//         i, i, vertex_input_stride_format[i].second, 0);
-//   }
+u32 Gpu::GetGraphicsQueueIndex() const { return graphics_queue_index_.value(); }
 
-//   vertex_input_state_ci.setVertexBindingDescriptions(
-//       vertex_input_binding_descriptions);
-//   vertex_input_state_ci.setVertexAttributeDescriptions(
-//       vertex_input_attribute_descriptions);
+u32 Gpu::GetPresentQueueIndex() const { return present_queue_index_.value(); }
 
-//   vk::PipelineInputAssemblyStateCreateInfo input_assembly_state_ci{
-//       {}, vk::PrimitiveTopology::eTriangleList, VK_FALSE};
+const vk::SurfaceCapabilitiesKHR& Gpu::GetSurfaceCapabilities() const {
+  return surface_capabilities_;
+}
 
-//   vk::PipelineViewportStateCreateInfo viewport_state_ci{
-//       {}, 1, nullptr, 1, nullptr};
+const std::vector<vk::SurfaceFormatKHR>& Gpu::GetSurfaceFormats() const {
+  return surface_formats_;
+}
 
-//   vk::PipelineRasterizationStateCreateInfo rasterization_state_ci{
-//       {},
-//       VK_FALSE,
-//       VK_FALSE,
-//       vk::PolygonMode::eFill,
-//       vk::CullModeFlagBits::eBack,
-//       vk::FrontFace::eCounterClockwise,
-//       VK_FALSE,
-//       0.0f,
-//       0.0f,
-//       0.0f,
-//       1.0f};
+const std::vector<vk::PresentModeKHR>& Gpu::GetSurfacePresentModes() const {
+  return present_modes_;
+}
 
-//   vk::PipelineMultisampleStateCreateInfo multisample_state_ci{
-//       {}, vk::SampleCountFlagBits::e1};
+vk::raii::CommandBuffer Gpu::BeginTempCommandBuffer() {
+  vk::CommandBufferAllocateInfo command_buffer_allocate_info{
+      *command_pools_[back_buffer_index], vk::CommandBufferLevel::ePrimary, 1};
 
-//   vk::PipelineDepthStencilStateCreateInfo depth_stencil_state_ci{
-//       {}, VK_TRUE, VK_TRUE, vk::CompareOp::eLessOrEqual, VK_FALSE, VK_FALSE,
-//   };
+  vk::raii::CommandBuffer command_buffer{std::move(
+      vk::raii::CommandBuffers{device_, command_buffer_allocate_info}.front())};
 
-//   vk::ColorComponentFlags color_component_flags{
-//       vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
-//       vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA};
-//   vk::PipelineColorBlendAttachmentState color_blend_attachment_state{
-//       VK_FALSE,          vk::BlendFactor::eZero, vk::BlendFactor::eZero,
-//       vk::BlendOp::eAdd, vk::BlendFactor::eZero, vk::BlendFactor::eZero,
-//       vk::BlendOp::eAdd, color_component_flags};
+  vk::CommandBufferBeginInfo command_buffer_begin_info{
+      vk::CommandBufferUsageFlagBits::eOneTimeSubmit};
+  command_buffer.begin(command_buffer_begin_info);
+  return command_buffer;
+}
 
-//   vk::PipelineColorBlendStateCreateInfo color_blend_state_ci{
-//       {},
-//       VK_FALSE,
-//       {},
-//       color_blend_attachment_state,
-//       {{0.0f, 0.0f, 0.0f, 0.0f}}};
+void Gpu::EndTempCommandBuffer(const vk::raii::CommandBuffer& command_buffer) {
+  command_buffer.end();
+  vk::SubmitInfo submit_info{nullptr, nullptr, *command_buffer};
+  graphics_queue_.submit(submit_info, nullptr);
+  graphics_queue_.waitIdle();
+}
 
-//   std::array<vk::DynamicState, 2> dynamic_states{vk::DynamicState::eViewport,
-//                                                  vk::DynamicState::eScissor};
-//   vk::PipelineDynamicStateCreateInfo dynamic_state_ci{{}, dynamic_states};
+void Gpu::WaitIdle() { device_.waitIdle(); }
 
-//   std::vector<vk::DescriptorSetLayout> descriptor_set_layout_with_bindless;
-//   for (u32 i{0}; i < descriptor_set_layout.size(); ++i) {
-//     descriptor_set_layout_with_bindless.push_back(*descriptor_set_layout[i]);
-//   }
-//   descriptor_set_layout_with_bindless.push_back(
-//       *bindless_descriptor_set_layout_);
+void Gpu::BeginLabel(const vk::raii::CommandBuffer& command_buffer,
+                     const std::string& label,
+                     const std::array<f32, 4>& color) {
+  vk::DebugUtilsLabelEXT debug_utils_label{label.c_str(), color};
+  command_buffer.beginDebugUtilsLabelEXT(debug_utils_label);
+}
 
-//   vk::PipelineLayoutCreateInfo pipeline_layout_ci{
-//       {}, descriptor_set_layout_with_bindless};
-//   pipeline_layout_ = CreatePipelineLayout(pipeline_layout_ci);
-
-//   vk::StructureChain<vk::GraphicsPipelineCreateInfo,
-//                      vk::PipelineRenderingCreateInfo>
-//       graphics_pipeline_ci{{{},
-//                             shader_stage_cis,
-//                             &vertex_input_state_ci,
-//                             &input_assembly_state_ci,
-//                             nullptr,
-//                             &viewport_state_ci,
-//                             &rasterization_state_ci,
-//                             &multisample_state_ci,
-//                             &depth_stencil_state_ci,
-//                             &color_blend_state_ci,
-//                             &dynamic_state_ci,
-//                             *pipeline_layout_,
-//                             nullptr},
-//                            pipeline_rendering_ci};
-
-//   vk::raii::Pipeline pipeline{
-//       device_, nullptr,
-//       graphics_pipeline_ci.get<vk::GraphicsPipelineCreateInfo>()};
-
-// #ifndef NDEBUG
-//   SetObjectName(vk::ObjectType::ePipeline,
-//                 reinterpret_cast<uint64_t>(static_cast<VkPipeline>(*pipeline)),
-//                 name, "pipeline");
-// #endif
-
-//   return pipeline;
-// }
-
-// vk::raii::DescriptorSet Gpu::AllocateDescriptorSet(
-//     vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
-//     const std::string& name) {
-//   descriptor_set_allocate_info.descriptorPool = *descriptor_pool_;
-//   vk::raii::DescriptorSet descriptor_set{std::move(
-//       device_.allocateDescriptorSets(descriptor_set_allocate_info).front())};
-
-// #ifndef NDEBUG
-//   SetObjectName(
-//       vk::ObjectType::eDescriptorSet,
-//       reinterpret_cast<uint64_t>(static_cast<VkDescriptorSet>(*descriptor_set)),
-//       name, "descriptor_set");
-// #endif
-
-//   return descriptor_set;
-// }
-
-// void Gpu::UpdateDescriptorSets(
-//     const std::vector<vk::WriteDescriptorSet>& writes) {
-//   device_.updateDescriptorSets(writes, nullptr);
-// }
-
-// const vk::raii::CommandBuffer& Gpu::BeginFrame() {
-//   used_command_buffer_counts_[back_buffer_index] = 0;
-
-//   if (device_.waitForFences(*(command_executed_fences_[back_buffer_index]),
-//                             VK_TRUE, UINT64_MAX) != vk::Result::eSuccess) {
-//     THROW("Fail to wait for fences.");
-//   }
-
-//   // vk::Result result;
-//   // std::tie(result, image_index_) = swapchain_.acquireNextImage(
-//   //     UINT64_MAX, *image_available_semaphores_[back_buffer_index],
-//   nullptr);
-//   // if (result != vk::Result::eSuccess) {
-//   //   THROW("Fail to acqurie next image.");
-//   // }
-
-//   device_.resetFences(*(command_executed_fences_[back_buffer_index]));
-
-//   u32 index{used_command_buffer_counts_[back_buffer_index]};
-//   if (index >= kMaxUsedCommandBufferCountperFrame) {
-//     THROW("Fail to get command buffer.");
-//   }
-//   ++used_command_buffer_counts_[back_buffer_index];
-
-//   const vk::raii::CommandBuffer& command_buffer{
-//       command_buffers_[back_buffer_index][index]};
-//   command_buffer.reset({});
-//   command_buffer.begin({});
-
-//   return command_buffer;
-// }
-
-// void Gpu::EndFrame(const vk::raii::CommandBuffer& command_buffer) {
-// #ifndef NDEBUG
-//   command_buffer.endDebugUtilsLabelEXT();
-// #endif
-//   command_buffer.end();
-//   vk::PipelineStageFlags wait_stage{
-//       vk::PipelineStageFlagBits::eColorAttachmentOutput};
-//   vk::SubmitInfo
-//   submit_info{*(image_available_semaphores_[back_buffer_index]),
-//                              wait_stage, *command_buffer,
-//                              *(render_finished_semaphores_[back_buffer_index])};
-//   graphics_queue_.submit(submit_info,
-//                          *(command_executed_fences_[back_buffer_index]));
-
-//   vk::PresentInfoKHR presten_info_khr{
-//       *(render_finished_semaphores_[back_buffer_index]), *swapchain_,
-//       image_index_};
-
-//   vk::Result result{present_queue_.presentKHR(presten_info_khr)};
-//   if (result != vk::Result::eSuccess) {
-//     THROW("Fail to present.");
-//   }
-
-//   back_buffer_index = (back_buffer_index + 1) % kBackBufferCount;
-// }
-
-// void Gpu::BeginLabel(const vk::raii::CommandBuffer& command_buffer,
-//                      const std::string& label,
-//                      const std::array<f32, 4>& color) {
-//   vk::DebugUtilsLabelEXT debug_utils_label{label.c_str(), color};
-//   command_buffer.beginDebugUtilsLabelEXT(debug_utils_label);
-// }
-
-// void Gpu::EndLabel(const vk::raii::CommandBuffer& command_buffer) {
-//   command_buffer.endDebugUtilsLabelEXT();
-// }
-
-// void Gpu::BeginRenderPass(const vk::raii::CommandBuffer& command_buffer) {
-//   std::array<vk::ClearValue, 1> clear_values;
-//   clear_values[0].color = vk::ClearColorValue{0.0f, 0.0f, 0.0f, 1.0f};
-
-//   vk::RenderPassBeginInfo render_pass_begin_info{
-//       *render_pass_, *framebuffers_[image_index_],
-//       vk::Rect2D{vk::Offset2D{0, 0}, extent_}, clear_values};
-
-//   command_buffer.beginRenderPass(render_pass_begin_info,
-//                                  vk::SubpassContents::eInline);
-// }
-
-// void Gpu::EndRenderPass(const vk::raii::CommandBuffer& command_buffer) {
-//   command_buffer.endRenderPass();
-// }
-
-// const u32 Gpu::GetBackBufferCount() const { return kBackBufferCount; }
-
-// const vk::Extent2D& Gpu::GetExtent2D() const { return extent_; }
-
-// const vk::raii::DescriptorSet& Gpu::GetBindlessDescriptorSet() const {
-//   return bindless_descriptor_set;
-// }
-
-// const vk::raii::PipelineLayout& Gpu::GetPipelineLayout() const {
-//   return pipeline_layout_;
-// }
-
-// std::pair<ImGui_ImplVulkan_InitInfo, VkRenderPass>
-// Gpu::GetVulkanInfoForImgui()
-//     const {
-//   ImGui_ImplVulkan_InitInfo init_info{
-//       .Instance = static_cast<VkInstance>(*instance_),
-//       .PhysicalDevice = static_cast<VkPhysicalDevice>(*physical_device_),
-//       .Device = static_cast<VkDevice>(*device_),
-//       .QueueFamily = graphics_queue_index_.value(),
-//       .Queue = static_cast<VkQueue>(*graphics_queue_),
-//       .PipelineCache = static_cast<VkPipelineCache>(*pipeline_cache_),
-//       .DescriptorPool = static_cast<VkDescriptorPool>(*descriptor_pool_),
-//       .Subpass = 0,
-//       .MinImageCount = image_count_,
-//       .ImageCount = image_count_,
-//       .MSAASamples = VK_SAMPLE_COUNT_1_BIT,
-//   };
-
-//   return std::make_pair(init_info, static_cast<VkRenderPass>(*render_pass_));
-// }
+void Gpu::EndLabel(const vk::raii::CommandBuffer& command_buffer) {
+  command_buffer.endDebugUtilsLabelEXT();
+}
 
 void Gpu::CreateInstance() {
   vk::InstanceCreateFlags flags;
@@ -1131,278 +866,30 @@ VKAPI_ATTR VkBool32 VKAPI_CALL Gpu::DebugUtilsMessengerCallback(
   return VK_TRUE;
 }
 
-// void Gpu::CreateSyncObjects() {
-//   command_executed_fences_.reserve(kBackBufferCount);
-//   image_available_semaphores_.reserve(kBackBufferCount);
-//   render_finished_semaphores_.reserve(kBackBufferCount);
+void Gpu::CreateDescriptorObjects() {
+  std::vector<vk::DescriptorPoolSize> pool_sizes{
+      {vk::DescriptorType::eSampler, 1000},
+      {vk::DescriptorType::eCombinedImageSampler, 1000},
+      {vk::DescriptorType::eSampledImage, 1000},
+      {vk::DescriptorType::eStorageImage, 1000},
+      {vk::DescriptorType::eUniformTexelBuffer, 1000},
+      {vk::DescriptorType::eStorageTexelBuffer, 1000},
+      {vk::DescriptorType::eUniformBuffer, 1000},
+      {vk::DescriptorType::eStorageBuffer, 1000},
+      {vk::DescriptorType::eUniformBufferDynamic, 1000},
+      {vk::DescriptorType::eStorageBufferDynamic, 1000},
+      {vk::DescriptorType::eInputAttachment, 1000}};
 
-//   vk::FenceCreateInfo fence_ci{vk::FenceCreateFlagBits::eSignaled};
-//   vk::SemaphoreCreateInfo semaphore_ci{};
+  u32 max_sets{std::accumulate(pool_sizes.begin(), pool_sizes.end(),
+                               static_cast<u32>(0),
+                               [](u32 sum, const vk::DescriptorPoolSize& dps) {
+                                 return sum + dps.descriptorCount;
+                               })};
 
-//   for (u32 i{0}; i < kBackBufferCount; ++i) {
-//     command_executed_fences_.emplace_back(device_, fence_ci);
-//     image_available_semaphores_.emplace_back(device_, semaphore_ci);
-//     render_finished_semaphores_.emplace_back(device_, semaphore_ci);
-//   }
-// }
-
-// void Gpu::CreateSwapchain() {
-//   // Image count.
-//   vk::SurfaceCapabilitiesKHR surface_capabilities{
-//       physical_device_.getSurfaceCapabilitiesKHR(*surface_)};
-//   image_count_ = surface_capabilities.minImageCount + 1;
-//   if (surface_capabilities.maxImageCount > 0 &&
-//       image_count_ > surface_capabilities.maxImageCount) {
-//     image_count_ = surface_capabilities.maxImageCount;
-//   }
-
-//   // Format and color space.
-//   std::vector<vk::SurfaceFormatKHR> surface_formats{
-//       physical_device_.getSurfaceFormatsKHR(*(surface_))};
-
-//   vk::SurfaceFormatKHR picked_format{surface_formats[0]};
-
-//   std::vector<vk::Format> requested_formats{vk::Format::eR8G8B8A8Srgb,
-//                                             vk::Format::eB8G8R8A8Srgb};
-//   vk::ColorSpaceKHR requested_color_space{vk::ColorSpaceKHR::eSrgbNonlinear};
-//   for (const auto& requested_format : requested_formats) {
-//     auto it{std::find_if(surface_formats.begin(), surface_formats.end(),
-//                          [requested_format, requested_color_space](
-//                              const vk::SurfaceFormatKHR& f) {
-//                            return (f.format == requested_format) &&
-//                                   (f.colorSpace == requested_color_space);
-//                          })};
-//     if (it != surface_formats.end()) {
-//       picked_format = *it;
-//       break;
-//     }
-//   }
-
-//   format_ = picked_format.format;
-//   color_space_ = picked_format.colorSpace;
-
-//   // Extent.
-//   if (surface_capabilities.currentExtent.width ==
-//       std::numeric_limits<u32>::max()) {
-//     i32 width{0};
-//     i32 height{0};
-//     window_->GetFramebufferSize(&width, &height);
-
-//     extent_.width = std::clamp(static_cast<u32>(width),
-//                                surface_capabilities.minImageExtent.width,
-//                                surface_capabilities.maxImageExtent.width);
-//     extent_.height = std::clamp(static_cast<u32>(height),
-//                                 surface_capabilities.minImageExtent.height,
-//                                 surface_capabilities.maxImageExtent.height);
-//   } else {
-//     extent_ = surface_capabilities.currentExtent;
-//   }
-
-//   // Present mode.
-//   std::vector<vk::PresentModeKHR> present_modes{
-//       physical_device_.getSurfacePresentModesKHR(*surface_)};
-
-//   std::vector<vk::PresentModeKHR> requested_present_modes{
-//       vk::PresentModeKHR::eMailbox, vk::PresentModeKHR::eFifo,
-//       vk::PresentModeKHR::eImmediate};
-
-//   vk::PresentModeKHR picked_mode{vk::PresentModeKHR::eImmediate};
-//   for (const auto& requested_present_mode : requested_present_modes) {
-//     auto it{std::find_if(present_modes.begin(), present_modes.end(),
-//                          [requested_present_mode](const vk::PresentModeKHR&
-//                          p) {
-//                            return p == requested_present_mode;
-//                          })};
-//     if (it != present_modes.end()) {
-//       picked_mode = *it;
-//       break;
-//     }
-//   }
-//   present_mode_ = picked_mode;
-
-//   // Create swapchain
-//   vk::SwapchainCreateInfoKHR swapchain_ci{
-//       {},
-//       *surface_,
-//       image_count_,
-//       format_,
-//       color_space_,
-//       extent_,
-//       1,
-//       vk::ImageUsageFlagBits::eColorAttachment,
-//       vk::SharingMode::eExclusive,
-//       {},
-//       surface_capabilities.currentTransform,
-//       vk::CompositeAlphaFlagBitsKHR::eOpaque,
-//       present_mode_,
-//       VK_TRUE,
-//       {}};
-
-//   if (graphics_queue_index_.value() != present_queue_index_.value()) {
-//     u32 queue_family_indices[2]{graphics_queue_index_.value(),
-//                                 present_queue_index_.value()};
-//     swapchain_ci.imageSharingMode = vk::SharingMode::eConcurrent;
-//     swapchain_ci.queueFamilyIndexCount = 2;
-//     swapchain_ci.pQueueFamilyIndices = queue_family_indices;
-//   }
-
-//   swapchain_.clear();
-//   swapchain_ = vk::raii::SwapchainKHR{device_, swapchain_ci};
-
-//   // Get swapchain images.
-//   images_ = swapchain_.getImages();
-
-//   // Create swapchain image views
-//   image_views_.clear();
-//   image_views_.reserve(images_.size());
-//   vk::ImageViewCreateInfo image_view_ci{
-//       {},      {}, vk::ImageViewType::e2D,
-//       format_, {}, {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}};
-//   for (auto image : images_) {
-//     image_view_ci.image = image;
-//     image_views_.emplace_back(device_, image_view_ci);
-//   }
-// }
-
-// void Gpu::CreateRenderPass() {
-//   std::vector<vk::AttachmentDescription> attachment_descriptions;
-
-//   attachment_descriptions.emplace_back(
-//       vk::AttachmentDescriptionFlags{}, format_, vk::SampleCountFlagBits::e1,
-//       vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore,
-//       vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare,
-//       vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
-
-//   vk::AttachmentReference color_attachment_ref{
-//       0, vk::ImageLayout::eColorAttachmentOptimal};
-
-//   vk::SubpassDescription subpass_description{
-//       {}, vk::PipelineBindPoint::eGraphics, {}, color_attachment_ref};
-
-//   vk::SubpassDependency subpass_dependency{
-//       VK_SUBPASS_EXTERNAL,
-//       0,
-//       vk::PipelineStageFlagBits::eColorAttachmentOutput,
-//       vk::PipelineStageFlagBits::eColorAttachmentOutput,
-//       {},
-//       vk::AccessFlagBits::eColorAttachmentRead |
-//           vk::AccessFlagBits::eColorAttachmentWrite};
-
-//   vk::RenderPassCreateInfo render_pass_ci{
-//       {}, attachment_descriptions, subpass_description, subpass_dependency};
-
-//   render_pass_ = vk::raii::RenderPass{device_, render_pass_ci};
-// }
-
-// void Gpu::CreateFramebuffers() {
-//   std::vector<vk::ImageView> attachements(1);
-//   vk::FramebufferCreateInfo framebuffer_ci{
-//       {}, *render_pass_, attachements, extent_.width, extent_.height, 1};
-
-//   framebuffers_.clear();
-//   framebuffers_.reserve(image_views_.size());
-//   for (const auto& image_view : image_views_) {
-//     attachements[0] = *image_view;
-//     framebuffers_.emplace_back(device_, framebuffer_ci);
-//   }
-// }
-
-// void Gpu::CreatePipelineCache() {
-//   vk::PipelineCacheCreateInfo pipeline_cache_ci;
-//   pipeline_cache_ = vk::raii::PipelineCache{device_, pipeline_cache_ci};
-// }
-
-// void Gpu::CreateDescriptorObjects() {
-//   // Global descriptor pool.
-//   {
-//     std::vector<vk::DescriptorPoolSize> pool_sizes{
-//         {vk::DescriptorType::eSampler, 1000},
-//         {vk::DescriptorType::eCombinedImageSampler, 1000},
-//         {vk::DescriptorType::eSampledImage, 1000},
-//         {vk::DescriptorType::eStorageImage, 1000},
-//         {vk::DescriptorType::eUniformTexelBuffer, 1000},
-//         {vk::DescriptorType::eStorageTexelBuffer, 1000},
-//         {vk::DescriptorType::eUniformBuffer, 1000},
-//         {vk::DescriptorType::eStorageBuffer, 1000},
-//         {vk::DescriptorType::eUniformBufferDynamic, 1000},
-//         {vk::DescriptorType::eStorageBufferDynamic, 1000},
-//         {vk::DescriptorType::eInputAttachment, 1000}};
-
-//     u32 max_sets{std::accumulate(
-//         pool_sizes.begin(), pool_sizes.end(), static_cast<u32>(0),
-//         [](u32 sum, const vk::DescriptorPoolSize& dps) {
-//           return sum + dps.descriptorCount;
-//         })};
-
-//     vk::DescriptorPoolCreateInfo descriptor_pool_ci{
-//         vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, max_sets,
-//         pool_sizes};
-//     descriptor_pool_ = vk::raii::DescriptorPool{device_, descriptor_pool_ci};
-//   }
-
-//   // Bindless descriptor objects.
-//   {
-//     std::vector<vk::DescriptorPoolSize> bindlessl_pool_sizes{
-//         {vk::DescriptorType::eCombinedImageSampler,
-//         kBindlessDescriptorCount}, {vk::DescriptorType::eStorageImage,
-//         kBindlessDescriptorCount}};
-
-//     u32 bindless_max_sets{std::accumulate(
-//         bindlessl_pool_sizes.begin(), bindlessl_pool_sizes.end(),
-//         static_cast<u32>(0), [](u32 sum, const vk::DescriptorPoolSize& dps) {
-//           return sum + dps.descriptorCount;
-//         })};
-
-//     vk::DescriptorPoolCreateInfo bindless_descriptor_pool_ci{
-//         vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind |
-//             vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
-//         bindless_max_sets, bindlessl_pool_sizes};
-//     bindless_descriptor_pool_ =
-//         vk::raii::DescriptorPool{device_, bindless_descriptor_pool_ci};
-//     std::vector<vk::DescriptorSetLayoutBinding>
-//     descriptor_set_layout_bindings{
-//         {kBindlessBinding, vk::DescriptorType::eCombinedImageSampler,
-//          kBindlessDescriptorCount, vk::ShaderStageFlagBits::eAll},
-//         {kBindlessBinding + 1, vk::DescriptorType::eCombinedImageSampler,
-//          kBindlessDescriptorCount, vk::ShaderStageFlagBits::eAll},
-//     };
-
-//     std::vector<vk::DescriptorBindingFlags> descriptor_binding_flags(
-//         2, vk::DescriptorBindingFlagBits::ePartiallyBound);
-
-//     vk::DescriptorSetLayoutBindingFlagsCreateInfo
-//         descriptor_set_layout_binding_flags_ci{descriptor_binding_flags};
-
-//     vk::DescriptorSetLayoutCreateInfo bindless_descriptor_set_layout_ci{
-//         vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool,
-//         descriptor_set_layout_bindings,
-//         &descriptor_set_layout_binding_flags_ci};
-
-//     bindless_descriptor_set_layout_ = vk::raii::DescriptorSetLayout{
-//         device_, bindless_descriptor_set_layout_ci};
-
-//     vk::DescriptorSetAllocateInfo bindless_descriptor_set_allocate_info{
-//         *bindless_descriptor_pool_, *bindless_descriptor_set_layout_};
-
-//     bindless_descriptor_set = std::move(
-//         device_.allocateDescriptorSets(bindless_descriptor_set_allocate_info)
-//             .front());
-//   }
-// }
-
-// void Gpu::Resize() {
-//   CreateSwapchain();
-//   CreateFramebuffers();
-// }
-
-// const vk::raii::CommandBuffer& Gpu::GetCommandBuffer() {
-//   u32 index{used_command_buffer_counts_[back_buffer_index]};
-//   if (index >= kMaxUsedCommandBufferCountperFrame) {
-//     THROW("Fail to get command buffer.");
-//   }
-//   ++used_command_buffer_counts_[back_buffer_index];
-
-//   return command_buffers_[back_buffer_index][index];
-// }
+  vk::DescriptorPoolCreateInfo descriptor_pool_ci{
+      vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, max_sets,
+      pool_sizes};
+  descriptor_pool_ = vk::raii::DescriptorPool{device_, descriptor_pool_ci};
+}
 
 }  // namespace luka

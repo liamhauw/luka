@@ -291,7 +291,7 @@ void Context::CreateAcquiredSemphores() {
   acquired_semaphores_.reserve(frame_count_);
   vk::SemaphoreCreateInfo semaphore_ci;
   for (u32 i = 0; i < frame_count_; ++i) {
-    acquired_semaphores_.emplace_back(gpu_->CreateSemaphore0(semaphore_ci));
+    acquired_semaphores_.emplace_back(gpu_->CreateSemaphoreLuka(semaphore_ci));
   }
 }
 

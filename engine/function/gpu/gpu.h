@@ -70,7 +70,7 @@ class Gpu {
   vk::raii::Fence CreateFence(const vk::FenceCreateInfo& fence_ci,
                               const std::string& name = {});
 
-  vk::raii::Semaphore CreateSemaphore0(
+  vk::raii::Semaphore CreateSemaphoreLuka(
       const vk::SemaphoreCreateInfo& semaphore_ci,
       const std::string& name = {});
 
@@ -81,6 +81,28 @@ class Gpu {
   vk::raii::Framebuffer CreateFramebuffer(
       const vk::FramebufferCreateInfo& framebuffer_ci,
       const std::string& name = {});
+
+  const vk::raii::DescriptorSetLayout& RequestDescriptorSetLayout(
+      const vk::DescriptorSetLayoutCreateInfo& descriptor_set_layout_ci,
+      const std::string& name = {});
+
+  const vk::raii::PipelineLayout& RequestPipelineLayout(
+      const vk::PipelineLayoutCreateInfo& pipeline_layout_ci,
+      const std::string& name = {});
+
+  const vk::raii::ShaderModule& RequestShaderModule(
+      const vk::ShaderModuleCreateInfo& shader_module_ci,
+      const std::string& name = {});
+
+  const vk::raii::Pipeline& RequestPipeline(
+      const vk::GraphicsPipelineCreateInfo& graphics_pipeline_ci,
+      const std::string& name = {});
+
+  vk::raii::DescriptorSet AllocateDescriptorSet(
+      vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
+      const std::string& name = {});
+
+  void UpdateDescriptorSets(const std::vector<vk::WriteDescriptorSet>& writes);
 
   vk::Result WaitForFence(const vk::raii::Fence& fence);
 
@@ -106,64 +128,11 @@ class Gpu {
 
   void WaitIdle();
 
-  const vk::raii::DescriptorSetLayout& RequestDescriptorSetLayout(
-      const vk::DescriptorSetLayoutCreateInfo& descriptor_set_layout_ci,
-      const std::string& name = {});
+  void BeginLabel(const vk::raii::CommandBuffer& command_buffer,
+                  const std::string& label,
+                  const std::array<f32, 4>& color = {0.0F, 0.0F, 0.6F, 1.0F});
 
-  const vk::raii::PipelineLayout& RequestPipelineLayout(
-      const vk::PipelineLayoutCreateInfo& pipeline_layout_ci,
-      const std::string& name = {});
-
-  const vk::raii::ShaderModule& RequestShaderModule(
-      const vk::ShaderModuleCreateInfo& shader_module_ci,
-      const std::string& name = {});
-
-  const vk::raii::Pipeline& RequestPipeline(
-      const vk::GraphicsPipelineCreateInfo& graphics_pipeline_ci,
-      const std::string& name = {});
-
-  //   vk::raii::Pipeline CreatePipeline(
-  //       const std::vector<u8>& vertex_shader_buffer,
-  //       const std::vector<u8>& fragment_shader_buffer,
-  //       const std::vector<std::pair<u32, vk::Format>>&
-  //       vertex_input_stride_format, const
-  //       std::vector<vk::raii::DescriptorSetLayout>& descriptor_set_layout,
-  //       const vk::PipelineRenderingCreateInfo& pipeline_rendering_ci,
-  //       const std::string& name = {});
-
-  // const u32 GetBackBufferCount() const;
-
-  //   vk::raii::DescriptorSet AllocateDescriptorSet(
-  //       vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
-  //       const std::string& name = {});
-
-  //   void UpdateDescriptorSets(const std::vector<vk::WriteDescriptorSet>&
-  //   writes);
-
-  //   const vk::raii::CommandBuffer& BeginFrame();
-
-  //   void EndFrame(const vk::raii::CommandBuffer& cur_command_buffer);
-
-  //   void BeginLabel(const vk::raii::CommandBuffer& command_buffer,
-  //                   const std::string& label,
-  //                   const std::array<f32, 4>& color = {0.0F, 0.0F,
-  //                   0.6F, 1.0F});
-
-  //   void EndLabel(const vk::raii::CommandBuffer& command_buffer);
-
-  //   void BeginRenderPass(const vk::raii::CommandBuffer& cur_command_buffer);
-
-  //   void EndRenderPass(const vk::raii::CommandBuffer& cur_command_buffer);
-
-  //   const vk::Extent2D& GetExtent2D() const;
-
-  //   const vk::raii::DescriptorSet& GetBindlessDescriptorSet() const;
-
-  //   const vk::raii::PipelineLayout& GetPipelineLayout() const;
-
-  //   std::pair<ImGui_ImplVulkan_InitInfo, VkRenderPass>
-  //   GetVulkanInfoForImgui()
-  //       const;
+  void EndLabel(const vk::raii::CommandBuffer& command_buffer);
 
  private:
   void CreateInstance();
@@ -172,6 +141,7 @@ class Gpu {
   void CreateDevice();
   void CreateAllocator();
   void CreateCommandObjects();
+  void CreateDescriptorObjects();
 
   void SetObjectName(vk::ObjectType object_type, u64 handle,
                      const std::string& name, const std::string& suffix = {});
@@ -182,18 +152,9 @@ class Gpu {
       const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
       void* user_data);
 
-  //   void CreateSyncObjects();
-  //   void CreateSwapchain();
-  //   void CreateRenderPass();
-  //   void CreateFramebuffers();
-  //   void CreatePipelineCache();
-  //   void CreateDescriptorObjects();
-  //   void Resize();
-  //   const vk::raii::CommandBuffer& GetCommandBuffer();
-
-  std::shared_ptr<Window> window_;
-
   // Parameters.
+  std::shared_ptr<Window> window_;
+  ResourceCache resource_cache_;
   const u32 kBackBufferCount{1};
   u32 back_buffer_index{0};
   u32 image_index_{0};
@@ -234,40 +195,8 @@ class Gpu {
   std::vector<vk::raii::CommandPool> command_pools_;
   std::vector<vk::raii::CommandBuffers> command_buffers_;
 
-  ResourceCache resource_cache_;
-
-  //   // Sync objects.
-  //   std::vector<vk::raii::Fence> command_executed_fences_;
-  //   std::vector<vk::raii::Semaphore> image_available_semaphores_;
-  //   std::vector<vk::raii::Semaphore> render_finished_semaphores_;
-
-  //   // Swapchain.
-  //   u32 image_count_;
-  //   vk::Format format_;
-  //   vk::ColorSpaceKHR color_space_;
-  //   vk::Extent2D extent_;
-  //   vk::PresentModeKHR present_mode_;
-  //   vk::raii::SwapchainKHR swapchain_{nullptr};
-  //   std::vector<vk::Image> images_;
-  //   std::vector<vk::raii::ImageView> image_views_;
-
-  //   // Render pass.
-  //   vk::raii::RenderPass render_pass_{nullptr};
-
-  //   // Framebuffers.
-  //   std::vector<vk::raii::Framebuffer> framebuffers_;
-
-  //   // Pipeline cache.
-  //   vk::raii::PipelineCache pipeline_cache_{nullptr};
-  //   vk::raii::PipelineLayout pipeline_layout_{nullptr};
-
-  //   // Descriptor objects.
-  //   vk::raii::DescriptorPool descriptor_pool_{nullptr};
-  //   const u32 kBindlessDescriptorCount{1024};
-  //   const u32 kBindlessBinding{10};
-  //   vk::raii::DescriptorPool bindless_descriptor_pool_{nullptr};
-  //   vk::raii::DescriptorSetLayout bindless_descriptor_set_layout_{nullptr};
-  //   vk::raii::DescriptorSet bindless_descriptor_set{nullptr};
+  // Descriptor objects.
+  vk::raii::DescriptorPool descriptor_pool_{nullptr};
 };
 
 }  // namespace luka

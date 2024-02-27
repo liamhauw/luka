@@ -20,7 +20,6 @@ struct DrawElement {
   vk::Pipeline pipeline;
   vk::PipelineLayout pipeline_layout;
   std::vector<vk::DescriptorSet> descriptor_sets;
-
   std::map<u32, const sg::VertexAttribute*> location_vertex_attributes;
   u64 vertex_count;
   const sg::IndexAttribute* index_attribute;
