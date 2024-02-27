@@ -45,8 +45,10 @@ class SPIRV {
   SPIRV(const ast::Shader& shader, const std::vector<std::string>& processes,
         vk::ShaderStageFlagBits stage);
 
+  vk::ShaderStageFlagBits GetStage() const;
   const std::vector<u32>& GetSpirv() const;
   const std::vector<ShaderResource>& GetShaderResources() const;
+  const std::vector<SpecializationConstant>& GetSpecializationConstants() const;
 
  private:
   void ParseShaderResource(const spirv_cross::CompilerGLSL& compiler);

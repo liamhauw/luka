@@ -55,6 +55,7 @@ void GeometrySubpass::CreateDrawElements() {
 DrawElement GeometrySubpass::CreateDrawElement(const sg::Primitive& primitive) {
   DrawElement draw_element;
 
+  // Vertex buffers and index buffer.
   const std::map<std::string, gpu::Buffer>& vertex_buffers{
       primitive.vertex_buffers};
   const gpu::Buffer& index_buffer{primitive.index_buffer};
@@ -68,6 +69,7 @@ DrawElement GeometrySubpass::CreateDrawElement(const sg::Primitive& primitive) {
   const sg::Material* material{primitive.material};
   const std::map<std::string, sg::Texture*>& textures{material->GetTextures()};
 
+  // Shaders.
   std::vector<std::string> shader_processes;
   for (const auto& vertex_buffer : vertex_buffers) {
     std::string name{vertex_buffer.first};
@@ -106,6 +108,7 @@ DrawElement GeometrySubpass::CreateDrawElement(const sg::Primitive& primitive) {
     spirv_shaders_.insert(std::make_pair(fragment_hash_value, spirv_frag));
   }
 
+  // Pipeline layout.
   std::vector<const SPIRV*> spirv_shaders{&spirv_vert, &spirv_frag};
 
   std::unordered_map<std::string, ShaderResource> name_shader_resources;
@@ -186,6 +189,24 @@ DrawElement GeometrySubpass::CreateDrawElement(const sg::Primitive& primitive) {
 
   const vk::raii::PipelineLayout& pipeline_layout{
       gpu_->RequestPipelineLayout(pipeline_layout_ci)};
+
+  draw_element.pipeline_layout = *pipeline_layout;
+
+  // Pipeline.
+  std::vector<vk::PipelineShaderStageCreateInfo> shader_stage_cis;
+  for (const auto* spirv_shader : spirv_shaders) {
+    const std::vector<u32>& spirv{spirv_shader->GetSpirv()};
+
+    vk::ShaderModuleCreateInfo shader_module_ci{
+        {}, spirv.size() * 3, spirv.data()};
+    const vk::raii::ShaderModule& shader_module{
+        gpu_->RequestShaderModule(shader_module_ci)};
+
+    vk::PipelineShaderStageCreateInfo shader_stage_ci{
+        {}, spirv_shader->GetStage(), *shader_module, "main", nullptr};
+
+    shader_stage_cis.push_back(std::move(shader_stage_ci));
+  }
 
   return draw_element;
 }

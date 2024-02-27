@@ -17,7 +17,6 @@ namespace luka {
 namespace rd {
 
 struct DrawElement {
-  glm::mat4 model;
   vk::Pipeline pipeline;
   vk::PipelineLayout pipeline_layout;
   std::vector<vk::DescriptorSet> descriptor_sets;

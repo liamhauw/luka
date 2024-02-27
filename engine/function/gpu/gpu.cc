@@ -362,7 +362,7 @@ const vk::raii::DescriptorSetLayout& Gpu::RequestDescriptorSetLayout(
   }
 
   std::unordered_map<u64, vk::raii::DescriptorSetLayout>&
-      descriptor_set_layouts_{resource_cache_.descriptor_set_layouts_};
+      descriptor_set_layouts_{resource_cache_.descriptor_set_layouts};
 
   auto it{descriptor_set_layouts_.find(hash_value)};
   if (it != descriptor_set_layouts_.end()) {
@@ -397,7 +397,7 @@ const vk::raii::PipelineLayout& Gpu::RequestPipelineLayout(
   }
 
   std::unordered_map<u64, vk::raii::PipelineLayout>& pipeline_layouts{
-      resource_cache_.pipeline_layouts_};
+      resource_cache_.pipeline_layouts};
 
   auto it{pipeline_layouts.find(hash_value)};
   if (it != pipeline_layouts.end()) {
@@ -414,6 +414,34 @@ const vk::raii::PipelineLayout& Gpu::RequestPipelineLayout(
 #endif
 
   auto it1{pipeline_layouts.emplace(hash_value, std::move(pipeline_layout))};
+
+  return it1.first->second;
+}
+
+const vk::raii::ShaderModule& Gpu::RequestShaderModule(
+    const vk::ShaderModuleCreateInfo& shader_module_ci,
+    const std::string& name) {
+  u64 hash_value;
+  HashCombine(hash_value, shader_module_ci);
+
+  std::unordered_map<u64, vk::raii::ShaderModule>& shader_modules{
+      resource_cache_.shader_modules};
+
+  auto it{shader_modules.find(hash_value)};
+  if (it != shader_modules.end()) {
+    return it->second;
+  }
+
+  vk::raii::ShaderModule shader_module{device_, shader_module_ci};
+
+#ifndef NDEBUG
+  SetObjectName(
+      vk::ObjectType::eShaderModule,
+      reinterpret_cast<uint64_t>(static_cast<VkShaderModule>(*shader_module)),
+      name, "shader_module");
+#endif
+
+  auto it1{shader_modules.emplace(hash_value, std::move(shader_module))};
 
   return it1.first->second;
 }

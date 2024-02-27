@@ -24,10 +24,17 @@ SPIRV::SPIRV(const ast::Shader& shader,
   ParseSpecialization(compiler);
 }
 
+vk::ShaderStageFlagBits SPIRV::GetStage() const { return stage_; }
+
 const std::vector<u32>& SPIRV::GetSpirv() const { return spirv_; }
 
 const std::vector<ShaderResource>& SPIRV::GetShaderResources() const {
   return shader_resources_;
+}
+
+const std::vector<SpecializationConstant>& SPIRV::GetSpecializationConstants()
+    const {
+  return specialization_constants_;
 }
 
 void SPIRV::ParseShaderResource(const spirv_cross::CompilerGLSL& compiler) {
