@@ -13,14 +13,14 @@ namespace rd {
 
 GeometrySubpass::GeometrySubpass(std::shared_ptr<Asset> asset,
                                  std::shared_ptr<Gpu> gpu,
-                                 std::shared_ptr<SceneGraph> scene_graph)
+                                 std::shared_ptr<SceneGraph> scene_graph,
+                                 const vk::raii::RenderPass& render_pass)
     : Subpass{asset, gpu, scene_graph} {
-  CreateDrawElements();
+  CreateDrawElements(render_pass);
 }
 
-void GeometrySubpass::CreatePipeline() {}
-
-void GeometrySubpass::CreateDrawElements() {
+void GeometrySubpass::CreateDrawElements(
+    const vk::raii::RenderPass& render_pass) {
   const sg::Map& object{scene_graph_->GetObject()};
   const sg::Scene* scene{object.GetScene()};
   const std::vector<sg::Node*>& nodes{scene->GetNodes()};
@@ -46,37 +46,31 @@ void GeometrySubpass::CreateDrawElements() {
     const glm::mat4& model{cur_node->GetMarix()};
 
     for (const sg::Primitive& primitive : primitives) {
-      DrawElement draw_element{CreateDrawElement(primitive)};
+      DrawElement draw_element{CreateDrawElement(primitive, render_pass)};
       draw_elements_.push_back(std::move(draw_element));
     }
   }
 }
 
-DrawElement GeometrySubpass::CreateDrawElement(const sg::Primitive& primitive) {
+DrawElement GeometrySubpass::CreateDrawElement(
+    const sg::Primitive& primitive, const vk::raii::RenderPass& render_pass) {
   DrawElement draw_element;
 
-  // Vertex buffers and index buffer.
-  const std::map<std::string, gpu::Buffer>& vertex_buffers{
-      primitive.vertex_buffers};
-  const gpu::Buffer& index_buffer{primitive.index_buffer};
-
-  const std::map<std::string, sg::VertexAttribute>& vertex_attributes{
-      primitive.vertex_attributes};
-  u64 vertex_count{primitive.vertex_count};
+  // Primitive info.
+  const auto& vertex_attributes{primitive.vertex_attributes};
+  const auto& index_attribute{primitive.index_attribute};
   bool has_index{primitive.has_index};
-  const sg::IndexAttribute& index_attribute{primitive.index_attribute};
-
   const sg::Material* material{primitive.material};
-  const std::map<std::string, sg::Texture*>& textures{material->GetTextures()};
 
   // Shaders.
   std::vector<std::string> shader_processes;
-  for (const auto& vertex_buffer : vertex_buffers) {
-    std::string name{vertex_buffer.first};
+  for (const auto& vertex_buffer_attribute : vertex_attributes) {
+    std::string name{vertex_buffer_attribute.first};
     std::transform(name.begin(), name.end(), name.begin(), ::toupper);
     shader_processes.push_back("DHAS_" + name + "_BUFFER");
   }
 
+  const std::map<std::string, sg::Texture*>& textures{material->GetTextures()};
   for (const auto& texture : textures) {
     std::string name{texture.first};
     std::transform(name.begin(), name.end(), name.begin(), ::toupper);
@@ -94,7 +88,7 @@ DrawElement GeometrySubpass::CreateDrawElement(const sg::Primitive& primitive) {
   } else {
     spirv_vert = SPIRV{asset_->GetAssetInfo().vertex, shader_processes,
                        vk::ShaderStageFlagBits::eVertex};
-    spirv_shaders_.insert(std::make_pair(vert_hash_value, spirv_vert));
+    vert_iter = spirv_shaders_.emplace(vert_hash_value, spirv_vert).first;
   }
 
   u64 fragment_hash_value{
@@ -105,11 +99,12 @@ DrawElement GeometrySubpass::CreateDrawElement(const sg::Primitive& primitive) {
   } else {
     spirv_frag = SPIRV{asset_->GetAssetInfo().fragment, shader_processes,
                        vk::ShaderStageFlagBits::eFragment};
-    spirv_shaders_.insert(std::make_pair(fragment_hash_value, spirv_frag));
+    frag_iter = spirv_shaders_.emplace(fragment_hash_value, spirv_frag).first;
   }
 
   // Pipeline layout.
-  std::vector<const SPIRV*> spirv_shaders{&spirv_vert, &spirv_frag};
+  std::vector<const SPIRV*> spirv_shaders{&(vert_iter->second),
+                                          &(frag_iter->second)};
 
   std::unordered_map<std::string, ShaderResource> name_shader_resources;
 
@@ -135,7 +130,7 @@ DrawElement GeometrySubpass::CreateDrawElement(const sg::Primitive& primitive) {
     const auto& shader_resource{name_shader_resource.second};
 
     if (shader_resource.type == ShaderResourceType::kUniformBuffer ||
-        shader_resource.type == ShaderResourceType::kSampledImage) {
+        shader_resource.type == ShaderResourceType::kCombinedImageSampler) {
       auto it{set_shader_resources.find(shader_resource.set)};
       if (it != set_shader_resources.end()) {
         it->second.push_back(shader_resource);
@@ -162,8 +157,8 @@ DrawElement GeometrySubpass::CreateDrawElement(const sg::Primitive& primitive) {
 
       if (shader_resource.type == ShaderResourceType::kUniformBuffer) {
         descriptor_type = vk::DescriptorType::eUniformBuffer;
-      } else if (shader_resource.type == ShaderResourceType::kSampledImage) {
-        descriptor_type = vk::DescriptorType::eSampledImage;
+      } else if (shader_resource.type == ShaderResourceType::kCombinedImageSampler) {
+        descriptor_type = vk::DescriptorType::eCombinedImageSampler;
       } else {
         continue;
       }
@@ -198,7 +193,7 @@ DrawElement GeometrySubpass::CreateDrawElement(const sg::Primitive& primitive) {
     const std::vector<u32>& spirv{spirv_shader->GetSpirv()};
 
     vk::ShaderModuleCreateInfo shader_module_ci{
-        {}, spirv.size() * 3, spirv.data()};
+        {}, spirv.size() * 4, spirv.data()};
     const vk::raii::ShaderModule& shader_module{
         gpu_->RequestShaderModule(shader_module_ci)};
 
@@ -207,6 +202,117 @@ DrawElement GeometrySubpass::CreateDrawElement(const sg::Primitive& primitive) {
 
     shader_stage_cis.push_back(std::move(shader_stage_ci));
   }
+
+  std::vector<vk::VertexInputBindingDescription>
+      vertex_input_binding_descriptions;
+  std::vector<vk::VertexInputAttributeDescription>
+      vertex_input_attribute_descriptions;
+
+  for (const auto& vertex_buffer_attribute : vertex_attributes) {
+    std::string name{vertex_buffer_attribute.first};
+    const sg::VertexAttribute& vertex_attribute{vertex_buffer_attribute.second};
+
+    std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+
+    auto it{name_shader_resources.find(name)};
+    if (it == name_shader_resources.end()) {
+      continue;
+    }
+
+    const auto& shader_resource{it->second};
+
+    vk::VertexInputBindingDescription vertex_input_binding_description{
+        shader_resource.location, vertex_attribute.stride};
+    vertex_input_binding_descriptions.push_back(
+        std::move(vertex_input_binding_description));
+
+    vk::VertexInputAttributeDescription vertex_input_attribute_description{
+        shader_resource.location, shader_resource.location,
+        vertex_attribute.format, vertex_attribute.offset};
+    vertex_input_attribute_descriptions.push_back(
+        std::move(vertex_input_attribute_description));
+
+    draw_element.location_vertex_attributes.emplace(shader_resource.location,
+                                                    &vertex_attribute);
+    if (draw_element.vertex_count == 0) {
+      draw_element.vertex_count = vertex_attribute.count;
+    }
+  }
+
+  if (has_index) {
+    draw_element.has_index = true;
+    draw_element.index_attribute = &index_attribute;
+  }
+
+  vk::PipelineVertexInputStateCreateInfo vertex_input_state_ci{
+      {},
+      vertex_input_binding_descriptions,
+      vertex_input_attribute_descriptions};
+
+  vk::PipelineInputAssemblyStateCreateInfo input_assembly_state_ci{
+      {}, vk::PrimitiveTopology::eTriangleList};
+
+  vk::PipelineViewportStateCreateInfo viewport_state_ci{
+      {}, 1, nullptr, 1, nullptr};
+
+  vk::PipelineRasterizationStateCreateInfo rasterization_state_ci{
+      {},
+      VK_FALSE,
+      VK_FALSE,
+      vk::PolygonMode::eFill,
+      vk::CullModeFlagBits::eBack,
+      vk::FrontFace::eCounterClockwise,
+      VK_FALSE,
+      0.0f,
+      0.0f,
+      0.0f,
+      1.0f};
+
+  vk::PipelineMultisampleStateCreateInfo multisample_state_ci{
+      {}, vk::SampleCountFlagBits::e1};
+
+  vk::PipelineDepthStencilStateCreateInfo depth_stencil_state_ci{
+      {}, VK_TRUE, VK_TRUE, vk::CompareOp::eLess, VK_FALSE, VK_FALSE,
+  };
+
+  vk::ColorComponentFlags color_component_flags{
+      vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+      vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA};
+  vk::PipelineColorBlendAttachmentState color_blend_attachment_state{
+      VK_FALSE,          vk::BlendFactor::eZero, vk::BlendFactor::eZero,
+      vk::BlendOp::eAdd, vk::BlendFactor::eZero, vk::BlendFactor::eZero,
+      vk::BlendOp::eAdd, color_component_flags};
+
+  vk::PipelineColorBlendStateCreateInfo color_blend_state_ci{
+      {},
+      VK_FALSE,
+      vk::LogicOp::eCopy,
+      color_blend_attachment_state,
+      {{0.0f, 0.0f, 0.0f, 0.0f}}};
+
+  std::array<vk::DynamicState, 2> dynamic_states{vk::DynamicState::eViewport,
+                                                 vk::DynamicState::eScissor};
+  vk::PipelineDynamicStateCreateInfo dynamic_state_create_info{{},
+                                                               dynamic_states};
+
+  vk::GraphicsPipelineCreateInfo graphics_pipeline_create_info{
+      {},
+      shader_stage_cis,
+      &vertex_input_state_ci,
+      &input_assembly_state_ci,
+      nullptr,
+      &viewport_state_ci,
+      &rasterization_state_ci,
+      &multisample_state_ci,
+      &depth_stencil_state_ci,
+      &color_blend_state_ci,
+      &dynamic_state_create_info,
+      *pipeline_layout,
+      *render_pass};
+
+  const vk::raii::Pipeline& pipeline{
+      gpu_->RequestPipeline(graphics_pipeline_create_info)};
+  draw_element.pipeline = *pipeline;
 
   return draw_element;
 }

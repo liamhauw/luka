@@ -60,7 +60,7 @@ void SPIRV::ParseShaderResource(const spirv_cross::CompilerGLSL& compiler) {
   for (const auto& sampled_image : sampled_images) {
     ShaderResource shader_resource;
     shader_resource.name = sampled_image.name;
-    shader_resource.type = ShaderResourceType::kSampledImage;
+    shader_resource.type = ShaderResourceType::kCombinedImageSampler;
     shader_resource.stage = stage_;
     shader_resource.set = ParseSet(compiler, sampled_image);
     shader_resource.binding = ParseBinding(compiler, sampled_image);
@@ -79,6 +79,18 @@ void SPIRV::ParseShaderResource(const spirv_cross::CompilerGLSL& compiler) {
     shader_resource.offset = ParseOffset(compiler, push_constant_buffer);
     shader_resource.size =
         ParseSize(compiler, push_constant_buffer) - shader_resource.offset;
+
+    shader_resources_.push_back(std::move(shader_resource));
+  }
+
+  // Stage inputs.
+  const auto& stage_inputs{resources.stage_inputs};
+  for (const auto& stage_input : stage_inputs) {
+    ShaderResource shader_resource;
+    shader_resource.name = stage_input.name;
+    shader_resource.type = ShaderResourceType::kStageInput;
+    shader_resource.stage = stage_;
+    shader_resource.location = ParseLocation(compiler, stage_input);
 
     shader_resources_.push_back(std::move(shader_resource));
   }
@@ -128,6 +140,11 @@ u32 SPIRV::ParseOffset(const spirv_cross::CompilerGLSL& compiler,
   }
 
   return offset;
+}
+
+u32 SPIRV::ParseLocation(const spirv_cross::CompilerGLSL& compiler,
+                         const spirv_cross::Resource& resource) {
+  return compiler.get_decoration(resource.id, spv::DecorationLocation);
 }
 
 }  // namespace rd

@@ -18,8 +18,9 @@ namespace rd {
 enum class ShaderResourceType {
   kNone,
   kUniformBuffer,
-  kSampledImage,
-  kPushConstantBuffer
+  kCombinedImageSampler,
+  kPushConstantBuffer,
+  kStageInput
 };
 
 struct ShaderResource {
@@ -31,6 +32,7 @@ struct ShaderResource {
   u32 array_size{UINT32_MAX};
   u64 size{UINT64_MAX};
   u32 offset{UINT32_MAX};
+  u32 location{UINT32_MAX};
 };
 
 struct SpecializationConstant {
@@ -64,6 +66,8 @@ class SPIRV {
                 const spirv_cross::Resource& resource);
   u32 ParseOffset(const spirv_cross::CompilerGLSL& compiler,
                   const spirv_cross::Resource& resource);
+  u32 ParseLocation(const spirv_cross::CompilerGLSL& compiler,
+                  const spirv_cross::Resource& resource);                
 
   ast::Shader shader_;
   std::vector<std::string> processes_;

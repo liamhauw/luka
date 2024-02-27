@@ -155,7 +155,7 @@ void SwapchainPass::CreateClearValues() {
 
 void SwapchainPass::CreateSubpasses() {
   std::unique_ptr<Subpass> forward_subpass{
-      std::make_unique<GeometrySubpass>(asset_, gpu_, scene_graph_)};
+      std::make_unique<GeometrySubpass>(asset_, gpu_, scene_graph_, render_pass_)};
   subpasses_.push_back(std::move(forward_subpass));
 }
 

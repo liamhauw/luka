@@ -17,14 +17,14 @@ namespace rd {
 class GeometrySubpass : public Subpass {
  public:
   GeometrySubpass(std::shared_ptr<Asset> asset, std::shared_ptr<Gpu> gpu,
-                  std::shared_ptr<SceneGraph> scene_graph);
+                  std::shared_ptr<SceneGraph> scene_graph,
+                  const vk::raii::RenderPass& render_pass);
   ~GeometrySubpass() = default;
 
  private:
-  void CreatePipeline() override;
-  void CreateDrawElements() override;
+  void CreateDrawElements(const vk::raii::RenderPass& render_pass) override;
 
-  DrawElement CreateDrawElement(const sg::Primitive& primitive);
+  DrawElement CreateDrawElement(const sg::Primitive& primitive, const vk::raii::RenderPass& render_pass);
 };
 
 }  // namespace rd

@@ -115,33 +115,30 @@ void Context::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
         }
 
         // Bind vertex buffers.
-        const auto& vertex_buffer_attributes{
-            draw_element.vertex_buffer_attributes};
-        for (const auto& location_vertex_buffer : vertex_buffer_attributes) {
-          vk::Buffer vertex_buffer{location_vertex_buffer.first};
-          const sg::VertexAttribute& vertex_attribute{
-              location_vertex_buffer.second};
+        const auto& location_vertex_attributes{
+            draw_element.location_vertex_attributes};
+        for (const auto& location_vertex_attribute :
+             location_vertex_attributes) {
+          u32 location{location_vertex_attribute.first};
+          const sg::VertexAttribute* vertex_attribute{
+              location_vertex_attribute.second};
 
-          command_buffer.bindVertexBuffers(vertex_attribute.location,
-                                           vertex_buffer,
-                                           vertex_attribute.offset);
+          command_buffer.bindVertexBuffers(
+              location, *(vertex_attribute->buffer), vertex_attribute->offset);
         }
 
         // Bind index buffer and draw indexed.
         if (!draw_element.has_index) {
           command_buffer.draw(draw_element.vertex_count, 1, 0, 0);
         } else {
-          const auto& index_buffer_attribute{
-              draw_element.index_buffer_attribute};
+          const sg::IndexAttribute* index_attribute{
+              draw_element.index_attribute};
 
-          vk::Buffer index_buffer{index_buffer_attribute.first};
-          const sg::IndexAttribute& index_attribute{
-              index_buffer_attribute.second};
+          command_buffer.bindIndexBuffer(*(index_attribute->buffer),
+                                         index_attribute->offset,
+                                         index_attribute->index_type);
 
-          command_buffer.bindIndexBuffer(index_buffer, index_attribute.offset,
-                                         index_attribute.index_type);
-
-          command_buffer.drawIndexed(index_attribute.count, 1, 0, 0, 0);
+          command_buffer.drawIndexed(index_attribute->count, 1, 0, 0, 0);
         }
       }
     }

@@ -21,9 +21,9 @@ struct DrawElement {
   vk::PipelineLayout pipeline_layout;
   std::vector<vk::DescriptorSet> descriptor_sets;
 
-  std::map<vk::Buffer, sg::VertexAttribute> vertex_buffer_attributes;
-  std::pair<vk::Buffer, sg::IndexAttribute> index_buffer_attribute;
+  std::map<u32, const sg::VertexAttribute*> location_vertex_attributes;
   u64 vertex_count;
+  const sg::IndexAttribute* index_attribute;
   bool has_index;
 };
 
@@ -33,18 +33,15 @@ class Subpass {
           std::shared_ptr<SceneGraph> scene_graph);
   virtual ~Subpass() = default;
 
-  const vk::raii::Pipeline& GetPipeline() const;
   const std::vector<DrawElement>& GetDrawElements() const;
 
  protected:
-  virtual void CreatePipeline() = 0;
-  virtual void CreateDrawElements() = 0;
+  virtual void CreateDrawElements(const vk::raii::RenderPass& render_pass) = 0;
 
   std::shared_ptr<Asset> asset_;
   std::shared_ptr<Gpu> gpu_;
   std::shared_ptr<SceneGraph> scene_graph_;
 
-  vk::raii::Pipeline pipeline_{nullptr};
   std::vector<DrawElement> draw_elements_;
 
   std::map<u64, SPIRV> spirv_shaders_;

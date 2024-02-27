@@ -15,7 +15,7 @@ namespace gpu {
 
 class Buffer {
  public:
-  Buffer() = delete;
+  Buffer() = default;
   Buffer(std::nullptr_t) {}
   Buffer(const VmaAllocator& allocator, const vk::BufferCreateInfo& buffer_ci,
          bool staging = false);

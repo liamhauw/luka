@@ -54,17 +54,14 @@ Mesh::Mesh(std::shared_ptr<Gpu> gpu,
 
       gpu::Buffer buffer{
           gpu->CreateBuffer(buffer_ci, staging_buffers.back(), command_buffer)};
-      primitive.vertex_buffers.insert(
-          std::make_pair(attribute_name, std::move(buffer)));
 
       vk::Format format{accessor->GetFormat()};
       u32 stride{accessor->GetStride()};
-      VertexAttribute vertex_attribute{format, stride, 0};
+      u64 count{accessor->GetCount()};
 
-      primitive.vertex_attributes.insert(
-          std::make_pair(attribute_name, std::move(vertex_attribute)));
-
-      primitive.vertex_count = accessor->GetCount();
+      primitive.vertex_attributes.insert(std::make_pair(
+          attribute_name,
+          VertexAttribute{std::move(buffer), format, stride, 0, count}));
     }
 
     // Index.
@@ -114,10 +111,8 @@ Mesh::Mesh(std::shared_ptr<Gpu> gpu,
 
       u64 index_count{accessor->GetCount()};
 
-      IndexAttribute index_attribute{index_type, index_count};
-
-      primitive.index_buffer = std::move(buffer);
-      primitive.index_attribute = std::move(index_attribute);
+      primitive.index_attribute =
+          IndexAttribute{std::move(buffer), index_type, 0, index_count};
     }
 
     // Material.

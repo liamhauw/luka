@@ -15,8 +15,6 @@ Subpass::Subpass(std::shared_ptr<Asset> asset, std::shared_ptr<Gpu> gpu,
                  std::shared_ptr<SceneGraph> scene_graph)
     : asset_{asset}, gpu_{gpu}, scene_graph_{scene_graph} {}
 
-const vk::raii::Pipeline& Subpass::GetPipeline() const { return pipeline_; }
-
 const std::vector<DrawElement>& Subpass::GetDrawElements() const {
   return draw_elements_;
 }

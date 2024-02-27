@@ -18,10 +18,10 @@
 namespace luka {
 
 struct ResourceCache {
-  std::unordered_map<u64, vk::raii::DescriptorSetLayout>
-      descriptor_set_layouts;
+  std::unordered_map<u64, vk::raii::DescriptorSetLayout> descriptor_set_layouts;
   std::unordered_map<u64, vk::raii::PipelineLayout> pipeline_layouts;
   std::unordered_map<u64, vk::raii::ShaderModule> shader_modules;
+  std::unordered_map<u64, vk::raii::Pipeline> pipelines;
 };
 
 class Gpu {
@@ -116,6 +116,10 @@ class Gpu {
 
   const vk::raii::ShaderModule& RequestShaderModule(
       const vk::ShaderModuleCreateInfo& shader_module_ci,
+      const std::string& name = {});
+
+  const vk::raii::Pipeline& RequestPipeline(
+      const vk::GraphicsPipelineCreateInfo& graphics_pipeline_ci,
       const std::string& name = {});
 
   //   vk::raii::Pipeline CreatePipeline(

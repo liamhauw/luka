@@ -421,7 +421,7 @@ const vk::raii::PipelineLayout& Gpu::RequestPipelineLayout(
 const vk::raii::ShaderModule& Gpu::RequestShaderModule(
     const vk::ShaderModuleCreateInfo& shader_module_ci,
     const std::string& name) {
-  u64 hash_value;
+  u64 hash_value{0};
   HashCombine(hash_value, shader_module_ci);
 
   std::unordered_map<u64, vk::raii::ShaderModule>& shader_modules{
@@ -442,6 +442,35 @@ const vk::raii::ShaderModule& Gpu::RequestShaderModule(
 #endif
 
   auto it1{shader_modules.emplace(hash_value, std::move(shader_module))};
+
+  return it1.first->second;
+}
+
+const vk::raii::Pipeline& Gpu::RequestPipeline(
+    const vk::GraphicsPipelineCreateInfo& graphics_pipeline_ci,
+    const std::string& name) {
+  u64 hash_value{0};
+  for (u32 i{0}; i < graphics_pipeline_ci.stageCount; ++i) {
+    HashCombine(hash_value, graphics_pipeline_ci.pStages[i]);
+  }
+
+  std::unordered_map<u64, vk::raii::Pipeline>& pipelines{
+      resource_cache_.pipelines};
+
+  auto it{pipelines.find(hash_value)};
+  if (it != pipelines.end()) {
+    return it->second;
+  }
+
+  vk::raii::Pipeline pipeline{device_, nullptr, graphics_pipeline_ci};
+
+#ifndef NDEBUG
+  SetObjectName(vk::ObjectType::ePipeline,
+                reinterpret_cast<uint64_t>(static_cast<VkPipeline>(*pipeline)),
+                name, "pipeline");
+#endif
+
+  auto it1{pipelines.emplace(hash_value, std::move(pipeline))};
 
   return it1.first->second;
 }

@@ -20,13 +20,16 @@ namespace luka {
 namespace sg {
 
 struct VertexAttribute {
+  gpu::Buffer buffer;
   vk::Format format{vk::Format::eUndefined};
   u32 stride{0};
   u32 offset{0};
+  u64 count{0};
   u32 location{0};
 };
 
 struct IndexAttribute {
+  gpu::Buffer buffer;
   vk::IndexType index_type{vk::IndexType::eUint16};
   u64 offset{0};
   u64 count{0};
@@ -41,15 +44,9 @@ struct Primitive {
   Primitive& operator=(const Primitive&) = delete;
   Primitive& operator=(Primitive&& rhs) = default;
 
-
-  std::map<std::string, gpu::Buffer> vertex_buffers;
-  gpu::Buffer index_buffer{nullptr};
-
   std::map<std::string, VertexAttribute> vertex_attributes;
-  u64 vertex_count{0};
-  bool has_index{false};
   IndexAttribute index_attribute;
-
+  bool has_index{false};
   Material* material;
 };
 
