@@ -59,6 +59,33 @@ const vk::raii::CommandBuffer& Context::Begin() {
   return command_buffer;
 }
 
+void Context::End(const vk::raii::CommandBuffer& command_buffer) {
+  command_buffer.end();
+
+  vk::PipelineStageFlags wait_pipeline_stage{
+      vk::PipelineStageFlagBits::eColorAttachmentOutput};
+  vk::SubmitInfo submit_info{
+      *(acquired_semaphores_[acquired_semaphore_index_]), wait_pipeline_stage,
+      *command_buffer, *(render_finished_semaphores_[active_frame_index_])};
+
+  const vk::raii::Queue& graphics_queue{gpu_->GetGraphicsQueue()};
+  graphics_queue.submit(submit_info,
+                        *(command_finished_fences_[active_frame_index_]));
+
+  vk::PresentInfoKHR present_info{
+      *(render_finished_semaphores_[active_frame_index_]), *swapchain_,
+      active_frame_index_};
+
+  const vk::raii::Queue& present_queue{gpu_->GetPresentQueue()};
+
+  vk::Result result{present_queue.presentKHR(present_info)};
+  if (result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR) {
+    THROW("Fail to present.");
+  }
+
+  acquired_semaphore_index_ = (acquired_semaphore_index_ + 1) % frame_count_;
+}
+
 void Context::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
   gpu_->BeginLabel(command_buffer, "traverse passes");
   // Set viewport and scissor.
@@ -160,34 +187,6 @@ void Context::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
   }
 
   gpu_->EndLabel(command_buffer);
-}
-
-void Context::End(const vk::raii::CommandBuffer& command_buffer) {
-  command_buffer.end();
-
-  vk::PipelineStageFlags wait_pipeline_stage{
-      vk::PipelineStageFlagBits::eColorAttachmentOutput};
-  vk::SubmitInfo submit_info{
-      *(acquired_semaphores_[acquired_semaphore_index_]), wait_pipeline_stage,
-      *command_buffer, *(render_finished_semaphores_[active_frame_index_])};
-
-  const vk::raii::Queue& graphics_queue{gpu_->GetGraphicsQueue()};
-  graphics_queue.submit(submit_info,
-                        *(command_finished_fences_[active_frame_index_]));
-
-  vk::PresentInfoKHR present_info{
-      *(render_finished_semaphores_[active_frame_index_]), *swapchain_,
-      active_frame_index_};
-
-  const vk::raii::Queue& present_queue{gpu_->GetPresentQueue()};
-
-  vk::Result result{present_queue.presentKHR(present_info)};
-  if (result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR) {
-    THROW("Fail to present.");
-  }
-
-  acquired_semaphore_index_ =
-      (acquired_semaphore_index_ + 1) % acquired_semaphores_.size();
 }
 
 void Context::CreateSwapchain() {
@@ -304,12 +303,10 @@ void Context::CreateSyncObjects() {
   vk::FenceCreateInfo fence_ci{vk::FenceCreateFlagBits::eSignaled};
   vk::SemaphoreCreateInfo semaphore_ci;
   for (u32 i{0}; i < frame_count_; ++i) {
+    acquired_semaphores_.push_back(gpu_->CreateSemaphoreLuka(semaphore_ci));
     render_finished_semaphores_.push_back(
         gpu_->CreateSemaphoreLuka(semaphore_ci));
-
     command_finished_fences_.push_back(gpu_->CreateFence(fence_ci));
-
-    acquired_semaphores_.push_back(gpu_->CreateSemaphoreLuka(semaphore_ci));
   }
 }
 
@@ -344,7 +341,6 @@ void Context::CreateViewportAndScissor() {
 void Context::CreatePasses() {
   passes_.clear();
 
-  // Swapchain pass.
   std::unique_ptr<Pass> swapchain_pass{std::make_unique<SwapchainPass>(
       asset_, gpu_, scene_graph_, swapchain_info_, swapchain_images_)};
 

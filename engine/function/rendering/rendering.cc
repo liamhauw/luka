@@ -1,9 +1,9 @@
 // SPDX license identifier: MIT.
 // Copyright (C) 2023-present Liam Hauw.
 
-// clang-swapchain_info.format off
+// clang-format off
 #include "platform/pch.h"
-// clang-swapchain_info.format on
+// clang-format on
 
 #include "function/rendering/rendering.h"
 
@@ -21,18 +21,15 @@ Rendering::Rendering(std::shared_ptr<Asset> asset,
 Rendering::~Rendering() { gpu_.reset(); }
 
 void Rendering::Tick() {
-  // Iconify.
   if (window_->GetIconified()) {
     return;
   }
 
-  // Resize.
   if (window_->GetFramebufferResized()) {
     window_->SetFramebufferResized(false);
     context_.Resize();
   }
 
-  // Render.
   context_.Render();
 }
 

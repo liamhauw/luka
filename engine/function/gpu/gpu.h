@@ -32,7 +32,8 @@ class Gpu {
   void Tick();
 
   gpu::Buffer CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
-                           const void* data, bool map = false, const std::string& name = {});
+                           const void* data, bool map = false,
+                           const std::string& name = {});
 
   gpu::Buffer CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
                            const gpu::Buffer& staging_buffer,
@@ -59,19 +60,15 @@ class Gpu {
   vk::raii::SwapchainKHR CreateSwapchain(
       vk::SwapchainCreateInfoKHR swapchain_ci, const std::string& name = {});
 
-  vk::raii::CommandPool CreateCommandPool(
-      const vk::CommandPoolCreateInfo& command_pool_ci,
-      const std::string& name = {});
-
-  vk::raii::CommandBuffers AllocateCommandBuffers(
-      const vk::CommandBufferAllocateInfo& command_buffer_ai,
+  vk::raii::Semaphore CreateSemaphoreLuka(
+      const vk::SemaphoreCreateInfo& semaphore_ci,
       const std::string& name = {});
 
   vk::raii::Fence CreateFence(const vk::FenceCreateInfo& fence_ci,
                               const std::string& name = {});
 
-  vk::raii::Semaphore CreateSemaphoreLuka(
-      const vk::SemaphoreCreateInfo& semaphore_ci,
+  vk::raii::CommandPool CreateCommandPool(
+      const vk::CommandPoolCreateInfo& command_pool_ci,
       const std::string& name = {});
 
   vk::raii::RenderPass CreateRenderPass(
@@ -98,6 +95,10 @@ class Gpu {
       const vk::GraphicsPipelineCreateInfo& graphics_pipeline_ci,
       const std::string& name = {});
 
+  vk::raii::CommandBuffers AllocateCommandBuffers(
+      const vk::CommandBufferAllocateInfo& command_buffer_ai,
+      const std::string& name = {});
+
   vk::raii::DescriptorSets AllocateDescriptorSets(
       vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
       const std::string& name = {});
@@ -107,6 +108,18 @@ class Gpu {
   vk::Result WaitForFence(const vk::raii::Fence& fence);
 
   void ResetFence(const vk::raii::Fence& fence);
+
+  const vk::raii::CommandBuffer& BeginTempCommandBuffer();
+
+  void EndTempCommandBuffer(const vk::raii::CommandBuffer& command_buffer);
+
+  void WaitIdle();
+
+  void BeginLabel(const vk::raii::CommandBuffer& command_buffer,
+                  const std::string& label,
+                  const std::array<f32, 4>& color = {0.8F, 0.7F, 1.0F, 1.0F});
+
+  void EndLabel(const vk::raii::CommandBuffer& command_buffer);
 
   const vk::raii::Queue& GetGraphicsQueue() const;
 
@@ -122,18 +135,6 @@ class Gpu {
 
   const std::vector<vk::PresentModeKHR>& GetSurfacePresentModes() const;
 
-  vk::raii::CommandBuffer BeginTempCommandBuffer();
-
-  void EndTempCommandBuffer(const vk::raii::CommandBuffer& command_buffer);
-
-  void WaitIdle();
-
-  void BeginLabel(const vk::raii::CommandBuffer& command_buffer,
-                  const std::string& label,
-                  const std::array<f32, 4>& color = {0.8F, 0.7F, 1.0F, 1.0F});
-
-  void EndLabel(const vk::raii::CommandBuffer& command_buffer);
-
  private:
   void CreateInstance();
   void CreateSurface();
@@ -141,7 +142,7 @@ class Gpu {
   void CreateDevice();
   void CreateAllocator();
   void CreateCommandObjects();
-  void CreateDescriptorObjects();
+  void CreateDescriptorPool();
 
   void SetObjectName(vk::ObjectType object_type, u64 handle,
                      const std::string& name, const std::string& suffix = {});
@@ -152,29 +153,21 @@ class Gpu {
       const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
       void* user_data);
 
-  // Parameters.
   std::shared_ptr<Window> window_;
-  const u32 kBackBufferCount{1};
-  u32 back_buffer_index{0};
-  u32 image_index_{0};
 
-  // Instance.
   vk::raii::Context context_;
   vk::raii::Instance instance_{nullptr};
 #ifndef NDEBUG
   vk::raii::DebugUtilsMessengerEXT debug_utils_messenger_{nullptr};
 #endif
 
-  // Surface.
   vk::raii::SurfaceKHR surface_{nullptr};
 
-  // Physical device.
   vk::raii::PhysicalDevice physical_device_{nullptr};
   vk::SurfaceCapabilitiesKHR surface_capabilities_;
   std::vector<vk::SurfaceFormatKHR> surface_formats_;
   std::vector<vk::PresentModeKHR> present_modes_;
 
-  // Device.
   vk::SampleCountFlagBits sample_count_{vk::SampleCountFlagBits::e1};
   f32 max_anisotropy_{0.0f};
   std::optional<u32> graphics_queue_index_;
@@ -185,19 +178,14 @@ class Gpu {
   vk::raii::Queue compute_queue_{nullptr};
   vk::raii::Queue present_queue_{nullptr};
 
-  // Allocator.
   VmaAllocator allocator_;
 
-  // Command objects.
-  const u32 kMaxUsedCommandBufferCountperFrame{8};
-  std::vector<u32> used_command_buffer_counts_;
-  std::vector<vk::raii::CommandPool> command_pools_;
-  std::vector<vk::raii::CommandBuffers> command_buffers_;
+  const u32 kCommandBufferCount{1};
+  vk::raii::CommandPool command_pool_{nullptr};
+  vk::raii::CommandBuffers command_buffers_{nullptr};
 
-  // Descriptor objects.
   vk::raii::DescriptorPool descriptor_pool_{nullptr};
 
-  // Resource cache.
   ResourceCache resource_cache_;
 };
 

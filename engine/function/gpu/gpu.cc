@@ -21,7 +21,7 @@ Gpu::Gpu(std::shared_ptr<Window> window) : window_{window} {
   CreateDevice();
   CreateAllocator();
   CreateCommandObjects();
-  CreateDescriptorObjects();
+  CreateDescriptorPool();
 }
 
 Gpu::~Gpu() {
@@ -215,35 +215,18 @@ vk::raii::SwapchainKHR Gpu::CreateSwapchain(
   return swapchain;
 }
 
-vk::raii::CommandPool Gpu::CreateCommandPool(
-    const vk::CommandPoolCreateInfo& command_pool_ci, const std::string& name) {
-  vk::raii::CommandPool command_pool{device_, command_pool_ci};
+vk::raii::Semaphore Gpu::CreateSemaphoreLuka(
+    const vk::SemaphoreCreateInfo& semaphore_ci, const std::string& name) {
+  vk::raii::Semaphore semaphore{device_, semaphore_ci};
 
 #ifndef NDEBUG
   SetObjectName(
-      vk::ObjectType::eCommandPool,
-      reinterpret_cast<uint64_t>(static_cast<VkCommandPool>(*command_pool)),
-      name, "command_pool");
+      vk::ObjectType::eSemaphore,
+      reinterpret_cast<uint64_t>(static_cast<VkSemaphore>(*semaphore)), name,
+      "semaphore");
 #endif
 
-  return command_pool;
-}
-
-vk::raii::CommandBuffers Gpu::AllocateCommandBuffers(
-    const vk::CommandBufferAllocateInfo& command_buffer_ai,
-    const std::string& name) {
-  vk::raii::CommandBuffers command_buffers{device_, command_buffer_ai};
-
-#ifndef NDEBUG
-  for (u32 i{0}; i < command_buffers.size(); ++i) {
-    SetObjectName(vk::ObjectType::eCommandBuffer,
-                  reinterpret_cast<uint64_t>(
-                      static_cast<VkCommandBuffer>(*command_buffers[i])),
-                  name, "command_buffer" + std::to_string(i));
-  }
-#endif
-
-  return command_buffers;
+  return semaphore;
 }
 
 vk::raii::Fence Gpu::CreateFence(const vk::FenceCreateInfo& fence_ci,
@@ -259,18 +242,18 @@ vk::raii::Fence Gpu::CreateFence(const vk::FenceCreateInfo& fence_ci,
   return fence;
 }
 
-vk::raii::Semaphore Gpu::CreateSemaphoreLuka(
-    const vk::SemaphoreCreateInfo& semaphore_ci, const std::string& name) {
-  vk::raii::Semaphore semaphore{device_, semaphore_ci};
+vk::raii::CommandPool Gpu::CreateCommandPool(
+    const vk::CommandPoolCreateInfo& command_pool_ci, const std::string& name) {
+  vk::raii::CommandPool command_pool{device_, command_pool_ci};
 
 #ifndef NDEBUG
   SetObjectName(
-      vk::ObjectType::eSemaphore,
-      reinterpret_cast<uint64_t>(static_cast<VkSemaphore>(*semaphore)), name,
-      "semaphore");
+      vk::ObjectType::eCommandPool,
+      reinterpret_cast<uint64_t>(static_cast<VkCommandPool>(*command_pool)),
+      name, "command_pool");
 #endif
 
-  return semaphore;
+  return command_pool;
 }
 
 vk::raii::RenderPass Gpu::CreateRenderPass(
@@ -423,6 +406,23 @@ const vk::raii::Pipeline& Gpu::RequestPipeline(
   return it1.first->second;
 }
 
+vk::raii::CommandBuffers Gpu::AllocateCommandBuffers(
+    const vk::CommandBufferAllocateInfo& command_buffer_ai,
+    const std::string& name) {
+  vk::raii::CommandBuffers command_buffers{device_, command_buffer_ai};
+
+#ifndef NDEBUG
+  for (u32 i{0}; i < command_buffers.size(); ++i) {
+    SetObjectName(vk::ObjectType::eCommandBuffer,
+                  reinterpret_cast<uint64_t>(
+                      static_cast<VkCommandBuffer>(*command_buffers[i])),
+                  name, "command_buffer" + std::to_string(i));
+  }
+#endif
+
+  return command_buffers;
+}
+
 vk::raii::DescriptorSets Gpu::AllocateDescriptorSets(
     vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
     const std::string& name) {
@@ -456,32 +456,8 @@ void Gpu::ResetFence(const vk::raii::Fence& fence) {
   device_.resetFences(*fence);
 }
 
-const vk::raii::Queue& Gpu::GetGraphicsQueue() const { return graphics_queue_; }
-
-const vk::raii::Queue& Gpu::GetPresentQueue() const { return present_queue_; }
-
-u32 Gpu::GetGraphicsQueueIndex() const { return graphics_queue_index_.value(); }
-
-u32 Gpu::GetPresentQueueIndex() const { return present_queue_index_.value(); }
-
-const vk::SurfaceCapabilitiesKHR& Gpu::GetSurfaceCapabilities() const {
-  return surface_capabilities_;
-}
-
-const std::vector<vk::SurfaceFormatKHR>& Gpu::GetSurfaceFormats() const {
-  return surface_formats_;
-}
-
-const std::vector<vk::PresentModeKHR>& Gpu::GetSurfacePresentModes() const {
-  return present_modes_;
-}
-
-vk::raii::CommandBuffer Gpu::BeginTempCommandBuffer() {
-  vk::CommandBufferAllocateInfo command_buffer_allocate_info{
-      *command_pools_[back_buffer_index], vk::CommandBufferLevel::ePrimary, 1};
-
-  vk::raii::CommandBuffer command_buffer{std::move(
-      vk::raii::CommandBuffers{device_, command_buffer_allocate_info}.front())};
+const vk::raii::CommandBuffer& Gpu::BeginTempCommandBuffer() {
+  const vk::raii::CommandBuffer& command_buffer{command_buffers_[0]};
 
   vk::CommandBufferBeginInfo command_buffer_begin_info{
       vk::CommandBufferUsageFlagBits::eOneTimeSubmit};
@@ -507,6 +483,26 @@ void Gpu::BeginLabel(const vk::raii::CommandBuffer& command_buffer,
 
 void Gpu::EndLabel(const vk::raii::CommandBuffer& command_buffer) {
   command_buffer.endDebugUtilsLabelEXT();
+}
+
+const vk::raii::Queue& Gpu::GetGraphicsQueue() const { return graphics_queue_; }
+
+const vk::raii::Queue& Gpu::GetPresentQueue() const { return present_queue_; }
+
+u32 Gpu::GetGraphicsQueueIndex() const { return graphics_queue_index_.value(); }
+
+u32 Gpu::GetPresentQueueIndex() const { return present_queue_index_.value(); }
+
+const vk::SurfaceCapabilitiesKHR& Gpu::GetSurfaceCapabilities() const {
+  return surface_capabilities_;
+}
+
+const std::vector<vk::SurfaceFormatKHR>& Gpu::GetSurfaceFormats() const {
+  return surface_formats_;
+}
+
+const std::vector<vk::PresentModeKHR>& Gpu::GetSurfacePresentModes() const {
+  return present_modes_;
 }
 
 void Gpu::CreateInstance() {
@@ -797,22 +793,44 @@ void Gpu::CreateAllocator() {
 }
 
 void Gpu::CreateCommandObjects() {
-  used_command_buffer_counts_ = std::vector<u32>(kBackBufferCount, 0);
-  command_pools_.reserve(kBackBufferCount);
-  command_buffers_.reserve(kBackBufferCount);
+  vk::CommandPoolCreateInfo command_pool_ci{
+      vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+      graphics_queue_index_.value()};
 
-  for (u32 i{0}; i < kBackBufferCount; ++i) {
-    command_pools_.emplace_back(vk::raii::CommandPool{
-        device_,
-        {vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-         graphics_queue_index_.value()}});
+  command_pool_ = vk::raii::CommandPool{device_, command_pool_ci};
 
-    vk::CommandBufferAllocateInfo command_buffer_allocate_info{
-        *command_pools_[i], vk::CommandBufferLevel::ePrimary,
-        kMaxUsedCommandBufferCountperFrame};
-    command_buffers_.emplace_back(
-        vk::raii::CommandBuffers{device_, command_buffer_allocate_info});
-  }
+  vk::CommandBufferAllocateInfo command_buffer_allocate_info{
+      *command_pool_, vk::CommandBufferLevel::ePrimary, kCommandBufferCount};
+
+  command_buffers_ =
+      vk::raii::CommandBuffers{device_, command_buffer_allocate_info};
+}
+
+void Gpu::CreateDescriptorPool() {
+  std::vector<vk::DescriptorPoolSize> pool_sizes{
+      {vk::DescriptorType::eSampler, 1000},
+      {vk::DescriptorType::eCombinedImageSampler, 1000},
+      {vk::DescriptorType::eSampledImage, 1000},
+      {vk::DescriptorType::eStorageImage, 1000},
+      {vk::DescriptorType::eUniformTexelBuffer, 1000},
+      {vk::DescriptorType::eStorageTexelBuffer, 1000},
+      {vk::DescriptorType::eUniformBuffer, 1000},
+      {vk::DescriptorType::eStorageBuffer, 1000},
+      {vk::DescriptorType::eUniformBufferDynamic, 1000},
+      {vk::DescriptorType::eStorageBufferDynamic, 1000},
+
+      {vk::DescriptorType::eInputAttachment, 1000}};
+
+  u32 max_sets{std::accumulate(pool_sizes.begin(), pool_sizes.end(),
+                               static_cast<u32>(0),
+                               [](u32 sum, const vk::DescriptorPoolSize& dps) {
+                                 return sum + dps.descriptorCount;
+                               })};
+
+  vk::DescriptorPoolCreateInfo descriptor_pool_ci{
+      vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, max_sets,
+      pool_sizes};
+  descriptor_pool_ = vk::raii::DescriptorPool{device_, descriptor_pool_ci};
 }
 
 void Gpu::SetObjectName(vk::ObjectType object_type, u64 handle,
@@ -870,32 +888,6 @@ VKAPI_ATTR VkBool32 VKAPI_CALL Gpu::DebugUtilsMessengerCallback(
     }
   }
   return VK_TRUE;
-}
-
-void Gpu::CreateDescriptorObjects() {
-  std::vector<vk::DescriptorPoolSize> pool_sizes{
-      {vk::DescriptorType::eSampler, 1000},
-      {vk::DescriptorType::eCombinedImageSampler, 1000},
-      {vk::DescriptorType::eSampledImage, 1000},
-      {vk::DescriptorType::eStorageImage, 1000},
-      {vk::DescriptorType::eUniformTexelBuffer, 1000},
-      {vk::DescriptorType::eStorageTexelBuffer, 1000},
-      {vk::DescriptorType::eUniformBuffer, 1000},
-      {vk::DescriptorType::eStorageBuffer, 1000},
-      {vk::DescriptorType::eUniformBufferDynamic, 1000},
-      {vk::DescriptorType::eStorageBufferDynamic, 1000},
-      {vk::DescriptorType::eInputAttachment, 1000}};
-
-  u32 max_sets{std::accumulate(pool_sizes.begin(), pool_sizes.end(),
-                               static_cast<u32>(0),
-                               [](u32 sum, const vk::DescriptorPoolSize& dps) {
-                                 return sum + dps.descriptorCount;
-                               })};
-
-  vk::DescriptorPoolCreateInfo descriptor_pool_ci{
-      vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, max_sets,
-      pool_sizes};
-  descriptor_pool_ = vk::raii::DescriptorPool{device_, descriptor_pool_ci};
 }
 
 }  // namespace luka

@@ -36,8 +36,8 @@ class Context {
   void CreatePasses();
 
   const vk::raii::CommandBuffer& Begin();
-  void TarversePasses(const vk::raii::CommandBuffer& command_buffer);
   void End(const vk::raii::CommandBuffer& command_buffer);
+  void TarversePasses(const vk::raii::CommandBuffer& command_buffer);
 
   std::shared_ptr<Asset> asset_;
   std::shared_ptr<Window> window_;
