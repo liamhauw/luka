@@ -36,7 +36,8 @@ void Gpu::Tick() {
 }
 
 gpu::Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
-                              const void* data, const std::string& name) {
+                              const void* data, bool map,
+                              const std::string& name) {
   gpu::Buffer buffer{allocator_, buffer_ci, true};
 
 #ifndef NDEBUG
@@ -47,7 +48,9 @@ gpu::Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
 
   void* mapped_data{buffer.Map()};
   memcpy(mapped_data, data, buffer_ci.size);
-  buffer.Unmap();
+  if (!map) {
+    buffer.Unmap();
+  }
 
   return buffer;
 }
@@ -427,12 +430,15 @@ vk::raii::DescriptorSets Gpu::AllocateDescriptorSets(
   vk::raii::DescriptorSets descriptor_sets{device_,
                                            descriptor_set_allocate_info};
 
-  // #ifndef NDEBUG
-  //   SetObjectName(
-  //       vk::ObjectType::eDescriptorSet,
-  //       reinterpret_cast<uint64_t>(static_cast<VkDescriptorSet>(*descriptor_set)),
-  //       name, "descriptor_set");
-  // #endif
+#ifndef NDEBUG
+  for (u32 i{0}; i < descriptor_sets.size(); ++i) {
+    SetObjectName(vk::ObjectType::eDescriptorSet,
+                  reinterpret_cast<uint64_t>(
+                      static_cast<VkDescriptorSet>(*(descriptor_sets[i]))),
+                  name, "descriptor_set_" + std::to_string(i));
+  }
+
+#endif
 
   return descriptor_sets;
 }

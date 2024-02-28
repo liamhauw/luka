@@ -19,42 +19,40 @@ Context::Context(std::shared_ptr<Asset> asset, std::shared_ptr<Window> window,
                  std::shared_ptr<SceneGraph> scene_graph)
     : asset_{asset}, window_{window}, gpu_{gpu}, scene_graph_{scene_graph} {
   CreateSwapchain();
-  CreateFrames();
-  CreateAcquiredSemphores();
+  CreateSyncObjects();
+  CreateCommandObjects();
   CreateViewportAndScissor();
   CreatePasses();
 }
 
 Context::~Context() { gpu_->WaitIdle(); }
 
-void Context::Resize() {}
+void Context::Resize() {
+  gpu_->WaitIdle();
+  CreateSwapchain();
+  CreateViewportAndScissor();
+  CreatePasses();
+}
 
-void Context::Draw() {
+void Context::Render() {
   const vk::raii::CommandBuffer& command_buffer{Begin()};
-
   TarversePasses(command_buffer);
-
   End(command_buffer);
 }
 
 const vk::raii::CommandBuffer& Context::Begin() {
   vk::Result result;
   std::tie(result, active_frame_index_) = swapchain_.acquireNextImage(
-      UINT64_MAX, *(acquired_semaphores_[acquired_semaphore_index]), nullptr);
-  if (result != vk::Result::eSuccess) {
-    THROW("Fail to acqurie next image.");
-  }
+      UINT64_MAX, *(acquired_semaphores_[acquired_semaphore_index_]), nullptr);
 
-  auto& cur_frame{frames_[active_frame_index_]};
-  const vk::raii::Fence& command_finished_fense(
-      cur_frame.GetCommandFinishedFence());
-  if (gpu_->WaitForFence(command_finished_fense) != vk::Result::eSuccess) {
-    THROW("Fail to wait for fences.");
-  }
-  gpu_->ResetFence(command_finished_fense);
+  const vk::raii::Fence& command_finished_fence{
+      command_finished_fences_[active_frame_index_]};
+  gpu_->WaitForFence(command_finished_fence);
+
+  gpu_->ResetFence(command_finished_fence);
 
   const vk::raii::CommandBuffer& command_buffer{
-      cur_frame.GetActiveCommandBuffer()};
+      command_buffers_[active_frame_index_][0]};
   command_buffer.reset({});
   command_buffer.begin({});
 
@@ -62,11 +60,13 @@ const vk::raii::CommandBuffer& Context::Begin() {
 }
 
 void Context::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
+  gpu_->BeginLabel(command_buffer, "traverse passes");
   // Set viewport and scissor.
   command_buffer.setViewport(0, viewport_);
   command_buffer.setScissor(0, scissor_);
 
   for (u32 i{0}; i < passes_.size(); ++i) {
+    gpu_->BeginLabel(command_buffer, "pass_" + std::to_string(i));
     // Begin render pass.
     const std::unique_ptr<rd::Pass>& pass{passes_[i]};
     const vk::raii::RenderPass& render_pass{pass->GetRenderPass()};
@@ -84,7 +84,11 @@ void Context::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
     const std::vector<std::unique_ptr<rd::Subpass>>& subpasses{
         pass->GetSubpasses()};
     for (u32 j{0}; j < subpasses.size(); ++j) {
+      gpu_->BeginLabel(command_buffer, "sub_pass_" + std::to_string(j));
       const std::unique_ptr<rd::Subpass>& subpass{subpasses[j]};
+
+      // Update subpass.
+      subpass->Update(active_frame_index_);
 
       // Next subpass.
       if (j > 0) {
@@ -110,8 +114,9 @@ void Context::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
         vk::PipelineLayout pipeline_layout{draw_element.pipeline_layout};
         if (prev_pipeline_layout != pipeline_layout) {
           std::vector<vk::DescriptorSet> descriptor_sets;
-          for (const auto& descriptor_set : draw_element.descriptor_sets) {
-            descriptor_sets.push_back(*descriptor_set);
+          for (const auto& descriptor_set :
+               draw_element.descriptor_sets[active_frame_index_]) {
+            descriptor_sets.push_back(*(descriptor_set));
           }
           command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
                                             draw_element.pipeline_layout, 0,
@@ -145,41 +150,50 @@ void Context::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
           command_buffer.drawIndexed(index_attribute->count, 1, 0, 0, 0);
         }
       }
+
+      gpu_->EndLabel(command_buffer);
     }
 
     // End render pass.
     command_buffer.endRenderPass();
+    gpu_->EndLabel(command_buffer);
   }
+
+  gpu_->EndLabel(command_buffer);
 }
 
 void Context::End(const vk::raii::CommandBuffer& command_buffer) {
   command_buffer.end();
 
-  auto& cur_frame{frames_[active_frame_index_]};
   vk::PipelineStageFlags wait_pipeline_stage{
       vk::PipelineStageFlagBits::eColorAttachmentOutput};
-  vk::SubmitInfo submit_info{*(acquired_semaphores_[acquired_semaphore_index]),
-                             wait_pipeline_stage, *command_buffer,
-                             *(cur_frame.GetRenderFinishedSemphore())};
+  vk::SubmitInfo submit_info{
+      *(acquired_semaphores_[acquired_semaphore_index_]), wait_pipeline_stage,
+      *command_buffer, *(render_finished_semaphores_[active_frame_index_])};
 
   const vk::raii::Queue& graphics_queue{gpu_->GetGraphicsQueue()};
-  graphics_queue.submit(submit_info, *(cur_frame.GetCommandFinishedFence()));
+  graphics_queue.submit(submit_info,
+                        *(command_finished_fences_[active_frame_index_]));
 
-  vk::PresentInfoKHR present_info{*(cur_frame.GetRenderFinishedSemphore()),
-                                  *swapchain_, active_frame_index_};
+  vk::PresentInfoKHR present_info{
+      *(render_finished_semaphores_[active_frame_index_]), *swapchain_,
+      active_frame_index_};
 
   const vk::raii::Queue& present_queue{gpu_->GetPresentQueue()};
 
   vk::Result result{present_queue.presentKHR(present_info)};
-  if (result != vk::Result::eSuccess) {
+  if (result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR) {
     THROW("Fail to present.");
   }
 
-  acquired_semaphore_index =
-      (acquired_semaphore_index + 1) % acquired_semaphores_.size();
+  acquired_semaphore_index_ =
+      (acquired_semaphore_index_ + 1) % acquired_semaphores_.size();
 }
 
 void Context::CreateSwapchain() {
+  // Clear
+  swapchain_.clear();
+
   // Image count.
   const vk::SurfaceCapabilitiesKHR& surface_capabilities{
       gpu_->GetSurfaceCapabilities()};
@@ -282,20 +296,34 @@ void Context::CreateSwapchain() {
   swapchain_ = gpu_->CreateSwapchain(swapchain_ci);
 
   swapchain_images_ = swapchain_.getImages();
+
+  frame_count_ = swapchain_images_.size();
 }
 
-void Context::CreateFrames() {
-  frame_count_ = swapchain_images_.size();
+void Context::CreateSyncObjects() {
+  vk::FenceCreateInfo fence_ci{vk::FenceCreateFlagBits::eSignaled};
+  vk::SemaphoreCreateInfo semaphore_ci;
   for (u32 i{0}; i < frame_count_; ++i) {
-    frames_.emplace_back(gpu_);
+    render_finished_semaphores_.push_back(
+        gpu_->CreateSemaphoreLuka(semaphore_ci));
+
+    command_finished_fences_.push_back(gpu_->CreateFence(fence_ci));
+
+    acquired_semaphores_.push_back(gpu_->CreateSemaphoreLuka(semaphore_ci));
   }
 }
 
-void Context::CreateAcquiredSemphores() {
-  acquired_semaphores_.reserve(frame_count_);
-  vk::SemaphoreCreateInfo semaphore_ci;
-  for (u32 i = 0; i < frame_count_; ++i) {
-    acquired_semaphores_.emplace_back(gpu_->CreateSemaphoreLuka(semaphore_ci));
+void Context::CreateCommandObjects() {
+  vk::CommandPoolCreateInfo command_pool_ci{
+      vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+      gpu_->GetGraphicsQueueIndex()};
+  vk::CommandBufferAllocateInfo command_buffer_ai{
+      nullptr, vk::CommandBufferLevel::ePrimary, 1};
+  for (u32 i{0}; i < frame_count_; ++i) {
+    command_pools_.push_back(gpu_->CreateCommandPool(command_pool_ci));
+
+    command_buffer_ai.commandPool = *(command_pools_.back());
+    command_buffers_.push_back(gpu_->AllocateCommandBuffers(command_buffer_ai));
   }
 }
 
@@ -314,9 +342,11 @@ void Context::CreateViewportAndScissor() {
 }
 
 void Context::CreatePasses() {
+  passes_.clear();
+
   // Swapchain pass.
   std::unique_ptr<Pass> swapchain_pass{std::make_unique<SwapchainPass>(
-      asset_, gpu_, scene_graph_, frames_, swapchain_info_, swapchain_images_)};
+      asset_, gpu_, scene_graph_, swapchain_info_, swapchain_images_)};
 
   passes_.push_back(std::move(swapchain_pass));
 }

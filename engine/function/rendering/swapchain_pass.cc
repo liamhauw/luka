@@ -15,10 +15,9 @@ namespace rd {
 SwapchainPass::SwapchainPass(std::shared_ptr<Asset> asset,
                              std::shared_ptr<Gpu> gpu,
                              std::shared_ptr<SceneGraph> scene_graph,
-                             std::vector<Frame>& frames,
                              const SwapchainInfo& swapchain_info,
                              const std::vector<vk::Image>& swapchain_images)
-    : Pass{asset, gpu, scene_graph, frames, 2, {0}, {}, 1},
+    : Pass{asset, gpu, scene_graph, 2, {0}, {}, 1},
       swapchain_info_{swapchain_info},
       swapchain_images_{swapchain_images} {
   CreateRenderPass();
@@ -100,7 +99,11 @@ void SwapchainPass::CreateFramebuffers() {
       {},
       {vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1}};
 
-  for (u32 i{0}; i < frames_->size(); ++i) {
+  u32 frame_count{static_cast<u32>(swapchain_images_.size())};
+  images_.resize(frame_count);
+  image_views_.resize(frame_count);
+
+  for (u32 i{0}; i < frame_count; ++i) {
     gpu::Image swapchain_image_gpu{swapchain_images_[i]};
 
     swapchain_image_view_ci.image = *swapchain_image_gpu;
@@ -124,20 +127,13 @@ void SwapchainPass::CreateFramebuffers() {
 
     vk::raii::Framebuffer framebuffer{gpu_->CreateFramebuffer(framebuffer_ci)};
 
-    // std::vector<gpu::Image> images{std::move(swapchain_image_gpu),
-    //                                std::move(depth_image)};
-    // std::vector<vk::raii::ImageView> image_views{
-    //     std::move(swapchain_image_view), std::move(depth_image_view)};
-    std::vector<gpu::Image> images;
-    images.push_back(std::move(swapchain_image_gpu));
-    images.push_back(std::move(depth_image));
-    std::vector<vk::raii::ImageView> image_views;
-    image_views.push_back(std::move(swapchain_image_view));
-    image_views.push_back(std::move(depth_image_view));
+    images_[i].push_back(std::move(swapchain_image_gpu));
+    images_[i].push_back(std::move(depth_image));
 
-    images_index_ = (*frames_)[i].AddImages(std::move(images));
-    image_views_index_ = (*frames_)[i].AddImageViews(std::move(image_views));
-    framebuffer_index_ = (*frames_)[i].AddFramebuffer(std::move(framebuffer));
+    image_views_[i].push_back(std::move(swapchain_image_view));
+    image_views_[i].push_back(std::move(depth_image_view));
+
+    framebuffers_.push_back(std::move(framebuffer));
   }
 }
 
@@ -154,8 +150,8 @@ void SwapchainPass::CreateClearValues() {
 }
 
 void SwapchainPass::CreateSubpasses() {
-  std::unique_ptr<Subpass> forward_subpass{
-      std::make_unique<GeometrySubpass>(asset_, gpu_, scene_graph_, render_pass_)};
+  std::unique_ptr<Subpass> forward_subpass{std::make_unique<GeometrySubpass>(
+      asset_, gpu_, scene_graph_, render_pass_, swapchain_images_.size())};
   subpasses_.push_back(std::move(forward_subpass));
 }
 

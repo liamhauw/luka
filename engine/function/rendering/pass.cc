@@ -12,15 +12,13 @@ namespace luka {
 namespace rd {
 
 Pass::Pass(std::shared_ptr<Asset> asset, std::shared_ptr<Gpu> gpu,
-           std::shared_ptr<SceneGraph> scene_graph, std::vector<Frame>& frames,
-           u32 attachment_count,
+           std::shared_ptr<SceneGraph> scene_graph, u32 attachment_count,
            const std::vector<u32>& color_attachment_indices,
            const std::vector<u32>& resolve_attachment_indices,
            u32 depth_stencil_attachment_index)
     : asset_{asset},
       gpu_{gpu},
       scene_graph_{scene_graph},
-      frames_{&frames},
       attachment_count_{attachment_count},
       color_attachment_indices_{color_attachment_indices},
       resolve_attachment_indices_{resolve_attachment_indices},
@@ -43,7 +41,7 @@ u32 Pass::GetDepthStencilAttachmentIndex() const {
 const vk::raii::RenderPass& Pass::GetRenderPass() const { return render_pass_; }
 
 const vk::raii::Framebuffer& Pass::GetFramebuffer(u32 frame_index) const {
-  return (*frames_)[frame_index].GetFramebuffer(framebuffer_index_);
+  return framebuffers_[frame_index];
 }
 
 const vk::Rect2D& Pass::GetRenderArea() const { return render_area_; }

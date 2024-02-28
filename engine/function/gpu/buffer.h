@@ -27,13 +27,14 @@ class Buffer {
   const vk::Buffer& operator*() const noexcept;
   void Clear() noexcept;
 
-  void* Map() const;
-  void Unmap() const;
+  void* Map();
+  void Unmap();
 
  private:
   VmaAllocator allocator_{nullptr};
   vk::Buffer buffer_{nullptr};
   VmaAllocation allocation_{nullptr};
+  void* mapped_data_{nullptr};
 };
 
 }  // namespace gpu

@@ -32,7 +32,7 @@ class Gpu {
   void Tick();
 
   gpu::Buffer CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
-                           const void* data, const std::string& name = {});
+                           const void* data, bool map = false, const std::string& name = {});
 
   gpu::Buffer CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
                            const gpu::Buffer& staging_buffer,
@@ -130,7 +130,7 @@ class Gpu {
 
   void BeginLabel(const vk::raii::CommandBuffer& command_buffer,
                   const std::string& label,
-                  const std::array<f32, 4>& color = {0.0F, 0.0F, 0.6F, 1.0F});
+                  const std::array<f32, 4>& color = {0.8F, 0.7F, 1.0F, 1.0F});
 
   void EndLabel(const vk::raii::CommandBuffer& command_buffer);
 

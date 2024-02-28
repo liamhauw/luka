@@ -31,7 +31,6 @@ set(HEADER_FILES
   function/gpu/image.h
 
   function/rendering/context.h
-  function/rendering/frame.h
   function/rendering/geometry_subpass.h
   function/rendering/pass.h
   function/rendering/rendering.h
@@ -83,7 +82,6 @@ set(SOURCE_FILES
   function/gpu/image.cc
 
   function/rendering/context.cc
-  function/rendering/frame.cc
   function/rendering/geometry_subpass.cc
   function/rendering/pass.cc
   function/rendering/rendering.cc

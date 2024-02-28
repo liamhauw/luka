@@ -14,13 +14,37 @@ namespace rd {
 GeometrySubpass::GeometrySubpass(std::shared_ptr<Asset> asset,
                                  std::shared_ptr<Gpu> gpu,
                                  std::shared_ptr<SceneGraph> scene_graph,
-                                 const vk::raii::RenderPass& render_pass)
-    : Subpass{asset, gpu, scene_graph} {
-  CreateDrawElements(render_pass);
+                                 const vk::raii::RenderPass& render_pass,
+                                 u32 frame_count)
+    : Subpass{asset, gpu, scene_graph, render_pass, frame_count},
+      global_created_(frame_count, false),
+      global_uniforms_(frame_count),
+      global_uniform_buffers_(frame_count) {
+  CreateDrawElements();
 }
 
-void GeometrySubpass::CreateDrawElements(
-    const vk::raii::RenderPass& render_pass) {
+void GeometrySubpass::Update(u32 active_frame_index) {
+  auto& global_uniform{global_uniforms_[active_frame_index]};
+  glm::vec3 eye{0.0F, 3.5F, 2.0F};
+  glm::vec3 look{0.0F, 0.0F, -1.0F};
+  glm::vec3 right{1.0F, 0.0F, 0.0F};
+
+  glm::mat4 view{glm::lookAt(eye, eye + look, glm::vec3(0.0f, -1.0f, 0.0f))};
+  glm::mat4 projection{
+      glm::perspective(glm::radians(60.0f), 1.78f, 0.1f, 1000.0f)};
+
+  global_uniform.model = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f),
+                                     glm::vec3(0.0f, 1.0f, 0.0f));
+  global_uniform.view_projection = projection * view;
+  global_uniform.camera_position = glm::vec4{eye, 1.0F};
+
+  gpu::Buffer& uniform_buffer{global_uniform_buffers_[active_frame_index]};
+
+  void* mapped_data{uniform_buffer.Map()};
+  memcpy(mapped_data, &global_uniform, sizeof(global_uniform));
+}
+
+void GeometrySubpass::CreateDrawElements() {
   const sg::Map& object{scene_graph_->GetObject()};
   const sg::Scene* scene{object.GetScene()};
   const std::vector<sg::Node*>& nodes{scene->GetNodes()};
@@ -46,14 +70,13 @@ void GeometrySubpass::CreateDrawElements(
     const glm::mat4& model{cur_node->GetMarix()};
 
     for (const sg::Primitive& primitive : primitives) {
-      DrawElement draw_element{CreateDrawElement(primitive, render_pass)};
+      DrawElement draw_element{CreateDrawElement(primitive)};
       draw_elements_.push_back(std::move(draw_element));
     }
   }
 }
 
-DrawElement GeometrySubpass::CreateDrawElement(
-    const sg::Primitive& primitive, const vk::raii::RenderPass& render_pass) {
+DrawElement GeometrySubpass::CreateDrawElement(const sg::Primitive& primitive) {
   DrawElement draw_element;
 
   // Primitive info.
@@ -309,96 +332,83 @@ DrawElement GeometrySubpass::CreateDrawElement(
       &color_blend_state_ci,
       &dynamic_state_create_info,
       *pipeline_layout,
-      *render_pass};
+      render_pass_};
 
   const vk::raii::Pipeline& pipeline{
       gpu_->RequestPipeline(graphics_pipeline_create_info)};
   draw_element.pipeline = *pipeline;
 
   // Descriptor set.
-  vk::DescriptorSetAllocateInfo descriptor_set_allocate_info{{}, set_layouts};
-  vk::raii::DescriptorSets descriptor_sets{
-      gpu_->AllocateDescriptorSets(descriptor_set_allocate_info)};
+  for (u32 i{0}; i < frame_count_; ++i) {
+    vk::DescriptorSetAllocateInfo descriptor_set_allocate_info{{}, set_layouts};
+    vk::raii::DescriptorSets descriptor_sets{
+        gpu_->AllocateDescriptorSets(descriptor_set_allocate_info)};
 
-  std::vector<vk::WriteDescriptorSet> write_descriptor_sets;
+    std::vector<vk::WriteDescriptorSet> write_descriptor_sets;
 
-  // 1. Combined image samplers.
-  for (const auto& texture : textures) {
-    const std::string& name{texture.first};
+    // 1. Combined image samplers.
+    for (const auto& texture : textures) {
+      const std::string& name{texture.first};
 
-    auto it{name_shader_resources.find(name)};
-    if (it != name_shader_resources.end()) {
-      const ShaderResource& shader_resource{it->second};
+      auto it{name_shader_resources.find(name)};
+      if (it != name_shader_resources.end()) {
+        const ShaderResource& shader_resource{it->second};
 
-      sg::Texture* tex{texture.second};
+        sg::Texture* tex{texture.second};
 
-      const vk::raii::ImageView& image_view{tex->GetImage()->GetImageView()};
-      const vk::raii::Sampler& sampler{tex->GetSampler()->GetSampler()};
+        const vk::raii::ImageView& image_view{tex->GetImage()->GetImageView()};
+        const vk::raii::Sampler& sampler{tex->GetSampler()->GetSampler()};
 
-      vk::DescriptorImageInfo descriptor_image_info{
-          *sampler, *image_view, vk::ImageLayout::eShaderReadOnlyOptimal};
+        vk::DescriptorImageInfo descriptor_image_info{
+            *sampler, *image_view, vk::ImageLayout::eShaderReadOnlyOptimal};
 
-      vk::WriteDescriptorSet write_descriptor_set{
-          *(descriptor_sets[shader_resource.set]), shader_resource.binding, 0,
-          vk::DescriptorType::eCombinedImageSampler, descriptor_image_info};
+        vk::WriteDescriptorSet write_descriptor_set{
+            *(descriptor_sets[shader_resource.set]), shader_resource.binding, 0,
+            vk::DescriptorType::eCombinedImageSampler, descriptor_image_info};
 
-      write_descriptor_sets.push_back(std::move(write_descriptor_set));
+        write_descriptor_sets.push_back(std::move(write_descriptor_set));
+      }
     }
-  }
 
-  // 2. Uniform buffers.
-  for (const auto& set_shader_resource : set_shader_resources) {
-    u32 set{set_shader_resource.first};
-    const auto& shader_resources{set_shader_resource.second};
-    for (const auto& shader_resource : shader_resources) {
-      if (shader_resource.type == ShaderResourceType::kUniformBuffer) {
-        if (shader_resource.name == "GlobalUniform") {
-          if (!global_created_) {
-            glm::vec3 eye{0.0F, 3.5F, 2.0F};
-            glm::vec3 look{0.0F, 0.0F, -1.0F};
-            glm::vec3 right{1.0F, 0.0F, 0.0F};
+    // 2. Uniform buffers.
+    for (const auto& set_shader_resource : set_shader_resources) {
+      u32 set{set_shader_resource.first};
+      const auto& shader_resources{set_shader_resource.second};
+      for (const auto& shader_resource : shader_resources) {
+        if (shader_resource.type == ShaderResourceType::kUniformBuffer) {
+          if (shader_resource.name == "GlobalUniform") {
+            if (!global_created_[i]) {
+              vk::BufferCreateInfo uniform_buffer_ci{
+                  {},
+                  sizeof(GlobalUniform),
+                  vk::BufferUsageFlagBits::eUniformBuffer,
+                  vk::SharingMode::eExclusive};
+              global_uniform_buffers_[i] =
+                  gpu_->CreateBuffer(uniform_buffer_ci, &(global_uniforms_[i]),
+                                     true, "globale_uniform");
+              global_created_[i] = true;
+            }
 
-            glm::mat4 view{
-                glm::lookAt(eye, eye + look, glm::vec3(0.0f, -1.0f, 0.0f))};
-            glm::mat4 projection{
-                glm::perspective(glm::radians(60.0f), 1.78f, 0.1f, 1000.0f)};
+            vk::DescriptorBufferInfo descriptor_buffer_info{
+                *(global_uniform_buffers_[i]), 0, sizeof(GlobalUniform)};
 
-            global_uniform_.model =
-                glm::rotate(glm::mat4(1.0f), glm::radians(0.0f),
-                            glm::vec3(0.0f, 1.0f, 0.0f));
-            global_uniform_.view_projection = projection * view;
-            global_uniform_.camera_position = glm::vec4{eye, 1.0F};
+            vk::WriteDescriptorSet write_descriptor_set{
+                *(descriptor_sets[shader_resource.set]),
+                shader_resource.binding,
+                0,
+                vk::DescriptorType::eUniformBuffer,
+                nullptr,
+                descriptor_buffer_info};
 
-            vk::BufferCreateInfo uniform_buffer_ci{
-                {},
-                sizeof(GlobalUniform),
-                vk::BufferUsageFlagBits::eUniformBuffer,
-                vk::SharingMode::eExclusive};
-            global_uniform_buffer_ = gpu_->CreateBuffer(
-                uniform_buffer_ci, &global_uniform_, "globale_uniform");
-            global_created_ = true;
+            write_descriptor_sets.push_back(std::move(write_descriptor_set));
           }
-
-          vk::DescriptorBufferInfo descriptor_buffer_info{
-              *global_uniform_buffer_, 0, sizeof(GlobalUniform)};
-
-          vk::WriteDescriptorSet write_descriptor_set{
-              *(descriptor_sets[shader_resource.set]),
-              shader_resource.binding,
-              0,
-              vk::DescriptorType::eUniformBuffer,
-              nullptr,
-              descriptor_buffer_info};
-
-          write_descriptor_sets.push_back(std::move(write_descriptor_set));
         }
       }
     }
+
+    gpu_->UpdateDescriptorSets(write_descriptor_sets);
+    draw_element.descriptor_sets.push_back(std::move(descriptor_sets));
   }
-
-  gpu_->UpdateDescriptorSets(write_descriptor_sets);
-
-  draw_element.descriptor_sets = std::move(descriptor_sets);
 
   return draw_element;
 }

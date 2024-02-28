@@ -8,7 +8,6 @@
 // clang-format on
 
 #include "function/gpu/gpu.h"
-#include "function/rendering/frame.h"
 #include "function/rendering/subpass.h"
 #include "function/scene_graph/scene_graph.h"
 #include "resource/asset/asset.h"
@@ -20,8 +19,8 @@ namespace rd {
 class Pass {
  public:
   Pass(std::shared_ptr<Asset> asset, std::shared_ptr<Gpu> gpu,
-       std::shared_ptr<SceneGraph> scene_graph, std::vector<Frame>& frames,
-       u32 attachment_count, const std::vector<u32>& color_attachment_indices,
+       std::shared_ptr<SceneGraph> scene_graph, u32 attachment_count,
+       const std::vector<u32>& color_attachment_indices,
        const std::vector<u32>& resolve_attachment_indices,
        u32 depth_stencil_attachment_index);
   virtual ~Pass() = default;
@@ -47,7 +46,6 @@ class Pass {
   std::shared_ptr<Asset> asset_;
   std::shared_ptr<Gpu> gpu_;
   std::shared_ptr<SceneGraph> scene_graph_;
-  std::vector<Frame>* frames_;
 
   u32 attachment_count_;
   std::vector<u32> color_attachment_indices_;
@@ -55,11 +53,15 @@ class Pass {
   u32 depth_stencil_attachment_index_;
 
   vk::raii::RenderPass render_pass_{nullptr};
-  u32 images_index_{0};
-  u32 image_views_index_{0};
-  u32 framebuffer_index_{0};
+
+  std::vector<std::vector<gpu::Image>> images_;
+  std::vector<std::vector<vk::raii::ImageView>> image_views_;
+  std::vector<vk::raii::Framebuffer> framebuffers_;
+
   vk::Rect2D render_area_;
+
   std::vector<vk::ClearValue> clear_values_;
+  
   std::vector<std::unique_ptr<Subpass>> subpasses_;
 };
 

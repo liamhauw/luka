@@ -21,28 +21,23 @@ struct alignas(16) GlobalUniform {
   glm::vec3 camera_position;
 };
 
-struct PBRMaterialUniform {
-  glm::vec4 base_color_factor;
-  float metallic_factor;
-  float roughness_factor;
-};
-
 class GeometrySubpass : public Subpass {
  public:
   GeometrySubpass(std::shared_ptr<Asset> asset, std::shared_ptr<Gpu> gpu,
                   std::shared_ptr<SceneGraph> scene_graph,
-                  const vk::raii::RenderPass& render_pass);
+                  const vk::raii::RenderPass& render_pass, u32 frame_count);
   ~GeometrySubpass() = default;
 
+  void Update(u32 active_frame_index) override;
+
  private:
-  void CreateDrawElements(const vk::raii::RenderPass& render_pass) override;
+  void CreateDrawElements() override;
 
-  DrawElement CreateDrawElement(const sg::Primitive& primitive,
-                                const vk::raii::RenderPass& render_pass);
+  DrawElement CreateDrawElement(const sg::Primitive& primitive);
 
-  bool global_created_{false};
-  GlobalUniform global_uniform_;
-  gpu::Buffer global_uniform_buffer_;
+  std::vector<bool> global_created_;
+  std::vector<GlobalUniform> global_uniforms_;
+  std::vector<gpu::Buffer> global_uniform_buffers_;
 };
 
 }  // namespace rd

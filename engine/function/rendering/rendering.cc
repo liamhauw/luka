@@ -32,7 +32,8 @@ void Rendering::Tick() {
     context_.Resize();
   }
 
-  context_.Draw();
+  // Render.
+  context_.Render();
 }
 
 }  // namespace luka

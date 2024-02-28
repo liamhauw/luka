@@ -28,18 +28,23 @@ Buffer::Buffer(const VmaAllocator& allocator,
   buffer_ = buffer;
 }
 
-Buffer::~Buffer() { Clear(); }
+Buffer::~Buffer() {
+  Unmap();
+  Clear();
+}
 
 Buffer::Buffer(Buffer&& rhs) noexcept
     : allocator_{rhs.allocator_},
       buffer_{std::exchange(rhs.buffer_, {})},
-      allocation_{std::exchange(rhs.allocation_, {})} {}
+      allocation_{std::exchange(rhs.allocation_, {})},
+      mapped_data_{std::exchange(rhs.mapped_data_, nullptr)} {}
 
 Buffer& Buffer::operator=(Buffer&& rhs) noexcept {
   if (this != &rhs) {
     allocator_ = rhs.allocator_;
     std::swap(buffer_, rhs.buffer_);
     std::swap(allocation_, rhs.allocation_);
+    std::swap(mapped_data_, rhs.mapped_data_);
   }
   return *this;
 }
@@ -53,15 +58,23 @@ void Buffer::Clear() noexcept {
   allocator_ = nullptr;
   buffer_ = nullptr;
   allocation_ = nullptr;
+  mapped_data_ = nullptr;
 }
 
-void* Buffer::Map() const {
-  void* mapped_data;
-  vmaMapMemory(allocator_, allocation_, &mapped_data);
-  return mapped_data;
+void* Buffer::Map() {
+  if (!mapped_data_) {
+    vmaMapMemory(allocator_, allocation_, &mapped_data_);
+  }
+
+  return mapped_data_;
 }
 
-void Buffer::Unmap() const { vmaUnmapMemory(allocator_, allocation_); }
+void Buffer::Unmap() {
+  if (mapped_data_) {
+    vmaUnmapMemory(allocator_, allocation_);
+    mapped_data_ = nullptr;
+  }
+}
 
 }  // namespace gpu
 
