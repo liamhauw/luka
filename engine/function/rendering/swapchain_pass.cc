@@ -27,6 +27,14 @@ SwapchainPass::SwapchainPass(std::shared_ptr<Asset> asset,
   CreateSubpasses();
 }
 
+void SwapchainPass::Resize(const SwapchainInfo& swapchain_info,
+                           const std::vector<vk::Image>& swapchain_images) {
+  swapchain_info_ = swapchain_info;
+  swapchain_images_ = swapchain_images;
+  CreateFramebuffers();
+  CreateRenderArea();
+}
+
 void SwapchainPass::CreateRenderPass() {
   std::vector<vk::AttachmentDescription> attachment_descriptions(
       attachment_count_);
@@ -68,6 +76,10 @@ void SwapchainPass::CreateRenderPass() {
 }
 
 void SwapchainPass::CreateFramebuffers() {
+  images_.clear();
+  image_views_.clear();
+  framebuffers_.clear();
+
   vk::ImageViewCreateInfo swapchain_image_view_ci{
       {},
       {},

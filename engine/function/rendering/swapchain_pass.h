@@ -14,15 +14,6 @@ namespace luka {
 
 namespace rd {
 
-struct SwapchainInfo {
-  u32 image_count;
-  vk::Format color_format;
-  vk::ColorSpaceKHR color_space;
-  vk::Extent2D extent;
-  vk::PresentModeKHR present_mode;
-  vk::Format depth_stencil_format_{vk::Format::eD32Sfloat};
-};
-
 class SwapchainPass : public Pass {
  public:
   SwapchainPass(std::shared_ptr<Asset> asset, std::shared_ptr<Gpu> gpu,
@@ -30,6 +21,9 @@ class SwapchainPass : public Pass {
                 const SwapchainInfo& swapchain_info,
                 const std::vector<vk::Image>& swapchain_images);
   ~SwapchainPass() = default;
+
+  void Resize(const SwapchainInfo& swapchain_info,
+              const std::vector<vk::Image>& swapchain_images) override;
 
  private:
   void CreateRenderPass() override;

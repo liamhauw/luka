@@ -31,7 +31,9 @@ void Context::Resize() {
   gpu_->WaitIdle();
   CreateSwapchain();
   CreateViewportAndScissor();
-  CreatePasses();
+  for (auto& pass : passes_) {
+    pass->Resize(swapchain_info_, swapchain_images_);
+  }
 }
 
 void Context::Render() {
@@ -339,8 +341,6 @@ void Context::CreateViewportAndScissor() {
 }
 
 void Context::CreatePasses() {
-  passes_.clear();
-
   std::unique_ptr<Pass> swapchain_pass{std::make_unique<SwapchainPass>(
       asset_, gpu_, scene_graph_, swapchain_info_, swapchain_images_)};
 

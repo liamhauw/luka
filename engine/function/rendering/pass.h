@@ -16,6 +16,15 @@ namespace luka {
 
 namespace rd {
 
+struct SwapchainInfo {
+  u32 image_count;
+  vk::Format color_format;
+  vk::ColorSpaceKHR color_space;
+  vk::Extent2D extent;
+  vk::PresentModeKHR present_mode;
+  vk::Format depth_stencil_format_{vk::Format::eD32Sfloat};
+};
+
 class Pass {
  public:
   Pass(std::shared_ptr<Asset> asset, std::shared_ptr<Gpu> gpu,
@@ -24,6 +33,9 @@ class Pass {
        const std::vector<u32>& resolve_attachment_indices,
        u32 depth_stencil_attachment_index);
   virtual ~Pass() = default;
+
+  virtual void Resize(const SwapchainInfo& swapchain_info,
+                      const std::vector<vk::Image>& swapchain_images) {}
 
   u32 GetAttachmentCount() const;
   const std::vector<u32>& GetColorAttachmentIndices() const;
@@ -61,7 +73,7 @@ class Pass {
   vk::Rect2D render_area_;
 
   std::vector<vk::ClearValue> clear_values_;
-  
+
   std::vector<std::unique_ptr<Subpass>> subpasses_;
 };
 

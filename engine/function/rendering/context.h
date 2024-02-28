@@ -61,7 +61,7 @@ class Context {
 
   vk::Viewport viewport_;
   vk::Rect2D scissor_;
-
+        
   std::vector<std::unique_ptr<Pass>> passes_;
 };
 
