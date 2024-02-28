@@ -493,16 +493,16 @@ u32 Gpu::GetGraphicsQueueIndex() const { return graphics_queue_index_.value(); }
 
 u32 Gpu::GetPresentQueueIndex() const { return present_queue_index_.value(); }
 
-const vk::SurfaceCapabilitiesKHR& Gpu::GetSurfaceCapabilities() const {
-  return surface_capabilities_;
+vk::SurfaceCapabilitiesKHR Gpu::GetSurfaceCapabilities() const {
+  return physical_device_.getSurfaceCapabilitiesKHR(*surface_);
 }
 
-const std::vector<vk::SurfaceFormatKHR>& Gpu::GetSurfaceFormats() const {
-  return surface_formats_;
+std::vector<vk::SurfaceFormatKHR> Gpu::GetSurfaceFormats() const {
+  return physical_device_.getSurfaceFormatsKHR(*surface_);
 }
 
-const std::vector<vk::PresentModeKHR>& Gpu::GetSurfacePresentModes() const {
-  return present_modes_;
+std::vector<vk::PresentModeKHR> Gpu::GetSurfacePresentModes() const {
+  return physical_device_.getSurfacePresentModesKHR(*surface_);
 }
 
 void Gpu::CreateInstance() {
@@ -664,10 +664,6 @@ void Gpu::CreatePhysicalDevice() {
   if (!(*physical_device_)) {
     THROW("Fail to find physical device.");
   }
-
-  surface_capabilities_ = physical_device_.getSurfaceCapabilitiesKHR(*surface_);
-  surface_formats_ = physical_device_.getSurfaceFormatsKHR(*surface_);
-  present_modes_ = physical_device_.getSurfacePresentModesKHR(*surface_);
 }
 
 void Gpu::CreateDevice() {

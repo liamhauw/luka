@@ -129,11 +129,11 @@ class Gpu {
 
   u32 GetPresentQueueIndex() const;
 
-  const vk::SurfaceCapabilitiesKHR& GetSurfaceCapabilities() const;
+  vk::SurfaceCapabilitiesKHR GetSurfaceCapabilities() const;
 
-  const std::vector<vk::SurfaceFormatKHR>& GetSurfaceFormats() const;
+  std::vector<vk::SurfaceFormatKHR> GetSurfaceFormats() const;
 
-  const std::vector<vk::PresentModeKHR>& GetSurfacePresentModes() const;
+  std::vector<vk::PresentModeKHR> GetSurfacePresentModes() const;
 
  private:
   void CreateInstance();
@@ -164,9 +164,6 @@ class Gpu {
   vk::raii::SurfaceKHR surface_{nullptr};
 
   vk::raii::PhysicalDevice physical_device_{nullptr};
-  vk::SurfaceCapabilitiesKHR surface_capabilities_;
-  std::vector<vk::SurfaceFormatKHR> surface_formats_;
-  std::vector<vk::PresentModeKHR> present_modes_;
 
   vk::SampleCountFlagBits sample_count_{vk::SampleCountFlagBits::e1};
   f32 max_anisotropy_{0.0f};
