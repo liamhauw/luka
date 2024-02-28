@@ -19,7 +19,7 @@ namespace rd {
 struct DrawElement {
   vk::Pipeline pipeline;
   vk::PipelineLayout pipeline_layout;
-  std::vector<vk::DescriptorSet> descriptor_sets;
+  vk::raii::DescriptorSets descriptor_sets{nullptr};
   std::map<u32, const sg::VertexAttribute*> location_vertex_attributes;
   u64 vertex_count;
   const sg::IndexAttribute* index_attribute;

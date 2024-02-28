@@ -25,6 +25,8 @@ class Sampler : public Component {
   virtual ~Sampler() = default;
   std::type_index GetType() override;
 
+  const vk::raii::Sampler& GetSampler() const;
+
  private:
   vk::raii::Sampler sampler_{nullptr};
 };

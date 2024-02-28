@@ -7,12 +7,25 @@
 #include "platform/pch.h"
 // clang-format on
 
+#include "core/math.h"
 #include "function/rendering/spirv.h"
 #include "function/rendering/subpass.h"
 
 namespace luka {
 
 namespace rd {
+
+struct alignas(16) GlobalUniform {
+  glm::mat4 model;
+  glm::mat4 view_projection;
+  glm::vec3 camera_position;
+};
+
+struct PBRMaterialUniform {
+  glm::vec4 base_color_factor;
+  float metallic_factor;
+  float roughness_factor;
+};
 
 class GeometrySubpass : public Subpass {
  public:
@@ -24,7 +37,12 @@ class GeometrySubpass : public Subpass {
  private:
   void CreateDrawElements(const vk::raii::RenderPass& render_pass) override;
 
-  DrawElement CreateDrawElement(const sg::Primitive& primitive, const vk::raii::RenderPass& render_pass);
+  DrawElement CreateDrawElement(const sg::Primitive& primitive,
+                                const vk::raii::RenderPass& render_pass);
+
+  bool global_created_{false};
+  GlobalUniform global_uniform_;
+  gpu::Buffer global_uniform_buffer_;
 };
 
 }  // namespace rd

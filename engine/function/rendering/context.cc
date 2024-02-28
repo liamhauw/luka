@@ -109,9 +109,13 @@ void Context::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
         // Bind descriptor sets.
         vk::PipelineLayout pipeline_layout{draw_element.pipeline_layout};
         if (prev_pipeline_layout != pipeline_layout) {
-          command_buffer.bindDescriptorSets(
-              vk::PipelineBindPoint::eGraphics, draw_element.pipeline_layout, 0,
-              draw_element.descriptor_sets, nullptr);
+          std::vector<vk::DescriptorSet> descriptor_sets;
+          for (const auto& descriptor_set : draw_element.descriptor_sets) {
+            descriptor_sets.push_back(*descriptor_set);
+          }
+          command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+                                            draw_element.pipeline_layout, 0,
+                                            descriptor_sets, nullptr);
         }
 
         // Bind vertex buffers.

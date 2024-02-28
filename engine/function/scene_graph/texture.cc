@@ -33,6 +33,10 @@ Texture::Texture(const std::vector<Image*>& image_components,
 
 std::type_index Texture::GetType() { return typeid(Texture); }
 
+Image* Texture::GetImage() { return image_; }
+
+Sampler* Texture::GetSampler() { return sampler_; }
+
 }  // namespace sg
 
 }  // namespace luka

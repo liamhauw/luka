@@ -420,21 +420,21 @@ const vk::raii::Pipeline& Gpu::RequestPipeline(
   return it1.first->second;
 }
 
-vk::raii::DescriptorSet Gpu::AllocateDescriptorSet(
+vk::raii::DescriptorSets Gpu::AllocateDescriptorSets(
     vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
     const std::string& name) {
   descriptor_set_allocate_info.descriptorPool = *descriptor_pool_;
-  vk::raii::DescriptorSet descriptor_set{std::move(
-      device_.allocateDescriptorSets(descriptor_set_allocate_info).front())};
+  vk::raii::DescriptorSets descriptor_sets{device_,
+                                           descriptor_set_allocate_info};
 
-#ifndef NDEBUG
-  SetObjectName(
-      vk::ObjectType::eDescriptorSet,
-      reinterpret_cast<uint64_t>(static_cast<VkDescriptorSet>(*descriptor_set)),
-      name, "descriptor_set");
-#endif
+  // #ifndef NDEBUG
+  //   SetObjectName(
+  //       vk::ObjectType::eDescriptorSet,
+  //       reinterpret_cast<uint64_t>(static_cast<VkDescriptorSet>(*descriptor_set)),
+  //       name, "descriptor_set");
+  // #endif
 
-  return descriptor_set;
+  return descriptor_sets;
 }
 
 void Gpu::UpdateDescriptorSets(

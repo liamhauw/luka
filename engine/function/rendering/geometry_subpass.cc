@@ -74,7 +74,7 @@ DrawElement GeometrySubpass::CreateDrawElement(
   for (const auto& texture : textures) {
     std::string name{texture.first};
     std::transform(name.begin(), name.end(), name.begin(), ::toupper);
-    shader_processes.push_back("DHAS_" + name + "_TEXTURE");
+    shader_processes.push_back("DHAS_" + name);
   }
 
   SPIRV spirv_vert;
@@ -157,7 +157,8 @@ DrawElement GeometrySubpass::CreateDrawElement(
 
       if (shader_resource.type == ShaderResourceType::kUniformBuffer) {
         descriptor_type = vk::DescriptorType::eUniformBuffer;
-      } else if (shader_resource.type == ShaderResourceType::kCombinedImageSampler) {
+      } else if (shader_resource.type ==
+                 ShaderResourceType::kCombinedImageSampler) {
         descriptor_type = vk::DescriptorType::eCombinedImageSampler;
       } else {
         continue;
@@ -313,6 +314,91 @@ DrawElement GeometrySubpass::CreateDrawElement(
   const vk::raii::Pipeline& pipeline{
       gpu_->RequestPipeline(graphics_pipeline_create_info)};
   draw_element.pipeline = *pipeline;
+
+  // Descriptor set.
+  vk::DescriptorSetAllocateInfo descriptor_set_allocate_info{{}, set_layouts};
+  vk::raii::DescriptorSets descriptor_sets{
+      gpu_->AllocateDescriptorSets(descriptor_set_allocate_info)};
+
+  std::vector<vk::WriteDescriptorSet> write_descriptor_sets;
+
+  // 1. Combined image samplers.
+  for (const auto& texture : textures) {
+    const std::string& name{texture.first};
+
+    auto it{name_shader_resources.find(name)};
+    if (it != name_shader_resources.end()) {
+      const ShaderResource& shader_resource{it->second};
+
+      sg::Texture* tex{texture.second};
+
+      const vk::raii::ImageView& image_view{tex->GetImage()->GetImageView()};
+      const vk::raii::Sampler& sampler{tex->GetSampler()->GetSampler()};
+
+      vk::DescriptorImageInfo descriptor_image_info{
+          *sampler, *image_view, vk::ImageLayout::eShaderReadOnlyOptimal};
+
+      vk::WriteDescriptorSet write_descriptor_set{
+          *(descriptor_sets[shader_resource.set]), shader_resource.binding, 0,
+          vk::DescriptorType::eCombinedImageSampler, descriptor_image_info};
+
+      write_descriptor_sets.push_back(std::move(write_descriptor_set));
+    }
+  }
+
+  // 2. Uniform buffers.
+  for (const auto& set_shader_resource : set_shader_resources) {
+    u32 set{set_shader_resource.first};
+    const auto& shader_resources{set_shader_resource.second};
+    for (const auto& shader_resource : shader_resources) {
+      if (shader_resource.type == ShaderResourceType::kUniformBuffer) {
+        if (shader_resource.name == "GlobalUniform") {
+          if (!global_created_) {
+            glm::vec3 eye{0.0F, 3.5F, 2.0F};
+            glm::vec3 look{0.0F, 0.0F, -1.0F};
+            glm::vec3 right{1.0F, 0.0F, 0.0F};
+
+            glm::mat4 view{
+                glm::lookAt(eye, eye + look, glm::vec3(0.0f, -1.0f, 0.0f))};
+            glm::mat4 projection{
+                glm::perspective(glm::radians(60.0f), 1.78f, 0.1f, 1000.0f)};
+
+            global_uniform_.model =
+                glm::rotate(glm::mat4(1.0f), glm::radians(0.0f),
+                            glm::vec3(0.0f, 1.0f, 0.0f));
+            global_uniform_.view_projection = projection * view;
+            global_uniform_.camera_position = glm::vec4{eye, 1.0F};
+
+            vk::BufferCreateInfo uniform_buffer_ci{
+                {},
+                sizeof(GlobalUniform),
+                vk::BufferUsageFlagBits::eUniformBuffer,
+                vk::SharingMode::eExclusive};
+            global_uniform_buffer_ = gpu_->CreateBuffer(
+                uniform_buffer_ci, &global_uniform_, "globale_uniform");
+            global_created_ = true;
+          }
+
+          vk::DescriptorBufferInfo descriptor_buffer_info{
+              *global_uniform_buffer_, 0, sizeof(GlobalUniform)};
+
+          vk::WriteDescriptorSet write_descriptor_set{
+              *(descriptor_sets[shader_resource.set]),
+              shader_resource.binding,
+              0,
+              vk::DescriptorType::eUniformBuffer,
+              nullptr,
+              descriptor_buffer_info};
+
+          write_descriptor_sets.push_back(std::move(write_descriptor_set));
+        }
+      }
+    }
+  }
+
+  gpu_->UpdateDescriptorSets(write_descriptor_sets);
+
+  draw_element.descriptor_sets = std::move(descriptor_sets);
 
   return draw_element;
 }

@@ -116,6 +116,10 @@ Image::Image(std::shared_ptr<Gpu> gpu, const ast::Image& model_image,
 
 std::type_index Image::GetType() { return typeid(Image); }
 
+const gpu::Image& Image::GetImage() const { return image_; }
+
+const vk::raii::ImageView& Image::GetImageView() const { return image_view_; }
+
 }  // namespace sg
 
 }  // namespace luka

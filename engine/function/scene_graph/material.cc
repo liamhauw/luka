@@ -46,7 +46,7 @@ Material::Material(const std::vector<Texture*> texture_components,
   if (metallic_roughness.baseColorTexture.index != -1) {
     base_color_texture =
         texture_components[metallic_roughness.baseColorTexture.index];
-    textures_.insert(std::make_pair("base_color", base_color_texture));
+    textures_.insert(std::make_pair("base_color_texture", base_color_texture));
   }
 
   metallic_factor_ = static_cast<f32>(metallic_roughness.metallicFactor);
@@ -58,7 +58,7 @@ Material::Material(const std::vector<Texture*> texture_components,
     metallic_roughness_texture =
         texture_components[metallic_roughness.metallicRoughnessTexture.index];
     textures_.insert(
-        std::make_pair("metallic_roughness", metallic_roughness_texture));
+        std::make_pair("metallic_roughness_texture", metallic_roughness_texture));
   }
 
   // Normal.
@@ -67,7 +67,7 @@ Material::Material(const std::vector<Texture*> texture_components,
   sg::Texture* normal_texture;
   if (normal.index != -1) {
     normal_texture = texture_components[normal.index];
-    textures_.insert(std::make_pair("normal", normal_texture));
+    textures_.insert(std::make_pair("normal_texture", normal_texture));
   }
   scale_ = static_cast<f32>(normal.scale);
 
@@ -78,7 +78,7 @@ Material::Material(const std::vector<Texture*> texture_components,
   sg::Texture* occlusion_texture;
   if (occlusion.index != -1) {
     occlusion_texture = texture_components[occlusion.index];
-    textures_.insert(std::make_pair("occlusion", occlusion_texture));
+    textures_.insert(std::make_pair("occlusion_texture", occlusion_texture));
   }
 
   strength_ = static_cast<f32>(occlusion.strength);
@@ -90,7 +90,7 @@ Material::Material(const std::vector<Texture*> texture_components,
   sg::Texture* emissive_texture;
   if (model_material.emissiveTexture.index != -1) {
     emissive_texture = texture_components[model_material.emissiveTexture.index];
-    textures_.insert(std::make_pair("emissive", emissive_texture));
+    textures_.insert(std::make_pair("emissive_texture", emissive_texture));
   }
 
   // Others.

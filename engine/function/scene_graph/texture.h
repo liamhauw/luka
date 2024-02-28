@@ -26,6 +26,9 @@ class Texture : public Component {
   virtual ~Texture() = default;
   std::type_index GetType() override;
 
+  Image* GetImage();
+  Sampler* GetSampler();
+
  private:
   Image* image_;
   Sampler* sampler_;

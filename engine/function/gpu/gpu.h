@@ -98,7 +98,7 @@ class Gpu {
       const vk::GraphicsPipelineCreateInfo& graphics_pipeline_ci,
       const std::string& name = {});
 
-  vk::raii::DescriptorSet AllocateDescriptorSet(
+  vk::raii::DescriptorSets AllocateDescriptorSets(
       vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
       const std::string& name = {});
 
@@ -154,7 +154,6 @@ class Gpu {
 
   // Parameters.
   std::shared_ptr<Window> window_;
-  ResourceCache resource_cache_;
   const u32 kBackBufferCount{1};
   u32 back_buffer_index{0};
   u32 image_index_{0};
@@ -197,6 +196,9 @@ class Gpu {
 
   // Descriptor objects.
   vk::raii::DescriptorPool descriptor_pool_{nullptr};
+
+  // Resource cache.
+  ResourceCache resource_cache_;
 };
 
 }  // namespace luka

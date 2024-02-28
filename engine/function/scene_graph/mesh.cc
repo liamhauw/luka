@@ -44,7 +44,7 @@ Mesh::Mesh(std::shared_ptr<Gpu> gpu,
 
       vk::BufferCreateInfo buffer_ci{{},
                                      buffer_size,
-                                     vk::BufferUsageFlagBits::eIndexBuffer |
+                                     vk::BufferUsageFlagBits::eVertexBuffer |
                                          vk::BufferUsageFlagBits::eTransferDst,
                                      vk::SharingMode::eExclusive};
 

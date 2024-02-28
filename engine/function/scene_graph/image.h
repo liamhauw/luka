@@ -28,6 +28,9 @@ class Image : public Component {
   virtual ~Image() = default;
   std::type_index GetType() override;
 
+  const gpu::Image& GetImage() const;
+  const vk::raii::ImageView& GetImageView() const;
+
  private:
   gpu::Image image_{nullptr};
   vk::raii::ImageView image_view_{nullptr};

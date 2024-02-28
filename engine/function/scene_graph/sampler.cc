@@ -96,6 +96,9 @@ Sampler::Sampler(std::shared_ptr<Gpu> gpu,
 }
 
 std::type_index Sampler::GetType() { return typeid(Sampler); }
+
+const vk::raii::Sampler& Sampler::GetSampler() const { return sampler_; }
+
 }  // namespace sg
 
 }  // namespace luka
