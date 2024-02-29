@@ -330,12 +330,12 @@ void Context::CreateViewportAndScissor() {
   u32 target_width{swapchain_info_.extent.width};
   u32 target_height{swapchain_info_.extent.height};
 
-  viewport_ = vk::Viewport{0.0f,
-                           0.0f,
+  viewport_ = vk::Viewport{0.0F,
+                           0.0F,
                            static_cast<f32>(target_width),
                            static_cast<f32>(target_height),
-                           0.0f,
-                           1.0f};
+                           0.0F,
+                           1.0F};
   scissor_ =
       vk::Rect2D{vk::Offset2D{0, 0}, vk::Extent2D{target_width, target_height}};
 }

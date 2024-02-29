@@ -16,32 +16,8 @@ GeometrySubpass::GeometrySubpass(std::shared_ptr<Asset> asset,
                                  std::shared_ptr<SceneGraph> scene_graph,
                                  const vk::raii::RenderPass& render_pass,
                                  u32 frame_count)
-    : Subpass{asset, gpu, scene_graph, render_pass, frame_count},
-      global_created_(frame_count, false),
-      global_uniforms_(frame_count),
-      global_uniform_buffers_(frame_count) {
+    : Subpass{asset, gpu, scene_graph, render_pass, frame_count} {
   CreateDrawElements();
-}
-
-void GeometrySubpass::Update(u32 active_frame_index) {
-  auto& global_uniform{global_uniforms_[active_frame_index]};
-  glm::vec3 eye{0.0F, 3.5F, 2.0F};
-  glm::vec3 look{0.0F, 0.0F, -1.0F};
-  glm::vec3 right{1.0F, 0.0F, 0.0F};
-
-  glm::mat4 view{glm::lookAt(eye, eye + look, glm::vec3(0.0f, -1.0f, 0.0f))};
-  glm::mat4 projection{
-      glm::perspective(glm::radians(60.0f), 1.78f, 0.1f, 1000.0f)};
-
-  global_uniform.model = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f),
-                                     glm::vec3(0.0f, 1.0f, 0.0f));
-  global_uniform.view_projection = projection * view;
-  global_uniform.camera_position = glm::vec4{eye, 1.0F};
-
-  gpu::Buffer& uniform_buffer{global_uniform_buffers_[active_frame_index]};
-
-  void* mapped_data{uniform_buffer.Map()};
-  memcpy(mapped_data, &global_uniform, sizeof(global_uniform));
 }
 
 void GeometrySubpass::CreateDrawElements() {
@@ -50,6 +26,7 @@ void GeometrySubpass::CreateDrawElements() {
   const std::vector<sg::Node*>& nodes{scene->GetNodes()};
 
   std::queue<const sg::Node*> all_nodes;
+  std::unordered_map<const sg::Node*, glm::mat4> node_model_matrix;
 
   for (const sg::Node* node : nodes) {
     all_nodes.push(node);
@@ -64,19 +41,27 @@ void GeometrySubpass::CreateDrawElements() {
       all_nodes.push(cur_node_child);
     }
 
+    // Model matrix.
+    glm::mat4 model_matrix{cur_node->GetModelMarix()};
+    const sg::Node* parent_node{cur_node->GetParent()};
+    while (parent_node) {
+      model_matrix *= parent_node->GetModelMarix();
+    }
+
+    // Primitives.
     const sg::Mesh* mesh{cur_node->GetMesh()};
     const std::vector<sg::Primitive>& primitives{mesh->GetPrimitives()};
 
-    const glm::mat4& model{cur_node->GetMarix()};
-
+    // Draw elements.
     for (const sg::Primitive& primitive : primitives) {
-      DrawElement draw_element{CreateDrawElement(primitive)};
+      DrawElement draw_element{CreateDrawElement(model_matrix, primitive)};
       draw_elements_.push_back(std::move(draw_element));
     }
   }
 }
 
-DrawElement GeometrySubpass::CreateDrawElement(const sg::Primitive& primitive) {
+DrawElement GeometrySubpass::CreateDrawElement(const glm::mat4& model_matrix,
+                                               const sg::Primitive& primitive) {
   DrawElement draw_element;
 
   // Primitive info.
@@ -287,10 +272,10 @@ DrawElement GeometrySubpass::CreateDrawElement(const sg::Primitive& primitive) {
       vk::CullModeFlagBits::eBack,
       vk::FrontFace::eCounterClockwise,
       VK_FALSE,
-      0.0f,
-      0.0f,
-      0.0f,
-      1.0f};
+      0.0F,
+      0.0F,
+      0.0F,
+      1.0F};
 
   vk::PipelineMultisampleStateCreateInfo multisample_state_ci{
       {}, vk::SampleCountFlagBits::e1};
@@ -312,7 +297,7 @@ DrawElement GeometrySubpass::CreateDrawElement(const sg::Primitive& primitive) {
       VK_FALSE,
       vk::LogicOp::eCopy,
       color_blend_attachment_state,
-      {{0.0f, 0.0f, 0.0f, 0.0f}}};
+      {{0.0F, 0.0F, 0.0F, 0.0F}}};
 
   std::array<vk::DynamicState, 2> dynamic_states{vk::DynamicState::eViewport,
                                                  vk::DynamicState::eScissor};
@@ -377,18 +362,6 @@ DrawElement GeometrySubpass::CreateDrawElement(const sg::Primitive& primitive) {
       for (const auto& shader_resource : shader_resources) {
         if (shader_resource.type == ShaderResourceType::kUniformBuffer) {
           if (shader_resource.name == "GlobalUniform") {
-            if (!global_created_[i]) {
-              vk::BufferCreateInfo uniform_buffer_ci{
-                  {},
-                  sizeof(GlobalUniform),
-                  vk::BufferUsageFlagBits::eUniformBuffer,
-                  vk::SharingMode::eExclusive};
-              global_uniform_buffers_[i] =
-                  gpu_->CreateBuffer(uniform_buffer_ci, &(global_uniforms_[i]),
-                                     true, "globale_uniform");
-              global_created_[i] = true;
-            }
-
             vk::DescriptorBufferInfo descriptor_buffer_info{
                 *(global_uniform_buffers_[i]), 0, sizeof(GlobalUniform)};
 
@@ -399,6 +372,36 @@ DrawElement GeometrySubpass::CreateDrawElement(const sg::Primitive& primitive) {
                 vk::DescriptorType::eUniformBuffer,
                 nullptr,
                 descriptor_buffer_info};
+
+            write_descriptor_sets.push_back(std::move(write_descriptor_set));
+          } else if (shader_resource.name == "DrawElementUniform") {
+            DrawElementUniform draw_element_uniform{model_matrix};
+
+            vk::BufferCreateInfo uniform_buffer_ci{
+                {},
+                sizeof(DrawElementUniform),
+                vk::BufferUsageFlagBits::eUniformBuffer,
+                vk::SharingMode::eExclusive};
+
+            gpu::Buffer draw_element_uniform_buffer{
+                gpu_->CreateBuffer(uniform_buffer_ci, &draw_element_uniform,
+                                   false, "draw_element_uniform")};
+
+            vk::DescriptorBufferInfo descriptor_buffer_info{
+                *draw_element_uniform_buffer, 0, sizeof(DrawElementUniform)};
+
+            vk::WriteDescriptorSet write_descriptor_set{
+                *(descriptor_sets[shader_resource.set]),
+                shader_resource.binding,
+                0,
+                vk::DescriptorType::eUniformBuffer,
+                nullptr,
+                descriptor_buffer_info};
+
+            draw_element.draw_element_uniforms.push_back(
+                std::move(draw_element_uniform));
+            draw_element.draw_element_uniform_buffers.push_back(
+                std::move(draw_element_uniform_buffer));
 
             write_descriptor_sets.push_back(std::move(write_descriptor_set));
           }

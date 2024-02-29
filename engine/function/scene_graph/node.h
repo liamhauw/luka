@@ -21,7 +21,7 @@ namespace sg {
 
 class Node : public Component {
  public:
-  Node(glm::mat4&& matrix, Mesh* mesh, Light* light, Camera* camera,
+  Node(glm::mat4&& model_matrix, Mesh* mesh, Light* light, Camera* camera,
        const std::vector<i32>& child_indices, const std::string& name = {});
 
   Node(const std::vector<Light*>& light_components,
@@ -40,11 +40,11 @@ class Node : public Component {
   const std::vector<Node*>& GetChildren() const;
   Node* GetParent() const;
 
-  const glm::mat4& GetMarix() const;
+  const glm::mat4& GetModelMarix() const;
   const Mesh* GetMesh() const;
 
  private:
-  glm::mat4 matrix_;
+  glm::mat4 model_matrix_;
   Mesh* mesh_;
   Light* light_;
   Camera* camera_;

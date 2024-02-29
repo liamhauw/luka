@@ -13,10 +13,10 @@ namespace luka {
 
 namespace sg {
 
-Node::Node(glm::mat4&& matrix, Mesh* mesh, Light* light, Camera* camera,
+Node::Node(glm::mat4&& model_matrix, Mesh* mesh, Light* light, Camera* camera,
            const std::vector<i32>& child_indices, const std::string& name)
     : Component{name},
-      matrix_{std::move(matrix)},
+      model_matrix_{std::move(model_matrix)},
       mesh_{mesh},
       light_{light},
       camera_{camera},
@@ -28,11 +28,11 @@ Node::Node(const std::vector<Light*>& light_components,
            const tinygltf::Node& model_node)
     : Component{model_node.name} {
   // Matrix.
-  matrix_ = glm::mat4{1.0F};
+  model_matrix_ = glm::mat4{1.0F};
 
   if (!model_node.matrix.empty()) {
     std::transform(model_node.matrix.begin(), model_node.matrix.end(),
-                   glm::value_ptr(matrix_), TypeCast<f64, f32>{});
+                   glm::value_ptr(model_matrix_), TypeCast<f64, f32>{});
   } else {
     glm::vec3 scale{1.0F, 1.0F, 1.0F};
     glm::quat rotation{0.0F, 0.0F, 0.0F, 1.0F};
@@ -52,8 +52,9 @@ Node::Node(const std::vector<Light*>& light_components,
                      TypeCast<f64, f32>{});
     }
 
-    matrix_ = glm::translate(glm::mat4(1.0F), translation) *
-              glm::mat4_cast(rotation) * glm::scale(glm::mat4(1.0F), scale);
+    model_matrix_ = glm::translate(glm::mat4(1.0F), translation) *
+                    glm::mat4_cast(rotation) *
+                    glm::scale(glm::mat4(1.0F), scale);
   }
 
   // Mesh.
@@ -96,7 +97,7 @@ const std::vector<Node*>& Node::GetChildren() const { return children_; }
 
 Node* Node::GetParent() const { return parent_; }
 
-const glm::mat4& Node::GetMarix() const { return matrix_; }
+const glm::mat4& Node::GetModelMarix() const { return model_matrix_; }
 
 const Mesh* Node::GetMesh() const { return mesh_; }
 

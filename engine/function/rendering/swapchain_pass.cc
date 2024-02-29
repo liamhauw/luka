@@ -156,9 +156,9 @@ void SwapchainPass::CreateRenderArea() {
 void SwapchainPass::CreateClearValues() {
   clear_values_.resize(attachment_count_);
   clear_values_[color_attachment_indices_[0]].color =
-      vk::ClearColorValue{0.0f, 0.0f, 0.0f, 1.0f};
+      vk::ClearColorValue{0.0F, 0.0F, 0.0F, 1.0F};
   clear_values_[depth_stencil_attachment_index_].depthStencil =
-      vk::ClearDepthStencilValue{1.0f, 0};
+      vk::ClearDepthStencilValue{1.0F, 0};
 }
 
 void SwapchainPass::CreateSubpasses() {

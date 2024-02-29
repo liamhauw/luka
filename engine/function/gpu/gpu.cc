@@ -718,7 +718,7 @@ void Gpu::CreateDevice() {
                                      compute_queue_index_.value(),
                                      present_queue_index_.value()};
 
-  f32 queue_priority{0.0f};
+  f32 queue_priority{0.0F};
   for (u32 queue_family_index : queue_family_indexes) {
     vk::DeviceQueueCreateInfo device_queue_ci{
         {}, queue_family_index, 1, &queue_priority};

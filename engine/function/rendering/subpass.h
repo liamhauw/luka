@@ -16,19 +16,29 @@ namespace luka {
 
 namespace rd {
 
+struct alignas(16) GlobalUniform {
+  glm::mat4 pv;
+  glm::vec3 view_position;
+};
+
+struct alignas(16) DrawElementUniform {
+  glm::mat4 m;
+};
+
 struct DrawElement {
   DrawElement() = default;
 
   DrawElement(DrawElement&& other) noexcept
       : pipeline(std::move(other.pipeline)),
         pipeline_layout(std::move(other.pipeline_layout)),
-        descriptor_sets(std::move(other.descriptor_sets)),
         location_vertex_attributes(std::move(other.location_vertex_attributes)),
         vertex_count(other.vertex_count),
         index_attribute(other.index_attribute),
-        has_index(other.has_index) {}
-
-  std::vector<vk::raii::DescriptorSets> descriptor_sets;
+        has_index(other.has_index),
+        draw_element_uniforms{std::move(other.draw_element_uniforms)},
+        draw_element_uniform_buffers{
+            std::move(other.draw_element_uniform_buffers)},
+        descriptor_sets(std::move(other.descriptor_sets)) {}
 
   vk::Pipeline pipeline;
   vk::PipelineLayout pipeline_layout;
@@ -36,6 +46,11 @@ struct DrawElement {
   u64 vertex_count;
   const sg::IndexAttribute* index_attribute;
   bool has_index;
+
+  // For every frame.
+  std::vector<DrawElementUniform> draw_element_uniforms;
+  std::vector<gpu::Buffer> draw_element_uniform_buffers;
+  std::vector<vk::raii::DescriptorSets> descriptor_sets;
 };
 
 class Subpass {
@@ -45,7 +60,7 @@ class Subpass {
           const vk::raii::RenderPass& render_pass, u32 frame_count);
   virtual ~Subpass() = default;
 
-  virtual void Update(u32 active_frame_index) {};
+  void Update(u32 active_frame_index);
 
   const std::vector<DrawElement>& GetDrawElements() const;
 
@@ -58,9 +73,12 @@ class Subpass {
 
   vk::RenderPass render_pass_;
   u32 frame_count_;
-  std::vector<DrawElement> draw_elements_;
+
+  std::vector<GlobalUniform> global_uniforms_;
+  std::vector<gpu::Buffer> global_uniform_buffers_;
 
   std::map<u64, SPIRV> spirv_shaders_;
+  std::vector<DrawElement> draw_elements_;
 };
 
 }  // namespace rd
