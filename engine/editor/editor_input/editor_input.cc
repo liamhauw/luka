@@ -33,9 +33,9 @@ EditorInput::EditorInput(std::shared_ptr<Context> context,
 
 void EditorInput::Tick() {
   f64 delta_time{time_->GetDeltaTime()};
-  f32 move_speed{2.0F};
+  f32 velocity{2.0F};
 
-  f32 move_distance{static_cast<f32>(delta_time * move_speed)};
+  f32 move_distance{static_cast<f32>(delta_time * velocity)};
 
   glm::vec3 camera_relative_pos{0.0F};
   bool has_move{false};
@@ -145,22 +145,25 @@ void EditorInput::OnCursorPos(f64 xpos, f64 ypos) {
   i32 window_height{0};
   window_->GetWindowSize(&window_width, &window_height);
 
-  f32 angularVelocity{180.0F / std::max(window_width, window_height)};
+  f32 angular_velocity{180.0F / std::max(window_width, window_height)};
 
-  if (cursor_xpos_ >= 0.0F && cursor_ypos_ >= 0.0F) {
+  if (prev_xpos_ >= 0.0F && prev_ypos_ >= 0.0F) {
     if (window_->IsMouseButtonDown(GLFW_MOUSE_BUTTON_RIGHT)) {
-      glm::vec2 delta{glm::radians((ypos - cursor_ypos_) * angularVelocity),
-                      glm::radians((xpos - cursor_xpos_) * angularVelocity)};
-      camera_->Rotate(delta);
+      f32 yaw{
+          glm::radians(static_cast<f32>(xpos - prev_xpos_) * angular_velocity)};
+      f32 pitch{
+          glm::radians(static_cast<f32>(ypos - prev_ypos_) * angular_velocity)};
+
+      camera_->Rotate(yaw, pitch);
     }
   }
-  cursor_xpos_ = xpos;
-  cursor_ypos_ = ypos;
+  prev_xpos_ = xpos;
+  prev_ypos_ = ypos;
 }
 
 void EditorInput::OnCursorEnter(int entered) {
   if (!entered) {
-    cursor_xpos_ = cursor_ypos_ = -1.0F;
+    prev_xpos_ = prev_ypos_ = -1.0F;
   }
 }
 

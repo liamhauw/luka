@@ -40,8 +40,8 @@ class EditorInput {
   std::shared_ptr<Window> window_;
   std::shared_ptr<Camera> camera_;
 
-  f32 cursor_xpos_{0};
-  f32 cursor_ypos_{0};
+  f32 prev_xpos_{0};
+  f32 prev_ypos_{0};
 
   u32 editor_command_{0};
 };

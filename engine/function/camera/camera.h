@@ -20,7 +20,7 @@ class Camera {
 
   void Move(const glm::vec3& camera_relative_pos);
 
-  void Rotate(const glm::vec2& delta);
+  void Rotate(f32 yaw, f32 pitch);
 
   const glm::vec3& GetPosition() const;
   const glm::mat4& GetViewMatrix();
@@ -31,13 +31,13 @@ class Camera {
 
   glm::vec3 position_{0.0F, 5.0F, -10.0F};
   glm::vec3 look_{0.0F, 0.0F, 1.0F};
-  glm::vec3 right{1.0F, 0.0F, 0.0F};
+  glm::vec3 right_{1.0F, 0.0F, 0.0F};
 
   bool view_matrix_dirty_{false};
   glm::mat4 view_matirx_;
   glm::mat4 projection_matirx_;
 
-  glm::quat rotation_;
+  glm::quat rotation_{glm::identity<glm::quat>()};
 };
 
 }  // namespace luka
