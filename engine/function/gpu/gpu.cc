@@ -39,7 +39,7 @@ gpu::Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
 #ifndef NDEBUG
   SetObjectName(vk::ObjectType::eBuffer,
                 reinterpret_cast<uint64_t>(static_cast<VkBuffer>(*buffer)),
-                name, "buffer");
+                name, "Buffer");
 #endif
 
   void* mapped_data{buffer.Map()};
@@ -60,7 +60,7 @@ gpu::Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
 #ifndef NDEBUG
   SetObjectName(vk::ObjectType::eBuffer,
                 reinterpret_cast<uint64_t>(static_cast<VkBuffer>(*buffer)),
-                name, "buffer");
+                name, "Buffer");
 #endif
   if (*staging_buffer) {
     vk::BufferCopy buffer_copy{0, 0, buffer_ci.size};
@@ -77,7 +77,7 @@ gpu::Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
 #ifndef NDEBUG
   SetObjectName(vk::ObjectType::eImage,
                 reinterpret_cast<u64>(static_cast<VkImage>(*image)), name,
-                "image");
+                "Image");
 #endif
 
   return image;
@@ -94,7 +94,7 @@ gpu::Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
 #ifndef NDEBUG
   SetObjectName(vk::ObjectType::eImage,
                 reinterpret_cast<u64>(static_cast<VkImage>(*image)), name,
-                "image");
+                "Image");
 #endif
   vk::ImageAspectFlagBits flag_bits;
   if (image_ci.usage & vk::ImageUsageFlagBits::eDepthStencilAttachment) {
@@ -177,7 +177,7 @@ vk::raii::ImageView Gpu::CreateImageView(
 #ifndef NDEBUG
   SetObjectName(vk::ObjectType::eImageView,
                 reinterpret_cast<u64>(static_cast<VkImageView>(*image_view)),
-                name, "image_view");
+                name, "Image View");
 #endif
 
   return image_view;
@@ -190,7 +190,7 @@ vk::raii::Sampler Gpu::CreateSampler(const vk::SamplerCreateInfo sampler_ci,
 #ifndef NDEBUG
   SetObjectName(vk::ObjectType::eSampler,
                 reinterpret_cast<uint64_t>(static_cast<VkSampler>(*sampler)),
-                name, "sampler");
+                name, "Sampler");
 #endif
 
   return sampler;
@@ -205,7 +205,7 @@ vk::raii::SwapchainKHR Gpu::CreateSwapchain(
   SetObjectName(
       vk::ObjectType::eSwapchainKHR,
       reinterpret_cast<uint64_t>(static_cast<VkSwapchainKHR>(*swapchain)), name,
-      "swapchain");
+      "Swapchain");
 #endif
 
   return swapchain;
@@ -219,7 +219,7 @@ vk::raii::Semaphore Gpu::CreateSemaphoreLuka(
   SetObjectName(
       vk::ObjectType::eSemaphore,
       reinterpret_cast<uint64_t>(static_cast<VkSemaphore>(*semaphore)), name,
-      "semaphore");
+      "Semaphore");
 #endif
 
   return semaphore;
@@ -232,7 +232,7 @@ vk::raii::Fence Gpu::CreateFence(const vk::FenceCreateInfo& fence_ci,
 #ifndef NDEBUG
   SetObjectName(vk::ObjectType::eFence,
                 reinterpret_cast<uint64_t>(static_cast<VkFence>(*fence)), name,
-                "fence");
+                "Fence");
 #endif
 
   return fence;
@@ -246,7 +246,7 @@ vk::raii::CommandPool Gpu::CreateCommandPool(
   SetObjectName(
       vk::ObjectType::eCommandPool,
       reinterpret_cast<uint64_t>(static_cast<VkCommandPool>(*command_pool)),
-      name, "command_pool");
+      name, "Command_pool");
 #endif
 
   return command_pool;
@@ -260,7 +260,7 @@ vk::raii::RenderPass Gpu::CreateRenderPass(
   SetObjectName(
       vk::ObjectType::eRenderPass,
       reinterpret_cast<uint64_t>(static_cast<VkRenderPass>(*render_pass)), name,
-      "render_pass");
+      "Render Pass");
 #endif
 
   return render_pass;
@@ -274,7 +274,7 @@ vk::raii::Framebuffer Gpu::CreateFramebuffer(
   SetObjectName(
       vk::ObjectType::eFramebuffer,
       reinterpret_cast<uint64_t>(static_cast<VkFramebuffer>(*framebuffer)),
-      name, "framebuffer");
+      name, "Framebuffer");
 #endif
 
   return framebuffer;
@@ -302,7 +302,7 @@ const vk::raii::DescriptorSetLayout& Gpu::RequestDescriptorSetLayout(
   SetObjectName(vk::ObjectType::eDescriptorSetLayout,
                 reinterpret_cast<uint64_t>(
                     static_cast<VkDescriptorSetLayout>(*descriptor_set_layout)),
-                name, "descriptor_set_layout");
+                name, "Descriptor Set Layout");
 #endif
 
   auto it1{descriptor_set_layouts_.emplace(hash_value,
@@ -337,7 +337,7 @@ const vk::raii::PipelineLayout& Gpu::RequestPipelineLayout(
   SetObjectName(vk::ObjectType::ePipelineLayout,
                 reinterpret_cast<uint64_t>(
                     static_cast<VkPipelineLayout>(*pipeline_layout)),
-                name, "pipeline_layout");
+                name, "Pipeline Layout");
 #endif
 
   auto it1{pipeline_layouts.emplace(hash_value, std::move(pipeline_layout))};
@@ -365,7 +365,7 @@ const vk::raii::ShaderModule& Gpu::RequestShaderModule(
   SetObjectName(
       vk::ObjectType::eShaderModule,
       reinterpret_cast<uint64_t>(static_cast<VkShaderModule>(*shader_module)),
-      name, "shader_module");
+      name, "Shader Module");
 #endif
 
   auto it1{shader_modules.emplace(hash_value, std::move(shader_module))};
@@ -394,7 +394,7 @@ const vk::raii::Pipeline& Gpu::RequestPipeline(
 #ifndef NDEBUG
   SetObjectName(vk::ObjectType::ePipeline,
                 reinterpret_cast<uint64_t>(static_cast<VkPipeline>(*pipeline)),
-                name, "pipeline");
+                name, "Pipeline");
 #endif
 
   auto it1{pipelines.emplace(hash_value, std::move(pipeline))};
@@ -412,7 +412,7 @@ vk::raii::CommandBuffers Gpu::AllocateCommandBuffers(
     SetObjectName(vk::ObjectType::eCommandBuffer,
                   reinterpret_cast<uint64_t>(
                       static_cast<VkCommandBuffer>(*command_buffers[i])),
-                  name, "command_buffer" + std::to_string(i));
+                  name, "Command Buffer" + std::to_string(i));
   }
 #endif
 
@@ -431,7 +431,7 @@ vk::raii::DescriptorSets Gpu::AllocateDescriptorSets(
     SetObjectName(vk::ObjectType::eDescriptorSet,
                   reinterpret_cast<uint64_t>(
                       static_cast<VkDescriptorSet>(*(descriptor_sets[i]))),
-                  name, "descriptor_set_" + std::to_string(i));
+                  name, "Descriptor Set " + std::to_string(i));
   }
 
 #endif
@@ -828,7 +828,7 @@ void Gpu::CreateDescriptorPool() {
 void Gpu::SetObjectName(vk::ObjectType object_type, u64 handle,
                         const std::string& name, const std::string& suffix) {
   if (!name.empty()) {
-    std::string name_suffix{name + "_" + suffix};
+    std::string name_suffix{suffix + " " + name};
     vk::DebugUtilsObjectNameInfoEXT buffer_name_info{object_type, handle,
                                                      name_suffix.c_str()};
     device_.setDebugUtilsObjectNameEXT(buffer_name_info);
