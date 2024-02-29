@@ -7,6 +7,7 @@
 #include "platform/pch.h"
 // clang-format on
 
+#include "function/camera/camera.h"
 #include "function/gpu/gpu.h"
 #include "function/rendering/context.h"
 #include "function/scene_graph/scene_graph.h"
@@ -18,7 +19,8 @@ namespace luka {
 class Rendering {
  public:
   Rendering(std::shared_ptr<Asset> asset, std::shared_ptr<Window> window,
-            std::shared_ptr<Gpu> gpu, std::shared_ptr<SceneGraph> scene_graph);
+            std::shared_ptr<Camera> camera, std::shared_ptr<Gpu> gpu,
+            std::shared_ptr<SceneGraph> scene_graph);
 
   ~Rendering();
 
@@ -27,6 +29,7 @@ class Rendering {
  private:
   std::shared_ptr<Asset> asset_;
   std::shared_ptr<Window> window_;
+  std::shared_ptr<Camera> camera_;
   std::shared_ptr<Gpu> gpu_;
   std::shared_ptr<SceneGraph> scene_graph_;
 

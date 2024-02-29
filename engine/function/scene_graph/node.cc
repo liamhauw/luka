@@ -35,7 +35,7 @@ Node::Node(const std::vector<Light*>& light_components,
                    glm::value_ptr(model_matrix_), TypeCast<f64, f32>{});
   } else {
     glm::vec3 scale{1.0F, 1.0F, 1.0F};
-    glm::quat rotation{0.0F, 0.0F, 0.0F, 1.0F};
+    glm::quat rotation{1.0F, 0.0F, 0.0F, 0.0F};
     glm::vec3 translation{0.0F, 0.0F, 0.0F};
 
     if (!model_node.scale.empty()) {

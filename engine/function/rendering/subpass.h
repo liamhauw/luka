@@ -11,6 +11,7 @@
 #include "function/rendering/spirv.h"
 #include "function/scene_graph/scene_graph.h"
 #include "resource/asset/asset.h"
+#include "function/camera/camera.h"
 
 namespace luka {
 
@@ -60,7 +61,7 @@ class Subpass {
           const vk::raii::RenderPass& render_pass, u32 frame_count);
   virtual ~Subpass() = default;
 
-  void Update(u32 active_frame_index);
+  void Update(u32 active_frame_index, std::shared_ptr<Camera> camera);
 
   const std::vector<DrawElement>& GetDrawElements() const;
 

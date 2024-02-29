@@ -100,6 +100,13 @@ void Window::SetFocusMode(bool mode) {
                    focus_mode_ ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
 }
 
+bool Window::IsMouseButtonDown(int button) const {
+  if (button < GLFW_MOUSE_BUTTON_1 || button > GLFW_MOUSE_BUTTON_LAST) {
+    return false;
+  }
+  return glfwGetMouseButton(glfw_window_, button) == GLFW_PRESS;
+}
+
 std::vector<const char*> Window::GetRequiredInstanceExtensions() {
   u32 glfw_extension_count{0};
   const char** glfw_extensions{

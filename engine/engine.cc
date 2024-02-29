@@ -12,16 +12,17 @@ namespace luka {
 Engine::Engine()
     : config_{std::make_shared<Config>()},
       asset_{std::make_shared<Asset>(config_)},
-      context_{std::make_shared<Context>(false, true)},
+      context_{std::make_shared<Context>(true, true)},
       time_{std::make_shared<Time>()},
       window_{std::make_shared<Window>(time_)},
+      camera_{std::make_shared<Camera>()},
       function_input_{std::make_shared<FunctionInput>(context_, window_)},
       gpu_{std::make_shared<Gpu>(window_)},
       scene_graph_{std::make_shared<SceneGraph>(asset_, gpu_)},
-      rendering_{
-          std::make_shared<Rendering>(asset_, window_, gpu_, scene_graph_)},
+      rendering_{std::make_shared<Rendering>(asset_, window_, camera_, gpu_,
+                                             scene_graph_)},
       function_ui_{std::make_shared<FunctionUi>()},
-      editor_input_{std::make_shared<EditorInput>(context_, window_)},
+      editor_input_{std::make_shared<EditorInput>(context_, window_, camera_)},
       editor_ui_{std::make_shared<EditorUi>()} {}
 
 void Engine::Run() {

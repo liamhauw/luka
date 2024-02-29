@@ -46,10 +46,14 @@ void GeometrySubpass::CreateDrawElements() {
     const sg::Node* parent_node{cur_node->GetParent()};
     while (parent_node) {
       model_matrix *= parent_node->GetModelMarix();
+      parent_node = parent_node->GetParent();
     }
 
     // Primitives.
     const sg::Mesh* mesh{cur_node->GetMesh()};
+    if (!mesh) {
+      continue;
+    }
     const std::vector<sg::Primitive>& primitives{mesh->GetPrimitives()};
 
     // Draw elements.
@@ -270,7 +274,7 @@ DrawElement GeometrySubpass::CreateDrawElement(const glm::mat4& model_matrix,
       VK_FALSE,
       vk::PolygonMode::eFill,
       vk::CullModeFlagBits::eBack,
-      vk::FrontFace::eCounterClockwise,
+      vk::FrontFace::eClockwise,
       VK_FALSE,
       0.0F,
       0.0F,

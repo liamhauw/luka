@@ -23,6 +23,7 @@ set(HEADER_FILES
   resource/config/config.h
   resource/config/generated/source_path.h
   # function
+  function/camera/camera.h
   function/context/context.h
   function/function_input/function_input.h
   function/function_ui/function_ui.h
@@ -74,6 +75,7 @@ set(SOURCE_FILES
   resource/asset/shader.cc
   resource/config/config.cc
   # function
+  function/camera/camera.cc
   function/context/context.cc
   function/function_input/function_input.cc
   function/function_ui/function_ui.cc

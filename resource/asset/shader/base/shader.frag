@@ -3,8 +3,14 @@
 precision highp float;
 
 layout(location = 0) in vec4 i_position;
+
+#ifdef HAS_TEXCOORD_0_BUFFER
 layout(location = 1) in vec2 i_texcoord_0;
+#endif
+
+#ifdef HAS_NORMAL_BUFFER
 layout(location = 2) in vec3 i_normal;
+#endif
 
 layout(location = 0) out vec4 o_color;
 

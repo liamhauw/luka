@@ -55,6 +55,7 @@ class Window {
   void GetFramebufferSize(i32* width, i32* height) const;
   bool GetFocusMode() const;
   void SetFocusMode(bool mode);
+  bool IsMouseButtonDown(int button) const;
 
   static std::vector<const char*> GetRequiredInstanceExtensions();
   void CreateWindowSurface(const vk::raii::Instance& instance,

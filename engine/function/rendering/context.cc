@@ -15,9 +15,13 @@ namespace luka {
 namespace rd {
 
 Context::Context(std::shared_ptr<Asset> asset, std::shared_ptr<Window> window,
-                 std::shared_ptr<Gpu> gpu,
+                 std::shared_ptr<Camera> camera, std::shared_ptr<Gpu> gpu,
                  std::shared_ptr<SceneGraph> scene_graph)
-    : asset_{asset}, window_{window}, gpu_{gpu}, scene_graph_{scene_graph} {
+    : asset_{asset},
+      window_{window},
+      camera_{camera},
+      gpu_{gpu},
+      scene_graph_{scene_graph} {
   CreateSwapchain();
   CreateSyncObjects();
   CreateCommandObjects();
@@ -116,8 +120,8 @@ void Context::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
       gpu_->BeginLabel(command_buffer, "sub_pass_" + std::to_string(j));
       const std::unique_ptr<rd::Subpass>& subpass{subpasses[j]};
 
-      // Update subpass.
-      subpass->Update(active_frame_index_);
+      // Update subpass uniform buffer.
+      subpass->Update(active_frame_index_, camera_);
 
       // Next subpass.
       if (j > 0) {

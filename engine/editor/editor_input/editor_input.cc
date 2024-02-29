@@ -7,19 +7,62 @@
 
 #include "editor/editor_input/editor_input.h"
 
+#include "core/log.h"
+
 namespace luka {
 
 EditorInput::EditorInput(std::shared_ptr<Context> context,
-                         std::shared_ptr<Window> window)
-    : context_{context}, window_{window} {
+                         std::shared_ptr<Window> window,
+                         std::shared_ptr<Camera> camera)
+    : context_{context}, window_{window}, camera_{camera} {
   window_->RegisterOnKeyFunc([this](auto&& ph1, auto&& ph2, auto&& ph3,
                                     auto&& ph4) {
     OnKey(std::forward<decltype(ph1)>(ph1), std::forward<decltype(ph2)>(ph2),
           std::forward<decltype(ph3)>(ph3), std::forward<decltype(ph4)>(ph4));
   });
+
+  window_->RegisterOnCursorPosFunc([this](auto&& ph1, auto&& ph2) {
+    OnCursorPos(std::forward<decltype(ph1)>(ph1),
+                std::forward<decltype(ph2)>(ph2));
+  });
+
+  window_->RegisterOnCursorEnterFunc(
+      [this](auto&& ph1) { OnCursorEnter(std::forward<decltype(ph1)>(ph1)); });
 }
 
-void EditorInput::Tick() {}
+void EditorInput::Tick() {
+  f32 camera_speed{0.05F};
+  glm::vec3 camera_relative_pos{0.0F};
+  bool has_move{false};
+  if (editor_command_ & static_cast<u32>(EditorCommand::kFoward)) {
+    camera_relative_pos += glm::vec3{0.0F, 0.0F, camera_speed};
+    has_move = true;
+  }
+  if (editor_command_ & static_cast<u32>(EditorCommand::kBackward)) {
+    camera_relative_pos += glm::vec3{0.0F, 0.0F, -camera_speed};
+    has_move = true;
+  }
+  if (editor_command_ & static_cast<u32>(EditorCommand::kLeft)) {
+    camera_relative_pos += glm::vec3{-camera_speed, 0.0F, 0.0F};
+    has_move = true;
+  }
+  if (editor_command_ & static_cast<u32>(EditorCommand::kRight)) {
+    camera_relative_pos += glm::vec3{camera_speed, 0.0F, 0.0F};
+    has_move = true;
+  }
+  if (editor_command_ & static_cast<u32>(EditorCommand::kUp)) {
+    camera_relative_pos += glm::vec3{0.0F, -camera_speed, 0.0F};
+    has_move = true;
+  }
+  if (editor_command_ & static_cast<u32>(EditorCommand::kDown)) {
+    camera_relative_pos += glm::vec3{0.0F, camera_speed, 0.0F};
+    has_move = true;
+  }
+
+  if (has_move) {
+    camera_->Move(camera_relative_pos);
+  }
+}
 
 void EditorInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mod*/) {
   if (!context_->GetEditorMode()) {
@@ -35,9 +78,84 @@ void EditorInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mod*/) {
         context_->SetEditorMode(false);
         window_->SetFocusMode(false);
         break;
+      case GLFW_KEY_W:
+        editor_command_ |= static_cast<u32>(EditorCommand::kFoward);
+        break;
+      case GLFW_KEY_S:
+        editor_command_ |= static_cast<u32>(EditorCommand::kBackward);
+        break;
+      case GLFW_KEY_A:
+        editor_command_ |= static_cast<u32>(EditorCommand::kLeft);
+        break;
+      case GLFW_KEY_D:
+        editor_command_ |= static_cast<u32>(EditorCommand::kRight);
+        break;
+      case GLFW_KEY_Q:
+        editor_command_ |= static_cast<u32>(EditorCommand::kUp);
+        break;
+      case GLFW_KEY_E:
+        editor_command_ |= static_cast<u32>(EditorCommand::kDown);
+        break;
       default:
         break;
     }
+  } else if (action == GLFW_RELEASE) {
+    switch (key) {
+      case GLFW_KEY_W:
+        editor_command_ &=
+            (editor_command_ ^ static_cast<u32>(EditorCommand::kFoward));
+        break;
+      case GLFW_KEY_S:
+        editor_command_ &=
+            (editor_command_ ^ static_cast<u32>(EditorCommand::kBackward));
+        break;
+      case GLFW_KEY_A:
+        editor_command_ &=
+            (editor_command_ ^ static_cast<u32>(EditorCommand::kLeft));
+        break;
+      case GLFW_KEY_D:
+        editor_command_ &=
+            (editor_command_ ^ static_cast<u32>(EditorCommand::kRight));
+        break;
+      case GLFW_KEY_Q:
+        editor_command_ &=
+            (editor_command_ ^ static_cast<u32>(EditorCommand::kUp));
+        break;
+      case GLFW_KEY_E:
+        editor_command_ &=
+            (editor_command_ ^ static_cast<u32>(EditorCommand::kDown));
+        break;
+      default:
+        break;
+    }
+  }
+}
+
+void EditorInput::OnCursorPos(f64 xpos, f64 ypos) {
+  if (!context_->GetEditorMode()) {
+    return;
+  }
+
+  i32 window_width{0};
+  i32 window_height{0};
+  window_->GetWindowSize(&window_width, &window_height);
+
+  f32 angularVelocity{180.0F / std::max(window_width, window_height)};
+
+  if (cursor_xpos_ >= 0.0F && cursor_ypos_ >= 0.0F) {
+    if (window_->IsMouseButtonDown(GLFW_MOUSE_BUTTON_RIGHT)) {
+      glm::vec2 delta{glm::radians((ypos - cursor_ypos_) * angularVelocity),
+                      glm::radians((xpos - cursor_xpos_) * angularVelocity)};
+      camera_->Rotate(delta);
+    }
+  }
+  cursor_xpos_ = xpos;
+  cursor_ypos_ = ypos;
+}
+
+void EditorInput::OnCursorEnter(int entered) {
+  if (!entered) {
+    cursor_xpos_ = cursor_ypos_ = -1.0F;
   }
 }
 
