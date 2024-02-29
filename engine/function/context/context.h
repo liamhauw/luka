@@ -11,19 +11,15 @@ namespace luka {
 
 class Context {
  public:
-  Context(bool editor_mode, bool load);
+  Context(bool editor_mode = true);
 
   void Tick();
 
   void SetEditorMode(bool editor_mode);
-  void SetLoad(bool load);
-
   bool GetEditorMode() const;
-  bool GetLoad() const;
 
  private:
   bool editor_mode_;
-  bool load_;
 };
 
 }  // namespace luka

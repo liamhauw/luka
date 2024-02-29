@@ -29,11 +29,7 @@ Gpu::~Gpu() {
   vmaDestroyAllocator(allocator_);
 }
 
-void Gpu::Tick() {
-  if (window_->GetIconified()) {
-    return;
-  }
-}
+void Gpu::Tick() {}
 
 gpu::Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
                               const void* data, bool map,

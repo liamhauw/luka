@@ -39,6 +39,19 @@ Window::Window(std::shared_ptr<Time> time, const WindowInfo& window_info)
   glfwSetCursorEnterCallback(glfw_window_, CursorEnterCallback);
   glfwSetScrollCallback(glfw_window_, ScrollCallback);
   glfwSetDropCallback(glfw_window_, DropCallback);
+
+  RegisterOnWindowSizeFunc([this](auto&& ph1, auto&& ph2) {
+    WindowSize(std::forward<decltype(ph1)>(ph1),
+               std::forward<decltype(ph2)>(ph2));
+  });
+
+  RegisterOnWindowIconifyFunc(
+      [this](auto&& ph1) { WindowIconify(std::forward<decltype(ph1)>(ph1)); });
+
+  RegisterOnFramebufferSizeFunc([this](auto&& ph1, auto&& ph2) {
+    FramebufferSize(std::forward<decltype(ph1)>(ph1),
+                    std::forward<decltype(ph2)>(ph2));
+  });
 }
 
 Window::~Window() {
@@ -47,11 +60,6 @@ Window::~Window() {
 }
 
 void Window::Tick() {
-  // In the last frame, funcrion Ui changes it if framebuffer resized .
-  if (framebuffer_resized_) {
-    framebuffer_resized_ = false;
-  }
-
   f64 delta_time{time_->GetDeltaTime()};
   std::string title{std::string{"luka "} +
                     std::to_string(static_cast<i32>(1.0 / delta_time)) +
@@ -68,6 +76,13 @@ void Window::SetWindowResized(bool resized) { window_resized_ = resized; }
 
 void Window::GetWindowSize(i32* width, i32* height) const {
   glfwGetWindowSize(glfw_window_, width, height);
+}
+
+f32 Window::GetWindowRatio() const {
+  i32 width{0};
+  i32 height{0};
+  glfwGetWindowSize(glfw_window_, &width, &height);
+  return static_cast<f32>(width) / height;
 }
 
 bool Window::WindowShouldClose() const {
@@ -298,6 +313,18 @@ void Window::OnDrop(i32 path_count, const char** paths) {
   for (auto& func : on_drop_func_) {
     func(path_count, paths);
   }
+}
+
+void Window::WindowSize(i32 /*width*/, i32 /*height*/) {
+  window_resized_ = true;
+}
+
+void Window::WindowIconify(i32 iconified) {
+  window_iconified_ = iconified == GLFW_TRUE;
+}
+
+void Window::FramebufferSize(i32 /*width*/, i32 /*height*/) {
+  framebuffer_resized_ = true;
 }
 
 }  // namespace luka

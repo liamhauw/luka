@@ -38,16 +38,8 @@ void Subpass::Update(u32 active_frame_index, std::shared_ptr<Camera> camera) {
   const glm::mat4& projection{camera->GetProjectionMatrix()};
   const glm::vec3& camera_position{camera->GetPosition()};
 
-  // glm::vec3 eye{0.0F, 0.0F, 100.0F};
-  // glm::vec3 look{0.0F, 0.0F, -1.0F};
-  // glm::vec3 right{1.0F, 0.0F, 0.0F};
-
-  // glm::mat4 view{glm::lookAt(eye, eye + look, glm::vec3(0.0F, 1.0F, 0.0F))};
-  // glm::mat4 projection{
-  //     glm::perspective(glm::radians(60.0F), 1.78F, 0.1F, 1000.0F)};
-
   global_uniform.pv = projection * view;
-  global_uniform.view_position = camera_position;
+  global_uniform.camera_position = camera_position;
 
   gpu::Buffer& uniform_buffer{global_uniform_buffers_[active_frame_index]};
 

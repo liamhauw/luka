@@ -8,12 +8,14 @@
 // clang-format on
 
 #include "core/math.h"
+#include "function/window/window.h"
 
 namespace luka {
 
 class Camera {
  public:
-  Camera();
+  Camera(std::shared_ptr<Window> window);
+
   void Tick();
 
   void Move(const glm::vec3& camera_relative_pos);
@@ -25,12 +27,13 @@ class Camera {
   const glm::mat4& GetProjectionMatrix() const;
 
  private:
-  bool dirty_{false};
+  std::shared_ptr<Window> window_;
 
   glm::vec3 position_{0.0F, 5.0F, -10.0F};
   glm::vec3 look_{0.0F, 0.0F, 1.0F};
   glm::vec3 right{1.0F, 0.0F, 0.0F};
 
+  bool view_matrix_dirty_{false};
   glm::mat4 view_matirx_;
   glm::mat4 projection_matirx_;
 

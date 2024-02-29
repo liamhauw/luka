@@ -7,20 +7,20 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "function/window/window.h"
 #include "function/context/context.h"
+#include "function/window/window.h"
 
 namespace luka {
 
 enum class FunctionCommand : u32 {
-  FORWARD = 1 << 0,                    // W
-  BACKWARD = 1 << 1,                   // S
-  LEFT = 1 << 2,                       // A
-  RIGHT = 1 << 3,                      // D
-  JUMP = 1 << 4,                       // Space
-  SQUAT = 1 << 5,                      // Left control
-  SPRINT = 1 << 6,                     // Left shift
-  INVALID = static_cast<u32>(1 << 31)  // Lost focus
+  kForward = 1 << 0,                    // W
+  kBackward = 1 << 1,                   // S
+  kLeft = 1 << 2,                       // A
+  kRight = 1 << 3,                      // D
+  kJump = 1 << 4,                       // Space
+  kSquat = 1 << 5,                      // Left control
+  kSprint = 1 << 6,                     // Left shift
+  kInvalid = static_cast<u32>(1 << 31)  // Lost focus
 };
 
 class FunctionInput {
@@ -30,9 +30,6 @@ class FunctionInput {
 
   void Tick();
 
-  void OnWindowSize(i32 width, i32 height);
-  void OnWindowIconify(i32 iconified);
-  void OnFramebufferSize(i32 width, i32 height);
   void OnKey(i32 key, i32 scancode, i32 action, i32 mod);
   void OnCursorPos(f64 xpos, f64 ypos);
 

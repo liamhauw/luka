@@ -32,12 +32,12 @@ set(HEADER_FILES
   function/gpu/image.h
 
   function/rendering/context.h
-  function/rendering/geometry_subpass.h
   function/rendering/pass.h
   function/rendering/rendering.h
   function/rendering/spirv.h
   function/rendering/subpass.h
   function/rendering/swapchain_pass.h
+  function/rendering/swapchain_subpass.h
 
   function/scene_graph/accessor.h
   function/scene_graph/buffer_view.h
@@ -84,12 +84,12 @@ set(SOURCE_FILES
   function/gpu/image.cc
 
   function/rendering/context.cc
-  function/rendering/geometry_subpass.cc
   function/rendering/pass.cc
   function/rendering/rendering.cc
   function/rendering/spirv.cc
   function/rendering/subpass.cc
   function/rendering/swapchain_pass.cc
+  function/rendering/swapchain_subpass.cc
 
   function/scene_graph/accessor.cc
   function/scene_graph/buffer_view.cc

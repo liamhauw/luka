@@ -14,20 +14,6 @@ namespace luka {
 FunctionInput::FunctionInput(std::shared_ptr<Context> context,
                              std::shared_ptr<Window> window)
     : context_{context}, window_{window} {
-  window_->RegisterOnWindowSizeFunc([this](auto&& ph1, auto&& ph2) {
-    OnWindowSize(std::forward<decltype(ph1)>(ph1),
-                 std::forward<decltype(ph2)>(ph2));
-  });
-
-  window_->RegisterOnWindowIconifyFunc([this](auto&& ph1) {
-    OnWindowIconify(std::forward<decltype(ph1)>(ph1));
-  });
-
-  window_->RegisterOnFramebufferSizeFunc([this](auto&& ph1, auto&& ph2) {
-    OnFramebufferSize(std::forward<decltype(ph1)>(ph1),
-                      std::forward<decltype(ph2)>(ph2));
-  });
-
   window_->RegisterOnKeyFunc([this](auto&& ph1, auto&& ph2, auto&& ph3,
                                     auto&& ph4) {
     OnKey(std::forward<decltype(ph1)>(ph1), std::forward<decltype(ph2)>(ph2),
@@ -42,25 +28,13 @@ FunctionInput::FunctionInput(std::shared_ptr<Context> context,
 
 void FunctionInput::Tick() {}
 
-void FunctionInput::OnWindowSize(i32 /*width*/, i32 /*height*/) {
-  window_->window_resized_ = true;
-}
-
-void FunctionInput::OnWindowIconify(i32 iconified) {
-  window_->window_iconified_ = iconified == GLFW_TRUE;
-}
-
-void FunctionInput::OnFramebufferSize(i32 /*width*/, i32 /*height*/) {
-  window_->framebuffer_resized_ = true;
-}
-
 void FunctionInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mods*/) {
   if (context_->GetEditorMode()) {
     return;
   }
 
   function_command_ &=
-      (control_command_ ^ static_cast<u32>(FunctionCommand::JUMP));
+      (control_command_ ^ static_cast<u32>(FunctionCommand::kJump));
 
   if (action == GLFW_PRESS) {
     switch (key) {
@@ -72,25 +46,25 @@ void FunctionInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mods*/) {
         window_->SetFocusMode(true);
         break;
       case GLFW_KEY_W:
-        function_command_ |= static_cast<u32>(FunctionCommand::FORWARD);
+        function_command_ |= static_cast<u32>(FunctionCommand::kForward);
         break;
       case GLFW_KEY_S:
-        function_command_ |= static_cast<u32>(FunctionCommand::BACKWARD);
+        function_command_ |= static_cast<u32>(FunctionCommand::kBackward);
         break;
       case GLFW_KEY_A:
-        function_command_ |= static_cast<u32>(FunctionCommand::LEFT);
+        function_command_ |= static_cast<u32>(FunctionCommand::kLeft);
         break;
       case GLFW_KEY_D:
-        function_command_ |= static_cast<u32>(FunctionCommand::RIGHT);
+        function_command_ |= static_cast<u32>(FunctionCommand::kRight);
         break;
       case GLFW_KEY_SPACE:
-        function_command_ |= static_cast<u32>(FunctionCommand::JUMP);
+        function_command_ |= static_cast<u32>(FunctionCommand::kJump);
         break;
       case GLFW_KEY_LEFT_CONTROL:
-        function_command_ |= static_cast<u32>(FunctionCommand::SQUAT);
+        function_command_ |= static_cast<u32>(FunctionCommand::kSquat);
         break;
       case GLFW_KEY_LEFT_SHIFT:
-        function_command_ |= static_cast<u32>(FunctionCommand::SPRINT);
+        function_command_ |= static_cast<u32>(FunctionCommand::kSprint);
         break;
       default:
         break;
@@ -99,27 +73,27 @@ void FunctionInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mods*/) {
     switch (key) {
       case GLFW_KEY_W:
         function_command_ &=
-            (control_command_ ^ static_cast<u32>(FunctionCommand::FORWARD));
+            (control_command_ ^ static_cast<u32>(FunctionCommand::kForward));
         break;
       case GLFW_KEY_S:
         function_command_ &=
-            (control_command_ ^ static_cast<u32>(FunctionCommand::BACKWARD));
+            (control_command_ ^ static_cast<u32>(FunctionCommand::kBackward));
         break;
       case GLFW_KEY_A:
         function_command_ &=
-            (control_command_ ^ static_cast<u32>(FunctionCommand::LEFT));
+            (control_command_ ^ static_cast<u32>(FunctionCommand::kLeft));
         break;
       case GLFW_KEY_D:
         function_command_ &=
-            (control_command_ ^ static_cast<u32>(FunctionCommand::RIGHT));
+            (control_command_ ^ static_cast<u32>(FunctionCommand::kRight));
         break;
       case GLFW_KEY_LEFT_CONTROL:
         function_command_ &=
-            (control_command_ ^ static_cast<u32>(FunctionCommand::SQUAT));
+            (control_command_ ^ static_cast<u32>(FunctionCommand::kSquat));
         break;
       case GLFW_KEY_LEFT_SHIFT:
         function_command_ &=
-            (control_command_ ^ static_cast<u32>(FunctionCommand::SPRINT));
+            (control_command_ ^ static_cast<u32>(FunctionCommand::kSprint));
         break;
       default:
         break;
@@ -128,12 +102,9 @@ void FunctionInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mods*/) {
 }
 
 void FunctionInput::OnCursorPos(f64 xpos, f64 ypos) {
-  if (window_->focus_mode_) {
-    window_->cursor_delta_xpos_ = window_->cursor_last_xpos_ - xpos;
-    window_->cursor_delta_ypos_ = window_->cursor_last_ypos_ - ypos;
+  if (context_->GetEditorMode()) {
+    return;
   }
-  window_->cursor_last_xpos_ = xpos;
-  window_->cursor_last_ypos_ = ypos;
 }
 
 }  // namespace luka

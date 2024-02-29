@@ -12,9 +12,10 @@
 namespace luka {
 
 EditorInput::EditorInput(std::shared_ptr<Context> context,
+                         std::shared_ptr<Time> time,
                          std::shared_ptr<Window> window,
                          std::shared_ptr<Camera> camera)
-    : context_{context}, window_{window}, camera_{camera} {
+    : context_{context}, time_{time}, window_{window}, camera_{camera} {
   window_->RegisterOnKeyFunc([this](auto&& ph1, auto&& ph2, auto&& ph3,
                                     auto&& ph4) {
     OnKey(std::forward<decltype(ph1)>(ph1), std::forward<decltype(ph2)>(ph2),
@@ -31,31 +32,35 @@ EditorInput::EditorInput(std::shared_ptr<Context> context,
 }
 
 void EditorInput::Tick() {
-  f32 camera_speed{0.05F};
+  f64 delta_time{time_->GetDeltaTime()};
+  f32 move_speed{2.0F};
+
+  f32 move_distance{static_cast<f32>(delta_time * move_speed)};
+
   glm::vec3 camera_relative_pos{0.0F};
   bool has_move{false};
   if (editor_command_ & static_cast<u32>(EditorCommand::kFoward)) {
-    camera_relative_pos += glm::vec3{0.0F, 0.0F, camera_speed};
+    camera_relative_pos += glm::vec3{0.0F, 0.0F, move_distance};
     has_move = true;
   }
   if (editor_command_ & static_cast<u32>(EditorCommand::kBackward)) {
-    camera_relative_pos += glm::vec3{0.0F, 0.0F, -camera_speed};
+    camera_relative_pos += glm::vec3{0.0F, 0.0F, -move_distance};
     has_move = true;
   }
   if (editor_command_ & static_cast<u32>(EditorCommand::kLeft)) {
-    camera_relative_pos += glm::vec3{-camera_speed, 0.0F, 0.0F};
+    camera_relative_pos += glm::vec3{-move_distance, 0.0F, 0.0F};
     has_move = true;
   }
   if (editor_command_ & static_cast<u32>(EditorCommand::kRight)) {
-    camera_relative_pos += glm::vec3{camera_speed, 0.0F, 0.0F};
+    camera_relative_pos += glm::vec3{move_distance, 0.0F, 0.0F};
     has_move = true;
   }
   if (editor_command_ & static_cast<u32>(EditorCommand::kUp)) {
-    camera_relative_pos += glm::vec3{0.0F, -camera_speed, 0.0F};
+    camera_relative_pos += glm::vec3{0.0F, -move_distance, 0.0F};
     has_move = true;
   }
   if (editor_command_ & static_cast<u32>(EditorCommand::kDown)) {
-    camera_relative_pos += glm::vec3{0.0F, camera_speed, 0.0F};
+    camera_relative_pos += glm::vec3{0.0F, move_distance, 0.0F};
     has_move = true;
   }
 

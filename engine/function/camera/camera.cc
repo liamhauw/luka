@@ -9,31 +9,34 @@
 
 namespace luka {
 
-Camera::Camera()
-    : view_matirx_{glm::mat4(
+Camera::Camera(std::shared_ptr<Window> window)
+    : window_{window},
+      view_matirx_{glm::mat4(
           glm::lookAt(position_, position_ + look_, glm::cross(right, look_)))},
-      projection_matirx_{
-          glm::perspective(glm::radians(60.0F), 1.78F, 0.1F, 1000.0F)} {}
+      projection_matirx_{glm::perspective(
+          glm::radians(60.0F), window_->GetWindowRatio(), 0.1F, 1000.0F)} {}
 
-void Camera::Tick() {}
+void Camera::Tick() {
+  if (window_->GetFramebufferResized()) {
+    projection_matirx_ = glm::perspective(
+        glm::radians(60.0F), window_->GetWindowRatio(), 0.1F, 1000.0F);
+  }
+}
 
 void Camera::Move(const glm::vec3& camera_relative_pos) {
   position_ += camera_relative_pos;
-  dirty_ = true;
+  view_matrix_dirty_ = true;
 }
 
-void Camera::Rotate(const glm::vec2& delta) {
-  
-
-}
+void Camera::Rotate(const glm::vec2& delta) {}
 
 const glm::vec3& Camera::GetPosition() const { return position_; }
 
 const glm::mat4& Camera::GetViewMatrix() {
-  if (dirty_) {
+  if (view_matrix_dirty_) {
     view_matirx_ = glm::mat4(
         glm::lookAt(position_, position_ + look_, glm::cross(right, look_)));
-    dirty_ = false;
+    view_matrix_dirty_ = false;
   }
   return view_matirx_;
 }

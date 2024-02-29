@@ -7,7 +7,7 @@
 
 #include "function/rendering/swapchain_pass.h"
 
-#include "function/rendering/geometry_subpass.h"
+#include "function/rendering/swapchain_subpass.h"
 
 namespace luka {
 
@@ -162,9 +162,9 @@ void SwapchainPass::CreateClearValues() {
 }
 
 void SwapchainPass::CreateSubpasses() {
-  std::unique_ptr<Subpass> forward_subpass{std::make_unique<GeometrySubpass>(
+  std::unique_ptr<Subpass> swapchain_subpass{std::make_unique<SwapchainSupass>(
       asset_, gpu_, scene_graph_, render_pass_, swapchain_images_.size())};
-  subpasses_.push_back(std::move(forward_subpass));
+  subpasses_.push_back(std::move(swapchain_subpass));
 }
 
 }  // namespace rd

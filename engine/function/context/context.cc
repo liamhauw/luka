@@ -9,17 +9,12 @@
 
 namespace luka {
 
-Context::Context(bool editor_mode, bool load)
-    : editor_mode_{editor_mode}, load_{load} {}
+Context::Context(bool editor_mode) : editor_mode_{editor_mode} {}
 
 void Context::Tick() {}
 
 void Context::SetEditorMode(bool editor_mode) { editor_mode_ = editor_mode; }
 
-void Context::SetLoad(bool load) { load_ = load; }
-
 bool Context::GetEditorMode() const { return editor_mode_; }
-
-bool Context::GetLoad() const { return load_; }
 
 }  // namespace luka

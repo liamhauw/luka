@@ -15,7 +15,7 @@ layout(location = 2) out vec3 o_normal;
 
 layout(set = 0, binding = 1) uniform GlobalUniform {
     mat4 pv;
-    vec3 view_position;
+    vec3 camera_position;
 } global_uniform;
 
 layout(set = 0, binding = 2) uniform DrawElementUniform {

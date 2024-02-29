@@ -19,7 +19,7 @@ namespace rd {
 
 struct alignas(16) GlobalUniform {
   glm::mat4 pv;
-  glm::vec3 view_position;
+  glm::vec3 camera_position;
 };
 
 struct alignas(16) DrawElementUniform {

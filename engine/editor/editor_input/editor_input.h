@@ -9,23 +9,24 @@
 
 #include "function/camera/camera.h"
 #include "function/context/context.h"
+#include "function/time/time.h"
 #include "function/window/window.h"
 
 namespace luka {
 
 enum class EditorCommand : u32 {
-  kFoward = 1 << 0,
-  kBackward = 1 << 1,
-  kLeft = 1 << 2,
-  kRight = 1 << 3,
-  kUp = 1 << 4,
-  kDown = 1 << 5
+  kFoward = 1 << 0,    // W
+  kBackward = 1 << 1,  // S
+  kLeft = 1 << 2,      // A
+  kRight = 1 << 3,     // D
+  kUp = 1 << 4,        // Q
+  kDown = 1 << 5       // E
 };
 
 class EditorInput {
  public:
-  EditorInput(std::shared_ptr<Context> context, std::shared_ptr<Window> window,
-              std::shared_ptr<Camera> camera);
+  EditorInput(std::shared_ptr<Context> context, std::shared_ptr<Time> time,
+              std::shared_ptr<Window> window, std::shared_ptr<Camera> camera);
 
   void Tick();
 
@@ -35,6 +36,7 @@ class EditorInput {
 
  private:
   std::shared_ptr<Context> context_;
+  std::shared_ptr<Time> time_;
   std::shared_ptr<Window> window_;
   std::shared_ptr<Camera> camera_;
 

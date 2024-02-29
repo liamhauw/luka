@@ -46,6 +46,7 @@ class Window {
   bool GetWindowResized() const;
   void SetWindowResized(bool resized);
   void GetWindowSize(i32* width, i32* height) const;
+  f32 GetWindowRatio() const;
   bool WindowShouldClose() const;
   void SetWindowShouldClose();
   bool GetIconified() const;
@@ -120,6 +121,10 @@ class Window {
   std::vector<OnScrollFunc> on_scroll_func_;
   std::vector<OnDropFunc> on_drop_func_;
 
+  void WindowSize(i32 width, i32 height);
+  void WindowIconify(i32 iconified);
+  void FramebufferSize(i32 width, i32 height);
+
   std::shared_ptr<Time> time_;
 
   GLFWwindow* glfw_window_{nullptr};
@@ -127,10 +132,6 @@ class Window {
   bool window_iconified_{false};
   bool framebuffer_resized_{false};
   bool focus_mode_{false};
-  f64 cursor_last_xpos_{0.0};
-  f64 cursor_last_ypos_{0.0};
-  f64 cursor_delta_xpos_{0.0};
-  f64 cursor_delta_ypos_{0.0};
 };
 
 }  // namespace luka
