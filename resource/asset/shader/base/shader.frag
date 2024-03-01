@@ -1,6 +1,4 @@
-#version 320 es
-
-precision highp float;
+#version 450
 
 layout(location = 0) in vec4 i_position;
 
@@ -18,14 +16,20 @@ layout(location = 0) out vec4 o_color;
 layout(set = 0, binding = 0) uniform sampler2D base_color_texture;
 #endif
 
+layout(set = 0, binding = 2) uniform DrawElementUniform {
+    mat4 m;
+		vec4 base_color_factor;
+} draw_element_uniform;
+
 void main(void)
 {
-	vec4 base_color = vec4(1.0, 0.0, 0.0, 1.0);
+	vec4 base_color = vec4(1.0, 1.0, 1.0, 1.0);
 
 #ifdef HAS_BASE_COLOR_TEXTURE
 	base_color = texture(base_color_texture, i_texcoord_0);
+#else
+	base_color = draw_element_uniform.base_color_factor;
 #endif
-	vec3 ambient_color = vec3(0.2) * base_color.xyz;
 
-	o_color = vec4(ambient_color + base_color.xyz, base_color.w);
+	o_color = base_color;
 }

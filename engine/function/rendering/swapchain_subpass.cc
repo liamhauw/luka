@@ -274,7 +274,7 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
       VK_FALSE,
       vk::PolygonMode::eFill,
       vk::CullModeFlagBits::eBack,
-      vk::FrontFace::eClockwise,
+      vk::FrontFace::eCounterClockwise,
       VK_FALSE,
       0.0F,
       0.0F,
@@ -379,7 +379,8 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
 
             write_descriptor_sets.push_back(std::move(write_descriptor_set));
           } else if (shader_resource.name == "DrawElementUniform") {
-            DrawElementUniform draw_element_uniform{model_matrix};
+            DrawElementUniform draw_element_uniform{
+                model_matrix, material->GetBaseColorFactor()};
 
             vk::BufferCreateInfo uniform_buffer_ci{
                 {},

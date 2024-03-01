@@ -48,19 +48,19 @@ void EditorInput::Tick() {
     has_move = true;
   }
   if (editor_command_ & static_cast<u32>(EditorCommand::kLeft)) {
-    camera_relative_pos += glm::vec3{-move_distance, 0.0F, 0.0F};
-    has_move = true;
-  }
-  if (editor_command_ & static_cast<u32>(EditorCommand::kRight)) {
     camera_relative_pos += glm::vec3{move_distance, 0.0F, 0.0F};
     has_move = true;
   }
+  if (editor_command_ & static_cast<u32>(EditorCommand::kRight)) {
+    camera_relative_pos += glm::vec3{-move_distance, 0.0F, 0.0F};
+    has_move = true;
+  }
   if (editor_command_ & static_cast<u32>(EditorCommand::kUp)) {
-    camera_relative_pos += glm::vec3{0.0F, -move_distance, 0.0F};
+    camera_relative_pos += glm::vec3{0.0F, move_distance, 0.0F};
     has_move = true;
   }
   if (editor_command_ & static_cast<u32>(EditorCommand::kDown)) {
-    camera_relative_pos += glm::vec3{0.0F, move_distance, 0.0F};
+    camera_relative_pos += glm::vec3{0.0F, -move_distance, 0.0F};
     has_move = true;
   }
 
@@ -150,9 +150,9 @@ void EditorInput::OnCursorPos(f64 xpos, f64 ypos) {
   if (prev_xpos_ >= 0.0F && prev_ypos_ >= 0.0F) {
     if (window_->IsMouseButtonDown(GLFW_MOUSE_BUTTON_RIGHT)) {
       f32 yaw{
-          glm::radians(static_cast<f32>(xpos - prev_xpos_) * angular_velocity)};
+          glm::radians(static_cast<f32>(prev_xpos_ - xpos) * angular_velocity)};
       f32 pitch{
-          glm::radians(static_cast<f32>(ypos - prev_ypos_) * angular_velocity)};
+          glm::radians(static_cast<f32>(prev_ypos_ - ypos) * angular_velocity)};
 
       camera_->Rotate(yaw, pitch);
     }

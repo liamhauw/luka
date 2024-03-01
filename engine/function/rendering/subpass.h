@@ -24,6 +24,7 @@ struct alignas(16) GlobalUniform {
 
 struct alignas(16) DrawElementUniform {
   glm::mat4 m;
+  glm::vec4 base_color_factor;
 };
 
 struct DrawElement {

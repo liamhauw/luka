@@ -1,4 +1,4 @@
-#version 320 es
+#version 450
 
 layout(location = 0) in vec3 position;
 layout(location = 0) out vec4 o_position;
@@ -20,6 +20,7 @@ layout(set = 0, binding = 1) uniform GlobalUniform {
 
 layout(set = 0, binding = 2) uniform DrawElementUniform {
     mat4 m;
+    vec4 base_color_factor;
 } draw_element_uniform;
 
 void main(void)

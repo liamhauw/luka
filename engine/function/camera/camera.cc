@@ -14,12 +14,15 @@ Camera::Camera(std::shared_ptr<Window> window)
       view_matirx_{glm::mat4(glm::lookAt(position_, position_ + look_,
                                          glm::cross(right_, look_)))},
       projection_matirx_{glm::perspective(
-          glm::radians(60.0F), window_->GetWindowRatio(), 0.1F, 1000.0F)} {}
+          glm::radians(60.0F), window_->GetWindowRatio(), 0.1F, 1000.0F)} {
+  projection_matirx_[1][1] *= -1;
+}
 
 void Camera::Tick() {
   if (window_->GetFramebufferResized()) {
     projection_matirx_ = glm::perspective(
         glm::radians(60.0F), window_->GetWindowRatio(), 0.1F, 1000.0F);
+    projection_matirx_[1][1] *= -1;
   }
 }
 

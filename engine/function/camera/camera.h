@@ -31,7 +31,7 @@ class Camera {
 
   glm::vec3 position_{0.0F, 5.0F, -10.0F};
   glm::vec3 look_{0.0F, 0.0F, 1.0F};
-  glm::vec3 right_{1.0F, 0.0F, 0.0F};
+  glm::vec3 right_{-1.0F, 0.0F, 0.0F};
 
   bool view_matrix_dirty_{false};
   glm::mat4 view_matirx_;

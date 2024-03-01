@@ -116,6 +116,11 @@ const std::map<std::string, Texture*>& Material::GetTextures() const {
   return textures_;
 }
 
+const glm::vec4& Material::GetBaseColorFactor() const {
+  return base_color_factor_;
+}
+
+
 }  // namespace sg
 
 }  // namespace luka

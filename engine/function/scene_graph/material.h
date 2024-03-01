@@ -34,6 +34,7 @@ class Material : public Component {
   std::type_index GetType() override;
 
   const std::map<std::string, Texture*>& GetTextures() const;
+  const glm::vec4& GetBaseColorFactor() const;
 
  private:
   std::map<std::string, Texture*> textures_;
