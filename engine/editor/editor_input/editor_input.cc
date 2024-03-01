@@ -40,19 +40,19 @@ void EditorInput::Tick() {
   glm::vec3 camera_relative_pos{0.0F};
   bool has_move{false};
   if (editor_command_ & static_cast<u32>(EditorCommand::kFoward)) {
-    camera_relative_pos += glm::vec3{0.0F, 0.0F, move_distance};
-    has_move = true;
-  }
-  if (editor_command_ & static_cast<u32>(EditorCommand::kBackward)) {
     camera_relative_pos += glm::vec3{0.0F, 0.0F, -move_distance};
     has_move = true;
   }
+  if (editor_command_ & static_cast<u32>(EditorCommand::kBackward)) {
+    camera_relative_pos += glm::vec3{0.0F, 0.0F, move_distance};
+    has_move = true;
+  }
   if (editor_command_ & static_cast<u32>(EditorCommand::kLeft)) {
-    camera_relative_pos += glm::vec3{move_distance, 0.0F, 0.0F};
+    camera_relative_pos += glm::vec3{-move_distance, 0.0F, 0.0F};
     has_move = true;
   }
   if (editor_command_ & static_cast<u32>(EditorCommand::kRight)) {
-    camera_relative_pos += glm::vec3{-move_distance, 0.0F, 0.0F};
+    camera_relative_pos += glm::vec3{move_distance, 0.0F, 0.0F};
     has_move = true;
   }
   if (editor_command_ & static_cast<u32>(EditorCommand::kUp)) {

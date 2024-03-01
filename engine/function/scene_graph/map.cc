@@ -112,7 +112,7 @@ void Map::ParseExtensionsUsed(
   for (const std::string& model_extension_used : model_extensions_used) {
     auto iter = supported_extensions.find(model_extension_used);
     if (iter == supported_extensions.end()) {
-      THROW("Contain unsupported extension.");
+      LOGW("Contain unsupported extension : {}", model_extension_used);
     } else {
       iter->second = true;
     }

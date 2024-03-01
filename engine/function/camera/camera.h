@@ -29,9 +29,9 @@ class Camera {
  private:
   std::shared_ptr<Window> window_;
 
-  glm::vec3 position_{0.0F, 5.0F, -10.0F};
-  glm::vec3 look_{0.0F, 0.0F, 1.0F};
-  glm::vec3 right_{-1.0F, 0.0F, 0.0F};
+  glm::vec3 position_{0.0F, 2.0F, 4.0F};
+  glm::vec3 look_{0.0F, 0.0F, -1.0F};
+  glm::vec3 right_{1.0F, 0.0F, 0.0F};
 
   bool view_matrix_dirty_{false};
   glm::mat4 view_matirx_;
