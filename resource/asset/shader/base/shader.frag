@@ -1,17 +1,5 @@
 #version 450
 
-layout(location = 0) in vec4 i_position;
-
-#ifdef HAS_TEXCOORD_0_BUFFER
-layout(location = 1) in vec2 i_texcoord_0;
-#endif
-
-#ifdef HAS_NORMAL_BUFFER
-layout(location = 2) in vec3 i_normal;
-#endif
-
-layout(location = 0) out vec4 o_color;
-
 layout(push_constant, std430) uniform PushConstantUniform {
 	float para;
 } push_constant_uniform;
@@ -24,6 +12,18 @@ layout(set = 0, binding = 2) uniform DrawElementUniform {
     mat4 m;
 		vec4 base_color_factor;
 } draw_element_uniform;
+
+layout(location = 0) in vec4 i_position;
+
+#ifdef HAS_TEXCOORD_0_BUFFER
+layout(location = 1) in vec2 i_texcoord_0;
+#endif
+
+#ifdef HAS_NORMAL_BUFFER
+layout(location = 2) in vec3 i_normal;
+#endif
+
+layout(location = 0) out vec4 o_color;
 
 void main(void)
 {

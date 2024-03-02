@@ -1,5 +1,15 @@
 #version 450
 
+layout(set = 0, binding = 1) uniform GlobalUniform {
+    mat4 pv;
+    vec3 camera_position;
+} global_uniform;
+
+layout(set = 0, binding = 2) uniform DrawElementUniform {
+    mat4 m;
+    vec4 base_color_factor;
+} draw_element_uniform;
+
 layout(location = 0) in vec3 position;
 layout(location = 0) out vec4 o_position;
 
@@ -12,16 +22,6 @@ layout(location = 1) out vec2 o_texcoord_0;
 layout(location = 2) in vec3 normal;
 layout(location = 2) out vec3 o_normal;
 #endif
-
-layout(set = 0, binding = 1) uniform GlobalUniform {
-    mat4 pv;
-    vec3 camera_position;
-} global_uniform;
-
-layout(set = 0, binding = 2) uniform DrawElementUniform {
-    mat4 m;
-    vec4 base_color_factor;
-} draw_element_uniform;
 
 void main(void)
 {
