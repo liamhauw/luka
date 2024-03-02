@@ -93,7 +93,6 @@ void Context::End(const vk::raii::CommandBuffer& command_buffer) {
 }
 
 void Context::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
-  gpu_->BeginLabel(command_buffer, "traverse passes");
   // Set viewport and scissor.
   command_buffer.setViewport(0, viewport_);
   command_buffer.setScissor(0, scissor_);
@@ -120,9 +119,6 @@ void Context::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
       gpu_->BeginLabel(command_buffer, "sub_pass_" + std::to_string(j));
       const std::unique_ptr<rd::Subpass>& subpass{subpasses[j]};
 
-      // Update subpass uniform buffer.
-      subpass->UpdateGlobalUniform(active_frame_index_, camera_);
-
       // Next subpass.
       if (j > 0) {
         command_buffer.nextSubpass({});
@@ -132,7 +128,7 @@ void Context::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
       std::vector<DrawElement>& draw_elements{subpass->GetDrawElements()};
 
       vk::Pipeline prev_pipeline{nullptr};
-
+      vk::PipelineLayout prev_pipeline_layout{nullptr};
       for (DrawElement& draw_element : draw_elements) {
         // Bind pipeline.
         vk::Pipeline pipeline{draw_element.pipeline};
@@ -142,12 +138,14 @@ void Context::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
           prev_pipeline = pipeline;
         }
 
-        // Push constants.
-        draw_element.PushConstants(command_buffer);
+        // Update subpass uniform buffer.
+        vk::PipelineLayout pipeline_layout{draw_element.pipeline_layout};
+        if (prev_pipeline_layout != pipeline_layout) {
+          subpass->PushConstants(command_buffer, pipeline_layout);
+          prev_pipeline_layout = pipeline_layout;
+        }
 
         // Bind descriptor sets.
-        vk::PipelineLayout pipeline_layout{draw_element.pipeline_layout};
-
         std::vector<vk::DescriptorSet> descriptor_sets;
         for (const auto& descriptor_set :
              draw_element.descriptor_sets[active_frame_index_]) {
@@ -192,8 +190,6 @@ void Context::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
     command_buffer.endRenderPass();
     gpu_->EndLabel(command_buffer);
   }
-
-  gpu_->EndLabel(command_buffer);
 }
 
 void Context::CreateSwapchain() {
@@ -347,7 +343,7 @@ void Context::CreateViewportAndScissor() {
 
 void Context::CreatePasses() {
   std::unique_ptr<Pass> swapchain_pass{std::make_unique<SwapchainPass>(
-      asset_, gpu_, scene_graph_, swapchain_info_, swapchain_images_)};
+      asset_, camera_, gpu_, scene_graph_, swapchain_info_, swapchain_images_)};
 
   passes_.push_back(std::move(swapchain_pass));
 }

@@ -12,17 +12,31 @@ namespace luka {
 namespace rd {
 
 SwapchainSupass::SwapchainSupass(std::shared_ptr<Asset> asset,
+                                 std::shared_ptr<Camera> camera,
                                  std::shared_ptr<Gpu> gpu,
                                  std::shared_ptr<SceneGraph> scene_graph,
                                  const vk::raii::RenderPass& render_pass,
                                  u32 frame_count)
-    : Subpass{asset, gpu, scene_graph, render_pass, frame_count} {
+    : Subpass{render_pass, frame_count},
+      asset_{asset},
+      camera_{camera},
+      gpu_{gpu},
+      scene_graph_{scene_graph} {
   CreateDrawElements();
 }
 
-void SwapchainSupass::UpdatePushConstantUniform(
-    const vk::raii::CommandBuffer& command_buffer) {
-  PushConstantUniform push_constant_uniform{0.5F};
+void SwapchainSupass::PushConstants(
+    const vk::raii::CommandBuffer& command_buffer,
+    vk::PipelineLayout pipeline_layout) {
+  const glm::mat4& view{camera_->GetViewMatrix()};
+  const glm::mat4& projection{camera_->GetProjectionMatrix()};
+  const glm::vec3& camera_position{camera_->GetPosition()};
+
+  PushConstantUniform push_constant_uniform{projection * view, camera_position};
+
+  command_buffer.pushConstants<PushConstantUniform>(
+      pipeline_layout, vk::ShaderStageFlagBits::eVertex, 0,
+      push_constant_uniform);
 }
 
 void SwapchainSupass::CreateDrawElements() {
@@ -370,20 +384,7 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
       const auto& shader_resources{set_shader_resource.second};
       for (const auto& shader_resource : shader_resources) {
         if (shader_resource.type == ShaderResourceType::kUniformBuffer) {
-          if (shader_resource.name == "GlobalUniform") {
-            vk::DescriptorBufferInfo descriptor_buffer_info{
-                *(global_uniform_buffers_[i]), 0, sizeof(GlobalUniform)};
-
-            vk::WriteDescriptorSet write_descriptor_set{
-                *(descriptor_sets[shader_resource.set]),
-                shader_resource.binding,
-                0,
-                vk::DescriptorType::eUniformBuffer,
-                nullptr,
-                descriptor_buffer_info};
-
-            write_descriptor_sets.push_back(std::move(write_descriptor_set));
-          } else if (shader_resource.name == "DrawElementUniform") {
+          if (shader_resource.name == "DrawElementUniform") {
             DrawElementUniform draw_element_uniform{
                 model_matrix, material->GetBaseColorFactor()};
 

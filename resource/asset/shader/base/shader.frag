@@ -1,14 +1,10 @@
 #version 450
 
-layout(push_constant, std430) uniform PushConstantUniform {
-	float para;
-} push_constant_uniform;
-
 #ifdef HAS_BASE_COLOR_TEXTURE
 layout(set = 0, binding = 0) uniform sampler2D base_color_texture;
 #endif
 
-layout(set = 0, binding = 2) uniform DrawElementUniform {
+layout(set = 0, binding = 1) uniform DrawElementUniform {
     mat4 m;
 		vec4 base_color_factor;
 } draw_element_uniform;
@@ -34,7 +30,6 @@ void main(void)
 #else
 	base_color = draw_element_uniform.base_color_factor;
 #endif
-	base_color.x *= push_constant_uniform.para;
 
 	o_color = base_color;
 }
