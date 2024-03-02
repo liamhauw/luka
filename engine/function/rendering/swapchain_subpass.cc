@@ -20,6 +20,11 @@ SwapchainSupass::SwapchainSupass(std::shared_ptr<Asset> asset,
   CreateDrawElements();
 }
 
+void SwapchainSupass::UpdatePushConstantUniform(
+    const vk::raii::CommandBuffer& command_buffer) {
+  PushConstantUniform push_constant_uniform{0.5F};
+}
+
 void SwapchainSupass::CreateDrawElements() {
   const sg::Map& object{scene_graph_->GetObject()};
   const sg::Scene* scene{object.GetScene()};

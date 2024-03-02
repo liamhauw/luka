@@ -21,6 +21,9 @@ class SwapchainSupass : public Subpass {
                   const vk::raii::RenderPass& render_pass, u32 frame_count);
   ~SwapchainSupass() = default;
 
+  void UpdatePushConstantUniform(
+      const vk::raii::CommandBuffer& command_buffer) override;
+
  private:
   void CreateDrawElements() override;
 

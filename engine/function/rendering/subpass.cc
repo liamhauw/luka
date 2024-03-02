@@ -31,7 +31,8 @@ Subpass::Subpass(std::shared_ptr<Asset> asset, std::shared_ptr<Gpu> gpu,
   }
 }
 
-void Subpass::Update(u32 active_frame_index, std::shared_ptr<Camera> camera) {
+void Subpass::UpdateGlobalUniform(u32 active_frame_index,
+                                  std::shared_ptr<Camera> camera) {
   auto& global_uniform{global_uniforms_[active_frame_index]};
 
   const glm::mat4& view{camera->GetViewMatrix()};
@@ -47,9 +48,7 @@ void Subpass::Update(u32 active_frame_index, std::shared_ptr<Camera> camera) {
   memcpy(mapped_data, &global_uniform, sizeof(global_uniform));
 }
 
-const std::vector<DrawElement>& Subpass::GetDrawElements() const {
-  return draw_elements_;
-}
+std::vector<DrawElement>& Subpass::GetDrawElements() { return draw_elements_; }
 
 }  // namespace rd
 

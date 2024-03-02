@@ -121,7 +121,7 @@ void Context::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
       const std::unique_ptr<rd::Subpass>& subpass{subpasses[j]};
 
       // Update subpass uniform buffer.
-      subpass->Update(active_frame_index_, camera_);
+      subpass->UpdateGlobalUniform(active_frame_index_, camera_);
 
       // Next subpass.
       if (j > 0) {
@@ -129,12 +129,11 @@ void Context::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
       }
 
       // Traverse draw elements.
-      const std::vector<DrawElement>& draw_elements{subpass->GetDrawElements()};
+      std::vector<DrawElement>& draw_elements{subpass->GetDrawElements()};
 
       vk::Pipeline prev_pipeline{nullptr};
-      vk::PipelineLayout prev_pipeline_layout{nullptr};
 
-      for (const DrawElement& draw_element : draw_elements) {
+      for (DrawElement& draw_element : draw_elements) {
         // Bind pipeline.
         vk::Pipeline pipeline{draw_element.pipeline};
         if (prev_pipeline != pipeline) {
@@ -143,18 +142,20 @@ void Context::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
           prev_pipeline = pipeline;
         }
 
+        // Push constants.
+        draw_element.PushConstants(command_buffer);
+
         // Bind descriptor sets.
         vk::PipelineLayout pipeline_layout{draw_element.pipeline_layout};
-        if (prev_pipeline_layout != pipeline_layout) {
-          std::vector<vk::DescriptorSet> descriptor_sets;
-          for (const auto& descriptor_set :
-               draw_element.descriptor_sets[active_frame_index_]) {
-            descriptor_sets.push_back(*(descriptor_set));
-          }
-          command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-                                            draw_element.pipeline_layout, 0,
-                                            descriptor_sets, nullptr);
+
+        std::vector<vk::DescriptorSet> descriptor_sets;
+        for (const auto& descriptor_set :
+             draw_element.descriptor_sets[active_frame_index_]) {
+          descriptor_sets.push_back(*(descriptor_set));
         }
+        command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+                                          draw_element.pipeline_layout, 0,
+                                          descriptor_sets, nullptr);
 
         // Bind vertex buffers.
         const auto& location_vertex_attributes{

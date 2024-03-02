@@ -7,11 +7,11 @@
 #include "platform/pch.h"
 // clang-format on
 
+#include "function/camera/camera.h"
 #include "function/gpu/gpu.h"
 #include "function/rendering/spirv.h"
 #include "function/scene_graph/scene_graph.h"
 #include "resource/asset/asset.h"
-#include "function/camera/camera.h"
 
 namespace luka {
 
@@ -25,6 +25,10 @@ struct alignas(16) GlobalUniform {
 struct alignas(16) DrawElementUniform {
   glm::mat4 m;
   glm::vec4 base_color_factor;
+};
+
+struct PushConstantUniform {
+  f32 para;
 };
 
 struct DrawElement {
@@ -42,6 +46,12 @@ struct DrawElement {
             std::move(other.draw_element_uniform_buffers)},
         descriptor_sets(std::move(other.descriptor_sets)) {}
 
+  void PushConstants(const vk::raii::CommandBuffer& command_buffer) {
+    command_buffer.pushConstants<PushConstantUniform>(
+        pipeline_layout, vk::ShaderStageFlagBits::eFragment, 0,
+        push_constant_uniform);
+  }
+
   vk::Pipeline pipeline;
   vk::PipelineLayout pipeline_layout;
   std::map<u32, const sg::VertexAttribute*> location_vertex_attributes;
@@ -53,6 +63,8 @@ struct DrawElement {
   std::vector<DrawElementUniform> draw_element_uniforms;
   std::vector<gpu::Buffer> draw_element_uniform_buffers;
   std::vector<vk::raii::DescriptorSets> descriptor_sets;
+
+  PushConstantUniform push_constant_uniform;
 };
 
 class Subpass {
@@ -62,9 +74,12 @@ class Subpass {
           const vk::raii::RenderPass& render_pass, u32 frame_count);
   virtual ~Subpass() = default;
 
-  void Update(u32 active_frame_index, std::shared_ptr<Camera> camera);
+  virtual void UpdatePushConstantUniform(
+      const vk::raii::CommandBuffer& command_buffer) = 0;
+  void UpdateGlobalUniform(u32 active_frame_index,
+                           std::shared_ptr<Camera> camera);
 
-  const std::vector<DrawElement>& GetDrawElements() const;
+  std::vector<DrawElement>& GetDrawElements();
 
  protected:
   virtual void CreateDrawElements() = 0;
