@@ -32,6 +32,7 @@ class SwapchainSupass : public Subpass {
                      vk::PipelineLayout pipeline_layout) override;
 
  private:
+  void CreateBindlessDescriptorSets() override;
   void CreateDrawElements() override;
 
   DrawElement CreateDrawElement(const glm::mat4& model_matrix,

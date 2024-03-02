@@ -20,22 +20,23 @@ namespace rd {
 struct alignas(16) DrawElementUniform {
   glm::mat4 m;
   glm::vec4 base_color_factor;
+  glm::uvec4 image_indices;
 };
 
 struct DrawElement {
   DrawElement() = default;
 
-  DrawElement(DrawElement&& other) noexcept
-      : pipeline(std::move(other.pipeline)),
-        pipeline_layout(std::move(other.pipeline_layout)),
-        location_vertex_attributes(std::move(other.location_vertex_attributes)),
-        vertex_count(other.vertex_count),
-        index_attribute(other.index_attribute),
-        has_index(other.has_index),
-        draw_element_uniforms{std::move(other.draw_element_uniforms)},
+  DrawElement(DrawElement&& rhs) noexcept
+      : pipeline(std::move(rhs.pipeline)),
+        pipeline_layout(std::move(rhs.pipeline_layout)),
+        location_vertex_attributes(std::move(rhs.location_vertex_attributes)),
+        vertex_count(rhs.vertex_count),
+        index_attribute(rhs.index_attribute),
+        has_index(rhs.has_index),
+        draw_element_uniforms{std::move(rhs.draw_element_uniforms)},
         draw_element_uniform_buffers{
-            std::move(other.draw_element_uniform_buffers)},
-        descriptor_sets(std::move(other.descriptor_sets)) {}
+            std::move(rhs.draw_element_uniform_buffers)},
+        descriptor_sets(std::move(rhs.descriptor_sets)) {}
 
   vk::Pipeline pipeline;
   vk::PipelineLayout pipeline_layout;
@@ -58,16 +59,26 @@ class Subpass {
   virtual void PushConstants(const vk::raii::CommandBuffer& command_buffer,
                              vk::PipelineLayout pipeline_layout) = 0;
 
+  vk::DescriptorSetLayout GetBindlessDescriptorSetLayout();
+  const vk::raii::DescriptorSet& GetBindlessDescriptorSet();
   std::vector<DrawElement>& GetDrawElements();
 
  protected:
+  virtual void CreateBindlessDescriptorSets() = 0;
   virtual void CreateDrawElements() = 0;
 
   vk::RenderPass render_pass_;
   u32 frame_count_;
 
-  std::map<u64, SPIRV> spirv_shaders_;
+  vk::DescriptorSetLayout bindless_descriptor_set_layout_{nullptr};
+  vk::raii::DescriptorSets bindless_descriptor_sets_{nullptr};
+
   std::vector<DrawElement> draw_elements_;
+
+  std::map<u64, SPIRV> spirv_shaders_;
+  u32 global_image_index_{0};
+
+  std::vector<std::string> textures_{"base_color_texture"};
 };
 
 }  // namespace rd

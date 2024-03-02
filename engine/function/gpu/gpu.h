@@ -99,7 +99,11 @@ class Gpu {
       const vk::CommandBufferAllocateInfo& command_buffer_ai,
       const std::string& name = {});
 
-  vk::raii::DescriptorSets AllocateDescriptorSets(
+  vk::raii::DescriptorSets AllocateNormalDescriptorSets(
+      vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
+      const std::string& name = {});
+
+  vk::raii::DescriptorSets AllocateBindlessDescriptorSets(
       vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
       const std::string& name = {});
 
@@ -181,7 +185,8 @@ class Gpu {
   vk::raii::CommandPool command_pool_{nullptr};
   vk::raii::CommandBuffers command_buffers_{nullptr};
 
-  vk::raii::DescriptorPool descriptor_pool_{nullptr};
+  vk::raii::DescriptorPool normal_descriptor_pool_{nullptr};
+  vk::raii::DescriptorPool bindless_descriptor_pool_{nullptr};
 
   ResourceCache resource_cache_;
 };

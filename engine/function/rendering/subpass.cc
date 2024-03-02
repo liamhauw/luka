@@ -14,6 +14,14 @@ namespace rd {
 Subpass::Subpass(const vk::raii::RenderPass& render_pass, u32 frame_count)
     : render_pass_{*render_pass}, frame_count_{frame_count} {}
 
+vk::DescriptorSetLayout Subpass::GetBindlessDescriptorSetLayout() {
+  return bindless_descriptor_set_layout_;
+}
+
+const vk::raii::DescriptorSet& Subpass::GetBindlessDescriptorSet() {
+  return bindless_descriptor_sets_.front();
+}
+
 std::vector<DrawElement>& Subpass::GetDrawElements() { return draw_elements_; }
 
 }  // namespace rd

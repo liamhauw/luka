@@ -22,6 +22,7 @@ SwapchainSupass::SwapchainSupass(std::shared_ptr<Asset> asset,
       camera_{camera},
       gpu_{gpu},
       scene_graph_{scene_graph} {
+  CreateBindlessDescriptorSets();
   CreateDrawElements();
 }
 
@@ -37,6 +38,30 @@ void SwapchainSupass::PushConstants(
   command_buffer.pushConstants<PushConstantUniform>(
       pipeline_layout, vk::ShaderStageFlagBits::eVertex, 0,
       push_constant_uniform);
+}
+
+void SwapchainSupass::CreateBindlessDescriptorSets() {
+  std::vector<vk::DescriptorSetLayoutBinding> descriptor_set_layout_bindings{
+      {0, vk::DescriptorType::eCombinedImageSampler, 1024,
+       vk::ShaderStageFlagBits::eAll}};
+
+  std::vector<vk::DescriptorBindingFlags> descriptor_binding_flags(
+      1, vk::DescriptorBindingFlagBits::ePartiallyBound);
+
+  vk::DescriptorSetLayoutBindingFlagsCreateInfo
+      descriptor_set_layout_binding_flags_ci{descriptor_binding_flags};
+
+  vk::DescriptorSetLayoutCreateInfo bindless_descriptor_set_layout_ci{
+      vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool,
+      descriptor_set_layout_bindings, &descriptor_set_layout_binding_flags_ci};
+
+  bindless_descriptor_set_layout_ =
+      *(gpu_->RequestDescriptorSetLayout(bindless_descriptor_set_layout_ci));
+
+  vk::DescriptorSetAllocateInfo bindless_descriptor_set_allocate_info{
+      nullptr, bindless_descriptor_set_layout_};
+  bindless_descriptor_sets_ = gpu_->AllocateBindlessDescriptorSets(
+      bindless_descriptor_set_allocate_info);
 }
 
 void SwapchainSupass::CreateDrawElements() {
@@ -188,9 +213,6 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
 
       if (shader_resource.type == ShaderResourceType::kUniformBuffer) {
         descriptor_type = vk::DescriptorType::eUniformBuffer;
-      } else if (shader_resource.type ==
-                 ShaderResourceType::kCombinedImageSampler) {
-        descriptor_type = vk::DescriptorType::eCombinedImageSampler;
       } else {
         continue;
       }
@@ -202,6 +224,10 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
       layout_bindings.push_back(layout_binding);
     }
 
+    if (layout_bindings.empty()) {
+      continue;
+    }
+
     vk::DescriptorSetLayoutCreateInfo descriptor_set_layout_ci{{},
                                                                layout_bindings};
 
@@ -211,8 +237,13 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
     set_layouts.push_back(*descriptor_set_layout);
   }
 
+  std::vector<vk::DescriptorSetLayout> set_layouts_with_bindless{bindless_descriptor_set_layout_};
+  for (vk::DescriptorSetLayout set_layout : set_layouts) {
+    set_layouts_with_bindless.push_back(set_layout);
+  }
+
   vk::PipelineLayoutCreateInfo pipeline_layout_ci{
-      {}, set_layouts, push_constant_ranges};
+      {}, set_layouts_with_bindless, push_constant_ranges};
 
   const vk::raii::PipelineLayout& pipeline_layout{
       gpu_->RequestPipelineLayout(pipeline_layout_ci)};
@@ -350,19 +381,21 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
   for (u32 i{0}; i < frame_count_; ++i) {
     vk::DescriptorSetAllocateInfo descriptor_set_allocate_info{{}, set_layouts};
     vk::raii::DescriptorSets descriptor_sets{
-        gpu_->AllocateDescriptorSets(descriptor_set_allocate_info)};
+        gpu_->AllocateNormalDescriptorSets(descriptor_set_allocate_info)};
 
     std::vector<vk::WriteDescriptorSet> write_descriptor_sets;
 
     // 1. Combined image samplers.
-    for (const auto& texture : textures) {
-      const std::string& name{texture.first};
+    glm::uvec4 image_indices{0};
+    u32 idx{0};
+    for (const auto& texture : textures_) {
 
-      auto it{name_shader_resources.find(name)};
-      if (it != name_shader_resources.end()) {
+      auto it{name_shader_resources.find("global_images")};
+      auto it1{textures.find(texture)};
+      if (it != name_shader_resources.end() && it1 != textures.end()) {
         const ShaderResource& shader_resource{it->second};
 
-        sg::Texture* tex{texture.second};
+        sg::Texture* tex{it1->second};
 
         const vk::raii::ImageView& image_view{tex->GetImage()->GetImageView()};
         const vk::raii::Sampler& sampler{tex->GetSampler()->GetSampler()};
@@ -370,10 +403,12 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
         vk::DescriptorImageInfo descriptor_image_info{
             *sampler, *image_view, vk::ImageLayout::eShaderReadOnlyOptimal};
 
+        image_indices[idx] = global_image_index_++;
         vk::WriteDescriptorSet write_descriptor_set{
-            *(descriptor_sets[shader_resource.set]), shader_resource.binding, 0,
-            vk::DescriptorType::eCombinedImageSampler, descriptor_image_info};
-
+            *(bindless_descriptor_sets_[0]), shader_resource.binding,
+            image_indices[idx], vk::DescriptorType::eCombinedImageSampler,
+            descriptor_image_info};
+        ++idx;
         write_descriptor_sets.push_back(std::move(write_descriptor_set));
       }
     }
@@ -386,7 +421,7 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
         if (shader_resource.type == ShaderResourceType::kUniformBuffer) {
           if (shader_resource.name == "DrawElementUniform") {
             DrawElementUniform draw_element_uniform{
-                model_matrix, material->GetBaseColorFactor()};
+                model_matrix, material->GetBaseColorFactor(), image_indices};
 
             vk::BufferCreateInfo uniform_buffer_ci{
                 {},
@@ -402,7 +437,7 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
                 *draw_element_uniform_buffer, 0, sizeof(DrawElementUniform)};
 
             vk::WriteDescriptorSet write_descriptor_set{
-                *(descriptor_sets[shader_resource.set]),
+                *(descriptor_sets[0]),
                 shader_resource.binding,
                 0,
                 vk::DescriptorType::eUniformBuffer,

@@ -284,6 +284,7 @@ const vk::raii::DescriptorSetLayout& Gpu::RequestDescriptorSetLayout(
     const vk::DescriptorSetLayoutCreateInfo& descriptor_set_layout_ci,
     const std::string& name) {
   u64 hash_value{0};
+  HashCombine(hash_value, descriptor_set_layout_ci.flags);
   for (u32 i{0}; i < descriptor_set_layout_ci.bindingCount; ++i) {
     HashCombine(hash_value, descriptor_set_layout_ci.pBindings[i]);
   }
@@ -419,10 +420,30 @@ vk::raii::CommandBuffers Gpu::AllocateCommandBuffers(
   return command_buffers;
 }
 
-vk::raii::DescriptorSets Gpu::AllocateDescriptorSets(
+vk::raii::DescriptorSets Gpu::AllocateNormalDescriptorSets(
     vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
     const std::string& name) {
-  descriptor_set_allocate_info.descriptorPool = *descriptor_pool_;
+  descriptor_set_allocate_info.descriptorPool = *normal_descriptor_pool_;
+  vk::raii::DescriptorSets descriptor_sets{device_,
+                                           descriptor_set_allocate_info};
+
+#ifndef NDEBUG
+  for (u32 i{0}; i < descriptor_sets.size(); ++i) {
+    SetObjectName(vk::ObjectType::eDescriptorSet,
+                  reinterpret_cast<uint64_t>(
+                      static_cast<VkDescriptorSet>(*(descriptor_sets[i]))),
+                  name, "Descriptor Set " + std::to_string(i));
+  }
+
+#endif
+
+  return descriptor_sets;
+}
+
+vk::raii::DescriptorSets Gpu::AllocateBindlessDescriptorSets(
+    vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
+    const std::string& name) {
+  descriptor_set_allocate_info.descriptorPool = *bindless_descriptor_pool_;
   vk::raii::DescriptorSets descriptor_sets{device_,
                                            descriptor_set_allocate_info};
 
@@ -751,14 +772,9 @@ void Gpu::CreateDevice() {
   indexing_features.runtimeDescriptorArray = VK_TRUE;
   indexing_features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
 
-  vk::PhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features;
-  dynamic_rendering_features.dynamicRendering = VK_TRUE;
-
   vk::StructureChain<vk::PhysicalDeviceFeatures2,
-                     vk::PhysicalDeviceDescriptorIndexingFeatures,
-                     vk::PhysicalDeviceDynamicRenderingFeatures>
-      physical_device_features2{physical_device_features, indexing_features,
-                                dynamic_rendering_features};
+                     vk::PhysicalDeviceDescriptorIndexingFeatures>
+      physical_device_features2{physical_device_features, indexing_features};
 
   // Create device.
   vk::DeviceCreateInfo device_ci{{},      device_queue_cis,
@@ -799,7 +815,8 @@ void Gpu::CreateCommandObjects() {
 }
 
 void Gpu::CreateDescriptorPool() {
-  std::vector<vk::DescriptorPoolSize> pool_sizes{
+  // Normal.
+  std::vector<vk::DescriptorPoolSize> normal_pool_sizes{
       {vk::DescriptorType::eSampler, 1000},
       {vk::DescriptorType::eCombinedImageSampler, 1000},
       {vk::DescriptorType::eSampledImage, 1000},
@@ -810,19 +827,36 @@ void Gpu::CreateDescriptorPool() {
       {vk::DescriptorType::eStorageBuffer, 1000},
       {vk::DescriptorType::eUniformBufferDynamic, 1000},
       {vk::DescriptorType::eStorageBufferDynamic, 1000},
-
       {vk::DescriptorType::eInputAttachment, 1000}};
 
-  u32 max_sets{std::accumulate(pool_sizes.begin(), pool_sizes.end(),
-                               static_cast<u32>(0),
-                               [](u32 sum, const vk::DescriptorPoolSize& dps) {
-                                 return sum + dps.descriptorCount;
-                               })};
+  u32 normal_max_sets{std::accumulate(
+      normal_pool_sizes.begin(), normal_pool_sizes.end(), static_cast<u32>(0),
+      [](u32 sum, const vk::DescriptorPoolSize& dps) {
+        return sum + dps.descriptorCount;
+      })};
 
-  vk::DescriptorPoolCreateInfo descriptor_pool_ci{
-      vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, max_sets,
-      pool_sizes};
-  descriptor_pool_ = vk::raii::DescriptorPool{device_, descriptor_pool_ci};
+  vk::DescriptorPoolCreateInfo normal_descriptor_pool_ci{
+      vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, normal_max_sets,
+      normal_pool_sizes};
+  normal_descriptor_pool_ =
+      vk::raii::DescriptorPool{device_, normal_descriptor_pool_ci};
+
+  // Bindless.
+  std::vector<vk::DescriptorPoolSize> bindlessl_pool_sizes{
+      {vk::DescriptorType::eCombinedImageSampler, 1000}};
+
+  u32 bindless_max_sets{std::accumulate(
+      bindlessl_pool_sizes.begin(), bindlessl_pool_sizes.end(),
+      static_cast<u32>(0), [](u32 sum, const vk::DescriptorPoolSize& dps) {
+        return sum + dps.descriptorCount;
+      })};
+
+  vk::DescriptorPoolCreateInfo bindless_descriptor_pool_ci{
+      vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind |
+          vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
+      bindless_max_sets, bindlessl_pool_sizes};
+  bindless_descriptor_pool_ =
+      vk::raii::DescriptorPool{device_, bindless_descriptor_pool_ci};
 }
 
 void Gpu::SetObjectName(vk::ObjectType object_type, u64 handle,

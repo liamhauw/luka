@@ -5,9 +5,10 @@ layout(push_constant, std430) uniform PushConstantUniform {
     vec3 camera_position;
 } push_constant_uniform;
 
-layout(set = 0, binding = 1) uniform DrawElementUniform {
+layout(set = 1, binding = 0) uniform DrawElementUniform {
     mat4 m;
     vec4 base_color_factor;
+    uvec4 texture_indices;
 } draw_element_uniform;
 
 layout(location = 0) in vec3 position;

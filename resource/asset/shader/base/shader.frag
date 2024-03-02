@@ -1,12 +1,13 @@
 #version 450
 
-#ifdef HAS_BASE_COLOR_TEXTURE
-layout(set = 0, binding = 0) uniform sampler2D base_color_texture;
-#endif
+#extension GL_EXT_nonuniform_qualifier : enable
 
-layout(set = 0, binding = 1) uniform DrawElementUniform {
+layout ( set = 0, binding = 0 ) uniform sampler2D global_images[];
+
+layout(set = 1, binding = 0) uniform DrawElementUniform {
     mat4 m;
 		vec4 base_color_factor;
+		uvec4 image_indices;
 } draw_element_uniform;
 
 layout(location = 0) in vec4 i_position;
@@ -26,7 +27,7 @@ void main(void)
 	vec4 base_color = vec4(1.0, 1.0, 1.0, 1.0);
 
 #ifdef HAS_BASE_COLOR_TEXTURE
-	base_color = texture(base_color_texture, i_texcoord_0);
+	base_color = texture(global_images[nonuniformEXT(draw_element_uniform.image_indices.x)], i_texcoord_0);
 #else
 	base_color = draw_element_uniform.base_color_factor;
 #endif
