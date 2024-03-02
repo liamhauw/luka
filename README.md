@@ -1,8 +1,5 @@
 # luka engine
 
-## Features
-- Modular
-
 ## Prerequisites
 - Windows/macOS
 - Git

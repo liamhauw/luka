@@ -168,7 +168,7 @@ void Context::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
               location, *(vertex_attribute->buffer), vertex_attribute->offset);
         }
 
-        // Bind index buffer and draw indexed.
+        // Draw.
         if (!draw_element.has_index) {
           command_buffer.draw(draw_element.vertex_count, 1, 0, 0);
         } else {
