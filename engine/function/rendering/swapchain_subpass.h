@@ -40,8 +40,9 @@ class SwapchainSupass : public Subpass {
 
   std::shared_ptr<Asset> asset_;
   std::shared_ptr<Camera> camera_;
-  std::shared_ptr<Gpu> gpu_;
   std::shared_ptr<SceneGraph> scene_graph_;
+
+  std::vector<std::string> wanted_textures_{"base_color_texture"};
 };
 
 }  // namespace rd

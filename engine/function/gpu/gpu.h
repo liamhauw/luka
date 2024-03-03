@@ -17,13 +17,6 @@
 
 namespace luka {
 
-struct ResourceCache {
-  std::unordered_map<u64, vk::raii::DescriptorSetLayout> descriptor_set_layouts;
-  std::unordered_map<u64, vk::raii::PipelineLayout> pipeline_layouts;
-  std::unordered_map<u64, vk::raii::ShaderModule> shader_modules;
-  std::unordered_map<u64, vk::raii::Pipeline> pipelines;
-};
-
 class Gpu {
  public:
   Gpu(std::shared_ptr<Window> window);
@@ -79,19 +72,19 @@ class Gpu {
       const vk::FramebufferCreateInfo& framebuffer_ci,
       const std::string& name = {});
 
-  const vk::raii::DescriptorSetLayout& RequestDescriptorSetLayout(
+  vk::raii::DescriptorSetLayout CreateDescriptorSetLayout(
       const vk::DescriptorSetLayoutCreateInfo& descriptor_set_layout_ci,
       const std::string& name = {});
 
-  const vk::raii::PipelineLayout& RequestPipelineLayout(
+  vk::raii::PipelineLayout CreatePipelineLayout(
       const vk::PipelineLayoutCreateInfo& pipeline_layout_ci,
       const std::string& name = {});
 
-  const vk::raii::ShaderModule& RequestShaderModule(
+  vk::raii::ShaderModule CreateShaderModule(
       const vk::ShaderModuleCreateInfo& shader_module_ci,
       const std::string& name = {});
 
-  const vk::raii::Pipeline& RequestPipeline(
+  vk::raii::Pipeline CreatePipeline(
       const vk::GraphicsPipelineCreateInfo& graphics_pipeline_ci,
       const std::string& name = {});
 
@@ -99,11 +92,11 @@ class Gpu {
       const vk::CommandBufferAllocateInfo& command_buffer_ai,
       const std::string& name = {});
 
-  vk::raii::DescriptorSets AllocateNormalDescriptorSets(
+  vk::raii::DescriptorSets AllocateBindlessDescriptorSets(
       vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
       const std::string& name = {});
 
-  vk::raii::DescriptorSets AllocateBindlessDescriptorSets(
+  vk::raii::DescriptorSets AllocateNormalDescriptorSets(
       vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
       const std::string& name = {});
 
@@ -185,10 +178,8 @@ class Gpu {
   vk::raii::CommandPool command_pool_{nullptr};
   vk::raii::CommandBuffers command_buffers_{nullptr};
 
-  vk::raii::DescriptorPool normal_descriptor_pool_{nullptr};
   vk::raii::DescriptorPool bindless_descriptor_pool_{nullptr};
-
-  ResourceCache resource_cache_;
+  vk::raii::DescriptorPool normal_descriptor_pool_{nullptr};
 };
 
 }  // namespace luka

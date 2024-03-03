@@ -17,10 +17,9 @@ SwapchainSupass::SwapchainSupass(std::shared_ptr<Asset> asset,
                                  std::shared_ptr<SceneGraph> scene_graph,
                                  const vk::raii::RenderPass& render_pass,
                                  u32 frame_count)
-    : Subpass{render_pass, frame_count},
+    : Subpass{gpu, render_pass, frame_count},
       asset_{asset},
       camera_{camera},
-      gpu_{gpu},
       scene_graph_{scene_graph} {
   CreateBindlessDescriptorSets();
   CreateDrawElements();
@@ -56,7 +55,7 @@ void SwapchainSupass::CreateBindlessDescriptorSets() {
       descriptor_set_layout_bindings, &descriptor_set_layout_binding_flags_ci};
 
   bindless_descriptor_set_layout_ =
-      *(gpu_->RequestDescriptorSetLayout(bindless_descriptor_set_layout_ci));
+      *(RequestDescriptorSetLayout(bindless_descriptor_set_layout_ci));
 
   vk::DescriptorSetAllocateInfo bindless_descriptor_set_allocate_info{
       nullptr, bindless_descriptor_set_layout_};
@@ -120,17 +119,20 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
 
   // Shaders.
   std::vector<std::string> shader_processes;
+  const std::map<std::string, sg::Texture*>& textures{material->GetTextures()};
+  for (std::string wanted_texture : wanted_textures_) {
+    auto it{textures.find(wanted_texture)};
+    if (it != textures.end()) {
+      std::transform(wanted_texture.begin(), wanted_texture.end(),
+                     wanted_texture.begin(), ::toupper);
+      shader_processes.push_back("DHAS_" + wanted_texture);
+    }
+  }
+
   for (const auto& vertex_buffer_attribute : vertex_attributes) {
     std::string name{vertex_buffer_attribute.first};
     std::transform(name.begin(), name.end(), name.begin(), ::toupper);
     shader_processes.push_back("DHAS_" + name + "_BUFFER");
-  }
-
-  const std::map<std::string, sg::Texture*>& textures{material->GetTextures()};
-  for (const auto& texture : textures) {
-    std::string name{texture.first};
-    std::transform(name.begin(), name.end(), name.begin(), ::toupper);
-    shader_processes.push_back("DHAS_" + name);
   }
 
   SPIRV spirv_vert;
@@ -179,7 +181,6 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
   }
 
   std::unordered_map<u32, std::vector<ShaderResource>> set_shader_resources;
-
   std::vector<vk::PushConstantRange> push_constant_ranges;
 
   for (const auto& name_shader_resource : name_shader_resources) {
@@ -205,6 +206,11 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
 
   for (const auto& set_shader_resource : set_shader_resources) {
     u32 set{set_shader_resource.first};
+
+    if (set == 0) {
+      continue;
+    }
+
     const auto& shader_resources{set_shader_resource.second};
 
     std::vector<vk::DescriptorSetLayoutBinding> layout_bindings;
@@ -232,12 +238,13 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
                                                                layout_bindings};
 
     const vk::raii::DescriptorSetLayout& descriptor_set_layout{
-        gpu_->RequestDescriptorSetLayout(descriptor_set_layout_ci)};
+        RequestDescriptorSetLayout(descriptor_set_layout_ci)};
 
     set_layouts.push_back(*descriptor_set_layout);
   }
 
-  std::vector<vk::DescriptorSetLayout> set_layouts_with_bindless{bindless_descriptor_set_layout_};
+  std::vector<vk::DescriptorSetLayout> set_layouts_with_bindless{
+      bindless_descriptor_set_layout_};
   for (vk::DescriptorSetLayout set_layout : set_layouts) {
     set_layouts_with_bindless.push_back(set_layout);
   }
@@ -246,7 +253,7 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
       {}, set_layouts_with_bindless, push_constant_ranges};
 
   const vk::raii::PipelineLayout& pipeline_layout{
-      gpu_->RequestPipelineLayout(pipeline_layout_ci)};
+      RequestPipelineLayout(pipeline_layout_ci)};
 
   draw_element.pipeline_layout = *pipeline_layout;
 
@@ -258,7 +265,7 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
     vk::ShaderModuleCreateInfo shader_module_ci{
         {}, spirv.size() * 4, spirv.data()};
     const vk::raii::ShaderModule& shader_module{
-        gpu_->RequestShaderModule(shader_module_ci)};
+        RequestShaderModule(shader_module_ci)};
 
     vk::PipelineShaderStageCreateInfo shader_stage_ci{
         {}, spirv_shader->GetStage(), *shader_module, "main", nullptr};
@@ -374,7 +381,7 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
       render_pass_};
 
   const vk::raii::Pipeline& pipeline{
-      gpu_->RequestPipeline(graphics_pipeline_create_info)};
+      RequestPipeline(graphics_pipeline_create_info)};
   draw_element.pipeline = *pipeline;
 
   // Descriptor set.
@@ -388,10 +395,9 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
     // 1. Combined image samplers.
     glm::uvec4 image_indices{0};
     u32 idx{0};
-    for (const auto& texture : textures_) {
-
+    for (const auto& wanted_texture : wanted_textures_) {
       auto it{name_shader_resources.find("global_images")};
-      auto it1{textures.find(texture)};
+      auto it1{textures.find(wanted_texture)};
       if (it != name_shader_resources.end() && it1 != textures.end()) {
         const ShaderResource& shader_resource{it->second};
 
@@ -437,7 +443,7 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
                 *draw_element_uniform_buffer, 0, sizeof(DrawElementUniform)};
 
             vk::WriteDescriptorSet write_descriptor_set{
-                *(descriptor_sets[0]),
+                *(descriptor_sets[shader_resource.set - 1]),
                 shader_resource.binding,
                 0,
                 vk::DescriptorType::eUniformBuffer,

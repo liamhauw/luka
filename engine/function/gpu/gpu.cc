@@ -7,8 +7,6 @@
 
 #include "function/gpu/gpu.h"
 
-#include <vulkan/vulkan_hash.hpp>
-
 #include "core/log.h"
 #include "core/util.h"
 
@@ -280,23 +278,9 @@ vk::raii::Framebuffer Gpu::CreateFramebuffer(
   return framebuffer;
 }
 
-const vk::raii::DescriptorSetLayout& Gpu::RequestDescriptorSetLayout(
+vk::raii::DescriptorSetLayout Gpu::CreateDescriptorSetLayout(
     const vk::DescriptorSetLayoutCreateInfo& descriptor_set_layout_ci,
     const std::string& name) {
-  u64 hash_value{0};
-  HashCombine(hash_value, descriptor_set_layout_ci.flags);
-  for (u32 i{0}; i < descriptor_set_layout_ci.bindingCount; ++i) {
-    HashCombine(hash_value, descriptor_set_layout_ci.pBindings[i]);
-  }
-
-  std::unordered_map<u64, vk::raii::DescriptorSetLayout>&
-      descriptor_set_layouts_{resource_cache_.descriptor_set_layouts};
-
-  auto it{descriptor_set_layouts_.find(hash_value)};
-  if (it != descriptor_set_layouts_.end()) {
-    return it->second;
-  }
-
   vk::raii::DescriptorSetLayout descriptor_set_layout{device_,
                                                       descriptor_set_layout_ci};
 #ifndef NDEBUG
@@ -306,32 +290,12 @@ const vk::raii::DescriptorSetLayout& Gpu::RequestDescriptorSetLayout(
                 name, "Descriptor Set Layout");
 #endif
 
-  auto it1{descriptor_set_layouts_.emplace(hash_value,
-                                           std::move(descriptor_set_layout))};
-
-  return it1.first->second;
+  return descriptor_set_layout;
 }
 
-const vk::raii::PipelineLayout& Gpu::RequestPipelineLayout(
+vk::raii::PipelineLayout Gpu::CreatePipelineLayout(
     const vk::PipelineLayoutCreateInfo& pipeline_layout_ci,
     const std::string& name) {
-  u64 hash_value{0};
-  HashCombine(hash_value, pipeline_layout_ci.flags);
-  for (u32 i{0}; i < pipeline_layout_ci.setLayoutCount; ++i) {
-    HashCombine(hash_value, pipeline_layout_ci.pSetLayouts[i]);
-  }
-  for (u32 i{0}; i < pipeline_layout_ci.pushConstantRangeCount; ++i) {
-    HashCombine(hash_value, pipeline_layout_ci.pPushConstantRanges[i]);
-  }
-
-  std::unordered_map<u64, vk::raii::PipelineLayout>& pipeline_layouts{
-      resource_cache_.pipeline_layouts};
-
-  auto it{pipeline_layouts.find(hash_value)};
-  if (it != pipeline_layouts.end()) {
-    return it->second;
-  }
-
   vk::raii::PipelineLayout pipeline_layout{device_, pipeline_layout_ci};
 
 #ifndef NDEBUG
@@ -340,26 +304,12 @@ const vk::raii::PipelineLayout& Gpu::RequestPipelineLayout(
                     static_cast<VkPipelineLayout>(*pipeline_layout)),
                 name, "Pipeline Layout");
 #endif
-
-  auto it1{pipeline_layouts.emplace(hash_value, std::move(pipeline_layout))};
-
-  return it1.first->second;
+  return pipeline_layout;
 }
 
-const vk::raii::ShaderModule& Gpu::RequestShaderModule(
+vk::raii::ShaderModule Gpu::CreateShaderModule(
     const vk::ShaderModuleCreateInfo& shader_module_ci,
     const std::string& name) {
-  u64 hash_value{0};
-  HashCombine(hash_value, shader_module_ci);
-
-  std::unordered_map<u64, vk::raii::ShaderModule>& shader_modules{
-      resource_cache_.shader_modules};
-
-  auto it{shader_modules.find(hash_value)};
-  if (it != shader_modules.end()) {
-    return it->second;
-  }
-
   vk::raii::ShaderModule shader_module{device_, shader_module_ci};
 
 #ifndef NDEBUG
@@ -368,28 +318,12 @@ const vk::raii::ShaderModule& Gpu::RequestShaderModule(
       reinterpret_cast<uint64_t>(static_cast<VkShaderModule>(*shader_module)),
       name, "Shader Module");
 #endif
-
-  auto it1{shader_modules.emplace(hash_value, std::move(shader_module))};
-
-  return it1.first->second;
+  return shader_module;
 }
 
-const vk::raii::Pipeline& Gpu::RequestPipeline(
+vk::raii::Pipeline Gpu::CreatePipeline(
     const vk::GraphicsPipelineCreateInfo& graphics_pipeline_ci,
     const std::string& name) {
-  u64 hash_value{0};
-  for (u32 i{0}; i < graphics_pipeline_ci.stageCount; ++i) {
-    HashCombine(hash_value, graphics_pipeline_ci.pStages[i]);
-  }
-
-  std::unordered_map<u64, vk::raii::Pipeline>& pipelines{
-      resource_cache_.pipelines};
-
-  auto it{pipelines.find(hash_value)};
-  if (it != pipelines.end()) {
-    return it->second;
-  }
-
   vk::raii::Pipeline pipeline{device_, nullptr, graphics_pipeline_ci};
 
 #ifndef NDEBUG
@@ -398,9 +332,7 @@ const vk::raii::Pipeline& Gpu::RequestPipeline(
                 name, "Pipeline");
 #endif
 
-  auto it1{pipelines.emplace(hash_value, std::move(pipeline))};
-
-  return it1.first->second;
+  return pipeline;
 }
 
 vk::raii::CommandBuffers Gpu::AllocateCommandBuffers(
@@ -420,10 +352,10 @@ vk::raii::CommandBuffers Gpu::AllocateCommandBuffers(
   return command_buffers;
 }
 
-vk::raii::DescriptorSets Gpu::AllocateNormalDescriptorSets(
+vk::raii::DescriptorSets Gpu::AllocateBindlessDescriptorSets(
     vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
     const std::string& name) {
-  descriptor_set_allocate_info.descriptorPool = *normal_descriptor_pool_;
+  descriptor_set_allocate_info.descriptorPool = *bindless_descriptor_pool_;
   vk::raii::DescriptorSets descriptor_sets{device_,
                                            descriptor_set_allocate_info};
 
@@ -440,10 +372,10 @@ vk::raii::DescriptorSets Gpu::AllocateNormalDescriptorSets(
   return descriptor_sets;
 }
 
-vk::raii::DescriptorSets Gpu::AllocateBindlessDescriptorSets(
+vk::raii::DescriptorSets Gpu::AllocateNormalDescriptorSets(
     vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
     const std::string& name) {
-  descriptor_set_allocate_info.descriptorPool = *bindless_descriptor_pool_;
+  descriptor_set_allocate_info.descriptorPool = *normal_descriptor_pool_;
   vk::raii::DescriptorSets descriptor_sets{device_,
                                            descriptor_set_allocate_info};
 
@@ -815,6 +747,23 @@ void Gpu::CreateCommandObjects() {
 }
 
 void Gpu::CreateDescriptorPool() {
+  // Bindless.
+  std::vector<vk::DescriptorPoolSize> bindlessl_pool_sizes{
+      {vk::DescriptorType::eCombinedImageSampler, 1000}};
+
+  u32 bindless_max_sets{std::accumulate(
+      bindlessl_pool_sizes.begin(), bindlessl_pool_sizes.end(),
+      static_cast<u32>(0), [](u32 sum, const vk::DescriptorPoolSize& dps) {
+        return sum + dps.descriptorCount;
+      })};
+
+  vk::DescriptorPoolCreateInfo bindless_descriptor_pool_ci{
+      vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind |
+          vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
+      bindless_max_sets, bindlessl_pool_sizes};
+  bindless_descriptor_pool_ =
+      vk::raii::DescriptorPool{device_, bindless_descriptor_pool_ci};
+
   // Normal.
   std::vector<vk::DescriptorPoolSize> normal_pool_sizes{
       {vk::DescriptorType::eSampler, 1000},
@@ -840,23 +789,6 @@ void Gpu::CreateDescriptorPool() {
       normal_pool_sizes};
   normal_descriptor_pool_ =
       vk::raii::DescriptorPool{device_, normal_descriptor_pool_ci};
-
-  // Bindless.
-  std::vector<vk::DescriptorPoolSize> bindlessl_pool_sizes{
-      {vk::DescriptorType::eCombinedImageSampler, 1000}};
-
-  u32 bindless_max_sets{std::accumulate(
-      bindlessl_pool_sizes.begin(), bindlessl_pool_sizes.end(),
-      static_cast<u32>(0), [](u32 sum, const vk::DescriptorPoolSize& dps) {
-        return sum + dps.descriptorCount;
-      })};
-
-  vk::DescriptorPoolCreateInfo bindless_descriptor_pool_ci{
-      vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind |
-          vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
-      bindless_max_sets, bindlessl_pool_sizes};
-  bindless_descriptor_pool_ =
-      vk::raii::DescriptorPool{device_, bindless_descriptor_pool_ci};
 }
 
 void Gpu::SetObjectName(vk::ObjectType object_type, u64 handle,

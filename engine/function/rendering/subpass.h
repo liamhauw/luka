@@ -53,7 +53,8 @@ struct DrawElement {
 
 class Subpass {
  public:
-  Subpass(const vk::raii::RenderPass& render_pass, u32 frame_count);
+  Subpass(std::shared_ptr<Gpu> gpu, const vk::raii::RenderPass& render_pass,
+          u32 frame_count);
   virtual ~Subpass() = default;
 
   virtual void PushConstants(const vk::raii::CommandBuffer& command_buffer,
@@ -67,6 +68,23 @@ class Subpass {
   virtual void CreateBindlessDescriptorSets() = 0;
   virtual void CreateDrawElements() = 0;
 
+  const vk::raii::DescriptorSetLayout& RequestDescriptorSetLayout(
+      const vk::DescriptorSetLayoutCreateInfo& descriptor_set_layout_ci,
+      const std::string& name = {});
+
+  const vk::raii::PipelineLayout& RequestPipelineLayout(
+      const vk::PipelineLayoutCreateInfo& pipeline_layout_ci,
+      const std::string& name = {});
+
+  const vk::raii::ShaderModule& RequestShaderModule(
+      const vk::ShaderModuleCreateInfo& shader_module_ci,
+      const std::string& name = {});
+
+  const vk::raii::Pipeline& RequestPipeline(
+      const vk::GraphicsPipelineCreateInfo& graphics_pipeline_ci,
+      const std::string& name = {});
+
+  std::shared_ptr<Gpu> gpu_;
   vk::RenderPass render_pass_;
   u32 frame_count_;
 
@@ -75,10 +93,13 @@ class Subpass {
 
   std::vector<DrawElement> draw_elements_;
 
-  std::map<u64, SPIRV> spirv_shaders_;
+  std::unordered_map<u64, SPIRV> spirv_shaders_;
+  std::unordered_map<u64, vk::raii::DescriptorSetLayout>
+      descriptor_set_layouts_;
+  std::unordered_map<u64, vk::raii::PipelineLayout> pipeline_layouts_;
+  std::unordered_map<u64, vk::raii::ShaderModule> shader_modules_;
+  std::unordered_map<u64, vk::raii::Pipeline> pipelines_;
   u32 global_image_index_{0};
-
-  std::vector<std::string> textures_{"base_color_texture"};
 };
 
 }  // namespace rd
