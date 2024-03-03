@@ -7,6 +7,8 @@
 
 #include "function/rendering/swapchain_subpass.h"
 
+#include "core/log.h"
+
 namespace luka {
 
 namespace rd {
@@ -64,7 +66,7 @@ void SwapchainSupass::CreateBindlessDescriptorSets() {
 }
 
 void SwapchainSupass::CreateDrawElements() {
-  const sg::Map& object{scene_graph_->GetObject()};
+  const sg::Map& object{scene_graph_->GetObjectLuka()};
   const sg::Scene* scene{object.GetScene()};
   const std::vector<sg::Node*>& nodes{scene->GetNodes()};
 
@@ -129,10 +131,17 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
     }
   }
 
+  bool has_position_buffer{false};
   for (const auto& vertex_buffer_attribute : vertex_attributes) {
     std::string name{vertex_buffer_attribute.first};
+    if (name == "POSITION") {
+      has_position_buffer = true;
+    }
     std::transform(name.begin(), name.end(), name.begin(), ::toupper);
     shader_processes.push_back("DHAS_" + name + "_BUFFER");
+  }
+  if (!has_position_buffer) {
+    THROW("There is no position buffer.");
   }
 
   SPIRV spirv_vert;

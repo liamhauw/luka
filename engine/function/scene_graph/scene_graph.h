@@ -19,7 +19,7 @@ class SceneGraph {
 
   void Tick();
 
-  const sg::Map& GetObject() const;
+  const sg::Map& GetObjectLuka() const;
 
  private:
   std::shared_ptr<Asset> asset_;
