@@ -22,13 +22,17 @@ EditorInput::EditorInput(std::shared_ptr<Context> context,
           std::forward<decltype(ph3)>(ph3), std::forward<decltype(ph4)>(ph4));
   });
 
+  window_->RegisterOnMouseButtonFunc(
+      [this](auto&& ph1, auto&& ph2, auto&& ph3) {
+        OnMouseButton(std::forward<decltype(ph1)>(ph1),
+                      std::forward<decltype(ph2)>(ph2),
+                      std::forward<decltype(ph3)>(ph3));
+      });
+
   window_->RegisterOnCursorPosFunc([this](auto&& ph1, auto&& ph2) {
     OnCursorPos(std::forward<decltype(ph1)>(ph1),
                 std::forward<decltype(ph2)>(ph2));
   });
-
-  window_->RegisterOnCursorEnterFunc(
-      [this](auto&& ph1) { OnCursorEnter(std::forward<decltype(ph1)>(ph1)); });
 }
 
 void EditorInput::Tick() {
@@ -136,35 +140,37 @@ void EditorInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mod*/) {
   }
 }
 
+void EditorInput::OnMouseButton(i32 button, i32 action, i32 mods) {
+  if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+    if (action == GLFW_PRESS) {
+      window_->SetFocusMode(true);
+    } else if (action == GLFW_RELEASE) {
+      window_->SetFocusMode(false);
+    }
+  }
+}
+
 void EditorInput::OnCursorPos(f64 xpos, f64 ypos) {
   if (!context_->GetEditorMode()) {
     return;
   }
 
-  i32 window_width{0};
-  i32 window_height{0};
-  window_->GetWindowSize(&window_width, &window_height);
+  if (window_->IsMouseButtonDown(GLFW_MOUSE_BUTTON_RIGHT)) {
+    i32 window_width{0};
+    i32 window_height{0};
+    window_->GetWindowSize(&window_width, &window_height);
 
-  f32 angular_velocity{180.0F / std::max(window_width, window_height)};
+    f32 angular_velocity{180.0F / std::max(window_width, window_height)};
+    f32 yaw{
+        glm::radians(static_cast<f32>(prev_xpos_ - xpos) * angular_velocity)};
+    f32 pitch{
+        glm::radians(static_cast<f32>(prev_ypos_ - ypos) * angular_velocity)};
 
-  if (prev_xpos_ >= 0.0F && prev_ypos_ >= 0.0F) {
-    if (window_->IsMouseButtonDown(GLFW_MOUSE_BUTTON_RIGHT)) {
-      f32 yaw{
-          glm::radians(static_cast<f32>(prev_xpos_ - xpos) * angular_velocity)};
-      f32 pitch{
-          glm::radians(static_cast<f32>(prev_ypos_ - ypos) * angular_velocity)};
-
-      camera_->Rotate(yaw, pitch);
-    }
+    camera_->Rotate(yaw, pitch);
   }
+
   prev_xpos_ = xpos;
   prev_ypos_ = ypos;
-}
-
-void EditorInput::OnCursorEnter(int entered) {
-  if (!entered) {
-    prev_xpos_ = prev_ypos_ = -1.0F;
-  }
 }
 
 }  // namespace luka

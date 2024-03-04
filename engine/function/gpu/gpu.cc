@@ -749,7 +749,7 @@ void Gpu::CreateCommandObjects() {
 void Gpu::CreateDescriptorPool() {
   // Bindless.
   std::vector<vk::DescriptorPoolSize> bindlessl_pool_sizes{
-      {vk::DescriptorType::eCombinedImageSampler, 1000}};
+      {vk::DescriptorType::eCombinedImageSampler, 1024}};
 
   u32 bindless_max_sets{std::accumulate(
       bindlessl_pool_sizes.begin(), bindlessl_pool_sizes.end(),
@@ -766,17 +766,17 @@ void Gpu::CreateDescriptorPool() {
 
   // Normal.
   std::vector<vk::DescriptorPoolSize> normal_pool_sizes{
-      {vk::DescriptorType::eSampler, 1000},
-      {vk::DescriptorType::eCombinedImageSampler, 1000},
-      {vk::DescriptorType::eSampledImage, 1000},
-      {vk::DescriptorType::eStorageImage, 1000},
-      {vk::DescriptorType::eUniformTexelBuffer, 1000},
-      {vk::DescriptorType::eStorageTexelBuffer, 1000},
-      {vk::DescriptorType::eUniformBuffer, 1000},
-      {vk::DescriptorType::eStorageBuffer, 1000},
-      {vk::DescriptorType::eUniformBufferDynamic, 1000},
-      {vk::DescriptorType::eStorageBufferDynamic, 1000},
-      {vk::DescriptorType::eInputAttachment, 1000}};
+      {vk::DescriptorType::eSampler, 1024},
+      {vk::DescriptorType::eCombinedImageSampler, 1024},
+      {vk::DescriptorType::eSampledImage, 1024},
+      {vk::DescriptorType::eStorageImage, 1024},
+      {vk::DescriptorType::eUniformTexelBuffer, 1024},
+      {vk::DescriptorType::eStorageTexelBuffer, 1024},
+      {vk::DescriptorType::eUniformBuffer, 1024},
+      {vk::DescriptorType::eStorageBuffer, 1024},
+      {vk::DescriptorType::eUniformBufferDynamic, 1024},
+      {vk::DescriptorType::eStorageBufferDynamic, 1024},
+      {vk::DescriptorType::eInputAttachment, 1024}};
 
   u32 normal_max_sets{std::accumulate(
       normal_pool_sizes.begin(), normal_pool_sizes.end(), static_cast<u32>(0),
