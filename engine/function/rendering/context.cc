@@ -98,7 +98,9 @@ void Context::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
   command_buffer.setScissor(0, scissor_);
 
   for (u32 i{0}; i < passes_.size(); ++i) {
+#ifndef NDEBUG
     gpu_->BeginLabel(command_buffer, "pass_" + std::to_string(i));
+#endif
     // Begin render pass.
     const std::unique_ptr<rd::Pass>& pass{passes_[i]};
     const vk::raii::RenderPass& render_pass{pass->GetRenderPass()};
@@ -116,7 +118,9 @@ void Context::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
     const std::vector<std::unique_ptr<rd::Subpass>>& subpasses{
         pass->GetSubpasses()};
     for (u32 j{0}; j < subpasses.size(); ++j) {
+#ifndef NDEBUG
       gpu_->BeginLabel(command_buffer, "sub_pass_" + std::to_string(j));
+#endif
       const std::unique_ptr<rd::Subpass>& subpass{subpasses[j]};
 
       // Next subpass.
@@ -187,13 +191,16 @@ void Context::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
           command_buffer.drawIndexed(index_attribute->count, 1, 0, 0, 0);
         }
       }
-
+#ifndef NDEBUG
       gpu_->EndLabel(command_buffer);
+#endif
     }
 
     // End render pass.
     command_buffer.endRenderPass();
+#ifndef NDEBUG
     gpu_->EndLabel(command_buffer);
+#endif
   }
 }
 

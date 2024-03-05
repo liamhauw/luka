@@ -5,12 +5,23 @@
       "name": "Windows Debug",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/engine/Debug/luka_engine",
+      "program": "${workspaceFolder}/build/engine/RelWithDebInfo/luka_engine",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],
-      "preLaunchTask": "CMake task"
+      "preLaunchTask": "CMake Debug"
+    },
+    {
+      "name": "Windows RelWithDebug",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "luka_engine",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/bin",
+      "environment": [],
+      "preLaunchTask": "CMake RelWithDebInfo"
     },
     {
       "name": "macOS Debug",
@@ -22,7 +33,19 @@
       "cwd": "${workspaceFolder}",
       "environment": [],
       "MIMode": "lldb",
-      "preLaunchTask": "CMake task"
+      "preLaunchTask": "CMake Debug"
     },
+    {
+      "name": "macOS RelWithDebug",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "luka_engine",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/bin",
+      "environment": [],
+      "MIMode": "lldb",
+      "preLaunchTask": "CMake RelWithDebInfo"
+    }
   ]
 }

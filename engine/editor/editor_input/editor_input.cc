@@ -147,9 +147,14 @@ void EditorInput::OnMouseButton(i32 button, i32 action, i32 mods) {
       i32 window_height{0};
       window_->GetWindowSize(&window_width, &window_height);
 
-      window_->SetCursorPos(static_cast<f64>(window_width) / 2.0,
-                            static_cast<f64>(window_height) / 2.0);
+      f32 xpos{window_width / 2.0f};
+      f32 ypos{window_height / 2.0f};
+
+      window_->SetCursorPos(xpos, ypos);
       window_->SetFocusMode(true);
+
+      prev_xpos_ = xpos;
+      prev_ypos_ = ypos;
 
     } else if (action == GLFW_RELEASE) {
       window_->SetFocusMode(false);

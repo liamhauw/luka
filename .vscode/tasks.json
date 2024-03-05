@@ -19,11 +19,40 @@
 			],
 		},
 		{
-			"label": "CMake task",
+			"type": "shell",
+			"label": "Build RelWithDebInfo",
+			"command": "cmake",
+			"args": [
+				"--build",
+				"--preset=RelWithDebInfo"
+			],
+		},
+		{
+			"type": "shell",
+			"label": "Install",
+			"command": "cmake",
+			"args": [
+				"--install",
+				"build",
+				"--config",
+				"RelWithDebInfo"
+			],
+		},
+		{
+			"label": "CMake Debug",
 			"dependsOrder": "sequence",
 			"dependsOn": [
 				"Config",
 				"Build Debug"
+			]
+		},
+		{
+			"label": "CMake RelWithDebInfo",
+			"dependsOrder": "sequence",
+			"dependsOn": [
+				"Config",
+				"Build RelWithDebInfo",
+				"Install"
 			]
 		}
 	]
