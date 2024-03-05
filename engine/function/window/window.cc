@@ -122,6 +122,10 @@ bool Window::IsMouseButtonDown(int button) const {
   return glfwGetMouseButton(glfw_window_, button) == GLFW_PRESS;
 }
 
+void Window::SetCursorPos(f64 xpos, f64 ypos) {
+  glfwSetCursorPos(glfw_window_, xpos, ypos);
+}
+
 std::vector<const char*> Window::GetRequiredInstanceExtensions() {
   u32 glfw_extension_count{0};
   const char** glfw_extensions{

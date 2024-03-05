@@ -143,7 +143,14 @@ void EditorInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mod*/) {
 void EditorInput::OnMouseButton(i32 button, i32 action, i32 mods) {
   if (button == GLFW_MOUSE_BUTTON_RIGHT) {
     if (action == GLFW_PRESS) {
+      i32 window_width{0};
+      i32 window_height{0};
+      window_->GetWindowSize(&window_width, &window_height);
+
+      window_->SetCursorPos(static_cast<f64>(window_width) / 2.0,
+                            static_cast<f64>(window_height) / 2.0);
       window_->SetFocusMode(true);
+
     } else if (action == GLFW_RELEASE) {
       window_->SetFocusMode(false);
     }
