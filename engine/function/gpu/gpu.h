@@ -84,8 +84,13 @@ class Gpu {
       const vk::ShaderModuleCreateInfo& shader_module_ci,
       const std::string& name = {});
 
+  vk::raii::PipelineCache CreatePipelineCache(
+      const vk::PipelineCacheCreateInfo& pipeline_cache_ci,
+      const std::string& name = {});
+
   vk::raii::Pipeline CreatePipeline(
       const vk::GraphicsPipelineCreateInfo& graphics_pipeline_ci,
+      const vk::raii::PipelineCache& pipeline_cache = nullptr,
       const std::string& name = {});
 
   vk::raii::CommandBuffers AllocateCommandBuffers(
@@ -131,6 +136,8 @@ class Gpu {
   std::vector<vk::SurfaceFormatKHR> GetSurfaceFormats() const;
 
   std::vector<vk::PresentModeKHR> GetSurfacePresentModes() const;
+
+  vk::PhysicalDeviceProperties GetPhysicalDeviceProperties() const;
 
  private:
   void CreateInstance();

@@ -21,7 +21,7 @@ std::string ReplacePathSlash(const std::string& str) {
   return res;
 }
 
-std::vector<u32> LoadBinary(const std::filesystem::path& binary_path) {
+std::vector<u8> LoadBinary(const std::filesystem::path& binary_path) {
   std::ifstream binary_file(binary_path.string(), std::ios::binary);
   if (!binary_file) {
     THROW("Fail to open {}", binary_path.string());
@@ -31,14 +31,28 @@ std::vector<u32> LoadBinary(const std::filesystem::path& binary_path) {
   std::streampos file_size{binary_file.tellg()};
   binary_file.seekg(0, std::ios::beg);
 
-  u64 count{file_size / sizeof(u32)};
-
-  std::vector<u32> binary_data(count);
+  std::vector<u8> binary_data(file_size);
   binary_file.read(reinterpret_cast<char*>(binary_data.data()), file_size);
+
+  if (binary_file.gcount() != file_size) {
+    THROW("Fail to read {}", binary_path.string());
+  }
 
   binary_file.close();
 
   return binary_data;
+}
+
+void SaveBinary(const std::vector<u8>& binary_data,
+                const std::filesystem::path& binary_path) {
+  std::ofstream binary_file(binary_path.string(), std::ios::binary);
+  if (!binary_file) {
+    THROW("Fail to open {}", binary_path.string());
+  }
+
+  binary_file.write(reinterpret_cast<const char*>(binary_data.data()),
+                    binary_data.size());
+  binary_file.close();
 }
 
 std::string LoadText(const std::filesystem::path& text_path) {

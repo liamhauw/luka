@@ -5,7 +5,7 @@
       "name": "Windows Debug",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/engine/RelWithDebInfo/luka_engine",
+      "program": "${workspaceFolder}/build/engine/Debug/luka_engine",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",

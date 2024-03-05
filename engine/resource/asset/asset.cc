@@ -20,6 +20,9 @@ Asset::Asset(std::shared_ptr<Config> config) : config_{config} {
       ast::Shader{config_info.shader_path / "shader.vert", EShLangVertex});
   asset_info_.fragment = std::move(
       ast::Shader{config_info.shader_path / "shader.frag", EShLangFragment});
+
+  asset_info_.pipeline_cache_path =
+      config_->GetAssetPath() / "generated" / "pipeline_cache";
 }
 
 void Asset::Tick() {}

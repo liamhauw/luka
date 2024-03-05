@@ -28,7 +28,10 @@ void HashCombine(u64& seed, const T& value) {
 
 std::string ReplacePathSlash(const std::string& str);
 
-std::vector<u32> LoadBinary(const std::filesystem::path& binary_path);
+std::vector<u8> LoadBinary(const std::filesystem::path& binary_path);
+
+void SaveBinary(const std::vector<u8>& binary_data,
+                const std::filesystem::path& binary_path);
 
 std::string LoadText(const std::filesystem::path& text_path);
 

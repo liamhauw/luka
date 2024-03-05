@@ -9,13 +9,22 @@
 
 #include <vulkan/vulkan_hash.hpp>
 
+#include "core/util.h"
+
 namespace luka {
 
 namespace rd {
 
-Subpass::Subpass(std::shared_ptr<Gpu> gpu,
+Subpass::Subpass(std::shared_ptr<Asset> asset, std::shared_ptr<Camera> camera,
+                 std::shared_ptr<Gpu> gpu,
+                 std::shared_ptr<SceneGraph> scene_graph,
                  const vk::raii::RenderPass& render_pass, u32 frame_count)
-    : gpu_{gpu}, render_pass_{*render_pass}, frame_count_{frame_count} {}
+    : asset_{asset},
+      camera_{camera},
+      gpu_{gpu},
+      scene_graph_{scene_graph},
+      render_pass_{*render_pass},
+      frame_count_{frame_count} {}
 
 vk::DescriptorSetLayout Subpass::GetBindlessDescriptorSetLayout() {
   return bindless_descriptor_set_layout_;
@@ -107,7 +116,50 @@ const vk::raii::Pipeline& Subpass::RequestPipeline(
     return it->second;
   }
 
-  vk::raii::Pipeline pipeline{gpu_->CreatePipeline(graphics_pipeline_ci, name)};
+  vk::PipelineCacheCreateInfo pipeline_cache_ci;
+
+  const std::filesystem::path& pipeline_cache_path{
+      asset_->GetAssetInfo().pipeline_cache_path};
+  std::filesystem::path pipeline_cache_file{
+      pipeline_cache_path / (std::to_string(hash_value) + ".pipeline_cache")};
+  std::vector<u8> pipeline_cache_data;
+
+  bool has_cache{false};
+  if (std::filesystem::exists(pipeline_cache_file)) {
+    
+    pipeline_cache_data = LoadBinary(pipeline_cache_file);
+
+    vk::PipelineCacheHeaderVersionOne* header_version_one{
+        reinterpret_cast<vk::PipelineCacheHeaderVersionOne*>(
+            pipeline_cache_data.data())};
+    vk::PhysicalDeviceProperties physical_device_properties{
+        gpu_->GetPhysicalDeviceProperties()};
+
+    if (header_version_one->headerSize > 0 &&
+        header_version_one->headerVersion ==
+            vk::PipelineCacheHeaderVersion::eOne &&
+        header_version_one->vendorID == physical_device_properties.vendorID &&
+        header_version_one->deviceID == physical_device_properties.deviceID) {
+      has_cache = true;
+
+      pipeline_cache_ci.initialDataSize = pipeline_cache_data.size();
+      pipeline_cache_ci.pInitialData = pipeline_cache_data.data();
+    }
+  }
+
+  vk::raii::PipelineCache pipeline_cache{
+      gpu_->CreatePipelineCache(pipeline_cache_ci)};
+
+  vk::raii::Pipeline pipeline{
+      gpu_->CreatePipeline(graphics_pipeline_ci, pipeline_cache, name)};
+
+  if (!has_cache) {
+    std::vector<u8> pipeline_cache_data{pipeline_cache.getData()};
+    if (!std::filesystem::exists(pipeline_cache_path)) {
+      std::filesystem::create_directories(pipeline_cache_path);
+    }
+    SaveBinary(pipeline_cache_data, pipeline_cache_file);
+  }
 
   auto it1{pipelines_.emplace(hash_value, std::move(pipeline))};
 

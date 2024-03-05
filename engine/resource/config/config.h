@@ -24,6 +24,7 @@ class Config {
 
   void Tick();
 
+  const std::filesystem::path GetAssetPath() const;
   const ConfigInfo& GetConfigInfo() const;
 
  private:

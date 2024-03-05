@@ -53,8 +53,9 @@ struct DrawElement {
 
 class Subpass {
  public:
-  Subpass(std::shared_ptr<Gpu> gpu, const vk::raii::RenderPass& render_pass,
-          u32 frame_count);
+  Subpass(std::shared_ptr<Asset> asset, std::shared_ptr<Camera> camera,
+          std::shared_ptr<Gpu> gpu, std::shared_ptr<SceneGraph> scene_graph,
+          const vk::raii::RenderPass& render_pass, u32 frame_count);
   virtual ~Subpass() = default;
 
   virtual void PushConstants(const vk::raii::CommandBuffer& command_buffer,
@@ -84,7 +85,10 @@ class Subpass {
       const vk::GraphicsPipelineCreateInfo& graphics_pipeline_ci,
       const std::string& name = {});
 
+  std::shared_ptr<Asset> asset_;
+  std::shared_ptr<Camera> camera_;
   std::shared_ptr<Gpu> gpu_;
+  std::shared_ptr<SceneGraph> scene_graph_;
   vk::RenderPass render_pass_;
   u32 frame_count_;
 

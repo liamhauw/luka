@@ -33,7 +33,7 @@ bin/luka_engine
 ## Development
 
 ### Debug
-Click Run and Debug in the sidebar, and select Windows Debug or macOS Debug. Click Start Debugging or press F5.
+Click Run and Debug in the sidebar, and select Windows/macOS Debug/RelWithDebInfo. Click Start Debugging or press F5.
 
 ### Update submodule
 ```shell

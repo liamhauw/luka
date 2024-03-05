@@ -321,10 +321,24 @@ vk::raii::ShaderModule Gpu::CreateShaderModule(
   return shader_module;
 }
 
+vk::raii::PipelineCache Gpu::CreatePipelineCache(
+    const vk::PipelineCacheCreateInfo& pipeline_cache_ci,
+    const std::string& name) {
+  vk::raii::PipelineCache pipeline_cache{device_, pipeline_cache_ci};
+
+#ifndef NDEBUG
+  SetObjectName(
+      vk::ObjectType::ePipelineCache,
+      reinterpret_cast<uint64_t>(static_cast<VkPipelineCache>(*pipeline_cache)),
+      name, "Pipeline Cache");
+#endif
+  return pipeline_cache;
+}
+
 vk::raii::Pipeline Gpu::CreatePipeline(
     const vk::GraphicsPipelineCreateInfo& graphics_pipeline_ci,
-    const std::string& name) {
-  vk::raii::Pipeline pipeline{device_, nullptr, graphics_pipeline_ci};
+    const vk::raii::PipelineCache& pipeline_cache, const std::string& name) {
+  vk::raii::Pipeline pipeline{device_, pipeline_cache, graphics_pipeline_ci};
 
 #ifndef NDEBUG
   SetObjectName(vk::ObjectType::ePipeline,
@@ -452,6 +466,10 @@ std::vector<vk::SurfaceFormatKHR> Gpu::GetSurfaceFormats() const {
 
 std::vector<vk::PresentModeKHR> Gpu::GetSurfacePresentModes() const {
   return physical_device_.getSurfacePresentModesKHR(*surface_);
+}
+
+vk::PhysicalDeviceProperties Gpu::GetPhysicalDeviceProperties() const {
+  return physical_device_.getProperties();
 }
 
 void Gpu::CreateInstance() {

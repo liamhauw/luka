@@ -19,10 +19,7 @@ SwapchainSupass::SwapchainSupass(std::shared_ptr<Asset> asset,
                                  std::shared_ptr<SceneGraph> scene_graph,
                                  const vk::raii::RenderPass& render_pass,
                                  u32 frame_count)
-    : Subpass{gpu, render_pass, frame_count},
-      asset_{asset},
-      camera_{camera},
-      scene_graph_{scene_graph} {
+    : Subpass{asset, camera, gpu, scene_graph, render_pass, frame_count} {
   CreateBindlessDescriptorSets();
   CreateDrawElements();
 }

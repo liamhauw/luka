@@ -38,10 +38,6 @@ class SwapchainSupass : public Subpass {
   DrawElement CreateDrawElement(const glm::mat4& model_matrix,
                                 const sg::Primitive& primitive);
 
-  std::shared_ptr<Asset> asset_;
-  std::shared_ptr<Camera> camera_;
-  std::shared_ptr<SceneGraph> scene_graph_;
-
   std::vector<std::string> wanted_textures_{"base_color_texture"};
 };
 
