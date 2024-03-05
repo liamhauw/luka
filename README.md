@@ -27,7 +27,8 @@ cmake --build --preset=Release
 cmake --install build --config Release
 
 # Run
-bin/luka_engine
+cd bin
+luka_engine
 ```
 
 ## Development

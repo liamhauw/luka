@@ -78,12 +78,12 @@ class Subpass {
       const std::string& name = {});
 
   const vk::raii::ShaderModule& RequestShaderModule(
-      const vk::ShaderModuleCreateInfo& shader_module_ci,
+      const vk::ShaderModuleCreateInfo& shader_module_ci, u64 hash_value,
       const std::string& name = {});
 
   const vk::raii::Pipeline& RequestPipeline(
       const vk::GraphicsPipelineCreateInfo& graphics_pipeline_ci,
-      const std::string& name = {});
+      u64 hash_value, const std::string& name = {});
 
   std::shared_ptr<Asset> asset_;
   std::shared_ptr<Camera> camera_;

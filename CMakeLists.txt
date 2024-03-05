@@ -3,5 +3,6 @@ project(luka)
 add_subdirectory(third_party)
 add_subdirectory(engine)
 
-install(TARGETS luka_engine DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/bin)
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/resource DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+set(INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+install(TARGETS luka_engine DESTINATION ${INSTALL_DIR})
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/resource DESTINATION ${INSTALL_DIR})

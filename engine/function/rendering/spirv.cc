@@ -13,10 +13,11 @@ namespace rd {
 
 SPIRV::SPIRV(const ast::Shader& shader,
              const std::vector<std::string>& processes,
-             vk::ShaderStageFlagBits stage)
+             vk::ShaderStageFlagBits stage, u64 hash_value)
     : shader_{shader},
       processes_{processes},
       stage_{stage},
+      hash_value_{hash_value},
       spirv_{shader_.CompileToSpirv(processes_)} {
   spirv_cross::CompilerGLSL compiler{spirv_};
 
@@ -25,6 +26,8 @@ SPIRV::SPIRV(const ast::Shader& shader,
 }
 
 vk::ShaderStageFlagBits SPIRV::GetStage() const { return stage_; }
+
+u64 SPIRV::GetHashValue() const { return hash_value_; }
 
 const std::vector<u32>& SPIRV::GetSpirv() const { return spirv_; }
 

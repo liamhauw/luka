@@ -151,7 +151,7 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
     spirv_vert = vert_iter->second;
   } else {
     spirv_vert = SPIRV{asset_->GetAssetInfo().vertex, shader_processes,
-                       vk::ShaderStageFlagBits::eVertex};
+                       vk::ShaderStageFlagBits::eVertex, vert_hash_value};
     vert_iter = spirv_shaders_.emplace(vert_hash_value, spirv_vert).first;
   }
 
@@ -162,7 +162,7 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
     spirv_frag = frag_iter->second;
   } else {
     spirv_frag = SPIRV{asset_->GetAssetInfo().fragment, shader_processes,
-                       vk::ShaderStageFlagBits::eFragment};
+                       vk::ShaderStageFlagBits::eFragment, fragment_hash_value};
     frag_iter = spirv_shaders_.emplace(fragment_hash_value, spirv_frag).first;
   }
 
@@ -265,13 +265,17 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
 
   // Pipeline.
   std::vector<vk::PipelineShaderStageCreateInfo> shader_stage_cis;
+  u64 pipeline_hash_value{0};
   for (const auto* spirv_shader : spirv_shaders) {
+    u64 shader_module_hash_value{spirv_shader->GetHashValue()};
+    HashCombine(pipeline_hash_value, shader_module_hash_value);
+
     const std::vector<u32>& spirv{spirv_shader->GetSpirv()};
 
     vk::ShaderModuleCreateInfo shader_module_ci{
         {}, spirv.size() * 4, spirv.data()};
     const vk::raii::ShaderModule& shader_module{
-        RequestShaderModule(shader_module_ci)};
+        RequestShaderModule(shader_module_ci, shader_module_hash_value)};
 
     vk::PipelineShaderStageCreateInfo shader_stage_ci{
         {}, spirv_shader->GetStage(), *shader_module, "main", nullptr};
@@ -387,7 +391,7 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
       render_pass_};
 
   const vk::raii::Pipeline& pipeline{
-      RequestPipeline(graphics_pipeline_create_info)};
+      RequestPipeline(graphics_pipeline_create_info, pipeline_hash_value)};
   draw_element.pipeline = *pipeline;
 
   // Descriptor set.

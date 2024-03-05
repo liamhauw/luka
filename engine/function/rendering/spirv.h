@@ -45,9 +45,11 @@ class SPIRV {
   SPIRV() = default;
 
   SPIRV(const ast::Shader& shader, const std::vector<std::string>& processes,
-        vk::ShaderStageFlagBits stage);
+        vk::ShaderStageFlagBits stage, u64 hash_value);
 
   vk::ShaderStageFlagBits GetStage() const;
+  u64 GetHashValue() const;
+
   const std::vector<u32>& GetSpirv() const;
   const std::vector<ShaderResource>& GetShaderResources() const;
   const std::vector<SpecializationConstant>& GetSpecializationConstants() const;
@@ -72,6 +74,7 @@ class SPIRV {
   ast::Shader shader_;
   std::vector<std::string> processes_;
   vk::ShaderStageFlagBits stage_;
+  u64 hash_value_;
 
   std::vector<u32> spirv_;
 

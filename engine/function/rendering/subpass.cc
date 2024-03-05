@@ -9,6 +9,7 @@
 
 #include <vulkan/vulkan_hash.hpp>
 
+#include "core/log.h"
 #include "core/util.h"
 
 namespace luka {
@@ -85,11 +86,8 @@ const vk::raii::PipelineLayout& Subpass::RequestPipelineLayout(
 }
 
 const vk::raii::ShaderModule& Subpass::RequestShaderModule(
-    const vk::ShaderModuleCreateInfo& shader_module_ci,
+    const vk::ShaderModuleCreateInfo& shader_module_ci, u64 hash_value,
     const std::string& name) {
-  u64 hash_value{0};
-  HashCombine(hash_value, shader_module_ci);
-
   auto it{shader_modules_.find(hash_value)};
   if (it != shader_modules_.end()) {
     return it->second;
@@ -104,13 +102,8 @@ const vk::raii::ShaderModule& Subpass::RequestShaderModule(
 }
 
 const vk::raii::Pipeline& Subpass::RequestPipeline(
-    const vk::GraphicsPipelineCreateInfo& graphics_pipeline_ci,
+    const vk::GraphicsPipelineCreateInfo& graphics_pipeline_ci, u64 hash_value,
     const std::string& name) {
-  u64 hash_value{0};
-  for (u32 i{0}; i < graphics_pipeline_ci.stageCount; ++i) {
-    HashCombine(hash_value, graphics_pipeline_ci.pStages[i]);
-  }
-
   auto it{pipelines_.find(hash_value)};
   if (it != pipelines_.end()) {
     return it->second;
@@ -126,7 +119,6 @@ const vk::raii::Pipeline& Subpass::RequestPipeline(
 
   bool has_cache{false};
   if (std::filesystem::exists(pipeline_cache_file)) {
-    
     pipeline_cache_data = LoadBinary(pipeline_cache_file);
 
     vk::PipelineCacheHeaderVersionOne* header_version_one{
