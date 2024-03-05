@@ -400,6 +400,8 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
         gpu_->AllocateNormalDescriptorSets(descriptor_set_allocate_info)};
 
     std::vector<vk::WriteDescriptorSet> write_descriptor_sets;
+    std::vector<vk::DescriptorImageInfo> image_infos;
+    std::vector<vk::DescriptorBufferInfo> buffer_infos;
 
     // 1. Combined image samplers.
     glm::uvec4 image_indices{0};
@@ -417,14 +419,15 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
 
         vk::DescriptorImageInfo descriptor_image_info{
             *sampler, *image_view, vk::ImageLayout::eShaderReadOnlyOptimal};
+        image_infos.push_back(std::move(descriptor_image_info));
 
         image_indices[idx] = global_image_index_++;
         vk::WriteDescriptorSet write_descriptor_set{
             *(bindless_descriptor_sets_[0]), shader_resource.binding,
             image_indices[idx], vk::DescriptorType::eCombinedImageSampler,
-            descriptor_image_info};
+            image_infos.back()};
         ++idx;
-        write_descriptor_sets.push_back(std::move(write_descriptor_set));
+        write_descriptor_sets.push_back(write_descriptor_set);
       }
     }
 
@@ -450,6 +453,7 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
 
             vk::DescriptorBufferInfo descriptor_buffer_info{
                 *draw_element_uniform_buffer, 0, sizeof(DrawElementUniform)};
+            buffer_infos.push_back(std::move(descriptor_buffer_info));
 
             vk::WriteDescriptorSet write_descriptor_set{
                 *(descriptor_sets[shader_resource.set - 1]),
@@ -457,14 +461,14 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
                 0,
                 vk::DescriptorType::eUniformBuffer,
                 nullptr,
-                descriptor_buffer_info};
+                buffer_infos.back()};
 
             draw_element.draw_element_uniforms.push_back(
                 std::move(draw_element_uniform));
             draw_element.draw_element_uniform_buffers.push_back(
                 std::move(draw_element_uniform_buffer));
 
-            write_descriptor_sets.push_back(std::move(write_descriptor_set));
+            write_descriptor_sets.push_back(write_descriptor_set);
           }
         }
       }

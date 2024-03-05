@@ -1,5 +1,10 @@
 # luka engine
 
+## Features
+- Bindless rendering with descriptor indexing
+- Automating pipeline layout generation with spirv-cross
+- Improving load times with a pipeline cache
+
 ## Prerequisites
 - Windows/macOS
 - Git
@@ -18,10 +23,11 @@ cd luka
 
 # Build
 cmake --preset=Base
-cmake --build --preset=[Debug/Release/RelWithDebInfo]
+cmake --build --preset=Release
+cmake --install build --config Release
 
 # Run
-build/engine/[Debug/Release/RelWithDebInfo]/luka_engine
+bin/luka_engine
 ```
 
 ## Development

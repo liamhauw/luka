@@ -1,1 +1,5 @@
+#ifndef DEBUG
+#define LUKA_SOURCE_PATH "."
+#else
 #define LUKA_SOURCE_PATH "@CMAKE_SOURCE_DIR@"
+#endif
