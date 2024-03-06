@@ -141,34 +141,14 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
     THROW("There is no position buffer.");
   }
 
-  SPIRV spirv_vert;
-  SPIRV spirv_frag;
-
-  u64 vert_hash_value{
-      asset_->GetAssetInfo().vertex.GetHashValue(shader_processes)};
-  auto vert_iter{spirv_shaders_.find(vert_hash_value)};
-  if (vert_iter != spirv_shaders_.end()) {
-    spirv_vert = vert_iter->second;
-  } else {
-    spirv_vert = SPIRV{asset_->GetAssetInfo().vertex, shader_processes,
-                       vk::ShaderStageFlagBits::eVertex, vert_hash_value};
-    vert_iter = spirv_shaders_.emplace(vert_hash_value, spirv_vert).first;
-  }
-
-  u64 fragment_hash_value{
-      asset_->GetAssetInfo().fragment.GetHashValue(shader_processes)};
-  auto frag_iter{spirv_shaders_.find(fragment_hash_value)};
-  if (frag_iter != spirv_shaders_.end()) {
-    spirv_frag = frag_iter->second;
-  } else {
-    spirv_frag = SPIRV{asset_->GetAssetInfo().fragment, shader_processes,
-                       vk::ShaderStageFlagBits::eFragment, fragment_hash_value};
-    frag_iter = spirv_shaders_.emplace(fragment_hash_value, spirv_frag).first;
-  }
+  const luka::AssetInfo& asset_info{asset_->GetAssetInfo()};
+  const SPIRV& vert_spirv{RequesetSpirv(asset_info.vertex, shader_processes,
+                                        vk::ShaderStageFlagBits::eVertex)};
+  const SPIRV& frag_spirv{RequesetSpirv(asset_info.fragment, shader_processes,
+                                        vk::ShaderStageFlagBits::eFragment)};
 
   // Pipeline layout.
-  std::vector<const SPIRV*> spirv_shaders{&(vert_iter->second),
-                                          &(frag_iter->second)};
+  std::vector<const SPIRV*> spirv_shaders{&vert_spirv, &frag_spirv};
 
   std::unordered_map<std::string, ShaderResource> name_shader_resources;
 

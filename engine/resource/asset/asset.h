@@ -17,7 +17,6 @@ struct AssetInfo {
   ast::Model object;
   ast::Shader vertex;
   ast::Shader fragment;
-  std::filesystem::path pipeline_cache_path;
 };
 
 class Asset {

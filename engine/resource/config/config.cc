@@ -44,6 +44,10 @@ Config::Config() {
 
 void Config::Tick() {}
 
+const std::filesystem::path Config::GetRootPath() const {
+  return root_path_;
+}
+
 const std::filesystem::path Config::GetAssetPath() const { return asset_path_; }
 
 const ConfigInfo& Config::GetConfigInfo() const {

@@ -11,6 +11,7 @@
 
 #include "core/log.h"
 #include "core/util.h"
+#include "resource/config/generated/root_path.h"
 
 namespace luka {
 
@@ -36,6 +37,24 @@ const vk::raii::DescriptorSet& Subpass::GetBindlessDescriptorSet() {
 }
 
 std::vector<DrawElement>& Subpass::GetDrawElements() { return draw_elements_; }
+
+const SPIRV& Subpass::RequesetSpirv(const ast::Shader& shader,
+                                    const std::vector<std::string>& processes,
+                                    vk::ShaderStageFlagBits shader_stage,
+                                    const std::string& name) {
+  u64 hash_value{shader.GetHashValue(processes)};
+
+  auto it{spirv_shaders_.find(hash_value)};
+  if (it != spirv_shaders_.end()) {
+    return it->second;
+  }
+
+  SPIRV spirv{shader, processes, shader_stage, hash_value};
+
+  auto it1{spirv_shaders_.emplace(hash_value, std::move(spirv))};
+
+  return it1.first->second;
+}
 
 const vk::raii::DescriptorSetLayout& Subpass::RequestDescriptorSetLayout(
     const vk::DescriptorSetLayoutCreateInfo& descriptor_set_layout_ci,
@@ -111,10 +130,10 @@ const vk::raii::Pipeline& Subpass::RequestPipeline(
 
   vk::PipelineCacheCreateInfo pipeline_cache_ci;
 
-  const std::filesystem::path& pipeline_cache_path{
-      asset_->GetAssetInfo().pipeline_cache_path};
+  std::filesystem::path root_path{ReplacePathSlash(LUKA_ROOT_PATH)};
+  std::filesystem::path cache_path{root_path / "cache"};
   std::filesystem::path pipeline_cache_file{
-      pipeline_cache_path / (std::to_string(hash_value) + ".pipeline_cache")};
+      cache_path / (std::to_string(hash_value) + ".pipeline_cache")};
   std::vector<u8> pipeline_cache_data;
 
   bool has_cache{false};
@@ -147,8 +166,8 @@ const vk::raii::Pipeline& Subpass::RequestPipeline(
 
   if (!has_cache) {
     std::vector<u8> pipeline_cache_data{pipeline_cache.getData()};
-    if (!std::filesystem::exists(pipeline_cache_path)) {
-      std::filesystem::create_directories(pipeline_cache_path);
+    if (!std::filesystem::exists(cache_path)) {
+      std::filesystem::create_directories(cache_path);
     }
     SaveBinary(pipeline_cache_data, pipeline_cache_file);
   }

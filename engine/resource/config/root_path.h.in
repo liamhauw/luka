@@ -1,0 +1,5 @@
+#ifndef NDEBUG
+#define LUKA_ROOT_PATH "@CMAKE_SOURCE_DIR@"
+#else
+#define LUKA_ROOT_PATH "."
+#endif

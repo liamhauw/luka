@@ -69,6 +69,11 @@ class Subpass {
   virtual void CreateBindlessDescriptorSets() = 0;
   virtual void CreateDrawElements() = 0;
 
+  const SPIRV& RequesetSpirv(const ast::Shader& shader,
+                             const std::vector<std::string>& processes,
+                             vk::ShaderStageFlagBits shader_stage,
+                             const std::string& name = {});
+
   const vk::raii::DescriptorSetLayout& RequestDescriptorSetLayout(
       const vk::DescriptorSetLayoutCreateInfo& descriptor_set_layout_ci,
       const std::string& name = {});

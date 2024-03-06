@@ -3,8 +3,8 @@ project(luka_engine)
 
 file(REMOVE_RECURSE "${CMAKE_CURRENT_SOURCE_DIR}/resource/config/generated")
 configure_file(
-  "${CMAKE_CURRENT_SOURCE_DIR}/resource/config/source_path.h.in"
-  "${CMAKE_CURRENT_SOURCE_DIR}/resource/config/generated/source_path.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/resource/config/root_path.h.in"
+  "${CMAKE_CURRENT_SOURCE_DIR}/resource/config/generated/root_path.h"
 )
 
 set(HEADER_FILES

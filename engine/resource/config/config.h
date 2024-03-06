@@ -9,7 +9,7 @@
 
 #include "core/json.h"
 #include "core/util.h"
-#include "resource/config/generated/source_path.h"
+#include "resource/config/generated/root_path.h"
 
 namespace luka {
 
@@ -24,14 +24,15 @@ class Config {
 
   void Tick();
 
+  const std::filesystem::path GetRootPath() const;
   const std::filesystem::path GetAssetPath() const;
   const ConfigInfo& GetConfigInfo() const;
 
  private:
-  std::filesystem::path source_path_{ReplacePathSlash(LUKA_SOURCE_PATH)};
-  std::filesystem::path config_path_{source_path_ / "resource" / "config" /
+  std::filesystem::path root_path_{ReplacePathSlash(LUKA_ROOT_PATH)};
+  std::filesystem::path config_path_{root_path_ / "resource" / "config" /
                                      "config.json"};
-  std::filesystem::path asset_path_{source_path_ / "resource" / "asset"};
+  std::filesystem::path asset_path_{root_path_ / "resource" / "asset"};
 
   json config_json_;
   u32 config_;
