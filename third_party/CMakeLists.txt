@@ -4,10 +4,6 @@ project(luka_third_party)
 # Vulkan SDK
 find_package(Vulkan REQUIRED GLOBAL)
 
-# ctpl
-add_library(ctpl INTERFACE)
-target_include_directories(ctpl INTERFACE ctpl)
-
 # glfw
 set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "" FORCE)
 set(GLFW_INSTALL OFF CACHE INTERNAL "" FORCE)
@@ -83,7 +79,6 @@ target_sources(${PROJECT_NAME} PRIVATE third_party.cc)
 target_compile_features(imgui PRIVATE cxx_std_20)
 target_link_libraries(${PROJECT_NAME} PUBLIC
   Vulkan::Vulkan
-  ctpl
   glfw
   glm
   glslang glslang-default-resource-limits SPIRV 
