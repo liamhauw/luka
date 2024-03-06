@@ -43,6 +43,7 @@ git submodule update --remote
 ```
 
 ## Third party
+- [enkits](https://github.com/dougbinks/enkiTS)
 - [glfw](https://github.com/glfw/glfw)
 - [glm](https://github.com/g-truc/glm)
 - [glslang](https://github.com/KhronosGroup/glslang)
