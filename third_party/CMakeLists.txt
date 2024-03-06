@@ -4,6 +4,11 @@ project(luka_third_party)
 # Vulkan SDK
 find_package(Vulkan REQUIRED GLOBAL)
 
+# enkits
+set(ENKITS_BUILD_C_INTERFACE OFF CACHE INTERNAL "" FORCE)
+set(ENKITS_BUILD_EXAMPLES OFF CACHE INTERNAL "" FORCE)
+add_subdirectory(enkits)
+
 # glfw
 set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "" FORCE)
 set(GLFW_INSTALL OFF CACHE INTERNAL "" FORCE)
@@ -79,6 +84,7 @@ target_sources(${PROJECT_NAME} PRIVATE third_party.cc)
 target_compile_features(imgui PRIVATE cxx_std_20)
 target_link_libraries(${PROJECT_NAME} PUBLIC
   Vulkan::Vulkan
+  enkiTS
   glfw
   glm
   glslang glslang-default-resource-limits SPIRV 

@@ -1,3 +1,6 @@
+[submodule "third_party/enkits"]
+	path = third_party/enkits
+	url = https://github.com/dougbinks/enkiTS.git
 [submodule "third_party/glfw"]
 	path = third_party/glfw
 	url = https://github.com/glfw/glfw.git
