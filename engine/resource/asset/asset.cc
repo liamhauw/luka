@@ -12,14 +12,12 @@
 namespace luka {
 
 Asset::Asset(std::shared_ptr<Config> config) : config_{config} {
-  const ConfigInfo& config_info{config_->GetConfigInfo()};
-
-  asset_info_.object = std::move(ast::Model{config_info.object_path});
+  asset_info_.object = std::move(ast::Model{config_->GetModelPath()});
 
   asset_info_.vertex = std::move(
-      ast::Shader{config_info.shader_path / "shader.vert", EShLangVertex});
+      ast::Shader{config_->GetShaderPath() / "shader.vert", EShLangVertex});
   asset_info_.fragment = std::move(
-      ast::Shader{config_info.shader_path / "shader.frag", EShLangFragment});
+      ast::Shader{config_->GetShaderPath() / "shader.frag", EShLangFragment});
 }
 
 void Asset::Tick() {}

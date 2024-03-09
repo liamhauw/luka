@@ -8,7 +8,7 @@
 #include "function/rendering/context.h"
 
 #include "core/log.h"
-#include "function/gpu/gpu.h"
+#include "resource/gpu/gpu.h"
 
 namespace luka {
 

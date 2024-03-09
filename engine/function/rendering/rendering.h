@@ -8,10 +8,10 @@
 // clang-format on
 
 #include "function/camera/camera.h"
-#include "function/gpu/gpu.h"
+#include "resource/gpu/gpu.h"
 #include "function/rendering/context.h"
-#include "function/scene_graph/scene_graph.h"
-#include "function/window/window.h"
+#include "resource/scene_graph/scene_graph.h"
+#include "resource/window/window.h"
 #include "resource/asset/asset.h"
 
 namespace luka {

@@ -10,16 +10,15 @@
 #include "editor/editor_input/editor_input.h"
 #include "editor/editor_ui/editor_ui.h"
 #include "function/camera/camera.h"
-#include "function/context/context.h"
 #include "function/function_input/function_input.h"
 #include "function/function_ui/function_ui.h"
-#include "function/gpu/gpu.h"
 #include "function/rendering/rendering.h"
-#include "function/scene_graph/scene_graph.h"
-#include "function/time/time.h"
-#include "function/window/window.h"
 #include "resource/asset/asset.h"
 #include "resource/config/config.h"
+#include "resource/gpu/gpu.h"
+#include "resource/scene_graph/scene_graph.h"
+#include "resource/time/time.h"
+#include "resource/window/window.h"
 
 namespace luka {
 
@@ -31,14 +30,13 @@ class Engine {
 
  private:
   std::shared_ptr<Config> config_;
-  std::shared_ptr<Asset> asset_;
-  std::shared_ptr<Context> context_;
   std::shared_ptr<Time> time_;
   std::shared_ptr<Window> window_;
-  std::shared_ptr<Camera> camera_;
-  std::shared_ptr<FunctionInput> function_input_;
   std::shared_ptr<Gpu> gpu_;
+  std::shared_ptr<Asset> asset_;
   std::shared_ptr<SceneGraph> scene_graph_;
+  std::shared_ptr<FunctionInput> function_input_;
+  std::shared_ptr<Camera> camera_;
   std::shared_ptr<Rendering> rendering_;
   std::shared_ptr<FunctionUi> function_ui_;
   std::shared_ptr<EditorInput> editor_input_;

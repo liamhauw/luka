@@ -11,11 +11,11 @@
 
 namespace luka {
 
-EditorInput::EditorInput(std::shared_ptr<Context> context,
+EditorInput::EditorInput(std::shared_ptr<Config> config,
                          std::shared_ptr<Time> time,
                          std::shared_ptr<Window> window,
                          std::shared_ptr<Camera> camera)
-    : context_{context}, time_{time}, window_{window}, camera_{camera} {
+    : config_{config}, time_{time}, window_{window}, camera_{camera} {
   window_->RegisterOnKeyFunc([this](auto&& ph1, auto&& ph2, auto&& ph3,
                                     auto&& ph4) {
     OnKey(std::forward<decltype(ph1)>(ph1), std::forward<decltype(ph2)>(ph2),
@@ -74,7 +74,7 @@ void EditorInput::Tick() {
 }
 
 void EditorInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mod*/) {
-  if (!context_->GetEditorMode()) {
+  if (!config_->GetEditorMode()) {
     return;
   }
 
@@ -84,7 +84,7 @@ void EditorInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mod*/) {
         window_->SetWindowShouldClose();
         break;
       case GLFW_KEY_F:
-        context_->SetEditorMode(false);
+        config_->SetEditorMode(false);
         window_->SetFocusMode(false);
         break;
       case GLFW_KEY_W:
@@ -163,7 +163,7 @@ void EditorInput::OnMouseButton(i32 button, i32 action, i32 mods) {
 }
 
 void EditorInput::OnCursorPos(f64 xpos, f64 ypos) {
-  if (!context_->GetEditorMode()) {
+  if (!config_->GetEditorMode()) {
     return;
   }
 

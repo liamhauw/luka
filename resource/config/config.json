@@ -2,8 +2,9 @@
   "config": 0,
   "configs": [
     {
-      "object_path": "model/sponza/Sponza.gltf",
-      "shader_path": "shader/base"
+      "model_path": "model/sponza/Sponza.gltf",
+      "shader_path": "shader/base",
+      "editor_mode": true
     }
   ]
 }

@@ -8,13 +8,16 @@ configure_file(
 )
 
 set(HEADER_FILES
+
   # platform
   platform/common.h
+
   # core
   core/json.h
   core/log.h
   core/math.h
   core/util.h
+
   # resource
   resource/asset/asset.h
   resource/asset/model.h
@@ -22,15 +25,33 @@ set(HEADER_FILES
   resource/asset/shader.h
   resource/config/config.h
   resource/config/generated/source_path.h
+  resource/gpu/buffer.h
+  resource/gpu/gpu.h
+  resource/gpu/image.h
+  resource/scene_graph/accessor.h
+  resource/scene_graph/buffer_view.h
+  resource/scene_graph/buffer.h
+  resource/scene_graph/camera.h
+  resource/scene_graph/component.h
+  resource/scene_graph/image.h
+  resource/scene_graph/light.h
+  resource/scene_graph/map.h
+  resource/scene_graph/material.h
+  resource/scene_graph/mesh.h
+  resource/scene_graph/node.h
+  resource/scene_graph/sampler.h
+  resource/scene_graph/scene_graph.h
+  resource/scene_graph/scene.h
+  resource/scene_graph/script.
+  resource/scene_graph/texture.h
+  resource/time/time.h
+  resource/window/window.h
+
   # function
   function/camera/camera.h
   function/context/context.h
   function/function_input/function_input.h
   function/function_ui/function_ui.h
-  function/gpu/buffer.h
-  function/gpu/gpu.h
-  function/gpu/image.h
-
   function/rendering/context.h
   function/rendering/pass.h
   function/rendering/rendering.h
@@ -39,50 +60,52 @@ set(HEADER_FILES
   function/rendering/swapchain_pass.h
   function/rendering/swapchain_subpass.h
 
-  function/scene_graph/accessor.h
-  function/scene_graph/buffer_view.h
-  function/scene_graph/buffer.h
-  function/scene_graph/camera.h
-  function/scene_graph/component.h
-  function/scene_graph/image.h
-  function/scene_graph/light.h
-  function/scene_graph/map.h
-  function/scene_graph/material.h
-  function/scene_graph/mesh.h
-  function/scene_graph/node.h
-  function/scene_graph/sampler.h
-  function/scene_graph/scene_graph.h
-  function/scene_graph/scene.h
-  function/scene_graph/script.
-  function/scene_graph/texture.h
-  function/time/time.h
-  function/window/window.h
   # editor
   editor/editor_input/editor_input.h
   editor/editor_ui/editor_ui.h
+
   # engine
   engine.h
 )
 
 set(SOURCE_FILES
+
   # core
   core/json.cc
   core/util.cc
+
   # resource
   resource/asset/asset.cc
   resource/asset/model.cc
   resource/asset/image.cc
   resource/asset/shader.cc
   resource/config/config.cc
+  resource/gpu/buffer.cc
+  resource/gpu/gpu.cc
+  resource/gpu/image.cc
+  resource/scene_graph/accessor.cc
+  resource/scene_graph/buffer_view.cc
+  resource/scene_graph/buffer.cc
+  resource/scene_graph/camera.cc
+  resource/scene_graph/component.cc
+  resource/scene_graph/image.cc
+  resource/scene_graph/light.cc
+  resource/scene_graph/map.cc
+  resource/scene_graph/material.cc
+  resource/scene_graph/mesh.cc
+  resource/scene_graph/node.cc
+  resource/scene_graph/sampler.cc
+  resource/scene_graph/scene_graph.cc
+  resource/scene_graph/scene.cc
+  resource/scene_graph/texture.cc
+  resource/time/time.cc
+  resource/window/window.cc
+
   # function
   function/camera/camera.cc
   function/context/context.cc
   function/function_input/function_input.cc
   function/function_ui/function_ui.cc
-  function/gpu/buffer.cc
-  function/gpu/gpu.cc
-  function/gpu/image.cc
-
   function/rendering/context.cc
   function/rendering/pass.cc
   function/rendering/rendering.cc
@@ -91,26 +114,10 @@ set(SOURCE_FILES
   function/rendering/swapchain_pass.cc
   function/rendering/swapchain_subpass.cc
 
-  function/scene_graph/accessor.cc
-  function/scene_graph/buffer_view.cc
-  function/scene_graph/buffer.cc
-  function/scene_graph/camera.cc
-  function/scene_graph/component.cc
-  function/scene_graph/image.cc
-  function/scene_graph/light.cc
-  function/scene_graph/map.cc
-  function/scene_graph/material.cc
-  function/scene_graph/mesh.cc
-  function/scene_graph/node.cc
-  function/scene_graph/sampler.cc
-  function/scene_graph/scene_graph.cc
-  function/scene_graph/scene.cc
-  function/scene_graph/texture.cc
-  function/time/time.cc
-  function/window/window.cc
   # editor
   editor/editor_input/editor_input.cc
   editor/editor_ui/editor_ui.cc
+
   # engine
   engine.cc
   main.cc

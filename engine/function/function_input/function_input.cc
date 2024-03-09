@@ -11,9 +11,9 @@
 
 namespace luka {
 
-FunctionInput::FunctionInput(std::shared_ptr<Context> context,
+FunctionInput::FunctionInput(std::shared_ptr<Config> config,
                              std::shared_ptr<Window> window)
-    : context_{context}, window_{window} {
+    : config_{config}, window_{window} {
   window_->RegisterOnKeyFunc([this](auto&& ph1, auto&& ph2, auto&& ph3,
                                     auto&& ph4) {
     OnKey(std::forward<decltype(ph1)>(ph1), std::forward<decltype(ph2)>(ph2),
@@ -29,7 +29,7 @@ FunctionInput::FunctionInput(std::shared_ptr<Context> context,
 void FunctionInput::Tick() {}
 
 void FunctionInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mods*/) {
-  if (context_->GetEditorMode()) {
+  if (config_->GetEditorMode()) {
     return;
   }
 
@@ -42,7 +42,7 @@ void FunctionInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mods*/) {
         window_->SetWindowShouldClose();
         break;
       case GLFW_KEY_E:
-        context_->SetEditorMode(true);
+        config_->SetEditorMode(true);
         window_->SetFocusMode(true);
         break;
       case GLFW_KEY_W:
@@ -102,7 +102,7 @@ void FunctionInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mods*/) {
 }
 
 void FunctionInput::OnCursorPos(f64 xpos, f64 ypos) {
-  if (context_->GetEditorMode()) {
+  if (config_->GetEditorMode()) {
     return;
   }
 }

@@ -17,41 +17,46 @@ Config::Config() {
     THROW("Fail to load config file {}", config_path_.string());
   }
   config_json_ = json::parse(config_file);
+
+  u32 config{0};
   if (config_json_.contains("config")) {
-    config_ = config_json_["config"].template get<u32>();
+    config = config_json_["config"].template get<u32>();
   }
+
   if (config_json_.contains("configs")) {
     json configs_j{config_json_["configs"]};
-    for (u32 i{0}; i < configs_j.size(); ++i) {
-      json config_j{configs_j[i]};
-      ConfigInfo config_info;
-      if (config_j.contains("object_path")) {
-        config_info.object_path =
-            asset_path_ /
-            ReplacePathSlash(
-                config_j["object_path"].template get<std::string>());
-      }
-      if (config_j.contains("shader_path")) {
-        config_info.shader_path =
-            asset_path_ /
-            ReplacePathSlash(
-                config_j["shader_path"].template get<std::string>());
-      }
-      config_infos_.push_back(std::move(config_info));
+    json config_j{configs_j[config]};
+
+    if (config_j.contains("model_path")) {
+      model_path_ =
+          asset_path_ /
+          ReplacePathSlash(config_j["model_path"].template get<std::string>());
+    }
+
+    if (config_j.contains("shader_path")) {
+      shader_path_ =
+          asset_path_ /
+          ReplacePathSlash(config_j["shader_path"].template get<std::string>());
+    }
+
+    if (config_j.contains("editor_mode")) {
+      editor_mode_ = config_j["editor_mode"].template get<bool>();
     }
   }
 }
 
 void Config::Tick() {}
 
-const std::filesystem::path Config::GetRootPath() const {
-  return root_path_;
+const std::filesystem::path& Config::GetModelPath() const {
+  return model_path_;
 }
 
-const std::filesystem::path Config::GetAssetPath() const { return asset_path_; }
-
-const ConfigInfo& Config::GetConfigInfo() const {
-  return config_infos_[config_];
+const std::filesystem::path& Config::GetShaderPath() const {
+  return shader_path_;
 }
+
+bool Config::GetEditorMode() const { return editor_mode_; }
+
+void Config::SetEditorMode(bool editor_mode) { editor_mode_ = editor_mode; }
 
 }  // namespace luka

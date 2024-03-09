@@ -8,7 +8,7 @@
 // clang-format on
 
 #include "core/math.h"
-#include "function/window/window.h"
+#include "resource/window/window.h"
 
 namespace luka {
 

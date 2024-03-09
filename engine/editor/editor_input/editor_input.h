@@ -8,9 +8,9 @@
 // clang-format on
 
 #include "function/camera/camera.h"
-#include "function/context/context.h"
-#include "function/time/time.h"
-#include "function/window/window.h"
+#include "resource/config/config.h"
+#include "resource/time/time.h"
+#include "resource/window/window.h"
 
 namespace luka {
 
@@ -25,7 +25,7 @@ enum class EditorCommand : u32 {
 
 class EditorInput {
  public:
-  EditorInput(std::shared_ptr<Context> context, std::shared_ptr<Time> time,
+  EditorInput(std::shared_ptr<Config> config, std::shared_ptr<Time> time,
               std::shared_ptr<Window> window, std::shared_ptr<Camera> camera);
 
   void Tick();
@@ -35,7 +35,7 @@ class EditorInput {
   void OnCursorPos(f64 xpos, f64 ypos);
 
  private:
-  std::shared_ptr<Context> context_;
+  std::shared_ptr<Config> config_;
   std::shared_ptr<Time> time_;
   std::shared_ptr<Window> window_;
   std::shared_ptr<Camera> camera_;
