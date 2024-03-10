@@ -15,7 +15,6 @@ Engine::Engine()
       window_{std::make_shared<Window>(time_)},
       gpu_{std::make_shared<Gpu>(window_)},
       asset_{std::make_shared<Asset>(config_, gpu_)}
- //     scene_graph_{std::make_shared<SceneGraph>(asset_, gpu_)},
 // function_input_{std::make_shared<FunctionInput>(config_, window_)},
 // camera_{std::make_shared<Camera>(window_)},
 // rendering_{std::make_shared<Rendering>(asset_, window_, camera_, gpu_,
@@ -33,7 +32,6 @@ void Engine::Run() {
     window_->Tick();
     gpu_->Tick();
     asset_->Tick();
-    //scene_graph_->Tick();
     // function_input_->Tick();
     // camera_->Tick();
     // rendering_->Tick();

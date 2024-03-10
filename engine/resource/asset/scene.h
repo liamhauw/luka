@@ -9,6 +9,7 @@
 
 #include <tiny_gltf.h>
 
+#include "resource/asset/scene_component/map.h"
 #include "resource/config/config.h"
 #include "resource/gpu/gpu.h"
 
@@ -24,6 +25,7 @@ class Scene {
 
  private:
   std::shared_ptr<Gpu> gpu_;
+  sc::Map map_;
 };
 
 }  // namespace ast

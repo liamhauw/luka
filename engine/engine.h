@@ -33,7 +33,6 @@ class Engine {
   std::shared_ptr<Window> window_;
   std::shared_ptr<Gpu> gpu_;
   std::shared_ptr<Asset> asset_;
-  // std::shared_ptr<SceneGraph> scene_graph_;
   // std::shared_ptr<FunctionInput> function_input_;
   // std::shared_ptr<Camera> camera_;
   // std::shared_ptr<Rendering> rendering_;

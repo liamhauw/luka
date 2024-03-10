@@ -109,11 +109,13 @@ gpu::Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
 //                                      VK_QUEUE_FAMILY_IGNORED,
 //                                      VK_QUEUE_FAMILY_IGNORED,
 //                                      *image,
-//                                      {flag_bits, 0, VK_REMAINING_MIP_LEVELS, 0,
+//                                      {flag_bits, 0, VK_REMAINING_MIP_LEVELS,
+//                                      0,
 //                                       VK_REMAINING_ARRAY_LAYERS}};
 
 //       command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe,
-//                                      vk::PipelineStageFlagBits::eTransfer, {},
+//                                      vk::PipelineStageFlagBits::eTransfer,
+//                                      {},
 //                                      {}, {}, barrier);
 //     }
 
@@ -143,7 +145,8 @@ gpu::Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
 //                                      VK_QUEUE_FAMILY_IGNORED,
 //                                      VK_QUEUE_FAMILY_IGNORED,
 //                                      *image,
-//                                      {flag_bits, 0, VK_REMAINING_MIP_LEVELS, 0,
+//                                      {flag_bits, 0, VK_REMAINING_MIP_LEVELS,
+//                                      0,
 //                                       VK_REMAINING_ARRAY_LAYERS}};
 //       command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
 //                                      vk::PipelineStageFlagBits::eAllCommands,
@@ -159,9 +162,11 @@ gpu::Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
 //         VK_QUEUE_FAMILY_IGNORED,
 //         VK_QUEUE_FAMILY_IGNORED,
 //         *image,
-//         {flag_bits, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS}};
+//         {flag_bits, 0, VK_REMAINING_MIP_LEVELS, 0,
+//         VK_REMAINING_ARRAY_LAYERS}};
 //     command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe,
-//                                    vk::PipelineStageFlagBits::eAllCommands, {},
+//                                    vk::PipelineStageFlagBits::eAllCommands,
+//                                    {},
 //                                    {}, {}, barrier);
 //   }
 

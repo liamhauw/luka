@@ -8,7 +8,6 @@
 #include "resource/asset/scene.h"
 
 #include "core/log.h"
-#include "resource/asset/scene_component/map.h"
 
 namespace luka {
 
@@ -36,7 +35,7 @@ Scene::Scene(std::shared_ptr<Gpu> gpu, const cfg::Scene& cfg_scene)
     THROW("Fail to load {}.", cfg_scene.path.string());
   }
 
-  sc::Map map{gpu, tinygltf_model};
+  map_ = sc::Map{gpu, tinygltf_model};
 }
 
 }  // namespace ast
