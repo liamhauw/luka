@@ -10,7 +10,7 @@
 #include "resource/gpu/gpu.h"
 #include "resource/gpu/image.h"
 #include "resource/scene_graph/component.h"
-#include "resource/asset/image.h"
+#include "resource/asset/scene.h"
 
 namespace luka {
 
@@ -21,9 +21,9 @@ class Image : public Component {
   Image(gpu::Image&& image, vk::raii::ImageView&& image_view,
         const std::string& name = {});
 
-  Image(std::shared_ptr<Gpu> gpu, const ast::Image& model_image,
-        const vk::raii::CommandBuffer& command_buffer,
-        std::vector<gpu::Buffer>& staging_buffers);
+//   Image(std::shared_ptr<Gpu> gpu, const ast::Image1& model_image,
+//         const vk::raii::CommandBuffer& command_buffer,
+//         std::vector<gpu::Buffer>& staging_buffers);
 
   virtual ~Image() = default;
   std::type_index GetType() override;

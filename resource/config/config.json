@@ -1,5 +1,5 @@
 {
-  "models": [
+  "scenes": [
     "sponza/Sponza.gltf"
   ],
   "shaders": [
@@ -9,7 +9,7 @@
   "subpasses": [
     {
       "name": "swapchain_subpass",
-      "models": [
+      "scenes": [
         0
       ],
       "shaders": {

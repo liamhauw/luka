@@ -21,12 +21,6 @@ namespace ast {
 Shader::Shader(const cfg::Shader& config_shader)
     : path_{config_shader.path.string()}, source_text_{LoadText(path_)} {}
 
-// Shader::Shader(const std::filesystem::path& input_file_name,
-//                EShLanguage language)
-//     : path_{input_file_name.string()},
-//       language_{language},
-//       source_text_{LoadText(path_)} {}
-
 u64 Shader::GetHashValue(const std::vector<std::string>& processes) const {
   std::vector<std::string> svec{processes};
   svec.push_back(path_);

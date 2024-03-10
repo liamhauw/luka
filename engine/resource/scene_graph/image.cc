@@ -19,7 +19,7 @@ Image::Image(gpu::Image&& image, vk::raii::ImageView&& image_view,
       image_{std::move(image)},
       image_view_{std::move(image_view)} {}
 
-Image::Image(std::shared_ptr<Gpu> gpu, const ast::Image& model_image,
+Image::Image(std::shared_ptr<Gpu> gpu, const ast::Image1& model_image,
              const vk::raii::CommandBuffer& command_buffer,
              std::vector<gpu::Buffer>& staging_buffers)
     : Component{model_image.GetName()} {

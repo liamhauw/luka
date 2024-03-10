@@ -11,7 +11,7 @@ namespace luka {
 
 SceneGraph::SceneGraph(std::shared_ptr<Asset> asset, std::shared_ptr<Gpu> gpu)
     : asset_{asset}, gpu_{gpu} {
-  const ast::Model& model{asset_->GetModel()};
+  const ast::Model& model{asset_->GetModel1()};
 
   model_ = std::move(sg::Map{gpu_, model, "object"});
   model_.LoadScene();

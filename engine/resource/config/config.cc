@@ -18,12 +18,12 @@ Config::Config() {
   }
   config_json_ = json::parse(config_file);
 
-  if (config_json_.contains("models")) {
-    const json& model_jsons{config_json_["models"]};
-    for (const json& model_json : model_jsons) {
-      std::string uri{model_json.template get<std::string>()};
-      std::filesystem::path path{model_path_ / GetPath(uri)};
-      models_.emplace_back(path);
+  if (config_json_.contains("scenes")) {
+    const json& scene_jsons{config_json_["scenes"]};
+    for (const json& scene_json : scene_jsons) {
+      std::string uri{scene_json.template get<std::string>()};
+      std::filesystem::path path{scene_path_ / GetPath(uri)};
+      scenes_.emplace_back(path);
     }
   }
   if (config_json_.contains("shaders")) {
@@ -42,11 +42,11 @@ Config::Config() {
       if (subpass_json.contains("name")) {
         subpass.name = subpass_json["name"].template get<std::string>();
       }
-      if (subpass_json.contains("models")) {
-        const json& model_jsons{subpass_json["models"]};
-        for (const auto& model_json : model_jsons) {
-          u32 model{model_json.template get<u32>()};
-          subpass.models.push_back(model);
+      if (subpass_json.contains("scenes")) {
+        const json& scene_jsons{subpass_json["scenes"]};
+        for (const auto& scene_json : scene_jsons) {
+          u32 scene{scene_json.template get<u32>()};
+          subpass.scenes.push_back(scene);
         }
       }
       if (subpass_json.contains("shaders")) {
@@ -104,7 +104,7 @@ Config::Config() {
 
 void Config::Tick() {}
 
-const std::vector<cfg::Model>& Config::GetModels() const { return models_; }
+const std::vector<cfg::Scene>& Config::GetScenes() const { return scenes_; }
 
 const std::vector<cfg::Shader>& Config::GetShaders() const { return shaders_; }
 

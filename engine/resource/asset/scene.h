@@ -9,25 +9,20 @@
 
 #include <tiny_gltf.h>
 
-#include "resource/asset/image.h"
 #include "resource/config/config.h"
 
 namespace luka {
 
 namespace ast {
 
-class Model {
+class Scene {
  public:
-  Model() = default;
+  Scene() = default;
 
-  Model(const cfg::Model& cfg_model);
-
-  const tinygltf::Model& GetTinygltfModel() const;
-  const std::map<std::string, Image>& GetUriImageMap() const;
+  Scene(const cfg::Scene& cfg_scene);
 
  private:
   tinygltf::Model tinygltf_model_;
-  std::map<std::string, Image> uri_image_map_;
 };
 
 }  // namespace ast

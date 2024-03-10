@@ -7,7 +7,7 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "resource/asset/model.h"
+#include "resource/asset/scene.h"
 #include "resource/asset/shader.h"
 #include "resource/config/config.h"
 #include "resource/gpu/gpu.h"
@@ -20,15 +20,14 @@ class Asset {
 
   void Tick();
 
-  const ast::Model& GetModel() const;
-  const ast::Shader& GetVertexShader() const;
-  const ast::Shader& GetFragmentShader() const;
+  const ast::Scene& GetScene(u32 index) const;
+  const ast::Shader& GetShader(u32 index) const;
 
  private:
   std::shared_ptr<Config> config_;
   std::shared_ptr<Gpu> gpu_;
 
-  std::vector<ast::Model> models_;
+  std::vector<ast::Scene> scenes_;
   std::vector<ast::Shader> shaders_;
 };
 

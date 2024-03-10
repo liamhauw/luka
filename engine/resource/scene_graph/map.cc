@@ -18,7 +18,7 @@ Map::Map(std::shared_ptr<Gpu> gpu, const ast::Model& model,
          const std::string& name)
     : gpu_{gpu}, name_{name} {
   const tinygltf::Model& tinygltf_model{model.GetTinygltfModel()};
-  const std::map<std::string, ast::Image>& uri_image_map{
+  const std::map<std::string, ast::Image1>& uri_image_map{
       model.GetUriImageMap()};
 
   ParseExtensionsUsed(tinygltf_model.extensionsUsed);
@@ -155,7 +155,7 @@ void Map::ParseCameraComponents(
 
 void Map::ParseImageComponents(
     const std::vector<tinygltf::Image>& tinygltf_images,
-    const std::map<std::string, ast::Image>& uri_image_map) {
+    const std::map<std::string, ast::Image1>& uri_image_map) {
   const vk::raii::CommandBuffer& command_buffer{gpu_->BeginTempCommandBuffer()};
 
   u64 model_image_count{tinygltf_images.size()};
@@ -170,13 +170,13 @@ void Map::ParseImageComponents(
     if (u2i == uri_image_map.end()) {
       THROW("Fail to find image uri");
     }
-    const ast::Image& model_image{u2i->second};
+    const ast::Image1& model_image{u2i->second};
     auto image_component{std::make_unique<Image>(
         gpu_, model_image, command_buffer, staging_buffers)};
     AddComponent(std::move(image_component));
   }
 
-  ast::Image default_model_image{std::vector<u8>(4, 0),
+  ast::Image1 default_model_image{std::vector<u8>(4, 0),
                                  {vk::Extent3D{1, 1, 1}},
                                  vk::Format::eR8G8B8A8Unorm};
   auto default_image_component{std::make_unique<Image>(

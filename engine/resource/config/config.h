@@ -15,7 +15,7 @@ namespace luka {
 
 namespace cfg {
 
-struct Model {
+struct Scene {
   std::filesystem::path path;
 };
 
@@ -25,7 +25,7 @@ struct Shader {
 
 struct Subpass {
   std::string name;
-  std::vector<u32> models;
+  std::vector<u32> scenes;
   std::unordered_map<std::string, u32> shaders;
 };
 
@@ -46,7 +46,7 @@ class Config {
 
   void Tick();
 
-  const std::vector<cfg::Model>& GetModels() const;
+  const std::vector<cfg::Scene>& GetScenes() const;
   const std::vector<cfg::Shader>& GetShaders() const;
   const std::vector<cfg::Subpass>& GetSubpasss() const;
   const std::vector<cfg::Pass>& GetPasss() const;
@@ -60,11 +60,11 @@ class Config {
   std::filesystem::path resource_path_{GetPath(LUKA_ROOT_PATH) / "resource"};
   std::filesystem::path config_path_{resource_path_ / "config" / "config.json"};
   std::filesystem::path asset_path_{resource_path_ / "asset"};
-  std::filesystem::path model_path_{asset_path_ / "model"};
+  std::filesystem::path scene_path_{asset_path_ / "scene"};
   std::filesystem::path shader_path_{asset_path_ / "shader"};
 
   json config_json_;
-  std::vector<cfg::Model> models_;
+  std::vector<cfg::Scene> scenes_;
   std::vector<cfg::Shader> shaders_;
   std::vector<cfg::Subpass> subpasses_;
   std::vector<cfg::Pass> passes_;

@@ -13,7 +13,7 @@
 #include "resource/gpu/image.h"
 #include "resource/window/window.h"
 #include "imgui_impl_vulkan.h"
-#include "resource/asset/image.h"
+#include "resource/asset/scene.h"
 
 namespace luka {
 
@@ -36,12 +36,12 @@ class Gpu {
   gpu::Image CreateImage(const vk::ImageCreateInfo& image_ci,
                          const std::string& name = {});
 
-  gpu::Image CreateImage(const vk::ImageCreateInfo& image_ci,
-                         const vk::ImageLayout new_layout,
-                         const gpu::Buffer& staging_buffer,
-                         const vk::raii::CommandBuffer& command_buffer,
-                         const ast::Image& asset_image,
-                         const std::string& name = {});
+//   gpu::Image CreateImage(const vk::ImageCreateInfo& image_ci,
+//                          const vk::ImageLayout new_layout,
+//                          const gpu::Buffer& staging_buffer,
+//                          const vk::raii::CommandBuffer& command_buffer,
+//                          const ast::Image1& asset_image,
+//                          const std::string& name = {});
 
   vk::raii::ImageView CreateImageView(
       const vk::ImageViewCreateInfo& image_view_ci,

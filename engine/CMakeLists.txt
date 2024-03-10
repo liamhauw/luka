@@ -20,30 +20,29 @@ set(HEADER_FILES
 
   # resource
   resource/asset/asset.h
-  resource/asset/model.h
-  resource/asset/image.h
+  resource/asset/scene.h
   resource/asset/shader.h
   resource/config/config.h
   resource/config/generated/source_path.h
   resource/gpu/buffer.h
   resource/gpu/gpu.h
   resource/gpu/image.h
-  resource/scene_graph/accessor.h
-  resource/scene_graph/buffer_view.h
-  resource/scene_graph/buffer.h
-  resource/scene_graph/camera.h
-  resource/scene_graph/component.h
-  resource/scene_graph/image.h
-  resource/scene_graph/light.h
-  resource/scene_graph/map.h
-  resource/scene_graph/material.h
-  resource/scene_graph/mesh.h
-  resource/scene_graph/node.h
-  resource/scene_graph/sampler.h
-  resource/scene_graph/scene_graph.h
-  resource/scene_graph/scene.h
-  resource/scene_graph/script.
-  resource/scene_graph/texture.h
+  # resource/scene_graph/accessor.h
+  # resource/scene_graph/buffer_view.h
+  # resource/scene_graph/buffer.h
+  # resource/scene_graph/camera.h
+  # resource/scene_graph/component.h
+  # resource/scene_graph/image.h
+  # resource/scene_graph/light.h
+  # resource/scene_graph/map.h
+  # resource/scene_graph/material.h
+  # resource/scene_graph/mesh.h
+  # resource/scene_graph/node.h
+  # resource/scene_graph/sampler.h
+  # resource/scene_graph/scene_graph.h
+  # resource/scene_graph/scene.h
+  # resource/scene_graph/script.
+  # resource/scene_graph/texture.h
   resource/time/time.h
   resource/window/window.h
 
@@ -75,48 +74,47 @@ set(SOURCE_FILES
 
   # resource
   resource/asset/asset.cc
-  resource/asset/model.cc
-  resource/asset/image.cc
+  resource/asset/scene.cc
   resource/asset/shader.cc
   resource/config/config.cc
   resource/gpu/buffer.cc
   resource/gpu/gpu.cc
   resource/gpu/image.cc
-  resource/scene_graph/accessor.cc
-  resource/scene_graph/buffer_view.cc
-  resource/scene_graph/buffer.cc
-  resource/scene_graph/camera.cc
-  resource/scene_graph/component.cc
-  resource/scene_graph/image.cc
-  resource/scene_graph/light.cc
-  resource/scene_graph/map.cc
-  resource/scene_graph/material.cc
-  resource/scene_graph/mesh.cc
-  resource/scene_graph/node.cc
-  resource/scene_graph/sampler.cc
-  resource/scene_graph/scene_graph.cc
-  resource/scene_graph/scene.cc
-  resource/scene_graph/texture.cc
+  # resource/scene_graph/accessor.cc
+  # resource/scene_graph/buffer_view.cc
+  # resource/scene_graph/buffer.cc
+  # resource/scene_graph/camera.cc
+  # resource/scene_graph/component.cc
+  # resource/scene_graph/image.cc
+  # resource/scene_graph/light.cc
+  # resource/scene_graph/map.cc
+  # resource/scene_graph/material.cc
+  # resource/scene_graph/mesh.cc
+  # resource/scene_graph/node.cc
+  # resource/scene_graph/sampler.cc
+  # resource/scene_graph/scene_graph.cc
+  # resource/scene_graph/scene.cc
+  # resource/scene_graph/texture.cc
   resource/time/time.cc
   resource/window/window.cc
 
-  # function
-  function/camera/camera.cc
-  function/function_input/function_input.cc
-  function/function_ui/function_ui.cc
-  function/rendering/context.cc
-  function/rendering/pass.cc
-  function/rendering/rendering.cc
-  function/rendering/spirv.cc
-  function/rendering/subpass.cc
-  function/rendering/swapchain_pass.cc
-  function/rendering/swapchain_subpass.cc
+  # # function
+  # function/camera/camera.cc
+  # function/function_input/function_input.cc
+  # function/function_ui/function_ui.cc
+  # function/rendering/context.cc
+  # function/rendering/pass.cc
+  # function/rendering/rendering.cc
+  # function/rendering/spirv.cc
+  # function/rendering/subpass.cc
+  # function/rendering/swapchain_pass.cc
+  # function/rendering/swapchain_subpass.cc
 
-  # editor
-  editor/editor_input/editor_input.cc
-  editor/editor_ui/editor_ui.cc
+  # # editor
+  # editor/editor_input/editor_input.cc
+  # editor/editor_ui/editor_ui.cc
 
-  # engine
+  # # engine
   engine.cc
   main.cc
 )
