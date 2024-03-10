@@ -5,11 +5,11 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "resource/scene_graph/sampler.h"
+#include "resource/asset/scene_component/sampler.h"
 
 namespace luka {
 
-namespace sg {
+namespace ast::sc {
 
 Sampler::Sampler(vk::raii::Sampler&& sampler, const std::string& name)
     : Component{name}, sampler_{std::move(sampler)} {}
@@ -99,6 +99,6 @@ std::type_index Sampler::GetType() { return typeid(Sampler); }
 
 const vk::raii::Sampler& Sampler::GetSampler() const { return sampler_; }
 
-}  // namespace sg
+}  // namespace ast::sc
 
 }  // namespace luka

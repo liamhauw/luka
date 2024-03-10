@@ -10,11 +10,11 @@
 #include <tiny_gltf.h>
 
 #include "resource/gpu/gpu.h"
-#include "resource/scene_graph/component.h"
+#include "resource/asset/scene_component/component.h"
 
 namespace luka {
 
-namespace sg {
+namespace ast::sc {
 
 class Sampler : public Component {
  public:
@@ -31,6 +31,6 @@ class Sampler : public Component {
   vk::raii::Sampler sampler_{nullptr};
 };
 
-}  // namespace sg
+}  // namespace ast::sc
 
 }  // namespace luka

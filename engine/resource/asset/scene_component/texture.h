@@ -7,13 +7,13 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "resource/scene_graph/component.h"
-#include "resource/scene_graph/image.h"
-#include "resource/scene_graph/sampler.h"
+#include "resource/asset/scene_component/component.h"
+#include "resource/asset/scene_component/image.h"
+#include "resource/asset/scene_component/sampler.h"
 
 namespace luka {
 
-namespace sg {
+namespace ast::sc {
 
 class Texture : public Component {
  public:
@@ -34,6 +34,6 @@ class Texture : public Component {
   Sampler* sampler_;
 };
 
-}  // namespace sg
+}  // namespace ast::sc
 
 }  // namespace luka

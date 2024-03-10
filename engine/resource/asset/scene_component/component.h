@@ -9,7 +9,7 @@
 
 namespace luka {
 
-namespace sg {
+namespace ast::sc {
 
 class Component {
  public:
@@ -22,6 +22,6 @@ class Component {
   std::string name_;
 };
 
-}  // namespace sg
+}  // namespace ast::sc
 
 }  // namespace luka

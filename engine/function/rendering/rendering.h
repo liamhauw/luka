@@ -10,7 +10,7 @@
 #include "function/camera/camera.h"
 #include "resource/gpu/gpu.h"
 #include "function/rendering/context.h"
-#include "resource/scene_graph/scene_graph.h"
+#include "resource/asset/scene_component/scene_graph.h"
 #include "resource/window/window.h"
 #include "resource/asset/asset.h"
 

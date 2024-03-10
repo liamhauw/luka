@@ -19,6 +19,22 @@ set(HEADER_FILES
   core/util.h
 
   # resource
+  resource/asset/scene_component/accessor.h
+  resource/asset/scene_component/buffer_view.h
+  resource/asset/scene_component/buffer.h
+  resource/asset/scene_component/camera.h
+  resource/asset/scene_component/component.h
+  resource/asset/scene_component/image.h
+  resource/asset/scene_component/light.h
+  resource/asset/scene_component/map.h
+  resource/asset/scene_component/material.h
+  resource/asset/scene_component/mesh.h
+  resource/asset/scene_component/node.h
+  resource/asset/scene_component/sampler.h
+  resource/asset/scene_component/scene_graph.h
+  resource/asset/scene_component/scene.h
+  resource/asset/scene_component/script.
+  resource/asset/scene_component/texture.h
   resource/asset/asset.h
   resource/asset/scene.h
   resource/asset/shader.h
@@ -27,22 +43,6 @@ set(HEADER_FILES
   resource/gpu/buffer.h
   resource/gpu/gpu.h
   resource/gpu/image.h
-  # resource/scene_graph/accessor.h
-  # resource/scene_graph/buffer_view.h
-  # resource/scene_graph/buffer.h
-  # resource/scene_graph/camera.h
-  # resource/scene_graph/component.h
-  # resource/scene_graph/image.h
-  # resource/scene_graph/light.h
-  # resource/scene_graph/map.h
-  # resource/scene_graph/material.h
-  # resource/scene_graph/mesh.h
-  # resource/scene_graph/node.h
-  # resource/scene_graph/sampler.h
-  # resource/scene_graph/scene_graph.h
-  # resource/scene_graph/scene.h
-  # resource/scene_graph/script.
-  # resource/scene_graph/texture.h
   resource/time/time.h
   resource/window/window.h
 
@@ -73,6 +73,20 @@ set(SOURCE_FILES
   core/util.cc
 
   # resource
+  resource/asset/scene_component/accessor.cc
+  resource/asset/scene_component/buffer_view.cc
+  resource/asset/scene_component/buffer.cc
+  resource/asset/scene_component/camera.cc
+  resource/asset/scene_component/component.cc
+  resource/asset/scene_component/image.cc
+  resource/asset/scene_component/light.cc
+  resource/asset/scene_component/map.cc
+  resource/asset/scene_component/material.cc
+  resource/asset/scene_component/mesh.cc
+  resource/asset/scene_component/node.cc
+  resource/asset/scene_component/sampler.cc
+  resource/asset/scene_component/scene.cc
+  resource/asset/scene_component/texture.cc
   resource/asset/asset.cc
   resource/asset/scene.cc
   resource/asset/shader.cc
@@ -80,21 +94,6 @@ set(SOURCE_FILES
   resource/gpu/buffer.cc
   resource/gpu/gpu.cc
   resource/gpu/image.cc
-  # resource/scene_graph/accessor.cc
-  # resource/scene_graph/buffer_view.cc
-  # resource/scene_graph/buffer.cc
-  # resource/scene_graph/camera.cc
-  # resource/scene_graph/component.cc
-  # resource/scene_graph/image.cc
-  # resource/scene_graph/light.cc
-  # resource/scene_graph/map.cc
-  # resource/scene_graph/material.cc
-  # resource/scene_graph/mesh.cc
-  # resource/scene_graph/node.cc
-  # resource/scene_graph/sampler.cc
-  # resource/scene_graph/scene_graph.cc
-  # resource/scene_graph/scene.cc
-  # resource/scene_graph/texture.cc
   resource/time/time.cc
   resource/window/window.cc
 

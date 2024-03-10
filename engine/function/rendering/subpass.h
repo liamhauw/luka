@@ -10,7 +10,7 @@
 #include "function/camera/camera.h"
 #include "resource/gpu/gpu.h"
 #include "function/rendering/spirv.h"
-#include "resource/scene_graph/scene_graph.h"
+#include "resource/asset/scene_component/scene_graph.h"
 #include "resource/asset/asset.h"
 
 namespace luka {
@@ -40,9 +40,9 @@ struct DrawElement {
 
   vk::Pipeline pipeline;
   vk::PipelineLayout pipeline_layout;
-  std::map<u32, const sg::VertexAttribute*> location_vertex_attributes;
+  std::map<u32, const ast::sc::VertexAttribute*> location_vertex_attributes;
   u64 vertex_count;
-  const sg::IndexAttribute* index_attribute;
+  const ast::sc::IndexAttribute* index_attribute;
   bool has_index;
 
   // For every frame.

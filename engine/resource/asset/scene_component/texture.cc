@@ -5,11 +5,11 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "resource/scene_graph/texture.h"
+#include "resource/asset/scene_component/texture.h"
 
 namespace luka {
 
-namespace sg {
+namespace ast::sc {
 
 Texture::Texture(Image* image, Sampler* sampler, const std::string& name)
     : Component{name}, image_{image}, sampler_{sampler} {}
@@ -37,6 +37,6 @@ Image* Texture::GetImage() { return image_; }
 
 Sampler* Texture::GetSampler() { return sampler_; }
 
-}  // namespace sg
+}  // namespace ast::sc
 
 }  // namespace luka

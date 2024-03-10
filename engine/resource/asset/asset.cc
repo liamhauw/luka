@@ -17,7 +17,7 @@ Asset::Asset(std::shared_ptr<Config> config, std::shared_ptr<Gpu> gpu)
   const std::vector<cfg::Shader> cfg_shaders{config_->GetShaders()};
 
   for (const auto& cfg_scene : cfg_scenes) {
-    ast::Scene scene{cfg_scene};
+    ast::Scene scene{gpu_, cfg_scene};
   }
 
   for (const auto& cfg_shader : cfg_shaders) {

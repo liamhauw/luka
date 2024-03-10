@@ -13,7 +13,6 @@
 #include "resource/gpu/image.h"
 #include "resource/window/window.h"
 #include "imgui_impl_vulkan.h"
-#include "resource/asset/scene.h"
 
 namespace luka {
 

@@ -10,11 +10,11 @@
 #include <tiny_gltf.h>
 
 #include "core/math.h"
-#include "resource/scene_graph/component.h"
+#include "resource/asset/scene_component/component.h"
 
 namespace luka {
 
-namespace sg {
+namespace ast::sc {
 
 enum class CameraType { kNone = -1, kPerspective, kCount };
 
@@ -35,6 +35,6 @@ class Camera : public Component {
   f32 zfar_;
 };
 
-}  // namespace sg
+}  // namespace ast::sc
 
 }  // namespace luka

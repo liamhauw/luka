@@ -5,26 +5,22 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "resource/scene_graph/map.h"
+#include "resource/asset/scene_component/map.h"
 
 #include "core/log.h"
 #include "core/util.h"
 
 namespace luka {
 
-namespace sg {
+namespace ast::sc {
 
-Map::Map(std::shared_ptr<Gpu> gpu, const ast::Model& model,
+Map::Map(std::shared_ptr<Gpu> gpu, const tinygltf::Model& tinygltf_model,
          const std::string& name)
     : gpu_{gpu}, name_{name} {
-  const tinygltf::Model& tinygltf_model{model.GetTinygltfModel()};
-  const std::map<std::string, ast::Image1>& uri_image_map{
-      model.GetUriImageMap()};
-
   ParseExtensionsUsed(tinygltf_model.extensionsUsed);
   ParseLightComponents(tinygltf_model.extensions);
   ParseCameraComponents(tinygltf_model.cameras);
-  ParseImageComponents(tinygltf_model.images, uri_image_map);
+  ParseImageComponents(tinygltf_model.images);
   ParseSamplerComponents(tinygltf_model.samplers);
   ParseTextureComponents(tinygltf_model.textures);
   ParseMaterialComponents(tinygltf_model.materials);
@@ -99,8 +95,8 @@ void Map::LoadScene(i32 scene) {
   }
 }
 
-const sg::Scene* Map::GetScene() const {
-  auto scene_components{GetComponents<sg::Scene>()};
+const ast::sc::Scene* Map::GetScene() const {
+  auto scene_components{GetComponents<ast::sc::Scene>()};
   return scene_components[scene_];
 }
 
@@ -154,8 +150,7 @@ void Map::ParseCameraComponents(
 }
 
 void Map::ParseImageComponents(
-    const std::vector<tinygltf::Image>& tinygltf_images,
-    const std::map<std::string, ast::Image1>& uri_image_map) {
+    const std::vector<tinygltf::Image>& tinygltf_images) {
   const vk::raii::CommandBuffer& command_buffer{gpu_->BeginTempCommandBuffer()};
 
   u64 model_image_count{tinygltf_images.size()};
@@ -165,20 +160,12 @@ void Map::ParseImageComponents(
   for (u64 i{0}; i < model_image_count; ++i) {
     const tinygltf::Image& tinygltf_image{tinygltf_images[i]};
 
-    const std::string& model_image_uri{tinygltf_image.uri};
-    auto u2i{uri_image_map.find(model_image_uri)};
-    if (u2i == uri_image_map.end()) {
-      THROW("Fail to find image uri");
-    }
-    const ast::Image1& model_image{u2i->second};
     auto image_component{std::make_unique<Image>(
-        gpu_, model_image, command_buffer, staging_buffers)};
+        gpu_, tinygltf_image, command_buffer, staging_buffers)};
     AddComponent(std::move(image_component));
   }
 
-  ast::Image1 default_model_image{std::vector<u8>(4, 0),
-                                 {vk::Extent3D{1, 1, 1}},
-                                 vk::Format::eR8G8B8A8Unorm};
+  tinygltf::Image default_model_image;
   auto default_image_component{std::make_unique<Image>(
       gpu_, default_model_image, command_buffer, staging_buffers)};
   AddComponent(std::move(default_image_component));
@@ -337,6 +324,6 @@ void Map::ParseDefaultScene(i32 model_default_scene) {
   }
 }
 
-}  // namespace sg
+}  // namespace ast::sc
 
 }  // namespace luka

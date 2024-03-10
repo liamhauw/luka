@@ -5,12 +5,12 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "resource/scene_graph/light.h"
+#include "resource/asset/scene_component/light.h"
 
 #include "core/log.h"
 
 namespace luka {
-namespace sg {
+namespace ast::sc {
 
 Light::Light(LightType type, glm::vec3 direction, glm::vec3 color,
              f32 intensity, f32 range, f32 inner_cone_angle,
@@ -75,6 +75,6 @@ Light::Light(const tinygltf::Value& model_light)
 
 std::type_index Light::GetType() { return typeid(Light); }
 
-}  // namespace sg
+}  // namespace ast::sc
 
 }  // namespace luka

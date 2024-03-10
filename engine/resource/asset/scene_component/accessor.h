@@ -9,13 +9,13 @@
 
 #include <tiny_gltf.h>
 
+#include "resource/asset/scene_component/buffer_view.h"
+#include "resource/asset/scene_component/component.h"
 #include "resource/gpu/buffer.h"
-#include "resource/scene_graph/buffer_view.h"
-#include "resource/scene_graph/component.h"
 
 namespace luka {
 
-namespace sg {
+namespace ast::sc {
 
 class Accessor : public Component {
  public:
@@ -52,6 +52,6 @@ class Accessor : public Component {
   vk::Format format_;
 };
 
-}  // namespace sg
+}  // namespace ast::sc
 
 }  // namespace luka

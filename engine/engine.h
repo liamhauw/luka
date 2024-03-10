@@ -16,7 +16,6 @@
 #include "resource/asset/asset.h"
 #include "resource/config/config.h"
 #include "resource/gpu/gpu.h"
-#include "resource/scene_graph/scene_graph.h"
 #include "resource/time/time.h"
 #include "resource/window/window.h"
 

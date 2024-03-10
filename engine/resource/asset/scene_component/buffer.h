@@ -9,16 +9,16 @@
 
 #include <tiny_gltf.h>
 
-#include "resource/scene_graph/component.h"
+#include "resource/asset/scene_component/component.h"
 
 namespace luka {
 
-namespace sg {
+namespace ast::sc {
 
 class Buffer : public Component {
  public:
   Buffer(const std::vector<u8>* data, const std::string& name = {});
-  
+
   Buffer(const tinygltf::Buffer& model_buffer);
 
   virtual ~Buffer() = default;
@@ -30,6 +30,6 @@ class Buffer : public Component {
   const std::vector<u8>* data_;
 };
 
-}  // namespace sg
+}  // namespace ast::sc
 
 }  // namespace luka

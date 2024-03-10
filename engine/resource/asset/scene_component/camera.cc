@@ -5,13 +5,13 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "resource/scene_graph/camera.h"
+#include "resource/asset/scene_component/camera.h"
 
 #include "core/log.h"
 
 namespace luka {
 
-namespace sg {
+namespace ast::sc {
 
 Camera::Camera(CameraType type, f32 aspect_ratio, f32 yfov, f32 znear, f32 zfar,
                const std::string& name)
@@ -39,6 +39,6 @@ Camera::Camera(const tinygltf::Camera& model_camera)
 
 std::type_index Camera::GetType() { return typeid(Camera); }
 
-}  // namespace sg
+}  // namespace ast::sc
 
 }  // namespace luka

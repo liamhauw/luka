@@ -11,7 +11,7 @@
 #include "resource/gpu/gpu.h"
 #include "function/rendering/pass.h"
 #include "function/rendering/subpass.h"
-#include "resource/scene_graph/scene_graph.h"
+#include "resource/asset/scene_component/scene_graph.h"
 #include "resource/asset/asset.h"
 
 namespace luka {

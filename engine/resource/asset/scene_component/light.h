@@ -10,13 +10,13 @@
 #include <tiny_gltf.h>
 
 #include "core/math.h"
-#include "resource/scene_graph/component.h"
+#include "resource/asset/scene_component/component.h"
 
 #define KHR_LIGHTS_PUNCTUAL_EXTENSION "KHR_lights_punctual"
 
 namespace luka {
 
-namespace sg {
+namespace ast::sc {
 
 enum class LightType { kNone = -1, kDirectional, kPoint, kSpot, kCount };
 
@@ -41,6 +41,6 @@ class Light : public Component {
   f32 outer_cone_angle_;
 };
 
-}  // namespace sg
+}  // namespace ast::sc
 
 }  // namespace luka

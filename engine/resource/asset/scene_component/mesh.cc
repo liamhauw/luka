@@ -5,13 +5,13 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "resource/scene_graph/mesh.h"
+#include "resource/asset/scene_component/mesh.h"
 
 #include "core/log.h"
 
 namespace luka {
 
-namespace sg {
+namespace ast::sc {
 
 Mesh::Mesh(std::vector<Primitive>&& primitives, const std::string& name)
     : Component{name}, primitives_{std::move(primitives)} {}
@@ -132,6 +132,6 @@ const std::vector<Primitive>& Mesh::GetPrimitives() const {
   return primitives_;
 }
 
-}  // namespace sg
+}  // namespace ast::sc
 
 }  // namespace luka

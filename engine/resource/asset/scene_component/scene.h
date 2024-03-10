@@ -9,17 +9,17 @@
 
 #include <tiny_gltf.h>
 
-#include "resource/scene_graph/component.h"
-#include "resource/scene_graph/node.h"
+#include "resource/asset/scene_component/component.h"
+#include "resource/asset/scene_component/node.h"
 
 namespace luka {
 
-namespace sg {
+namespace ast::sc {
 
 class Scene : public Component {
  public:
   Scene(std::vector<Node*>&& nodes, const std::string& name = {});
-  
+
   Scene(const std::vector<Node*> node_components,
         const tinygltf::Scene& model_scene);
 
@@ -32,6 +32,6 @@ class Scene : public Component {
   std::vector<Node*> nodes_;
 };
 
-}  // namespace sg
+}  // namespace ast::sc
 
 }  // namespace luka

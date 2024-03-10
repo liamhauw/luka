@@ -5,14 +5,14 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "resource/scene_graph/accessor.h"
+#include "resource/asset/scene_component/accessor.h"
 
 #include "core/log.h"
-#include "resource/scene_graph/buffer_view.h"
+#include "resource/asset/scene_component/buffer_view.h"
 
 namespace luka {
 
-namespace sg {
+namespace ast::sc {
 
 Accessor::Accessor(BufferView* buffer_view, u64 byte_offset, bool normalized,
                    u32 component_type, u64 count, u32 type,
@@ -314,6 +314,6 @@ vk::Format Accessor::ParseFormat() {
   return format;
 }
 
-}  // namespace sg
+}  // namespace ast::sc
 
 }  // namespace luka

@@ -36,7 +36,7 @@ class SwapchainSupass : public Subpass {
   void CreateDrawElements() override;
 
   DrawElement CreateDrawElement(const glm::mat4& model_matrix,
-                                const sg::Primitive& primitive);
+                                const ast::sc::Primitive& primitive);
 
   std::vector<std::string> wanted_textures_{"base_color_texture"};
 };

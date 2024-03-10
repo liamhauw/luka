@@ -5,11 +5,11 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "resource/scene_graph/scene.h"
+#include "resource/asset/scene_component/scene.h"
 
 namespace luka {
 
-namespace sg {
+namespace ast::sc {
 
 Scene::Scene(std::vector<Node*>&& nodes, const std::string& name)
     : Component{name}, nodes_{std::move(nodes)} {}
@@ -28,6 +28,6 @@ std::type_index Scene::GetType() { return typeid(Scene); }
 
 const std::vector<Node*>& Scene::GetNodes() const { return nodes_; }
 
-}  // namespace sg
+}  // namespace ast::sc
 
 }  // namespace luka

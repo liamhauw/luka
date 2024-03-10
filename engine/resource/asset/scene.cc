@@ -8,12 +8,15 @@
 #include "resource/asset/scene.h"
 
 #include "core/log.h"
+#include "resource/asset/scene_component/map.h"
 
 namespace luka {
 
 namespace ast {
 
-Scene::Scene(const cfg::Scene& cfg_scene) {
+Scene::Scene(std::shared_ptr<Gpu> gpu, const cfg::Scene& cfg_scene)
+    : gpu_{gpu} {
+  tinygltf::Model tinygltf_model;
   std::string extension{cfg_scene.path.extension().string()};
   if (extension != ".gltf") {
     THROW("Unsupported model format.");
@@ -21,7 +24,7 @@ Scene::Scene(const cfg::Scene& cfg_scene) {
   tinygltf::TinyGLTF tinygltf;
   std::string error;
   std::string warning;
-  bool result{tinygltf.LoadASCIIFromFile(&tinygltf_model_, &error, &warning,
+  bool result{tinygltf.LoadASCIIFromFile(&tinygltf_model, &error, &warning,
                                          cfg_scene.path.string())};
   if (!warning.empty()) {
     LOGW("Tinygltf: {}.", warning);
@@ -32,6 +35,8 @@ Scene::Scene(const cfg::Scene& cfg_scene) {
   if (!result) {
     THROW("Fail to load {}.", cfg_scene.path.string());
   }
+
+  sc::Map map{gpu, tinygltf_model};
 }
 
 }  // namespace ast

@@ -10,14 +10,14 @@
 #include <tiny_gltf.h>
 
 #include "core/math.h"
-#include "resource/scene_graph/camera.h"
-#include "resource/scene_graph/component.h"
-#include "resource/scene_graph/light.h"
-#include "resource/scene_graph/mesh.h"
+#include "resource/asset/scene_component/camera.h"
+#include "resource/asset/scene_component/component.h"
+#include "resource/asset/scene_component/light.h"
+#include "resource/asset/scene_component/mesh.h"
 
 namespace luka {
 
-namespace sg {
+namespace ast::sc {
 
 class Node : public Component {
  public:
@@ -54,6 +54,6 @@ class Node : public Component {
   Node* parent_{nullptr};
 };
 
-}  // namespace sg
+}  // namespace ast::sc
 
 }  // namespace luka

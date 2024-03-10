@@ -9,15 +9,15 @@
 
 #include <tiny_gltf.h>
 
+#include "resource/asset/scene_component/accessor.h"
+#include "resource/asset/scene_component/component.h"
+#include "resource/asset/scene_component/material.h"
 #include "resource/gpu/buffer.h"
 #include "resource/gpu/gpu.h"
-#include "resource/scene_graph/accessor.h"
-#include "resource/scene_graph/component.h"
-#include "resource/scene_graph/material.h"
 
 namespace luka {
 
-namespace sg {
+namespace ast::sc {
 
 struct VertexAttribute {
   gpu::Buffer buffer;
@@ -70,6 +70,6 @@ class Mesh : public Component {
   std::vector<Primitive> primitives_;
 };
 
-}  // namespace sg
+}  // namespace ast::sc
 
 }  // namespace luka

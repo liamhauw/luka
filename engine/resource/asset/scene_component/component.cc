@@ -5,16 +5,16 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "resource/scene_graph/component.h"
+#include "resource/asset/scene_component/component.h"
 
 namespace luka {
 
-namespace sg {
+namespace ast::sc {
 
 Component::Component(const std::string& name) : name_{name} {}
 
 const std::string& Component::GetName() const { return name_; }
 
-}  // namespace sg
+}  // namespace ast::sc
 
 }  // namespace luka

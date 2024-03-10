@@ -10,6 +10,7 @@
 #include <tiny_gltf.h>
 
 #include "resource/config/config.h"
+#include "resource/gpu/gpu.h"
 
 namespace luka {
 
@@ -19,10 +20,10 @@ class Scene {
  public:
   Scene() = default;
 
-  Scene(const cfg::Scene& cfg_scene);
+  Scene(std::shared_ptr<Gpu> gpu, const cfg::Scene& cfg_scene);
 
  private:
-  tinygltf::Model tinygltf_model_;
+  std::shared_ptr<Gpu> gpu_;
 };
 
 }  // namespace ast

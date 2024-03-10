@@ -7,33 +7,31 @@
 #include "platform/pch.h"
 // clang-format on
 
+#include "resource/asset/scene_component/accessor.h"
+#include "resource/asset/scene_component/buffer.h"
+#include "resource/asset/scene_component/buffer_view.h"
+#include "resource/asset/scene_component/camera.h"
+#include "resource/asset/scene_component/component.h"
+#include "resource/asset/scene_component/image.h"
+#include "resource/asset/scene_component/light.h"
+#include "resource/asset/scene_component/material.h"
+#include "resource/asset/scene_component/mesh.h"
+#include "resource/asset/scene_component/node.h"
+#include "resource/asset/scene_component/sampler.h"
+#include "resource/asset/scene_component/scene.h"
+#include "resource/asset/scene_component/texture.h"
 #include "resource/gpu/gpu.h"
-#include "resource/scene_graph/accessor.h"
-#include "resource/scene_graph/buffer.h"
-#include "resource/scene_graph/buffer_view.h"
-#include "resource/scene_graph/camera.h"
-#include "resource/scene_graph/component.h"
-#include "resource/scene_graph/image.h"
-#include "resource/scene_graph/light.h"
-#include "resource/scene_graph/material.h"
-#include "resource/scene_graph/mesh.h"
-#include "resource/scene_graph/node.h"
-#include "resource/scene_graph/sampler.h"
-#include "resource/scene_graph/scene.h"
-#include "resource/scene_graph/texture.h"
-#include "resource/asset/scene.h"
-#include "resource/asset/scene.h"
 
 namespace luka {
 
-namespace sg {
+namespace ast::sc {
 
 class Map {
  public:
   Map() = default;
 
-//   Map(std::shared_ptr<Gpu> gpu, const ast::Model& model,
-//       const std::string& name = {});
+  Map(std::shared_ptr<Gpu> gpu, const tinygltf::Model& tinygltf_model,
+      const std::string& name = {});
 
   template <typename T>
   void AddComponent(std::unique_ptr<T>&& component) {
@@ -72,7 +70,7 @@ class Map {
 
   void LoadScene(i32 scene = -1);
 
-  const sg::Scene* GetScene() const;
+  const ast::sc::Scene* GetScene() const;
 
  private:
   void ParseExtensionsUsed(
@@ -83,8 +81,8 @@ class Map {
   void ParseCameraComponents(
       const std::vector<tinygltf::Camera>& model_cameras);
 
-//   void ParseImageComponents(const std::vector<tinygltf::Image>& tinygltf_images,
-//                             const std::map<std::string, ast::Image1>&);
+  void ParseImageComponents(
+      const std::vector<tinygltf::Image>& tinygltf_images);
 
   void ParseSamplerComponents(
       const std::vector<tinygltf::Sampler>& model_samplers);
@@ -120,6 +118,6 @@ class Map {
   std::unordered_map<std::string, bool> supported_extensions_;
   i32 scene_;
 };
-}  // namespace sg
+}  // namespace ast::sc
 
 }  // namespace luka

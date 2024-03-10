@@ -170,7 +170,7 @@ void Context::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
         for (const auto& location_vertex_attribute :
              location_vertex_attributes) {
           u32 location{location_vertex_attribute.first};
-          const sg::VertexAttribute* vertex_attribute{
+          const ast::sc::VertexAttribute* vertex_attribute{
               location_vertex_attribute.second};
 
           command_buffer.bindVertexBuffers(
@@ -181,7 +181,7 @@ void Context::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
         if (!draw_element.has_index) {
           command_buffer.draw(draw_element.vertex_count, 1, 0, 0);
         } else {
-          const sg::IndexAttribute* index_attribute{
+          const ast::sc::IndexAttribute* index_attribute{
               draw_element.index_attribute};
 
           command_buffer.bindIndexBuffer(*(index_attribute->buffer),

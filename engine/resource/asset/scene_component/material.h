@@ -10,12 +10,12 @@
 #include <tiny_gltf.h>
 
 #include "core/math.h"
-#include "resource/scene_graph/component.h"
-#include "resource/scene_graph/texture.h"
+#include "resource/asset/scene_component/component.h"
+#include "resource/asset/scene_component/texture.h"
 
 namespace luka {
 
-namespace sg {
+namespace ast::sc {
 
 enum class AlphaMode { kOpaque, kMask, kBlend };
 
@@ -38,7 +38,7 @@ class Material : public Component {
 
  private:
   std::map<std::string, Texture*> textures_;
-  
+
   glm::vec4 base_color_factor_;
   f32 metallic_factor_;
   f32 roughness_factor_;
@@ -50,6 +50,6 @@ class Material : public Component {
   bool double_sided_;
 };
 
-}  // namespace sg
+}  // namespace ast::sc
 
 }  // namespace luka

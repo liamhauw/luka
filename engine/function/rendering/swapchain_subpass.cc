@@ -63,43 +63,43 @@ void SwapchainSupass::CreateBindlessDescriptorSets() {
 }
 
 void SwapchainSupass::CreateDrawElements() {
-  const sg::Map& object{scene_graph_->GetObjectLuka()};
-  const sg::Scene* scene{object.GetScene()};
-  const std::vector<sg::Node*>& nodes{scene->GetNodes()};
+  const ast::sc::Map& object{scene_graph_->GetObjectLuka()};
+  const ast::sc::Scene* scene{object.GetScene()};
+  const std::vector<ast::sc::Node*>& nodes{scene->GetNodes()};
 
-  std::queue<const sg::Node*> all_nodes;
-  std::unordered_map<const sg::Node*, glm::mat4> node_model_matrix;
+  std::queue<const ast::sc::Node*> all_nodes;
+  std::unordered_map<const ast::sc::Node*, glm::mat4> node_model_matrix;
 
-  for (const sg::Node* node : nodes) {
+  for (const ast::sc::Node* node : nodes) {
     all_nodes.push(node);
   }
 
   while (!all_nodes.empty()) {
-    const sg::Node* cur_node{all_nodes.front()};
+    const ast::sc::Node* cur_node{all_nodes.front()};
     all_nodes.pop();
 
-    const std::vector<sg::Node*>& cur_node_children{cur_node->GetChildren()};
-    for (const sg::Node* cur_node_child : cur_node_children) {
+    const std::vector<ast::sc::Node*>& cur_node_children{cur_node->GetChildren()};
+    for (const ast::sc::Node* cur_node_child : cur_node_children) {
       all_nodes.push(cur_node_child);
     }
 
     // Model matrix.
     glm::mat4 model_matrix{cur_node->GetModelMarix()};
-    const sg::Node* parent_node{cur_node->GetParent()};
+    const ast::sc::Node* parent_node{cur_node->GetParent()};
     while (parent_node) {
       model_matrix *= parent_node->GetModelMarix();
       parent_node = parent_node->GetParent();
     }
 
     // Primitives.
-    const sg::Mesh* mesh{cur_node->GetMesh()};
+    const ast::sc::Mesh* mesh{cur_node->GetMesh()};
     if (!mesh) {
       continue;
     }
-    const std::vector<sg::Primitive>& primitives{mesh->GetPrimitives()};
+    const std::vector<ast::sc::Primitive>& primitives{mesh->GetPrimitives()};
 
     // Draw elements.
-    for (const sg::Primitive& primitive : primitives) {
+    for (const ast::sc::Primitive& primitive : primitives) {
       DrawElement draw_element{CreateDrawElement(model_matrix, primitive)};
       draw_elements_.push_back(std::move(draw_element));
     }
@@ -107,18 +107,18 @@ void SwapchainSupass::CreateDrawElements() {
 }
 
 DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
-                                               const sg::Primitive& primitive) {
+                                               const ast::sc::Primitive& primitive) {
   DrawElement draw_element;
 
   // Primitive info.
   const auto& vertex_attributes{primitive.vertex_attributes};
   const auto& index_attribute{primitive.index_attribute};
   bool has_index{primitive.has_index};
-  const sg::Material* material{primitive.material};
+  const ast::sc::Material* material{primitive.material};
 
   // Shaders.
   std::vector<std::string> shader_processes;
-  const std::map<std::string, sg::Texture*>& textures{material->GetTextures()};
+  const std::map<std::string, ast::sc::Texture*>& textures{material->GetTextures()};
   for (std::string wanted_texture : wanted_textures_) {
     auto it{textures.find(wanted_texture)};
     if (it != textures.end()) {
@@ -269,7 +269,7 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
 
   for (const auto& vertex_buffer_attribute : vertex_attributes) {
     std::string name{vertex_buffer_attribute.first};
-    const sg::VertexAttribute& vertex_attribute{vertex_buffer_attribute.second};
+    const ast::sc::VertexAttribute& vertex_attribute{vertex_buffer_attribute.second};
 
     std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 
@@ -392,7 +392,7 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
       if (it != name_shader_resources.end() && it1 != textures.end()) {
         const ShaderResource& shader_resource{it->second};
 
-        sg::Texture* tex{it1->second};
+        ast::sc::Texture* tex{it1->second};
 
         const vk::raii::ImageView& image_view{tex->GetImage()->GetImageView()};
         const vk::raii::Sampler& sampler{tex->GetSampler()->GetSampler()};

@@ -5,13 +5,13 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "resource/scene_graph/node.h"
+#include "resource/asset/scene_component/node.h"
 
 #include "core/util.h"
 
 namespace luka {
 
-namespace sg {
+namespace ast::sc {
 
 Node::Node(glm::mat4&& model_matrix, Mesh* mesh, Light* light, Camera* camera,
            const std::vector<i32>& child_indices, const std::string& name)
@@ -101,6 +101,6 @@ const glm::mat4& Node::GetModelMarix() const { return model_matrix_; }
 
 const Mesh* Node::GetMesh() const { return mesh_; }
 
-}  // namespace sg
+}  // namespace ast::sc
 
 }  // namespace luka

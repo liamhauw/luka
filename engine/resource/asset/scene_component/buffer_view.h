@@ -9,19 +9,19 @@
 
 #include <tiny_gltf.h>
 
-#include "resource/scene_graph/buffer.h"
-#include "resource/scene_graph/component.h"
+#include "resource/asset/scene_component/buffer.h"
+#include "resource/asset/scene_component/component.h"
 
 namespace luka {
 
-namespace sg {
+namespace ast::sc {
 
 class BufferView : public Component {
  public:
   BufferView(Buffer* buffer, u64 byte_offset, u64 byte_length, u64 byte_stride,
              const std::string& name = {});
 
-  BufferView(const std::vector<sg::Buffer*>& buffer_components,
+  BufferView(const std::vector<ast::sc::Buffer*>& buffer_components,
              const tinygltf::BufferView& model_buffer_view);
 
   virtual ~BufferView() = default;
@@ -39,6 +39,6 @@ class BufferView : public Component {
   u64 byte_stride_;
 };
 
-}  // namespace sg
+}  // namespace ast::sc
 
 }  // namespace luka

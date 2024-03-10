@@ -5,11 +5,11 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "resource/scene_graph/buffer_view.h"
+#include "resource/asset/scene_component/buffer_view.h"
 
 namespace luka {
 
-namespace sg {
+namespace ast::sc {
 
 BufferView::BufferView(Buffer* buffer, u64 byte_offset, u64 byte_length,
                        u64 byte_stride, const std::string& name)
@@ -19,7 +19,7 @@ BufferView::BufferView(Buffer* buffer, u64 byte_offset, u64 byte_length,
       byte_length_{byte_length},
       byte_stride_{byte_stride} {}
 
-BufferView::BufferView(const std::vector<sg::Buffer*>& buffer_components,
+BufferView::BufferView(const std::vector<ast::sc::Buffer*>& buffer_components,
                        const tinygltf::BufferView& model_buffer_view)
     : Component{model_buffer_view.name},
       buffer_{buffer_components[model_buffer_view.buffer]},
@@ -37,6 +37,6 @@ u64 BufferView::GetByteLength() const { return byte_length_; }
 
 u64 BufferView::GetByteStride() const { return byte_stride_; }
 
-}  // namespace sg
+}  // namespace ast::sc
 
 }  // namespace luka

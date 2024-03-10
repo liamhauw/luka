@@ -7,23 +7,23 @@
 #include "platform/pch.h"
 // clang-format on
 
+#include "resource/asset/scene.h"
+#include "resource/asset/scene_component/component.h"
 #include "resource/gpu/gpu.h"
 #include "resource/gpu/image.h"
-#include "resource/scene_graph/component.h"
-#include "resource/asset/scene.h"
 
 namespace luka {
 
-namespace sg {
+namespace ast::sc {
 
 class Image : public Component {
  public:
   Image(gpu::Image&& image, vk::raii::ImageView&& image_view,
         const std::string& name = {});
 
-//   Image(std::shared_ptr<Gpu> gpu, const ast::Image1& model_image,
-//         const vk::raii::CommandBuffer& command_buffer,
-//         std::vector<gpu::Buffer>& staging_buffers);
+  Image(std::shared_ptr<Gpu> gpu, const tinygltf::Image& model_image,
+        const vk::raii::CommandBuffer& command_buffer,
+        std::vector<gpu::Buffer>& staging_buffers);
 
   virtual ~Image() = default;
   std::type_index GetType() override;
@@ -36,6 +36,6 @@ class Image : public Component {
   vk::raii::ImageView image_view_{nullptr};
 };
 
-}  // namespace sg
+}  // namespace ast::sc
 
 }  // namespace luka
