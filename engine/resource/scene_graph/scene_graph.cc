@@ -11,15 +11,14 @@ namespace luka {
 
 SceneGraph::SceneGraph(std::shared_ptr<Asset> asset, std::shared_ptr<Gpu> gpu)
     : asset_{asset}, gpu_{gpu} {
-  const AssetInfo& asset_info{asset_->GetAssetInfo()};
-  const ast::Model& object{asset_info.object};
+  const ast::Model& model{asset_->GetModel()};
 
-  object_ = std::move(sg::Map{gpu_, object, "object"});
-  object_.LoadScene();
+  model_ = std::move(sg::Map{gpu_, model, "object"});
+  model_.LoadScene();
 }
 
 void SceneGraph::Tick() {}
 
-const sg::Map& SceneGraph::GetObjectLuka() const { return object_; }
+const sg::Map& SceneGraph::GetObjectLuka() const { return model_; }
 
 }  // namespace luka

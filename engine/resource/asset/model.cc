@@ -13,8 +13,8 @@ namespace luka {
 
 namespace ast {
 
-Model::Model(const std::filesystem::path& model_path) {
-  std::string extension{model_path.extension().string()};
+Model::Model(const cfg::Model& cfg_model) {
+  std::string extension{cfg_model.path.extension().string()};
   if (extension != ".gltf") {
     THROW("Unsupported model format.");
   }
@@ -22,7 +22,7 @@ Model::Model(const std::filesystem::path& model_path) {
   std::string error;
   std::string warning;
   bool result{tinygltf.LoadASCIIFromFile(&tinygltf_model_, &error, &warning,
-                                         model_path.string())};
+                                         cfg_model.path.string())};
   if (!warning.empty()) {
     LOGW("Tinygltf: {}.", warning);
   }
@@ -30,7 +30,7 @@ Model::Model(const std::filesystem::path& model_path) {
     LOGE("Tinygltf: {}.", error);
   }
   if (!result) {
-    THROW("Fail to load {}.", model_path.string());
+    THROW("Fail to load {}.", cfg_model.path.string());
   }
 
   std::vector<tinygltf::Image>& tinygltf_images{tinygltf_model_.images};

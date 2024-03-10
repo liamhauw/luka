@@ -25,7 +25,7 @@ class SceneGraph {
   std::shared_ptr<Asset> asset_;
   std::shared_ptr<Gpu> gpu_;
 
-  sg::Map object_;
+  sg::Map model_;
 };
 
 }  // namespace luka

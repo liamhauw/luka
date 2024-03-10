@@ -7,8 +7,10 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "resource/asset/image.h"
 #include <tiny_gltf.h>
+
+#include "resource/asset/image.h"
+#include "resource/config/config.h"
 
 namespace luka {
 
@@ -17,8 +19,8 @@ namespace ast {
 class Model {
  public:
   Model() = default;
-  
-  Model(const std::filesystem::path& model_path);
+
+  Model(const cfg::Model& cfg_model);
 
   const tinygltf::Model& GetTinygltfModel() const;
   const std::map<std::string, Image>& GetUriImageMap() const;

@@ -11,17 +11,26 @@
 
 namespace luka {
 
-Asset::Asset(std::shared_ptr<Config> config) : config_{config} {
-  asset_info_.object = std::move(ast::Model{config_->GetModelPath()});
+Asset::Asset(std::shared_ptr<Config> config, std::shared_ptr<Gpu> gpu)
+    : config_{config}, gpu_{gpu} {
+  const std::vector<cfg::Model> cfg_models{config_->GetModels()};
+  const std::vector<cfg::Shader> cfg_shaders{config_->GetShaders()};
 
-  asset_info_.vertex = std::move(
-      ast::Shader{config_->GetShaderPath() / "shader.vert", EShLangVertex});
-  asset_info_.fragment = std::move(
-      ast::Shader{config_->GetShaderPath() / "shader.frag", EShLangFragment});
+  for (const auto& cfg_model : cfg_models) {
+    ast::Model model{ast::Model{cfg_model}};
+  }
+
+  for (const auto& cfg_shader : cfg_shaders) {
+    ast::Shader shader{ast::Shader{cfg_shader}};
+  }
 }
 
 void Asset::Tick() {}
 
-const AssetInfo& Asset::GetAssetInfo() const { return asset_info_; }
+const ast::Model& Asset::GetModel() const { return models_[0]; }
+
+const ast::Shader& Asset::GetVertexShader() const { return shaders_[0]; }
+
+const ast::Shader& Asset::GetFragmentShader() const { return shaders_[1]; }
 
 }  // namespace luka

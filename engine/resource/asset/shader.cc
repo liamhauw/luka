@@ -18,15 +18,18 @@ namespace luka {
 
 namespace ast {
 
-Shader::Shader(const std::filesystem::path& input_file_name,
-               EShLanguage language)
-    : input_file_name_{input_file_name.string()},
-      language_{language},
-      source_text_{LoadText(input_file_name_)} {}
+Shader::Shader(const cfg::Shader& config_shader)
+    : path_{config_shader.path.string()}, source_text_{LoadText(path_)} {}
+
+// Shader::Shader(const std::filesystem::path& input_file_name,
+//                EShLanguage language)
+//     : path_{input_file_name.string()},
+//       language_{language},
+//       source_text_{LoadText(path_)} {}
 
 u64 Shader::GetHashValue(const std::vector<std::string>& processes) const {
   std::vector<std::string> svec{processes};
-  svec.push_back(input_file_name_);
+  svec.push_back(path_);
   svec.push_back(source_text_);
 
   u64 hash_value{0};
@@ -50,7 +53,7 @@ std::vector<u32> Shader::CompileToSpirv(
   shader.setStrings(&source_string, 1);
 
   std::string preamble;
-  for(const std::string& process : processes) {
+  for (const std::string& process : processes) {
     std::string line{"#define " + process.substr(1) + "\n"};
     preamble += line;
   }

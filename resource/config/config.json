@@ -1,10 +1,37 @@
 {
-  "config": 0,
-  "configs": [
+  "models": [
+    "sponza/Sponza.gltf"
+  ],
+  "shaders": [
+    "base/shader.vert",
+    "base/shader.frag"
+  ],
+  "subpasses": [
     {
-      "model_path": "model/sponza/Sponza.gltf",
-      "shader_path": "shader/base",
-      "editor_mode": true
+      "name": "swapchain_subpass",
+      "models": [
+        0
+      ],
+      "shaders": {
+        "vertex": 0,
+        "fragment": 1
+      }
     }
-  ]
+  ],
+  "passes": [
+    {
+      "name": "swapchain_pass",
+      "subpasses": [
+        0
+      ]
+    }
+  ],
+  "frame_graphs": [
+    {
+      "passes": [
+        0
+      ]
+    }
+  ],
+  "frame_graph": 0
 }

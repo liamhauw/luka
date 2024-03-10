@@ -13,27 +13,64 @@
 
 namespace luka {
 
+namespace cfg {
+
+struct Model {
+  std::filesystem::path path;
+};
+
+struct Shader {
+  std::filesystem::path path;
+};
+
+struct Subpass {
+  std::string name;
+  std::vector<u32> models;
+  std::unordered_map<std::string, u32> shaders;
+};
+
+struct Pass {
+  std::string name;
+  std::vector<u32> subpasses;
+};
+
+struct FrameGraph {
+  std::vector<u32> passes;
+};
+
+}  // namespace cfg
+
 class Config {
  public:
   Config();
 
   void Tick();
 
-  const std::filesystem::path& GetModelPath() const;
-  const std::filesystem::path& GetShaderPath() const;
+  const std::vector<cfg::Model>& GetModels() const;
+  const std::vector<cfg::Shader>& GetShaders() const;
+  const std::vector<cfg::Subpass>& GetSubpasss() const;
+  const std::vector<cfg::Pass>& GetPasss() const;
+  const std::vector<cfg::FrameGraph>& GetFrameGraphs() const;
+  u32 GetFrameGraph() const;
+
   bool GetEditorMode() const;
   void SetEditorMode(bool editor_mode);
 
  private:
-  std::filesystem::path root_path_{ReplacePathSlash(LUKA_ROOT_PATH)};
-  std::filesystem::path config_path_{root_path_ / "resource" / "config" /
-                                     "config.json"};
-  std::filesystem::path asset_path_{root_path_ / "resource" / "asset"};
+  std::filesystem::path resource_path_{GetPath(LUKA_ROOT_PATH) / "resource"};
+  std::filesystem::path config_path_{resource_path_ / "config" / "config.json"};
+  std::filesystem::path asset_path_{resource_path_ / "asset"};
+  std::filesystem::path model_path_{asset_path_ / "model"};
+  std::filesystem::path shader_path_{asset_path_ / "shader"};
 
   json config_json_;
+  std::vector<cfg::Model> models_;
+  std::vector<cfg::Shader> shaders_;
+  std::vector<cfg::Subpass> subpasses_;
+  std::vector<cfg::Pass> passes_;
+  std::vector<cfg::FrameGraph> frame_graphs_;
+  u32 frame_graph_;
 
-  std::filesystem::path model_path_;
-  std::filesystem::path shader_path_;
   bool editor_mode_{true};
 };
 

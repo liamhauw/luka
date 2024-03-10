@@ -11,14 +11,15 @@
 
 namespace luka {
 
-std::string ReplacePathSlash(const std::string& str) {
-  std::string res{str};
+std::filesystem::path GetPath(const std::string& path) {
+  std::string res{path};
   if (PATH_SEPARATOR == '/') {
     std::replace(res.begin(), res.end(), '\\', '/');
   } else {
     std::replace(res.begin(), res.end(), '/', '\\');
   }
-  return res;
+
+  return std::filesystem::path{res};
 }
 
 std::vector<u8> LoadBinary(const std::filesystem::path& binary_path) {

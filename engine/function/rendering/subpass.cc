@@ -130,7 +130,7 @@ const vk::raii::Pipeline& Subpass::RequestPipeline(
 
   vk::PipelineCacheCreateInfo pipeline_cache_ci;
 
-  std::filesystem::path root_path{ReplacePathSlash(LUKA_ROOT_PATH)};
+  std::filesystem::path root_path{GetPath(LUKA_ROOT_PATH)};
   std::filesystem::path cache_path{root_path / "cache"};
   std::filesystem::path pipeline_cache_file{
       cache_path / (std::to_string(hash_value) + ".pipeline_cache")};

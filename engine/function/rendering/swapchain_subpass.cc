@@ -141,10 +141,9 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
     THROW("There is no position buffer.");
   }
 
-  const luka::AssetInfo& asset_info{asset_->GetAssetInfo()};
-  const SPIRV& vert_spirv{RequesetSpirv(asset_info.vertex, shader_processes,
+  const SPIRV& vert_spirv{RequesetSpirv(asset_->GetVertexShader(), shader_processes,
                                         vk::ShaderStageFlagBits::eVertex)};
-  const SPIRV& frag_spirv{RequesetSpirv(asset_info.fragment, shader_processes,
+  const SPIRV& frag_spirv{RequesetSpirv(asset_->GetFragmentShader(), shader_processes,
                                         vk::ShaderStageFlagBits::eFragment)};
 
   // Pipeline layout.

@@ -26,7 +26,7 @@ void HashCombine(u64& seed, const T& value) {
   seed ^= hasher(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
-std::string ReplacePathSlash(const std::string& str);
+std::filesystem::path GetPath(const std::string& str);
 
 std::vector<u8> LoadBinary(const std::filesystem::path& binary_path);
 
