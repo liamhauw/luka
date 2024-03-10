@@ -18,10 +18,12 @@ Asset::Asset(std::shared_ptr<Config> config, std::shared_ptr<Gpu> gpu)
 
   for (const auto& cfg_scene : cfg_scenes) {
     ast::Scene scene{gpu_, cfg_scene};
+    scenes_.push_back(std::move(scene));
   }
 
   for (const auto& cfg_shader : cfg_shaders) {
     ast::Shader shader{cfg_shader};
+    shaders_.push_back(std::move(shader));
   }
 }
 

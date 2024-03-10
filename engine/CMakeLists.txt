@@ -26,7 +26,6 @@ set(HEADER_FILES
   resource/asset/scene_component/component.h
   resource/asset/scene_component/image.h
   resource/asset/scene_component/light.h
-  resource/asset/scene_component/map.h
   resource/asset/scene_component/material.h
   resource/asset/scene_component/mesh.h
   resource/asset/scene_component/node.h
@@ -80,7 +79,6 @@ set(SOURCE_FILES
   resource/asset/scene_component/component.cc
   resource/asset/scene_component/image.cc
   resource/asset/scene_component/light.cc
-  resource/asset/scene_component/map.cc
   resource/asset/scene_component/material.cc
   resource/asset/scene_component/mesh.cc
   resource/asset/scene_component/node.cc
