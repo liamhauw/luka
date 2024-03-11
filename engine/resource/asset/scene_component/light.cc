@@ -24,14 +24,14 @@ Light::Light(LightType type, glm::vec3 direction, glm::vec3 color,
       inner_cone_angle_{inner_cone_angle},
       outer_cone_angle_{outer_cone_angle} {}
 
-Light::Light(const tinygltf::Value& model_light)
-    : Component{model_light.Has("name")
-                    ? model_light.Get("name").Get<std::string>()
+Light::Light(const tinygltf::Value& tinygltf_light)
+    : Component{tinygltf_light.Has("name")
+                    ? tinygltf_light.Get("name").Get<std::string>()
                     : ""} {
-  if (!model_light.Has("type")) {
+  if (!tinygltf_light.Has("type")) {
     THROW("Light doesn't have type.");
   }
-  const std::string& type{model_light.Get("type").Get<std::string>()};
+  const std::string& type{tinygltf_light.Get("type").Get<std::string>()};
   if (type == "directional") {
     type_ = LightType::kDirectional;
   } else if (type == "point") {
@@ -42,33 +42,33 @@ Light::Light(const tinygltf::Value& model_light)
     THROW("Unkonwn light type.");
   }
 
-  if (model_light.Has("color")) {
-    color_ =
-        glm::vec3(static_cast<f32>(model_light.Get("color").Get(0).Get<f64>()),
-                  static_cast<f32>(model_light.Get("color").Get(1).Get<f64>()),
-                  static_cast<f32>(model_light.Get("color").Get(2).Get<f64>()));
+  if (tinygltf_light.Has("color")) {
+    color_ = glm::vec3(
+        static_cast<f32>(tinygltf_light.Get("color").Get(0).Get<f64>()),
+        static_cast<f32>(tinygltf_light.Get("color").Get(1).Get<f64>()),
+        static_cast<f32>(tinygltf_light.Get("color").Get(2).Get<f64>()));
   }
 
-  if (model_light.Has("intensity")) {
-    intensity_ = static_cast<f32>(model_light.Get("intensity").Get<f64>());
+  if (tinygltf_light.Has("intensity")) {
+    intensity_ = static_cast<f32>(tinygltf_light.Get("intensity").Get<f64>());
   }
 
   if (type_ == LightType::kPoint || type_ == LightType::kSpot) {
-    range_ = static_cast<f32>(model_light.Get("range").Get<f64>());
+    range_ = static_cast<f32>(tinygltf_light.Get("range").Get<f64>());
   }
 
   if (type_ == LightType::kSpot) {
-    if (!model_light.Has("spot")) {
+    if (!tinygltf_light.Has("spot")) {
       THROW("Spot light doesn't have spot ");
     }
-    if (model_light.Get("spot").Has("innerConeAngle")) {
+    if (tinygltf_light.Get("spot").Has("innerConeAngle")) {
       inner_cone_angle_ = static_cast<f32>(
-          model_light.Get("spot").Get("innerConeAngle").Get<f64>());
+          tinygltf_light.Get("spot").Get("innerConeAngle").Get<f64>());
     }
 
-    if (model_light.Get("spot").Has("outerConeAngle")) {
+    if (tinygltf_light.Get("spot").Has("outerConeAngle")) {
       outer_cone_angle_ = static_cast<f32>(
-          model_light.Get("spot").Get("outerConeAngle").Get<f64>());
+          tinygltf_light.Get("spot").Get("outerConeAngle").Get<f64>());
     }
   }
 }

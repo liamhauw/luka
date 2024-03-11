@@ -22,7 +22,7 @@ class Camera : public Component {
  public:
   Camera(CameraType type, f32 aspect_ratioF, f32 yfov, f32 znear, f32 zfar,
          const std::string& name = {});
-  Camera(const tinygltf::Camera& model_camera);
+  Camera(const tinygltf::Camera& tinygltf_camera);
 
   virtual ~Camera() = default;
   std::type_index GetType() override;

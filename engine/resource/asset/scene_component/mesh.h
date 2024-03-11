@@ -57,7 +57,7 @@ class Mesh : public Component {
   Mesh(std::shared_ptr<Gpu> gpu,
        const std::vector<Material*> material_components,
        const std::vector<Accessor*> accessor_components,
-       const tinygltf::Mesh& model_mesh,
+       const tinygltf::Mesh& tinygltf_mesh,
        const vk::raii::CommandBuffer& command_buffer,
        std::vector<gpu::Buffer>& staging_buffers);
 

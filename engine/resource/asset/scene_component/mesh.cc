@@ -19,18 +19,18 @@ Mesh::Mesh(std::vector<Primitive>&& primitives, const std::string& name)
 Mesh::Mesh(std::shared_ptr<Gpu> gpu,
            const std::vector<Material*> material_components,
            const std::vector<Accessor*> accessor_components,
-           const tinygltf::Mesh& model_mesh,
+           const tinygltf::Mesh& tinygltf_mesh,
            const vk::raii::CommandBuffer& command_buffer,
            std::vector<gpu::Buffer>& staging_buffers)
-    : Component{model_mesh.name} {
-  const std::vector<tinygltf::Primitive> model_primitives{
-      model_mesh.primitives};
+    : Component{tinygltf_mesh.name} {
+  const std::vector<tinygltf::Primitive> tinygltf_primitives{
+      tinygltf_mesh.primitives};
 
-  for (const auto& model_primitive : model_primitives) {
+  for (const auto& tinygltf_primitive : tinygltf_primitives) {
     Primitive primitive;
 
     // Vertex.
-    for (const auto& attribute : model_primitive.attributes) {
+    for (const auto& attribute : tinygltf_primitive.attributes) {
       const std::string& attribute_name{attribute.first};
       u32 attribute_accessor_index{static_cast<u32>(attribute.second)};
       Accessor* accessor{accessor_components[attribute_accessor_index]};
@@ -65,10 +65,11 @@ Mesh::Mesh(std::shared_ptr<Gpu> gpu,
     }
 
     // Index.
-    if (model_primitive.indices != -1) {
+    if (tinygltf_primitive.indices != -1) {
       primitive.has_index = true;
 
-      u32 attribute_accessor_index{static_cast<u32>(model_primitive.indices)};
+      u32 attribute_accessor_index{
+          static_cast<u32>(tinygltf_primitive.indices)};
       Accessor* accessor{accessor_components[attribute_accessor_index]};
 
       auto accessor_buffer{accessor->GetBuffer()};
@@ -116,8 +117,8 @@ Mesh::Mesh(std::shared_ptr<Gpu> gpu,
     }
 
     // Material.
-    if (model_primitive.material != -1) {
-      primitive.material = material_components[model_primitive.material];
+    if (tinygltf_primitive.material != -1) {
+      primitive.material = material_components[tinygltf_primitive.material];
     } else {
       primitive.material = material_components.back();
     }

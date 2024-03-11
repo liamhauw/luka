@@ -13,8 +13,9 @@ namespace luka {
 
 namespace ast::sc {
 
-Node::Node(glm::mat4&& model_matrix, Mesh* mesh, Light* light, Camera* camera,
-           const std::vector<i32>& child_indices, const std::string& name)
+Node::Node(glm::mat4&& model_matrix, Mesh* mesh, Light* light,
+           Camera* camera, const std::vector<i32>& child_indices,
+           const std::string& name)
     : Component{name},
       model_matrix_{std::move(model_matrix)},
       mesh_{mesh},
@@ -25,60 +26,61 @@ Node::Node(glm::mat4&& model_matrix, Mesh* mesh, Light* light, Camera* camera,
 Node::Node(const std::vector<Light*>& light_components,
            const std::vector<Camera*>& camera_components,
            const std::vector<Mesh*>& mesh_components,
-           const tinygltf::Node& model_node)
-    : Component{model_node.name} {
+           const tinygltf::Node& tinygltf_node)
+    : Component{tinygltf_node.name} {
   // Matrix.
   model_matrix_ = glm::mat4{1.0F};
 
-  if (!model_node.matrix.empty()) {
-    std::transform(model_node.matrix.begin(), model_node.matrix.end(),
+  if (!tinygltf_node.matrix.empty()) {
+    std::transform(tinygltf_node.matrix.begin(), tinygltf_node.matrix.end(),
                    glm::value_ptr(model_matrix_), TypeCast<f64, f32>{});
   } else {
     glm::vec3 scale{1.0F, 1.0F, 1.0F};
     glm::quat rotation{1.0F, 0.0F, 0.0F, 0.0F};
     glm::vec3 translation{0.0F, 0.0F, 0.0F};
 
-    if (!model_node.scale.empty()) {
-      std::transform(model_node.scale.begin(), model_node.scale.end(),
+    if (!tinygltf_node.scale.empty()) {
+      std::transform(tinygltf_node.scale.begin(), tinygltf_node.scale.end(),
                      glm::value_ptr(scale), TypeCast<f64, f32>{});
     }
-    if (!model_node.rotation.empty()) {
-      std::transform(model_node.rotation.begin(), model_node.rotation.end(),
-                     glm::value_ptr(rotation), TypeCast<f64, f32>{});
-    }
-    if (!model_node.translation.empty()) {
-      std::transform(model_node.translation.begin(),
-                     model_node.translation.end(), glm::value_ptr(translation),
+    if (!tinygltf_node.rotation.empty()) {
+      std::transform(tinygltf_node.rotation.begin(),
+                     tinygltf_node.rotation.end(), glm::value_ptr(rotation),
                      TypeCast<f64, f32>{});
+    }
+    if (!tinygltf_node.translation.empty()) {
+      std::transform(tinygltf_node.translation.begin(),
+                     tinygltf_node.translation.end(),
+                     glm::value_ptr(translation), TypeCast<f64, f32>{});
     }
 
     model_matrix_ = glm::translate(glm::mat4(1.0F), translation) *
-                    glm::mat4_cast(rotation) *
-                    glm::scale(glm::mat4(1.0F), scale);
+                       glm::mat4_cast(rotation) *
+                       glm::scale(glm::mat4(1.0F), scale);
   }
 
   // Mesh.
   mesh_ = nullptr;
-  if (model_node.mesh != -1) {
-    mesh_ = mesh_components[model_node.mesh];
+  if (tinygltf_node.mesh != -1) {
+    mesh_ = mesh_components[tinygltf_node.mesh];
   }
 
   // Light.
   light_ = nullptr;
-  auto light_iter{model_node.extensions.find(KHR_LIGHTS_PUNCTUAL_EXTENSION)};
-  if (light_iter != model_node.extensions.end()) {
+  auto light_iter{tinygltf_node.extensions.find(KHR_LIGHTS_PUNCTUAL_EXTENSION)};
+  if (light_iter != tinygltf_node.extensions.end()) {
     i32 light_index{light_iter->second.Get("light").Get<i32>()};
     light_ = light_components[light_index];
   }
 
   // Camera.
   camera_ = nullptr;
-  if (model_node.camera != -1) {
-    camera_ = camera_components[model_node.camera];
+  if (tinygltf_node.camera != -1) {
+    camera_ = camera_components[tinygltf_node.camera];
   }
 
   // Children.
-  child_indices_ = model_node.children;
+  child_indices_ = tinygltf_node.children;
 }
 
 std::type_index Node::GetType() { return typeid(Node); }

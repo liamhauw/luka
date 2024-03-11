@@ -15,10 +15,10 @@ Sampler::Sampler(vk::raii::Sampler&& sampler, const std::string& name)
     : Component{name}, sampler_{std::move(sampler)} {}
 
 Sampler::Sampler(std::shared_ptr<Gpu> gpu,
-                 const tinygltf::Sampler& model_sampler)
-    : Component{model_sampler.name} {
+                 const tinygltf::Sampler& tinygltf_sampler)
+    : Component{tinygltf_sampler.name} {
   vk::Filter mag_filter;
-  switch (model_sampler.minFilter) {
+  switch (tinygltf_sampler.minFilter) {
     case TINYGLTF_TEXTURE_FILTER_NEAREST:
       mag_filter = vk::Filter::eNearest;
       break;
@@ -30,7 +30,7 @@ Sampler::Sampler(std::shared_ptr<Gpu> gpu,
   }
 
   vk::Filter min_filter;
-  switch (model_sampler.minFilter) {
+  switch (tinygltf_sampler.minFilter) {
     case TINYGLTF_TEXTURE_FILTER_NEAREST:
     case TINYGLTF_TEXTURE_FILTER_NEAREST_MIPMAP_NEAREST:
     case TINYGLTF_TEXTURE_FILTER_NEAREST_MIPMAP_LINEAR:
@@ -46,7 +46,7 @@ Sampler::Sampler(std::shared_ptr<Gpu> gpu,
   }
 
   vk::SamplerMipmapMode mipmap_mode;
-  switch (model_sampler.minFilter) {
+  switch (tinygltf_sampler.minFilter) {
     case TINYGLTF_TEXTURE_FILTER_NEAREST_MIPMAP_NEAREST:
     case TINYGLTF_TEXTURE_FILTER_LINEAR_MIPMAP_NEAREST:
       mipmap_mode = vk::SamplerMipmapMode::eNearest;
@@ -60,7 +60,7 @@ Sampler::Sampler(std::shared_ptr<Gpu> gpu,
   }
 
   vk::SamplerAddressMode address_mode_u;
-  switch (model_sampler.wrapS) {
+  switch (tinygltf_sampler.wrapS) {
     case TINYGLTF_TEXTURE_WRAP_REPEAT:
       address_mode_u = vk::SamplerAddressMode::eRepeat;
       break;
@@ -75,7 +75,7 @@ Sampler::Sampler(std::shared_ptr<Gpu> gpu,
   }
 
   vk::SamplerAddressMode address_mode_v;
-  switch (model_sampler.wrapT) {
+  switch (tinygltf_sampler.wrapT) {
     case TINYGLTF_TEXTURE_WRAP_REPEAT:
       address_mode_v = vk::SamplerAddressMode::eRepeat;
       break;

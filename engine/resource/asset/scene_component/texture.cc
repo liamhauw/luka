@@ -16,16 +16,16 @@ Texture::Texture(Image* image, Sampler* sampler, const std::string& name)
 
 Texture::Texture(const std::vector<Image*>& image_components,
                  const std::vector<Sampler*>& sampler_components,
-                 const tinygltf::Texture& model_texture)
-    : Component{model_texture.name} {
-  if (model_texture.source != -1) {
-    image_ = image_components[model_texture.source];
+                 const tinygltf::Texture& tinygltf_texture)
+    : Component{tinygltf_texture.name} {
+  if (tinygltf_texture.source != -1) {
+    image_ = image_components[tinygltf_texture.source];
   } else {
     image_ = image_components.back();
   }
 
-  if (model_texture.sampler != -1) {
-    sampler_ = sampler_components[model_texture.sampler];
+  if (tinygltf_texture.sampler != -1) {
+    sampler_ = sampler_components[tinygltf_texture.sampler];
   } else {
     sampler_ = sampler_components.back();
   }

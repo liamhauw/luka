@@ -9,6 +9,8 @@
 #include "vk_mem_alloc.h"
 // clang-format on
 
+#include <tiny_gltf.h>
+
 #include "imgui_impl_vulkan.h"
 #include "resource/gpu/buffer.h"
 #include "resource/gpu/image.h"
@@ -35,12 +37,12 @@ class Gpu {
   gpu::Image CreateImage(const vk::ImageCreateInfo& image_ci,
                          const std::string& name = {});
 
-  //   gpu::Image CreateImage(const vk::ImageCreateInfo& image_ci,
-  //                          const vk::ImageLayout new_layout,
-  //                          const gpu::Buffer& staging_buffer,
-  //                          const vk::raii::CommandBuffer& command_buffer,
-  //                          const ast::Image1& asset_image,
-  //                          const std::string& name = {});
+  gpu::Image CreateImage(const vk::ImageCreateInfo& image_ci,
+                         const vk::ImageLayout new_layout,
+                         const gpu::Buffer& staging_buffer,
+                         const vk::raii::CommandBuffer& command_buffer,
+                         const tinygltf::Image& tinygltf_image,
+                         const std::string& name = {});
 
   vk::raii::ImageView CreateImageView(
       const vk::ImageViewCreateInfo& image_view_ci,

@@ -15,11 +15,11 @@ Scene::Scene(std::vector<Node*>&& nodes, const std::string& name)
     : Component{name}, nodes_{std::move(nodes)} {}
 
 Scene::Scene(const std::vector<Node*> node_components,
-             const tinygltf::Scene& model_scene)
-    : Component{model_scene.name} {
-  const std::vector<i32>& model_nodes{model_scene.nodes};
-  for (u32 i{0}; i < model_nodes.size(); ++i) {
-    Node* node{node_components[model_nodes[i]]};
+             const tinygltf::Scene& tinygltf_scene)
+    : Component{tinygltf_scene.name} {
+  const std::vector<i32>& tinygltf_nodes{tinygltf_scene.nodes};
+  for (u32 i{0}; i < tinygltf_nodes.size(); ++i) {
+    Node* node{node_components[tinygltf_nodes[i]]};
     nodes_.push_back(node);
   }
 }

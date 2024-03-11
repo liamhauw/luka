@@ -22,7 +22,7 @@ class BufferView : public Component {
              const std::string& name = {});
 
   BufferView(const std::vector<ast::sc::Buffer*>& buffer_components,
-             const tinygltf::BufferView& model_buffer_view);
+             const tinygltf::BufferView& tinygltf_buffer_view);
 
   virtual ~BufferView() = default;
   std::type_index GetType() override;

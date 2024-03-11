@@ -32,11 +32,11 @@ Material::Material(std::map<std::string, Texture*>&& textures,
       double_sided_{double_sided} {}
 
 Material::Material(const std::vector<Texture*> texture_components,
-                   const tinygltf::Material& model_material)
-    : Component{model_material.name} {
+                   const tinygltf::Material& tinygltf_material)
+    : Component{tinygltf_material.name} {
   // Pbr.
   const tinygltf::PbrMetallicRoughness& metallic_roughness{
-      model_material.pbrMetallicRoughness};
+      tinygltf_material.pbrMetallicRoughness};
 
   std::vector<f32> base_color_factor_fv{
       D2FVector(metallic_roughness.baseColorFactor)};
@@ -62,7 +62,7 @@ Material::Material(const std::vector<Texture*> texture_components,
   }
 
   // Normal.
-  const tinygltf::NormalTextureInfo& normal{model_material.normalTexture};
+  const tinygltf::NormalTextureInfo& normal{tinygltf_material.normalTexture};
 
   ast::sc::Texture* normal_texture;
   if (normal.index != -1) {
@@ -73,7 +73,7 @@ Material::Material(const std::vector<Texture*> texture_components,
 
   // Occlusion.
   const tinygltf::OcclusionTextureInfo& occlusion{
-      model_material.occlusionTexture};
+      tinygltf_material.occlusionTexture};
 
   ast::sc::Texture* occlusion_texture;
   if (occlusion.index != -1) {
@@ -84,17 +84,19 @@ Material::Material(const std::vector<Texture*> texture_components,
   strength_ = static_cast<f32>(occlusion.strength);
 
   // Emissive.
-  std::vector<f32> emissive_factor_fv{D2FVector(model_material.emissiveFactor)};
+  std::vector<f32> emissive_factor_fv{
+      D2FVector(tinygltf_material.emissiveFactor)};
   emissive_factor_ = glm::make_vec3(emissive_factor_fv.data());
 
   ast::sc::Texture* emissive_texture;
-  if (model_material.emissiveTexture.index != -1) {
-    emissive_texture = texture_components[model_material.emissiveTexture.index];
+  if (tinygltf_material.emissiveTexture.index != -1) {
+    emissive_texture =
+        texture_components[tinygltf_material.emissiveTexture.index];
     textures_.insert(std::make_pair("emissive_texture", emissive_texture));
   }
 
   // Others.
-  const std::string& alpha_mode_str{model_material.alphaMode};
+  const std::string& alpha_mode_str{tinygltf_material.alphaMode};
   if (alpha_mode_str == "OPAQUE") {
     alpha_mode_ = ast::sc::AlphaMode::kOpaque;
   } else if (alpha_mode_str == "MASK") {
@@ -105,9 +107,9 @@ Material::Material(const std::vector<Texture*> texture_components,
     THROW("Unsupported alpha mode");
   }
 
-  alpha_cutoff_ = static_cast<f32>(model_material.alphaCutoff);
+  alpha_cutoff_ = static_cast<f32>(tinygltf_material.alphaCutoff);
 
-  double_sided_ = model_material.doubleSided;
+  double_sided_ = tinygltf_material.doubleSided;
 }
 
 std::type_index Material::GetType() { return typeid(Material); }

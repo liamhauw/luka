@@ -16,15 +16,17 @@ namespace gpu {
 class Buffer {
  public:
   Buffer() = default;
-  Buffer(std::nullptr_t) {}
   Buffer(const VmaAllocator& allocator, const vk::BufferCreateInfo& buffer_ci,
          bool staging = false);
-  ~Buffer();
   Buffer(const Buffer&) = delete;
   Buffer(Buffer&& rhs) noexcept;
+
+  ~Buffer();
+
   Buffer& operator=(const Buffer&) = delete;
   Buffer& operator=(Buffer&& rhs) noexcept;
   const vk::Buffer& operator*() const noexcept;
+  
   void Clear() noexcept;
 
   void* Map();

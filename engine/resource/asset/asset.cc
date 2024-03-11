@@ -17,13 +17,11 @@ Asset::Asset(std::shared_ptr<Config> config, std::shared_ptr<Gpu> gpu)
   const std::vector<cfg::Shader> cfg_shaders{config_->GetShaders()};
 
   for (const auto& cfg_scene : cfg_scenes) {
-    ast::Scene scene{gpu_, cfg_scene};
-    scenes_.push_back(std::move(scene));
+    scenes_.emplace_back(gpu_, cfg_scene);
   }
 
   for (const auto& cfg_shader : cfg_shaders) {
-    ast::Shader shader{cfg_shader};
-    shaders_.push_back(std::move(shader));
+    shaders_.emplace_back(cfg_shader);
   }
 }
 

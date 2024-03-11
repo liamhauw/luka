@@ -26,7 +26,7 @@ class Light : public Component {
         f32 range, f32 inner_cone_angle, f32 outer_cone_angle,
         const std::string& name = {});
 
-  Light(const tinygltf::Value& model_light);
+  Light(const tinygltf::Value& tinygltf_light);
 
   virtual ~Light() = default;
   std::type_index GetType() override;

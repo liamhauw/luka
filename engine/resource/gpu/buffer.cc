@@ -28,20 +28,20 @@ Buffer::Buffer(const VmaAllocator& allocator,
   buffer_ = buffer;
 }
 
+Buffer::Buffer(Buffer&& rhs) noexcept
+    : allocator_{std::exchange(rhs.allocator_, {})},
+      buffer_{std::exchange(rhs.buffer_, {})},
+      allocation_{std::exchange(rhs.allocation_, {})},
+      mapped_data_{std::exchange(rhs.mapped_data_, nullptr)} {}
+
 Buffer::~Buffer() {
   Unmap();
   Clear();
 }
 
-Buffer::Buffer(Buffer&& rhs) noexcept
-    : allocator_{rhs.allocator_},
-      buffer_{std::exchange(rhs.buffer_, {})},
-      allocation_{std::exchange(rhs.allocation_, {})},
-      mapped_data_{std::exchange(rhs.mapped_data_, nullptr)} {}
-
 Buffer& Buffer::operator=(Buffer&& rhs) noexcept {
   if (this != &rhs) {
-    allocator_ = rhs.allocator_;
+    std::swap(allocator_, rhs.allocator_);
     std::swap(buffer_, rhs.buffer_);
     std::swap(allocation_, rhs.allocation_);
     std::swap(mapped_data_, rhs.mapped_data_);
@@ -52,7 +52,7 @@ Buffer& Buffer::operator=(Buffer&& rhs) noexcept {
 const vk::Buffer& Buffer::operator*() const noexcept { return buffer_; }
 
 void Buffer::Clear() noexcept {
-  if (buffer_) {
+  if (allocator_ && buffer_ && allocation_) {
     vmaDestroyBuffer(allocator_, static_cast<VkBuffer>(buffer_), allocation_);
   }
   allocator_ = nullptr;
@@ -62,7 +62,7 @@ void Buffer::Clear() noexcept {
 }
 
 void* Buffer::Map() {
-  if (!mapped_data_) {
+  if (allocator_ && allocation_ && !mapped_data_) {
     vmaMapMemory(allocator_, allocation_, &mapped_data_);
   }
 
@@ -70,7 +70,7 @@ void* Buffer::Map() {
 }
 
 void Buffer::Unmap() {
-  if (mapped_data_) {
+  if (allocator_ && mapped_data_) {
     vmaUnmapMemory(allocator_, allocation_);
     mapped_data_ = nullptr;
   }

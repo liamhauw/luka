@@ -35,6 +35,8 @@ class Scene {
 
   Scene(std::shared_ptr<Gpu> gpu, const cfg::Scene& cfg_scene);
 
+  Scene(Scene&& rhs);
+
   template <typename T>
   void AddComponent(std::unique_ptr<T>&& component) {
     std::unique_ptr<sc::Component> result{std::move(component)};
@@ -76,42 +78,44 @@ class Scene {
 
  private:
   void ParseExtensionsUsed(
-      const std::vector<std::string>& model_extensions_used);
+      const std::vector<std::string>& tinygltf_extensions_used);
 
-  void ParseLightComponents(const tinygltf::ExtensionMap& model_extension_map);
+  void ParseLightComponents(
+      const tinygltf::ExtensionMap& tinygltf_extension_map);
 
   void ParseCameraComponents(
-      const std::vector<tinygltf::Camera>& model_cameras);
+      const std::vector<tinygltf::Camera>& tinygltf_cameras);
 
   void ParseImageComponents(
       const std::vector<tinygltf::Image>& tinygltf_images);
 
   void ParseSamplerComponents(
-      const std::vector<tinygltf::Sampler>& model_samplers);
+      const std::vector<tinygltf::Sampler>& tinygltf_samplers);
 
   void ParseTextureComponents(
-      const std::vector<tinygltf::Texture>& model_textures);
+      const std::vector<tinygltf::Texture>& tinygltf_textures);
 
   void ParseMaterialComponents(
-      const std::vector<tinygltf::Material>& model_materials);
+      const std::vector<tinygltf::Material>& tinygltf_materials);
 
   void ParseBufferComponents(
-      const std::vector<tinygltf::Buffer>& model_buffers);
+      const std::vector<tinygltf::Buffer>& tinygltf_buffers);
 
   void ParseBufferViewComponents(
-      const std::vector<tinygltf::BufferView>& model_buffer_views);
+      const std::vector<tinygltf::BufferView>& tinygltf_buffer_views);
 
   void ParseAccessorComponents(
-      const std::vector<tinygltf::Accessor>& model_accessors);
+      const std::vector<tinygltf::Accessor>& tinygltf_accessors);
 
-  void ParseMeshComponents(const std::vector<tinygltf::Mesh>& model_meshs);
+  void ParseMeshComponents(const std::vector<tinygltf::Mesh>& tinygltf_meshs);
 
-  void ParseNodeComponents(const std::vector<tinygltf::Node>& model_nodes);
+  void ParseNodeComponents(const std::vector<tinygltf::Node>& tinygltf_nodes);
   void InitNodeChildren();
 
-  void ParseSceneComponents(const std::vector<tinygltf::Scene>& model_scenes);
+  void ParseSceneComponents(
+      const std::vector<tinygltf::Scene>& tinygltf_scenes);
 
-  void ParseDefaultScene(i32 model_default_scene);
+  void ParseDefaultScene(i32 tinygltf_default_scene);
 
   std::shared_ptr<Gpu> gpu_;
 

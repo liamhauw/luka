@@ -28,14 +28,14 @@ Accessor::Accessor(BufferView* buffer_view, u64 byte_offset, bool normalized,
 }
 
 Accessor::Accessor(const std::vector<BufferView*>& buffer_view_components,
-                   const tinygltf::Accessor& model_accessor)
-    : Component{model_accessor.name},
-      buffer_view_{buffer_view_components[model_accessor.bufferView]},
-      byte_offset_{model_accessor.byteOffset},
-      normalized_{model_accessor.normalized},
-      component_type_{static_cast<u32>(model_accessor.componentType)},
-      count_{model_accessor.count},
-      type_{static_cast<u32>(model_accessor.type)} {
+                   const tinygltf::Accessor& tinygltf_accessor)
+    : Component{tinygltf_accessor.name},
+      buffer_view_{buffer_view_components[tinygltf_accessor.bufferView]},
+      byte_offset_{tinygltf_accessor.byteOffset},
+      normalized_{tinygltf_accessor.normalized},
+      component_type_{static_cast<u32>(tinygltf_accessor.componentType)},
+      count_{tinygltf_accessor.count},
+      type_{static_cast<u32>(tinygltf_accessor.type)} {
   CalculateBufferData();
 }
 

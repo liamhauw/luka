@@ -81,97 +81,91 @@ gpu::Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
   return image;
 }
 
-// gpu::Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
-//                             const vk::ImageLayout new_layout,
-//                             const gpu::Buffer& staging_buffer,
-//                             const vk::raii::CommandBuffer& command_buffer,
-//                             const ast::Image1& asset_image,
-//                             const std::string& name) {
-//   gpu::Image image{allocator_, image_ci};
+gpu::Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
+                            const vk::ImageLayout new_layout,
+                            const gpu::Buffer& staging_buffer,
+                            const vk::raii::CommandBuffer& command_buffer,
+                            const tinygltf::Image& tinygltf_image,
+                            const std::string& name) {
+  gpu::Image image{allocator_, image_ci};
 
-// #ifndef NDEBUG
-//   SetObjectName(vk::ObjectType::eImage,
-//                 reinterpret_cast<u64>(static_cast<VkImage>(*image)), name,
-//                 "Image");
-// #endif
-//   vk::ImageAspectFlagBits flag_bits;
-//   if (image_ci.usage & vk::ImageUsageFlagBits::eDepthStencilAttachment) {
-//     flag_bits = vk::ImageAspectFlagBits::eDepth;
-//   } else {
-//     flag_bits = vk::ImageAspectFlagBits::eColor;
-//   }
-//   if (*staging_buffer) {
-//     {
-//       vk::ImageMemoryBarrier barrier{{},
-//                                      vk::AccessFlagBits::eTransferWrite,
-//                                      image_ci.initialLayout,
-//                                      vk::ImageLayout::eTransferDstOptimal,
-//                                      VK_QUEUE_FAMILY_IGNORED,
-//                                      VK_QUEUE_FAMILY_IGNORED,
-//                                      *image,
-//                                      {flag_bits, 0, VK_REMAINING_MIP_LEVELS,
-//                                      0,
-//                                       VK_REMAINING_ARRAY_LAYERS}};
+#ifndef NDEBUG
+  SetObjectName(vk::ObjectType::eImage,
+                reinterpret_cast<u64>(static_cast<VkImage>(*image)), name,
+                "Image");
+#endif
+  vk::ImageAspectFlagBits flag_bits;
+  if (image_ci.usage & vk::ImageUsageFlagBits::eDepthStencilAttachment) {
+    flag_bits = vk::ImageAspectFlagBits::eDepth;
+  } else {
+    flag_bits = vk::ImageAspectFlagBits::eColor;
+  }
+  if (*staging_buffer) {
+    {
+      vk::ImageMemoryBarrier barrier{{},
+                                     vk::AccessFlagBits::eTransferWrite,
+                                     image_ci.initialLayout,
+                                     vk::ImageLayout::eTransferDstOptimal,
+                                     VK_QUEUE_FAMILY_IGNORED,
+                                     VK_QUEUE_FAMILY_IGNORED,
+                                     *image,
+                                     {flag_bits, 0, VK_REMAINING_MIP_LEVELS, 0,
+                                      VK_REMAINING_ARRAY_LAYERS}};
 
-//       command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe,
-//                                      vk::PipelineStageFlagBits::eTransfer,
-//                                      {},
-//                                      {}, {}, barrier);
-//     }
+      command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe,
+                                     vk::PipelineStageFlagBits::eTransfer, {},
+                                     {}, {}, barrier);
+    }
 
-//     {
-//       const std::vector<vk::Extent3D>& mipmap_extents{
-//           asset_image.GetMipmapExtents()};
-//       u32 layer_count{asset_image.GetLayerCount()};
-//       const auto& offsets{asset_image.GetOffsets()};
+    {
+      const std::vector<vk::Extent3D>& mipmap_extents{
+          {static_cast<u32>(tinygltf_image.width),
+           static_cast<u32>(tinygltf_image.height), 1}};
+      u32 layer_count{1};
 
-//       std::vector<vk::BufferImageCopy> buffer_image_copys;
-//       for (u32 i{0}; i < layer_count; ++i) {
-//         vk::BufferImageCopy buffer_image_copy{
-//             offsets.empty() ? 0 : offsets[i][0][0], {}, {},
-//             {flag_bits, i, 0, layer_count},         {}, mipmap_extents[i]};
-//         buffer_image_copys.push_back(buffer_image_copy);
-//       }
-//       command_buffer.copyBufferToImage(*staging_buffer, *image,
-//                                        vk::ImageLayout::eTransferDstOptimal,
-//                                        buffer_image_copys);
-//     }
+      std::vector<vk::BufferImageCopy> buffer_image_copys;
+      for (u32 i{0}; i < layer_count; ++i) {
+        vk::BufferImageCopy buffer_image_copy{
+            0, {}, {}, {flag_bits, i, 0, layer_count}, {}, mipmap_extents[i]};
+        buffer_image_copys.push_back(buffer_image_copy);
+      }
+      command_buffer.copyBufferToImage(*staging_buffer, *image,
+                                       vk::ImageLayout::eTransferDstOptimal,
+                                       buffer_image_copys);
+    }
 
-//     {
-//       vk::ImageMemoryBarrier barrier{vk::AccessFlagBits::eTransferWrite,
-//                                      vk::AccessFlagBits::eShaderRead,
-//                                      vk::ImageLayout::eTransferDstOptimal,
-//                                      new_layout,
-//                                      VK_QUEUE_FAMILY_IGNORED,
-//                                      VK_QUEUE_FAMILY_IGNORED,
-//                                      *image,
-//                                      {flag_bits, 0, VK_REMAINING_MIP_LEVELS,
-//                                      0,
-//                                       VK_REMAINING_ARRAY_LAYERS}};
-//       command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
-//                                      vk::PipelineStageFlagBits::eAllCommands,
-//                                      {}, {}, {}, barrier);
-//     }
+    {
+      vk::ImageMemoryBarrier barrier{vk::AccessFlagBits::eTransferWrite,
+                                     vk::AccessFlagBits::eShaderRead,
+                                     vk::ImageLayout::eTransferDstOptimal,
+                                     new_layout,
+                                     VK_QUEUE_FAMILY_IGNORED,
+                                     VK_QUEUE_FAMILY_IGNORED,
+                                     *image,
+                                     {flag_bits, 0, VK_REMAINING_MIP_LEVELS, 0,
+                                      VK_REMAINING_ARRAY_LAYERS}};
+      command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
+                                     vk::PipelineStageFlagBits::eAllCommands,
+                                     {}, {}, {}, barrier);
+    }
 
-//   } else if (*command_buffer) {
-//     vk::ImageMemoryBarrier barrier{
-//         {},
-//         vk::AccessFlagBits::eShaderRead,
-//         image_ci.initialLayout,
-//         new_layout,
-//         VK_QUEUE_FAMILY_IGNORED,
-//         VK_QUEUE_FAMILY_IGNORED,
-//         *image,
-//         {flag_bits, 0, VK_REMAINING_MIP_LEVELS, 0,
-//         VK_REMAINING_ARRAY_LAYERS}};
-//     command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe,
-//                                    vk::PipelineStageFlagBits::eAllCommands,
-//                                    {},
-//                                    {}, {}, barrier);
-//   }
+  } else if (*command_buffer) {
+    vk::ImageMemoryBarrier barrier{
+        {},
+        vk::AccessFlagBits::eShaderRead,
+        image_ci.initialLayout,
+        new_layout,
+        VK_QUEUE_FAMILY_IGNORED,
+        VK_QUEUE_FAMILY_IGNORED,
+        *image,
+        {flag_bits, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS}};
+    command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe,
+                                   vk::PipelineStageFlagBits::eAllCommands, {},
+                                   {}, {}, barrier);
+  }
 
-//   return image;
-// }
+  return image;
+}
 
 vk::raii::ImageView Gpu::CreateImageView(
     const vk::ImageViewCreateInfo& image_view_ci, const std::string& name) {

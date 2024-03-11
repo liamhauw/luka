@@ -19,7 +19,7 @@ class Buffer : public Component {
  public:
   Buffer(const std::vector<u8>* data, const std::string& name = {});
 
-  Buffer(const tinygltf::Buffer& model_buffer);
+  Buffer(const tinygltf::Buffer& tinygltf_buffer);
 
   virtual ~Buffer() = default;
   std::type_index GetType() override;

@@ -14,16 +14,18 @@ namespace luka {
 namespace gpu {
 class Image {
  public:
-  Image() = delete;
-  Image(std::nullptr_t) {}
+  Image() = default;
   Image(const VmaAllocator& allocator, const vk::ImageCreateInfo& image_ci);
   Image(vk::Image image);
-  ~Image();
   Image(const Image&) = delete;
   Image(Image&& rhs) noexcept;
+
+  ~Image();
+
   Image& operator=(const Image&) = delete;
   Image& operator=(Image&& rhs) noexcept;
   const vk::Image& operator*() const noexcept;
+
   void Clear() noexcept;
 
  private:

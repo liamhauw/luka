@@ -28,7 +28,7 @@ class Material : public Component {
            bool double_sided, const std::string& name = {});
 
   Material(const std::vector<Texture*> texture_components,
-           const tinygltf::Material& model_material);
+           const tinygltf::Material& tinygltf_material);
 
   virtual ~Material() = default;
   std::type_index GetType() override;

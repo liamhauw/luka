@@ -24,16 +24,16 @@ Image::Image(const VmaAllocator& allocator, const vk::ImageCreateInfo& image_ci)
 
 Image::Image(vk::Image image) : image_{image} {}
 
-Image::~Image() { Clear(); }
-
 Image::Image(Image&& rhs) noexcept
-    : allocator_{rhs.allocator_},
+    : allocator_{std::exchange(rhs.allocator_, {})},
       image_{std::exchange(rhs.image_, {})},
       allocation_{std::exchange(rhs.allocation_, {})} {}
 
+Image::~Image() { Clear(); }
+
 Image& Image::operator=(Image&& rhs) noexcept {
   if (this != &rhs) {
-    allocator_ = rhs.allocator_;
+    std::swap(allocator_, rhs.allocator_);
     std::swap(image_, rhs.image_);
     std::swap(allocation_, rhs.allocation_);
   }
@@ -43,7 +43,7 @@ Image& Image::operator=(Image&& rhs) noexcept {
 const vk::Image& Image::operator*() const noexcept { return image_; }
 
 void Image::Clear() noexcept {
-  if (allocator_) {
+  if (allocator_ && image_ && allocation_) {
     vmaDestroyImage(allocator_, static_cast<VkImage>(image_), allocation_);
   }
   allocator_ = nullptr;

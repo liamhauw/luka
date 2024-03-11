@@ -21,7 +21,7 @@ class Texture : public Component {
 
   Texture(const std::vector<Image*>& image_components,
           const std::vector<Sampler*>& sampler_components,
-          const tinygltf::Texture& model_texture);
+          const tinygltf::Texture& tinygltf_texture);
 
   virtual ~Texture() = default;
   std::type_index GetType() override;

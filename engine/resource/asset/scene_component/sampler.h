@@ -9,8 +9,8 @@
 
 #include <tiny_gltf.h>
 
-#include "resource/gpu/gpu.h"
 #include "resource/asset/scene_component/component.h"
+#include "resource/gpu/gpu.h"
 
 namespace luka {
 
@@ -18,9 +18,9 @@ namespace ast::sc {
 
 class Sampler : public Component {
  public:
-  Sampler(vk::raii::Sampler&& sampler,const std::string& name = {});
+  Sampler(vk::raii::Sampler&& sampler, const std::string& name = {});
 
-  Sampler(std::shared_ptr<Gpu> gpu, const tinygltf::Sampler& model_sampler);
+  Sampler(std::shared_ptr<Gpu> gpu, const tinygltf::Sampler& tinygltf_sampler);
 
   virtual ~Sampler() = default;
   std::type_index GetType() override;

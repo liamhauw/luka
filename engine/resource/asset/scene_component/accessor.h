@@ -24,7 +24,7 @@ class Accessor : public Component {
            const std::string& name = {});
 
   Accessor(const std::vector<BufferView*>& buffer_view_components,
-           const tinygltf::Accessor& model_accessor);
+           const tinygltf::Accessor& tinygltf_accessor);
 
   virtual ~Accessor() = default;
   std::type_index GetType() override;

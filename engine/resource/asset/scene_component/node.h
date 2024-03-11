@@ -21,13 +21,13 @@ namespace ast::sc {
 
 class Node : public Component {
  public:
-  Node(glm::mat4&& model_matrix, Mesh* mesh, Light* light, Camera* camera,
+  Node(glm::mat4&& tinygltf_matrix, Mesh* mesh, Light* light, Camera* camera,
        const std::vector<i32>& child_indices, const std::string& name = {});
 
   Node(const std::vector<Light*>& light_components,
        const std::vector<Camera*>& camera_components,
        const std::vector<Mesh*>& mesh_components,
-       const tinygltf::Node& model_node);
+       const tinygltf::Node& tinygltf_node);
 
   virtual ~Node() = default;
   std::type_index GetType() override;

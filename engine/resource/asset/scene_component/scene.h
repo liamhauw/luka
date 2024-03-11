@@ -21,7 +21,7 @@ class Scene : public Component {
   Scene(std::vector<Node*>&& nodes, const std::string& name = {});
 
   Scene(const std::vector<Node*> node_components,
-        const tinygltf::Scene& model_scene);
+        const tinygltf::Scene& tinygltf_scene);
 
   virtual ~Scene() = default;
   std::type_index GetType() override;
