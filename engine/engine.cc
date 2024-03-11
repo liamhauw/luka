@@ -38,6 +38,8 @@ void Engine::Run() {
     // function_ui_->Tick();
     // editor_input_->Tick();
     // editor_ui_->Tick();
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
 }
 
