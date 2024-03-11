@@ -178,7 +178,8 @@ void Scene::ParseCameraComponents(
 
 void Scene::ParseImageComponents(
     const std::vector<tinygltf::Image>& tinygltf_images) {
-  const vk::raii::CommandBuffer& command_buffer{gpu_->BeginTempCommandBuffer()};
+  const vk::raii::CommandBuffer& command_buffer{
+      gpu_->BeginTransferCommandBuffer()};
 
   u64 tinygltf_image_count{tinygltf_images.size()};
 
@@ -204,7 +205,7 @@ void Scene::ParseImageComponents(
       gpu_, default_tinygltf_image, command_buffer, staging_buffers)};
   AddComponent(std::move(default_image_component));
 
-  gpu_->EndTempCommandBuffer(command_buffer);
+  gpu_->EndTransferCommandBuffer(command_buffer);
 }
 
 void Scene::ParseSamplerComponents(
@@ -300,7 +301,8 @@ void Scene::ParseMeshComponents(
   auto material_components{GetComponents<sc::Material>()};
   auto accessor_components{GetComponents<sc::Accessor>()};
 
-  const vk::raii::CommandBuffer& command_buffer{gpu_->BeginTempCommandBuffer()};
+  const vk::raii::CommandBuffer& command_buffer{
+      gpu_->BeginTransferCommandBuffer()};
 
   std::vector<gpu::Buffer> staging_buffers;
 
@@ -311,7 +313,7 @@ void Scene::ParseMeshComponents(
     AddComponent(std::move(mesh_component));
   }
 
-  gpu_->EndTempCommandBuffer(command_buffer);
+  gpu_->EndTransferCommandBuffer(command_buffer);
 }
 
 void Scene::ParseNodeComponents(

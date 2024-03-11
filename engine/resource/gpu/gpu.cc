@@ -18,7 +18,7 @@ Gpu::Gpu(std::shared_ptr<Window> window) : window_{window} {
   CreatePhysicalDevice();
   CreateDevice();
   CreateAllocator();
-  CreateCommandObjects();
+  CreateTransferCommandObjects();
   CreateDescriptorPool();
 }
 
@@ -418,8 +418,8 @@ void Gpu::ResetFence(const vk::raii::Fence& fence) {
   device_.resetFences(*fence);
 }
 
-const vk::raii::CommandBuffer& Gpu::BeginTempCommandBuffer() {
-  const vk::raii::CommandBuffer& command_buffer{command_buffers_[0]};
+const vk::raii::CommandBuffer& Gpu::BeginTransferCommandBuffer() {
+  const vk::raii::CommandBuffer& command_buffer{transfer_command_buffers_[0]};
 
   vk::CommandBufferBeginInfo command_buffer_begin_info{
       vk::CommandBufferUsageFlagBits::eOneTimeSubmit};
@@ -427,11 +427,12 @@ const vk::raii::CommandBuffer& Gpu::BeginTempCommandBuffer() {
   return command_buffer;
 }
 
-void Gpu::EndTempCommandBuffer(const vk::raii::CommandBuffer& command_buffer) {
+void Gpu::EndTransferCommandBuffer(
+    const vk::raii::CommandBuffer& command_buffer) {
   command_buffer.end();
   vk::SubmitInfo submit_info{nullptr, nullptr, *command_buffer};
-  graphics_queue_.submit(submit_info, nullptr);
-  graphics_queue_.waitIdle();
+  transfer_queue_.submit(submit_info, nullptr);
+  transfer_queue_.waitIdle();
 }
 
 void Gpu::WaitIdle() { device_.waitIdle(); }
@@ -644,9 +645,11 @@ void Gpu::CreateDevice() {
   for (const auto& queue_famliy_propertie : queue_family_properties) {
     if ((queue_famliy_propertie.queueFlags & vk::QueueFlagBits::eGraphics) &&
         (queue_famliy_propertie.queueFlags & vk::QueueFlagBits::eCompute) &&
+        (queue_famliy_propertie.queueFlags & vk::QueueFlagBits::eTransfer) &&
         physical_device_.getSurfaceSupportKHR(i, *surface_)) {
       graphics_queue_index_ = i;
       compute_queue_index_ = i;
+      transfer_queue_index_ = i;
       present_queue_index_ = i;
       break;
     }
@@ -662,11 +665,15 @@ void Gpu::CreateDevice() {
       if (queue_famliy_propertie.queueFlags & vk::QueueFlagBits::eCompute) {
         compute_queue_index_ = i;
       }
+      if (queue_famliy_propertie.queueFlags & vk::QueueFlagBits::eTransfer) {
+        transfer_queue_index_ = i;
+      }
       if (physical_device_.getSurfaceSupportKHR(i, *surface_)) {
         present_queue_index_ = i;
       }
       if (graphics_queue_index_.has_value() &&
           compute_queue_index_.has_value() &&
+          transfer_queue_index_.has_value() &&
           present_queue_index_.has_value()) {
         break;
       }
@@ -675,14 +682,15 @@ void Gpu::CreateDevice() {
   }
 
   if (!(graphics_queue_index_.has_value() && compute_queue_index_.has_value() &&
+        transfer_queue_index_.has_value() &&
         present_queue_index_.has_value())) {
     THROW("Fail to find queue family.");
   }
 
   std::vector<vk::DeviceQueueCreateInfo> device_queue_cis;
-  std::set<u32> queue_family_indexes{graphics_queue_index_.value(),
-                                     compute_queue_index_.value(),
-                                     present_queue_index_.value()};
+  std::set<u32> queue_family_indexes{
+      graphics_queue_index_.value(), compute_queue_index_.value(),
+      transfer_queue_index_.value(), present_queue_index_.value()};
 
   f32 queue_priority{0.0F};
   for (u32 queue_family_index : queue_family_indexes) {
@@ -735,6 +743,7 @@ void Gpu::CreateDevice() {
   // Create queue.
   graphics_queue_ = vk::raii::Queue{device_, graphics_queue_index_.value(), 0};
   compute_queue_ = vk::raii::Queue{device_, compute_queue_index_.value(), 0};
+  transfer_queue_ = vk::raii::Queue{device_, transfer_queue_index_.value(), 0};
   present_queue_ = vk::raii::Queue{device_, present_queue_index_.value(), 0};
 }
 
@@ -749,17 +758,18 @@ void Gpu::CreateAllocator() {
   vmaCreateAllocator(&allocator_ci, &allocator_);
 }
 
-void Gpu::CreateCommandObjects() {
+void Gpu::CreateTransferCommandObjects() {
   vk::CommandPoolCreateInfo command_pool_ci{
       vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-      graphics_queue_index_.value()};
+      transfer_queue_index_.value()};
 
-  command_pool_ = vk::raii::CommandPool{device_, command_pool_ci};
+  transfer_command_pool_ = vk::raii::CommandPool{device_, command_pool_ci};
 
   vk::CommandBufferAllocateInfo command_buffer_allocate_info{
-      *command_pool_, vk::CommandBufferLevel::ePrimary, kCommandBufferCount};
+      *transfer_command_pool_, vk::CommandBufferLevel::ePrimary,
+      kTransferCommandBufferCount};
 
-  command_buffers_ =
+  transfer_command_buffers_ =
       vk::raii::CommandBuffers{device_, command_buffer_allocate_info};
 }
 

@@ -25,11 +25,11 @@ void AssetAsync::Load() {
   }
 }
 
-const ast::Shader& AssetAsync::GetShader(u32 index) {
-  if (index >= shaders_.size()) {
+const ast::Scene& AssetAsync::GetScene(u32 index) {
+  if (index >= scenes_.size()) {
     THROW("Fail to get shader");
   }
-  return shaders_[index];
+  return scenes_[index];
 }
 
 const ast::Shader& AssetAsync::GetShader(u32 index) {

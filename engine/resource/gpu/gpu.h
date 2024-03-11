@@ -112,9 +112,9 @@ class Gpu {
 
   void ResetFence(const vk::raii::Fence& fence);
 
-  const vk::raii::CommandBuffer& BeginTempCommandBuffer();
+  const vk::raii::CommandBuffer& BeginTransferCommandBuffer();
 
-  void EndTempCommandBuffer(const vk::raii::CommandBuffer& command_buffer);
+  void EndTransferCommandBuffer(const vk::raii::CommandBuffer& command_buffer);
 
   void WaitIdle();
 
@@ -146,7 +146,7 @@ class Gpu {
   void CreatePhysicalDevice();
   void CreateDevice();
   void CreateAllocator();
-  void CreateCommandObjects();
+  void CreateTransferCommandObjects();
   void CreateDescriptorPool();
 
   void SetObjectName(vk::ObjectType object_type, u64 handle,
@@ -174,17 +174,19 @@ class Gpu {
   f32 max_anisotropy_{0.0F};
   std::optional<u32> graphics_queue_index_;
   std::optional<u32> compute_queue_index_;
+  std::optional<u32> transfer_queue_index_;
   std::optional<u32> present_queue_index_;
   vk::raii::Device device_{nullptr};
   vk::raii::Queue graphics_queue_{nullptr};
   vk::raii::Queue compute_queue_{nullptr};
+  vk::raii::Queue transfer_queue_{nullptr};
   vk::raii::Queue present_queue_{nullptr};
 
   VmaAllocator allocator_;
 
-  const u32 kCommandBufferCount{1};
-  vk::raii::CommandPool command_pool_{nullptr};
-  vk::raii::CommandBuffers command_buffers_{nullptr};
+  const u32 kTransferCommandBufferCount{1};
+  vk::raii::CommandPool transfer_command_pool_{nullptr};
+  vk::raii::CommandBuffers transfer_command_buffers_{nullptr};
 
   vk::raii::DescriptorPool bindless_descriptor_pool_{nullptr};
   vk::raii::DescriptorPool normal_descriptor_pool_{nullptr};
