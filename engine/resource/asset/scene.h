@@ -22,7 +22,6 @@
 #include "resource/asset/scene_component/sampler.h"
 #include "resource/asset/scene_component/scene.h"
 #include "resource/asset/scene_component/texture.h"
-#include "resource/config/config.h"
 #include "resource/gpu/gpu.h"
 
 namespace luka {
@@ -33,7 +32,7 @@ class Scene {
  public:
   Scene() = default;
 
-  Scene(std::shared_ptr<Gpu> gpu, const cfg::Scene& cfg_scene);
+  Scene(std::shared_ptr<Gpu> gpu, const std::filesystem::path& cfg_scene_path);
 
   Scene(Scene&& rhs);
 

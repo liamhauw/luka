@@ -3,8 +3,8 @@
 ## Features
 - Bindless rendering with descriptor indexing
 - Automating pipeline layout generation with spirv-cross
-- Improving load times with pipeline cache
-- Asynchronously load resources using a task-based multi-threading library
+- Improving load time with pipeline cache
+- Asynchronously load asset using a task-based multi-threading library
 
 ## Prerequisites
 - Windows/macOS

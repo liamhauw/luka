@@ -13,45 +13,15 @@
 
 namespace luka {
 
-namespace cfg {
-
-struct Scene {
-  std::filesystem::path path;
-};
-
-struct Shader {
-  std::filesystem::path path;
-};
-
-struct Subpass {
-  std::string name;
-  std::vector<u32> scenes;
-  std::unordered_map<std::string, u32> shaders;
-};
-
-struct Pass {
-  std::string name;
-  std::vector<u32> subpasses;
-};
-
-struct FrameGraph {
-  std::vector<u32> passes;
-};
-
-}  // namespace cfg
-
 class Config {
  public:
   Config();
 
   void Tick();
 
-  const std::vector<cfg::Scene>& GetScenes() const;
-  const std::vector<cfg::Shader>& GetShaders() const;
-  const std::vector<cfg::Subpass>& GetSubpasss() const;
-  const std::vector<cfg::Pass>& GetPasss() const;
-  const std::vector<cfg::FrameGraph>& GetFrameGraphs() const;
-  u32 GetFrameGraph() const;
+  const std::vector<std::filesystem::path>& GetScenePaths() const;
+  const std::vector<std::filesystem::path>& GetShaderPaths() const;
+  const std::vector<std::filesystem::path>& GetFrameGraphPaths() const;
 
   bool GetEditorMode() const;
   void SetEditorMode(bool editor_mode);
@@ -62,14 +32,12 @@ class Config {
   std::filesystem::path asset_path_{resource_path_ / "asset"};
   std::filesystem::path scene_path_{asset_path_ / "scene"};
   std::filesystem::path shader_path_{asset_path_ / "shader"};
+  std::filesystem::path frame_graph_path_{asset_path_ / "frame_graph"};
 
   json config_json_;
-  std::vector<cfg::Scene> scenes_;
-  std::vector<cfg::Shader> shaders_;
-  std::vector<cfg::Subpass> subpasses_;
-  std::vector<cfg::Pass> passes_;
-  std::vector<cfg::FrameGraph> frame_graphs_;
-  u32 frame_graph_;
+  std::vector<std::filesystem::path> scene_paths_;
+  std::vector<std::filesystem::path> shader_paths_;
+  std::vector<std::filesystem::path> frame_graph_paths_;
 
   bool editor_mode_{true};
 };

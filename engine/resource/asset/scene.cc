@@ -13,10 +13,11 @@ namespace luka {
 
 namespace ast {
 
-Scene::Scene(std::shared_ptr<Gpu> gpu, const cfg::Scene& cfg_scene)
+Scene::Scene(std::shared_ptr<Gpu> gpu,
+             const std::filesystem::path& cfg_scene_path)
     : gpu_{gpu} {
   tinygltf::Model tinygltf;
-  std::string extension{cfg_scene.path.extension().string()};
+  std::string extension{cfg_scene_path.extension().string()};
   if (extension != ".gltf") {
     THROW("Unsupported tinygltf format.");
   }
@@ -24,7 +25,7 @@ Scene::Scene(std::shared_ptr<Gpu> gpu, const cfg::Scene& cfg_scene)
   std::string error;
   std::string warning;
   bool result{tg.LoadASCIIFromFile(&tinygltf, &error, &warning,
-                                   cfg_scene.path.string())};
+                                   cfg_scene_path.string())};
   if (!warning.empty()) {
     LOGW("Tinygltf: {}.", warning);
   }
@@ -32,7 +33,7 @@ Scene::Scene(std::shared_ptr<Gpu> gpu, const cfg::Scene& cfg_scene)
     LOGE("Tinygltf: {}.", error);
   }
   if (!result) {
-    THROW("Fail to load {}.", cfg_scene.path.string());
+    THROW("Fail to load {}.", cfg_scene_path.string());
   }
 
   ParseExtensionsUsed(tinygltf.extensionsUsed);

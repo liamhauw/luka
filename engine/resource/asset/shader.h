@@ -8,7 +8,6 @@
 // clang-format on
 
 #include "glslang/Public/ShaderLang.h"
-#include "resource/config/config.h"
 
 namespace luka {
 
@@ -18,7 +17,7 @@ class Shader {
  public:
   Shader() = default;
 
-  Shader(const cfg::Shader& config_shader);
+  Shader(const std::filesystem::path& cfg_shader_path);
 
   u64 GetHashValue(const std::vector<std::string>& processes) const;
 

@@ -10,38 +10,47 @@
 #include <TaskScheduler.h>
 
 #include "core/log.h"
+#include "resource/asset/frame_graph.h"
 #include "resource/asset/scene.h"
 #include "resource/asset/shader.h"
 #include "resource/config/config.h"
 #include "resource/gpu/gpu.h"
+
 namespace luka {
 
 class AssetAsync {
  public:
   AssetAsync(std::shared_ptr<Config> config, std::shared_ptr<Gpu> gpu);
 
-  u32 GetShaderSize() const;
-  u32 GetSetSize() const;
-  u32 GetSceneSize() const;
+  u32 GetSceneCount() const;
+  u32 GetShaderCount() const;
+  u32 GetFrameGraphCount() const;
+  u32 GetAssetCount() const;
 
   void LoadScene(u32 index);
   void LoadShader(u32 index);
+  void LoadFrameGraph(u32 index);
 
   const ast::Scene& GetScene(u32 index);
   const ast::Shader& GetShader(u32 index);
+  const ast::FrameGraph& GetFrameGraph(u32 index);
 
  private:
   std::shared_ptr<Config> config_;
   std::shared_ptr<Gpu> gpu_;
 
-  const std::vector<cfg::Scene>* cfg_scenes_;
-  const std::vector<cfg::Shader>* cfg_shaders_;
-  u32 scene_size_;
-  u32 shader_size_;
-  u32 set_size_;
+  const std::vector<std::filesystem::path>* cfg_scene_paths_;
+  const std::vector<std::filesystem::path>* cfg_shader_paths_;
+  const std::vector<std::filesystem::path>* cfg_frame_graph_paths_;
+  
+  u32 scene_count_;
+  u32 shader_count_;
+  u32 frame_graph_count_;
+  u32 asset_count_;
 
   std::vector<ast::Scene> scenes_;
   std::vector<ast::Shader> shaders_;
+  std::vector<ast::FrameGraph> frame_graphs_;
 };
 
 class AssetAsyncLoadTaskSet : public enki::ITaskSet {
@@ -64,6 +73,7 @@ class Asset {
 
   const ast::Scene& GetScene(u32 index);
   const ast::Shader& GetShader(u32 index);
+  const ast::FrameGraph& GetFrameGraph(u32 index);
 
  private:
   void WaitAssetAsyncLoad();

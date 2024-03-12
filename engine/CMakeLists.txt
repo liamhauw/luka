@@ -46,11 +46,11 @@ set(HEADER_FILES
   resource/asset/scene_component/mesh.h
   resource/asset/scene_component/node.h
   resource/asset/scene_component/sampler.h
-  resource/asset/scene_component/scene_graph.h
   resource/asset/scene_component/scene.h
   resource/asset/scene_component/script.
   resource/asset/scene_component/texture.h
   resource/asset/asset.h
+  resource/asset/frame_graph.h
   resource/asset/scene.h
   resource/asset/shader.h
   resource/config/config.h
@@ -86,6 +86,7 @@ set(SOURCE_FILES
   resource/asset/scene_component/scene.cc
   resource/asset/scene_component/texture.cc
   resource/asset/asset.cc
+  resource/asset/frame_graph.cc
   resource/asset/scene.cc
   resource/asset/shader.cc
   resource/config/config.cc

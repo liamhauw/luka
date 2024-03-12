@@ -18,9 +18,9 @@ namespace luka {
 
 namespace ast {
 
-Shader::Shader(const cfg::Shader& config_shader)
-    : path_{config_shader.path.string()}, source_text_{LoadText(path_)} {
-  std::string extension{config_shader.path.extension().string()};
+Shader::Shader(const std::filesystem::path& cfg_shader_path)
+    : path_{cfg_shader_path.string()}, source_text_{LoadText(path_)} {
+  std::string extension{cfg_shader_path.extension().string()};
   if (extension == ".vert") {
     language_ = EShLangVertex;
   } else if (extension == ".frag") {

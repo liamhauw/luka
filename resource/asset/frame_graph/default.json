@@ -1,0 +1,30 @@
+{
+  "subpasses": [
+    {
+      "name": "swapchain_subpass",
+      "scenes": [
+        0
+      ],
+      "shaders": {
+        "vertex": 0,
+        "fragment": 1
+      }
+    }
+  ],
+  "passes": [
+    {
+      "name": "swapchain_pass",
+      "subpasses": [
+        0
+      ]
+    }
+  ],
+  "frame_graphs": [
+    {
+      "passes": [
+        0
+      ]
+    }
+  ],
+  "frame_graph": 0
+}
