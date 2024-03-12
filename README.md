@@ -29,7 +29,7 @@ cmake --install build --config Release
 
 # Run
 cd bin
-luka_engine
+./luka_engine
 ```
 
 ## Development
