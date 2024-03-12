@@ -14,14 +14,14 @@ namespace luka {
 
 namespace rd {
 
-Context::Context(std::shared_ptr<Asset> asset, std::shared_ptr<Window> window,
-                 std::shared_ptr<Camera> camera, std::shared_ptr<Gpu> gpu,
-                 std::shared_ptr<SceneGraph> scene_graph)
-    : asset_{asset},
+Context::Context(std::shared_ptr<Config> config, std::shared_ptr<Window> window,
+                 std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
+                 std::shared_ptr<Camera> camera)
+    : config_{config},
       window_{window},
-      camera_{camera},
       gpu_{gpu},
-      scene_graph_{scene_graph} {
+      asset_{asset},
+      camera_{camera} {
   CreateSwapchain();
   CreateSyncObjects();
   CreateCommandObjects();
@@ -355,7 +355,7 @@ void Context::CreateViewportAndScissor() {
 
 void Context::CreatePasses() {
   std::unique_ptr<Pass> swapchain_pass{std::make_unique<SwapchainPass>(
-      asset_, camera_, gpu_, scene_graph_, swapchain_info_, swapchain_images_)};
+      config_, gpu_, asset_, camera_, swapchain_info_, swapchain_images_)};
 
   passes_.push_back(std::move(swapchain_pass));
 }

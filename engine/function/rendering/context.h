@@ -8,11 +8,11 @@
 // clang-format on
 
 #include "function/camera/camera.h"
-#include "resource/gpu/gpu.h"
 #include "function/rendering/swapchain_pass.h"
-#include "resource/asset/scene_component/scene_graph.h"
-#include "resource/window/window.h"
 #include "resource/asset/asset.h"
+#include "resource/config/config.h"
+#include "resource/gpu/gpu.h"
+#include "resource/window/window.h"
 
 namespace luka {
 
@@ -20,9 +20,9 @@ namespace rd {
 
 class Context {
  public:
-  Context(std::shared_ptr<Asset> asset, std::shared_ptr<Window> window,
-          std::shared_ptr<Camera> camera, std::shared_ptr<Gpu> gpu,
-          std::shared_ptr<SceneGraph> scene_graph);
+  Context(std::shared_ptr<Config> config, std::shared_ptr<Window> window,
+          std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
+          std::shared_ptr<Camera> camera);
 
   ~Context();
 
@@ -41,11 +41,11 @@ class Context {
   void End(const vk::raii::CommandBuffer& command_buffer);
   void TarversePasses(const vk::raii::CommandBuffer& command_buffer);
 
-  std::shared_ptr<Asset> asset_;
-  std::shared_ptr<Camera> camera_;
+  std::shared_ptr<Config> config_;
   std::shared_ptr<Window> window_;
   std::shared_ptr<Gpu> gpu_;
-  std::shared_ptr<SceneGraph> scene_graph_;
+  std::shared_ptr<Asset> asset_;
+  std::shared_ptr<Camera> camera_;
 
   SwapchainInfo swapchain_info_;
   vk::raii::SwapchainKHR swapchain_{nullptr};

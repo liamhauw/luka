@@ -9,14 +9,30 @@ configure_file(
 
 set(HEADER_FILES
 
-  # platform
-  platform/common.h
-
   # core
   core/json.h
   core/log.h
   core/math.h
   core/util.h
+
+  # editor
+  editor/editor_input/editor_input.h
+  editor/editor_ui/editor_ui.h
+
+  # function
+  function/camera/camera.h
+  function/function_input/function_input.h
+  function/function_ui/function_ui.h
+  function/rendering/context.h
+  function/rendering/pass.h
+  function/rendering/rendering.h
+  function/rendering/spirv.h
+  function/rendering/subpass.h
+  function/rendering/swapchain_pass.h
+  function/rendering/swapchain_subpass.h
+
+  # platform
+  platform/common.h
 
   # resource
   resource/asset/scene_component/accessor.h
@@ -44,22 +60,6 @@ set(HEADER_FILES
   resource/gpu/image.h
   resource/time/time.h
   resource/window/window.h
-
-  # function
-  function/camera/camera.h
-  function/function_input/function_input.h
-  function/function_ui/function_ui.h
-  function/rendering/context.h
-  function/rendering/pass.h
-  function/rendering/rendering.h
-  function/rendering/spirv.h
-  function/rendering/subpass.h
-  function/rendering/swapchain_pass.h
-  function/rendering/swapchain_subpass.h
-
-  # editor
-  editor/editor_input/editor_input.h
-  editor/editor_ui/editor_ui.h
 
   # engine
   engine.h
@@ -95,23 +95,23 @@ set(SOURCE_FILES
   resource/time/time.cc
   resource/window/window.cc
 
-  # # function
-  # function/camera/camera.cc
-  # function/function_input/function_input.cc
-  # function/function_ui/function_ui.cc
-  # function/rendering/context.cc
-  # function/rendering/pass.cc
-  # function/rendering/rendering.cc
-  # function/rendering/spirv.cc
-  # function/rendering/subpass.cc
-  # function/rendering/swapchain_pass.cc
-  # function/rendering/swapchain_subpass.cc
+  # function
+  function/camera/camera.cc
+  function/function_input/function_input.cc
+  function/function_ui/function_ui.cc
+  function/rendering/context.cc
+  function/rendering/pass.cc
+  function/rendering/rendering.cc
+  function/rendering/spirv.cc
+  function/rendering/subpass.cc
+  function/rendering/swapchain_pass.cc
+  function/rendering/swapchain_subpass.cc
 
-  # # editor
-  # editor/editor_input/editor_input.cc
-  # editor/editor_ui/editor_ui.cc
+  # editor
+  editor/editor_input/editor_input.cc
+  editor/editor_ui/editor_ui.cc
 
-  # # engine
+  # engine
   engine.cc
   main.cc
 )

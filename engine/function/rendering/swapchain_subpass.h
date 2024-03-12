@@ -22,9 +22,8 @@ struct PushConstantUniform {
 
 class SwapchainSupass : public Subpass {
  public:
-  SwapchainSupass(std::shared_ptr<Asset> asset, std::shared_ptr<Camera> camera,
-                  std::shared_ptr<Gpu> gpu,
-                  std::shared_ptr<SceneGraph> scene_graph,
+  SwapchainSupass(std::shared_ptr<Config> config, std::shared_ptr<Gpu> gpu,
+                  std::shared_ptr<Asset> asset, std::shared_ptr<Camera> camera,
                   const vk::raii::RenderPass& render_pass, u32 frame_count);
   ~SwapchainSupass() = default;
 

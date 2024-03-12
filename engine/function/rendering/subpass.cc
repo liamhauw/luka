@@ -7,6 +7,7 @@
 
 #include "function/rendering/subpass.h"
 
+#undef MemoryBarrier
 #include <vulkan/vulkan_hash.hpp>
 
 #include "core/log.h"
@@ -17,14 +18,13 @@ namespace luka {
 
 namespace rd {
 
-Subpass::Subpass(std::shared_ptr<Asset> asset, std::shared_ptr<Camera> camera,
-                 std::shared_ptr<Gpu> gpu,
-                 std::shared_ptr<SceneGraph> scene_graph,
+Subpass::Subpass(std::shared_ptr<Config> config, std::shared_ptr<Gpu> gpu,
+                 std::shared_ptr<Asset> asset, std::shared_ptr<Camera> camera,
                  const vk::raii::RenderPass& render_pass, u32 frame_count)
-    : asset_{asset},
-      camera_{camera},
+    : config_{config},
       gpu_{gpu},
-      scene_graph_{scene_graph},
+      asset_{asset},
+      camera_{camera},
       render_pass_{*render_pass},
       frame_count_{frame_count} {}
 

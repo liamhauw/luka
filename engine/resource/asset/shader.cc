@@ -19,7 +19,14 @@ namespace luka {
 namespace ast {
 
 Shader::Shader(const cfg::Shader& config_shader)
-    : path_{config_shader.path.string()}, source_text_{LoadText(path_)} {}
+    : path_{config_shader.path.string()}, source_text_{LoadText(path_)} {
+  std::string extension{config_shader.path.extension().string()};
+  if (extension == ".vert") {
+    language_ = EShLangVertex;
+  } else if (extension == ".frag") {
+    language_ = EShLangFragment;
+  }
+}
 
 u64 Shader::GetHashValue(const std::vector<std::string>& processes) const {
   std::vector<std::string> svec{processes};

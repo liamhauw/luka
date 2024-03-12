@@ -13,13 +13,13 @@ namespace luka {
 
 namespace rd {
 
-SwapchainSupass::SwapchainSupass(std::shared_ptr<Asset> asset,
-                                 std::shared_ptr<Camera> camera,
+SwapchainSupass::SwapchainSupass(std::shared_ptr<Config> config,
                                  std::shared_ptr<Gpu> gpu,
-                                 std::shared_ptr<SceneGraph> scene_graph,
+                                 std::shared_ptr<Asset> asset,
+                                 std::shared_ptr<Camera> camera,
                                  const vk::raii::RenderPass& render_pass,
                                  u32 frame_count)
-    : Subpass{asset, camera, gpu, scene_graph, render_pass, frame_count} {
+    : Subpass{config, gpu, asset, camera, render_pass, frame_count} {
   CreateBindlessDescriptorSets();
   CreateDrawElements();
 }
@@ -63,8 +63,7 @@ void SwapchainSupass::CreateBindlessDescriptorSets() {
 }
 
 void SwapchainSupass::CreateDrawElements() {
-  const ast::sc::Map& object{scene_graph_->GetObjectLuka()};
-  const ast::sc::Scene* scene{object.GetScene()};
+  const ast::sc::Scene* scene{asset_->GetScene(0).GetScene()};
   const std::vector<ast::sc::Node*>& nodes{scene->GetNodes()};
 
   std::queue<const ast::sc::Node*> all_nodes;
@@ -78,7 +77,8 @@ void SwapchainSupass::CreateDrawElements() {
     const ast::sc::Node* cur_node{all_nodes.front()};
     all_nodes.pop();
 
-    const std::vector<ast::sc::Node*>& cur_node_children{cur_node->GetChildren()};
+    const std::vector<ast::sc::Node*>& cur_node_children{
+        cur_node->GetChildren()};
     for (const ast::sc::Node* cur_node_child : cur_node_children) {
       all_nodes.push(cur_node_child);
     }
@@ -106,8 +106,8 @@ void SwapchainSupass::CreateDrawElements() {
   }
 }
 
-DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
-                                               const ast::sc::Primitive& primitive) {
+DrawElement SwapchainSupass::CreateDrawElement(
+    const glm::mat4& model_matrix, const ast::sc::Primitive& primitive) {
   DrawElement draw_element;
 
   // Primitive info.
@@ -118,7 +118,8 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
 
   // Shaders.
   std::vector<std::string> shader_processes;
-  const std::map<std::string, ast::sc::Texture*>& textures{material->GetTextures()};
+  const std::map<std::string, ast::sc::Texture*>& textures{
+      material->GetTextures()};
   for (std::string wanted_texture : wanted_textures_) {
     auto it{textures.find(wanted_texture)};
     if (it != textures.end()) {
@@ -141,9 +142,9 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
     THROW("There is no position buffer.");
   }
 
-  const SPIRV& vert_spirv{RequesetSpirv(asset_->GetVertexShader(), shader_processes,
+  const SPIRV& vert_spirv{RequesetSpirv(asset_->GetShader(0), shader_processes,
                                         vk::ShaderStageFlagBits::eVertex)};
-  const SPIRV& frag_spirv{RequesetSpirv(asset_->GetFragmentShader(), shader_processes,
+  const SPIRV& frag_spirv{RequesetSpirv(asset_->GetShader(1), shader_processes,
                                         vk::ShaderStageFlagBits::eFragment)};
 
   // Pipeline layout.
@@ -269,7 +270,8 @@ DrawElement SwapchainSupass::CreateDrawElement(const glm::mat4& model_matrix,
 
   for (const auto& vertex_buffer_attribute : vertex_attributes) {
     std::string name{vertex_buffer_attribute.first};
-    const ast::sc::VertexAttribute& vertex_attribute{vertex_buffer_attribute.second};
+    const ast::sc::VertexAttribute& vertex_attribute{
+        vertex_buffer_attribute.second};
 
     std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 
