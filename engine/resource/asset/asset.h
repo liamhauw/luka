@@ -20,7 +20,12 @@ class AssetAsync {
  public:
   AssetAsync(std::shared_ptr<Config> config, std::shared_ptr<Gpu> gpu);
 
-  void Load();
+  u32 GetShaderSize() const;
+  u32 GetSetSize() const;
+  u32 GetSceneSize() const;
+
+  void LoadScene(u32 index);
+  void LoadShader(u32 index);
 
   const ast::Scene& GetScene(u32 index);
   const ast::Shader& GetShader(u32 index);
@@ -28,6 +33,12 @@ class AssetAsync {
  private:
   std::shared_ptr<Config> config_;
   std::shared_ptr<Gpu> gpu_;
+
+  const std::vector<cfg::Scene>* cfg_scenes_;
+  const std::vector<cfg::Shader>* cfg_shaders_;
+  u32 scene_size_;
+  u32 shader_size_;
+  u32 set_size_;
 
   std::vector<ast::Scene> scenes_;
   std::vector<ast::Shader> shaders_;
@@ -55,12 +66,16 @@ class Asset {
   const ast::Shader& GetShader(u32 index);
 
  private:
+  void WaitAssetAsyncLoad();
+
   std::shared_ptr<Config> config_;
   std::shared_ptr<Gpu> gpu_;
 
   AssetAsync asset_async_;
   AssetAsyncLoadTaskSet asset_async_load_task_set_;
   enki::TaskScheduler task_scheduler_;
+
+  bool dirty_{true};
 };
 
 }  // namespace luka

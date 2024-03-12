@@ -37,6 +37,8 @@ class Scene {
 
   Scene(Scene&& rhs);
 
+  Scene& operator=(Scene&& rhs);
+
   template <typename T>
   void AddComponent(std::unique_ptr<T>&& component) {
     std::unique_ptr<sc::Component> result{std::move(component)};

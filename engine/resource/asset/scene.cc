@@ -58,6 +58,17 @@ Scene::Scene(Scene&& rhs)
       supported_extensions_{std::exchange(rhs.supported_extensions_, {})},
       scene_{rhs.scene_} {}
 
+Scene& Scene::operator=(Scene&& rhs) {
+  if (this != &rhs) {
+    gpu_ = rhs.gpu_;
+    std::swap(name_, rhs.name_);
+    std::swap(components_, rhs.components_);
+    std::swap(supported_extensions_, rhs.supported_extensions_);
+    scene_ = rhs.scene_;
+  }
+  return *this;
+}
+
 void Scene::AddComponent(const std::type_index& type_info,
                          std::unique_ptr<sc::Component>&& component) {
   components_[type_info].push_back(std::move(component));
