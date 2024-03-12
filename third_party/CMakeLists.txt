@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.24)
 project(luka_third_party)
 
+set(CMAKE_WARN_DEPRECATED OFF CACHE BOOL "" FORCE)
+
 # Vulkan SDK
 find_package(Vulkan REQUIRED GLOBAL)
 

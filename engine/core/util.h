@@ -9,12 +9,6 @@
 
 namespace luka {
 
-template <typename T>
-inline T AlignUp(T val, T alignment) {
-  return (val + alignment - static_cast<T>(1)) &
-         ~(alignment - static_cast<T>(1));
-}
-
 template <class T, class Y>
 struct TypeCast {
   Y operator()(T value) const noexcept { return static_cast<Y>(value); }

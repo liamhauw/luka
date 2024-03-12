@@ -18,7 +18,6 @@ std::filesystem::path GetPath(const std::string& path) {
   } else {
     std::replace(res.begin(), res.end(), '/', '\\');
   }
-
   return std::filesystem::path{res};
 }
 

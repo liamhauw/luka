@@ -24,9 +24,16 @@ class Exception : public std::exception {
 #define LOGI(...) spdlog::info(__VA_ARGS__);
 #define LOGW(...) spdlog::warn(__VA_ARGS__);
 #define LOGE(...) spdlog::error(__VA_ARGS__);
+
+#ifndef NDEBUG
 #define THROW(...)                    \
   LOGE("{}:{} ", __FILE__, __LINE__); \
   LOGE(__VA_ARGS__);                  \
   throw Exception {}
+#else
+#define THROW(...)   \
+  LOGE(__VA_ARGS__); \
+  throw Exception {}
+#endif
 
 }  // namespace luka
