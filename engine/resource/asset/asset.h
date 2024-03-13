@@ -15,12 +15,14 @@
 #include "resource/asset/shader.h"
 #include "resource/config/config.h"
 #include "resource/gpu/gpu.h"
+#include "resource/task_scheduler/task_scheduler.h"
 
 namespace luka {
 
 class AssetAsync {
  public:
-  AssetAsync(std::shared_ptr<Config> config, std::shared_ptr<Gpu> gpu, u32 thread_count);
+  AssetAsync(std::shared_ptr<Config> config, std::shared_ptr<Gpu> gpu,
+             u32 thread_count);
 
   void Load(enki::TaskSetPartition range, u32 thread_num);
 
@@ -74,7 +76,9 @@ class AssetAsyncLoadTaskSet : public enki::ITaskSet {
 
 class Asset {
  public:
-  Asset(std::shared_ptr<Config> config, std::shared_ptr<Gpu> gpu);
+  Asset(std::shared_ptr<Config> config,
+        std::shared_ptr<TaskScheduler> task_scheduler,
+        std::shared_ptr<Gpu> gpu);
 
   void Tick();
 
@@ -86,15 +90,12 @@ class Asset {
   void WaitAssetAsyncLoad();
 
   std::shared_ptr<Config> config_;
+  std::shared_ptr<TaskScheduler> task_scheduler_;
   std::shared_ptr<Gpu> gpu_;
-
-  const u32 kAssetLoadThreadCount{2};
 
   AssetAsync asset_async_;
   AssetAsyncLoadTaskSet asset_async_load_task_set_;
-  enki::TaskScheduler task_scheduler_;
-
-  bool dirty_{true};
+  bool loaded_{false};
 };
 
 }  // namespace luka

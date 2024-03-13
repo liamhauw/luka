@@ -58,6 +58,7 @@ set(HEADER_FILES
   resource/gpu/buffer.h
   resource/gpu/gpu.h
   resource/gpu/image.h
+  resource/task_scheduler/task_scheduler.h
   resource/time/time.h
   resource/window/window.h
 
@@ -68,7 +69,6 @@ set(HEADER_FILES
 set(SOURCE_FILES
 
   # core
-  core/json.cc
   core/util.cc
 
   # resource
@@ -93,6 +93,7 @@ set(SOURCE_FILES
   resource/gpu/buffer.cc
   resource/gpu/gpu.cc
   resource/gpu/image.cc
+  resource/task_scheduler/task_scheduler.cc
   resource/time/time.cc
   resource/window/window.cc
 

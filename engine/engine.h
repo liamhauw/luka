@@ -16,6 +16,7 @@
 #include "resource/asset/asset.h"
 #include "resource/config/config.h"
 #include "resource/gpu/gpu.h"
+#include "resource/task_scheduler/task_scheduler.h"
 #include "resource/time/time.h"
 #include "resource/window/window.h"
 
@@ -29,6 +30,7 @@ class Engine {
 
  private:
   std::shared_ptr<Config> config_;
+  std::shared_ptr<TaskScheduler> task_scheduler_;
   std::shared_ptr<Time> time_;
   std::shared_ptr<Window> window_;
   std::shared_ptr<Gpu> gpu_;

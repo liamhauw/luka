@@ -119,15 +119,15 @@ void AssetAsyncLoadTaskSet::ExecuteRange(enki::TaskSetPartition range,
   asset_async_->Load(range, thread_num);
 }
 
-Asset::Asset(std::shared_ptr<Config> config, std::shared_ptr<Gpu> gpu)
+Asset::Asset(std::shared_ptr<Config> config,
+             std::shared_ptr<TaskScheduler> task_scheduler,
+             std::shared_ptr<Gpu> gpu)
     : config_{config},
+      task_scheduler_{task_scheduler},
       gpu_{gpu},
-      asset_async_{config_, gpu_, kAssetLoadThreadCount},
+      asset_async_{config_, gpu_, task_scheduler_->GetThreadCount()},
       asset_async_load_task_set_{&asset_async_} {
-  enki::TaskSchedulerConfig task_scheduler_config;
-  task_scheduler_config.numTaskThreadsToCreate = kAssetLoadThreadCount - 1;
-  task_scheduler_.Initialize(task_scheduler_config);
-  task_scheduler_.AddTaskSetToPipe(&asset_async_load_task_set_);
+  task_scheduler_->AddTaskSetToPipe(&asset_async_load_task_set_);
 }
 
 void Asset::Tick() {}
@@ -148,10 +148,10 @@ const ast::FrameGraph& Asset::GetFrameGraph(u32 index) {
 }
 
 void Asset::WaitAssetAsyncLoad() {
-  if (dirty_) {
-    task_scheduler_.WaitforTask(&asset_async_load_task_set_);
+  if (!loaded_) {
+    task_scheduler_->WaitforTask(&asset_async_load_task_set_);
     asset_async_.Submit();
-    dirty_ = false;
+    loaded_ = true;
   }
 }
 

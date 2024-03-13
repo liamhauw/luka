@@ -11,10 +11,11 @@ namespace luka {
 
 Engine::Engine()
     : config_{std::make_shared<Config>()},
+      task_scheduler_{std::make_shared<TaskScheduler>()},
       time_{std::make_shared<Time>()},
       window_{std::make_shared<Window>(time_)},
       gpu_{std::make_shared<Gpu>(window_)},
-      asset_{std::make_shared<Asset>(config_, gpu_)},
+      asset_{std::make_shared<Asset>(config_, task_scheduler_, gpu_)},
       function_input_{std::make_shared<FunctionInput>(config_, window_)},
       camera_{std::make_shared<Camera>(window_)},
       rendering_{
@@ -27,6 +28,7 @@ Engine::Engine()
 void Engine::Run() {
   while (!window_->WindowShouldClose()) {
     config_->Tick();
+    task_scheduler_->Tick();
     time_->Tick();
     window_->Tick();
     gpu_->Tick();
