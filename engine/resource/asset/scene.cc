@@ -14,7 +14,9 @@ namespace luka {
 namespace ast {
 
 Scene::Scene(std::shared_ptr<Gpu> gpu,
-             const std::filesystem::path& cfg_scene_path)
+             const std::filesystem::path& cfg_scene_path,
+             const vk::raii::CommandBuffer& command_buffer,
+             std::vector<gpu::Buffer>& staging_buffers)
     : gpu_{gpu} {
   tinygltf::Model tinygltf;
   std::string extension{cfg_scene_path.extension().string()};
@@ -39,14 +41,14 @@ Scene::Scene(std::shared_ptr<Gpu> gpu,
   ParseExtensionsUsed(tinygltf.extensionsUsed);
   ParseLightComponents(tinygltf.extensions);
   ParseCameraComponents(tinygltf.cameras);
-  ParseImageComponents(tinygltf.images);
+  ParseImageComponents(tinygltf.images, command_buffer, staging_buffers);
   ParseSamplerComponents(tinygltf.samplers);
   ParseTextureComponents(tinygltf.textures);
   ParseMaterialComponents(tinygltf.materials);
   ParseBufferComponents(tinygltf.buffers);
   ParseBufferViewComponents(tinygltf.bufferViews);
   ParseAccessorComponents(tinygltf.accessors);
-  ParseMeshComponents(tinygltf.meshes);
+  ParseMeshComponents(tinygltf.meshes, command_buffer, staging_buffers);
   ParseNodeComponents(tinygltf.nodes);
   ParseSceneComponents(tinygltf.scenes);
   ParseDefaultScene(tinygltf.defaultScene);
@@ -189,13 +191,10 @@ void Scene::ParseCameraComponents(
 }
 
 void Scene::ParseImageComponents(
-    const std::vector<tinygltf::Image>& tinygltf_images) {
-  const vk::raii::CommandBuffer& command_buffer{
-      gpu_->BeginTransferCommandBuffer()};
-
+    const std::vector<tinygltf::Image>& tinygltf_images,
+    const vk::raii::CommandBuffer& command_buffer,
+    std::vector<gpu::Buffer>& staging_buffers) {
   u64 tinygltf_image_count{tinygltf_images.size()};
-
-  std::vector<gpu::Buffer> staging_buffers;
 
   for (u64 i{0}; i < tinygltf_image_count; ++i) {
     const tinygltf::Image& tinygltf_image{tinygltf_images[i]};
@@ -216,8 +215,6 @@ void Scene::ParseImageComponents(
   auto default_image_component{std::make_unique<sc::Image>(
       gpu_, default_tinygltf_image, command_buffer, staging_buffers)};
   AddComponent(std::move(default_image_component));
-
-  gpu_->EndTransferCommandBuffer(command_buffer);
 }
 
 void Scene::ParseSamplerComponents(
@@ -309,14 +306,11 @@ void Scene::ParseAccessorComponents(
 }
 
 void Scene::ParseMeshComponents(
-    const std::vector<tinygltf::Mesh>& tinygltf_meshs) {
+    const std::vector<tinygltf::Mesh>& tinygltf_meshs,
+    const vk::raii::CommandBuffer& command_buffer,
+    std::vector<gpu::Buffer>& staging_buffers) {
   auto material_components{GetComponents<sc::Material>()};
   auto accessor_components{GetComponents<sc::Accessor>()};
-
-  const vk::raii::CommandBuffer& command_buffer{
-      gpu_->BeginTransferCommandBuffer()};
-
-  std::vector<gpu::Buffer> staging_buffers;
 
   for (const auto& tinygltf_mesh : tinygltf_meshs) {
     std::unique_ptr<sc::Mesh> mesh_component{std::make_unique<sc::Mesh>(
@@ -324,8 +318,6 @@ void Scene::ParseMeshComponents(
         command_buffer, staging_buffers)};
     AddComponent(std::move(mesh_component));
   }
-
-  gpu_->EndTransferCommandBuffer(command_buffer);
 }
 
 void Scene::ParseNodeComponents(

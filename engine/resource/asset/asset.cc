@@ -9,9 +9,11 @@
 
 namespace luka {
 
-AssetAsync::AssetAsync(std::shared_ptr<Config> config, std::shared_ptr<Gpu> gpu)
+AssetAsync::AssetAsync(std::shared_ptr<Config> config, std::shared_ptr<Gpu> gpu,
+                       u32 thread_count)
     : config_{config},
       gpu_{gpu},
+      thread_count_{thread_count},
       cfg_scene_paths_{&(config_->GetScenePaths())},
       cfg_shader_paths_{&(config_->GetShaderPaths())},
       cfg_frame_graph_paths_{&(config_->GetFrameGraphPaths())},
@@ -21,18 +23,60 @@ AssetAsync::AssetAsync(std::shared_ptr<Config> config, std::shared_ptr<Gpu> gpu)
       asset_count_{scene_count_ + shader_count_ + frame_graph_count_},
       scenes_(scene_count_),
       shaders_(shader_count_),
-      frame_graphs_(frame_graph_count_) {}
+      frame_graphs_(frame_graph_count_),
+      staging_buffers_(thread_count_) {
+  vk::CommandPoolCreateInfo command_pool_ci{
+      vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+      gpu_->GetTransferQueueIndex()};
+  vk::CommandBufferAllocateInfo command_buffer_allocate_info{
+      nullptr, vk::CommandBufferLevel::ePrimary, 1};
+  vk::CommandBufferBeginInfo command_buffer_begin_info{
+      vk::CommandBufferUsageFlagBits::eOneTimeSubmit};
 
-u32 AssetAsync::GetSceneCount() const { return scene_count_; }
+  for (u32 i{0}; i < thread_count_; ++i) {
+    transfer_command_pools_.push_back(
+        std::move(gpu_->CreateCommandPool(command_pool_ci)));
+    command_buffer_allocate_info.commandPool = *(transfer_command_pools_[i]);
+    transfer_command_buffers_.push_back(std::move(
+        gpu_->AllocateCommandBuffers(command_buffer_allocate_info).front()));
+    transfer_command_buffers_[i].begin(command_buffer_begin_info);
+  }
+}
 
-u32 AssetAsync::GetShaderCount() const { return shader_count_; }
+void AssetAsync::Load(enki::TaskSetPartition range, u32 thread_num) {
+  for (auto i{range.start}; i < range.end; ++i) {
+    if (i < scene_count_) {
+      LoadScene(i, thread_num);
+      LOGI("Load scene {} in range {} thread {}", i, i, thread_num);
+    } else if (i < scene_count_ + shader_count_) {
+      u32 index{i - scene_count_};
+      LoadShader(index);
+      LOGI("Load shader {} in range {} thread {}", index, i, thread_num);
+    } else {
+      u32 index{i - scene_count_ - shader_count_};
+      LoadFrameGraph(index);
+      LOGI("Load frame graph {} in range {} thread {}", index, i, thread_num);
+    }
+  }
+}
 
-u32 AssetAsync::GetFrameGraphCount() const { return frame_graph_count_; }
+void AssetAsync::Submit() {
+  std::vector<vk::CommandBuffer> command_buffers;
+
+  for (u32 i{0}; i < thread_count_; ++i) {
+    transfer_command_buffers_[i].end();
+    command_buffers.push_back(*transfer_command_buffers_[i]);
+  }
+  vk::SubmitInfo submit_info{nullptr, nullptr, command_buffers};
+  gpu_->TransferQueueSubmit(submit_info);
+}
 
 u32 AssetAsync::GetAssetCount() const { return asset_count_; }
 
-void AssetAsync::LoadScene(u32 index) {
-  scenes_[index] = std::move(ast::Scene{gpu_, (*cfg_scene_paths_)[index]});
+void AssetAsync::LoadScene(u32 index, u32 thread_num) {
+  scenes_[index] = std::move(ast::Scene{gpu_, (*cfg_scene_paths_)[index],
+                                        transfer_command_buffers_[thread_num],
+                                        staging_buffers_[thread_num]});
 }
 
 void AssetAsync::LoadShader(u32 index) {
@@ -72,33 +116,16 @@ AssetAsyncLoadTaskSet::AssetAsyncLoadTaskSet(AssetAsync* asset_async)
 
 void AssetAsyncLoadTaskSet::ExecuteRange(enki::TaskSetPartition range,
                                          uint32_t thread_num) {
-  u32 scene_count{asset_async_->GetSceneCount()};
-  u32 shader_count{asset_async_->GetShaderCount()};
-  u32 frame_graph_count{asset_async_->GetFrameGraphCount()};
-
-  for (auto i{range.start}; i < range.end; ++i) {
-    if (i < scene_count) {
-      asset_async_->LoadScene(i);
-      LOGI("Load scene {} in range {} thread {}", i, i, thread_num);
-    } else if (i < scene_count + shader_count) {
-      u32 index{i - scene_count};
-      asset_async_->LoadShader(index);
-      LOGI("Load shader {} in range {} thread {}", index, i, thread_num);
-    } else {
-      u32 index{i - scene_count - shader_count};
-      asset_async_->LoadFrameGraph(index);
-      LOGI("Load frame graph {} in range {} thread {}", index, i, thread_num);
-    }
-  }
+  asset_async_->Load(range, thread_num);
 }
 
 Asset::Asset(std::shared_ptr<Config> config, std::shared_ptr<Gpu> gpu)
     : config_{config},
       gpu_{gpu},
-      asset_async_{config_, gpu_},
+      asset_async_{config_, gpu_, kAssetLoadThreadCount},
       asset_async_load_task_set_{&asset_async_} {
   enki::TaskSchedulerConfig task_scheduler_config;
-  task_scheduler_config.numTaskThreadsToCreate = 2;
+  task_scheduler_config.numTaskThreadsToCreate = kAssetLoadThreadCount - 1;
   task_scheduler_.Initialize(task_scheduler_config);
   task_scheduler_.AddTaskSetToPipe(&asset_async_load_task_set_);
 }
@@ -123,6 +150,7 @@ const ast::FrameGraph& Asset::GetFrameGraph(u32 index) {
 void Asset::WaitAssetAsyncLoad() {
   if (dirty_) {
     task_scheduler_.WaitforTask(&asset_async_load_task_set_);
+    asset_async_.Submit();
     dirty_ = false;
   }
 }

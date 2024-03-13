@@ -20,29 +20,32 @@ namespace luka {
 
 class AssetAsync {
  public:
-  AssetAsync(std::shared_ptr<Config> config, std::shared_ptr<Gpu> gpu);
+  AssetAsync(std::shared_ptr<Config> config, std::shared_ptr<Gpu> gpu, u32 thread_count);
 
-  u32 GetSceneCount() const;
-  u32 GetShaderCount() const;
-  u32 GetFrameGraphCount() const;
+  void Load(enki::TaskSetPartition range, u32 thread_num);
+
+  void Submit();
+
   u32 GetAssetCount() const;
-
-  void LoadScene(u32 index);
-  void LoadShader(u32 index);
-  void LoadFrameGraph(u32 index);
 
   const ast::Scene& GetScene(u32 index);
   const ast::Shader& GetShader(u32 index);
   const ast::FrameGraph& GetFrameGraph(u32 index);
 
  private:
+  void LoadScene(u32 index, u32 thread_num);
+  void LoadShader(u32 index);
+  void LoadFrameGraph(u32 index);
+
   std::shared_ptr<Config> config_;
   std::shared_ptr<Gpu> gpu_;
+
+  u32 thread_count_;
 
   const std::vector<std::filesystem::path>* cfg_scene_paths_;
   const std::vector<std::filesystem::path>* cfg_shader_paths_;
   const std::vector<std::filesystem::path>* cfg_frame_graph_paths_;
-  
+
   u32 scene_count_;
   u32 shader_count_;
   u32 frame_graph_count_;
@@ -51,6 +54,10 @@ class AssetAsync {
   std::vector<ast::Scene> scenes_;
   std::vector<ast::Shader> shaders_;
   std::vector<ast::FrameGraph> frame_graphs_;
+
+  std::vector<vk::raii::CommandPool> transfer_command_pools_;
+  vk::raii::CommandBuffers transfer_command_buffers_{nullptr};
+  std::vector<std::vector<gpu::Buffer>> staging_buffers_;
 };
 
 class AssetAsyncLoadTaskSet : public enki::ITaskSet {
@@ -80,6 +87,8 @@ class Asset {
 
   std::shared_ptr<Config> config_;
   std::shared_ptr<Gpu> gpu_;
+
+  const u32 kAssetLoadThreadCount{2};
 
   AssetAsync asset_async_;
   AssetAsyncLoadTaskSet asset_async_load_task_set_;

@@ -418,19 +418,7 @@ void Gpu::ResetFence(const vk::raii::Fence& fence) {
   device_.resetFences(*fence);
 }
 
-const vk::raii::CommandBuffer& Gpu::BeginTransferCommandBuffer() {
-  const vk::raii::CommandBuffer& command_buffer{transfer_command_buffers_[0]};
-
-  vk::CommandBufferBeginInfo command_buffer_begin_info{
-      vk::CommandBufferUsageFlagBits::eOneTimeSubmit};
-  command_buffer.begin(command_buffer_begin_info);
-  return command_buffer;
-}
-
-void Gpu::EndTransferCommandBuffer(
-    const vk::raii::CommandBuffer& command_buffer) {
-  command_buffer.end();
-  vk::SubmitInfo submit_info{nullptr, nullptr, *command_buffer};
+void Gpu::TransferQueueSubmit(const vk::SubmitInfo& submit_info) {
   transfer_queue_.submit(submit_info, nullptr);
   transfer_queue_.waitIdle();
 }
@@ -453,6 +441,8 @@ const vk::raii::Queue& Gpu::GetGraphicsQueue() const { return graphics_queue_; }
 const vk::raii::Queue& Gpu::GetPresentQueue() const { return present_queue_; }
 
 u32 Gpu::GetGraphicsQueueIndex() const { return graphics_queue_index_.value(); }
+
+u32 Gpu::GetTransferQueueIndex() const { return transfer_queue_index_.value(); }
 
 u32 Gpu::GetPresentQueueIndex() const { return present_queue_index_.value(); }
 

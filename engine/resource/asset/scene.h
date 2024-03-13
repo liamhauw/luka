@@ -32,7 +32,9 @@ class Scene {
  public:
   Scene() = default;
 
-  Scene(std::shared_ptr<Gpu> gpu, const std::filesystem::path& cfg_scene_path);
+  Scene(std::shared_ptr<Gpu> gpu, const std::filesystem::path& cfg_scene_path,
+        const vk::raii::CommandBuffer& command_buffer,
+        std::vector<gpu::Buffer>& staging_buffers);
 
   Scene(Scene&& rhs);
 
@@ -87,8 +89,9 @@ class Scene {
   void ParseCameraComponents(
       const std::vector<tinygltf::Camera>& tinygltf_cameras);
 
-  void ParseImageComponents(
-      const std::vector<tinygltf::Image>& tinygltf_images);
+  void ParseImageComponents(const std::vector<tinygltf::Image>& tinygltf_images,
+                            const vk::raii::CommandBuffer& command_buffer,
+                            std::vector<gpu::Buffer>& staging_buffers);
 
   void ParseSamplerComponents(
       const std::vector<tinygltf::Sampler>& tinygltf_samplers);
@@ -108,7 +111,9 @@ class Scene {
   void ParseAccessorComponents(
       const std::vector<tinygltf::Accessor>& tinygltf_accessors);
 
-  void ParseMeshComponents(const std::vector<tinygltf::Mesh>& tinygltf_meshs);
+  void ParseMeshComponents(const std::vector<tinygltf::Mesh>& tinygltf_meshs,
+                           const vk::raii::CommandBuffer& command_buffer,
+                           std::vector<gpu::Buffer>& staging_buffers);
 
   void ParseNodeComponents(const std::vector<tinygltf::Node>& tinygltf_nodes);
   void InitNodeChildren();

@@ -112,9 +112,7 @@ class Gpu {
 
   void ResetFence(const vk::raii::Fence& fence);
 
-  const vk::raii::CommandBuffer& BeginTransferCommandBuffer();
-
-  void EndTransferCommandBuffer(const vk::raii::CommandBuffer& command_buffer);
+  void TransferQueueSubmit(const vk::SubmitInfo& submit_info);
 
   void WaitIdle();
 
@@ -129,6 +127,8 @@ class Gpu {
   const vk::raii::Queue& GetPresentQueue() const;
 
   u32 GetGraphicsQueueIndex() const;
+
+  u32 GetTransferQueueIndex() const;
 
   u32 GetPresentQueueIndex() const;
 
@@ -184,7 +184,7 @@ class Gpu {
 
   VmaAllocator allocator_;
 
-  const u32 kTransferCommandBufferCount{1};
+  const u32 kTransferCommandBufferCount{4};
   vk::raii::CommandPool transfer_command_pool_{nullptr};
   vk::raii::CommandBuffers transfer_command_buffers_{nullptr};
 
