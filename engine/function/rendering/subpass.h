@@ -10,7 +10,6 @@
 #include "function/camera/camera.h"
 #include "function/rendering/spirv.h"
 #include "resource/asset/asset.h"
-#include "resource/config/config.h"
 #include "resource/gpu/gpu.h"
 
 namespace luka {
@@ -53,8 +52,8 @@ struct DrawElement {
 
 class Subpass {
  public:
-  Subpass(std::shared_ptr<Config> config, std::shared_ptr<Gpu> gpu,
-          std::shared_ptr<Asset> asset, std::shared_ptr<Camera> camera,
+  Subpass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
+          std::shared_ptr<Camera> camera,
           const vk::raii::RenderPass& render_pass, u32 frame_count);
   virtual ~Subpass() = default;
 
@@ -90,7 +89,6 @@ class Subpass {
       const vk::GraphicsPipelineCreateInfo& graphics_pipeline_ci,
       u64 hash_value, const std::string& name = {});
 
-  std::shared_ptr<Config> config_;  
   std::shared_ptr<Gpu> gpu_;
   std::shared_ptr<Asset> asset_;
   std::shared_ptr<Camera> camera_;

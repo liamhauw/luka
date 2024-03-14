@@ -18,11 +18,10 @@ namespace luka {
 
 namespace rd {
 
-Subpass::Subpass(std::shared_ptr<Config> config, std::shared_ptr<Gpu> gpu,
-                 std::shared_ptr<Asset> asset, std::shared_ptr<Camera> camera,
+Subpass::Subpass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
+                 std::shared_ptr<Camera> camera,
                  const vk::raii::RenderPass& render_pass, u32 frame_count)
-    : config_{config},
-      gpu_{gpu},
+    : gpu_{gpu},
       asset_{asset},
       camera_{camera},
       render_pass_{*render_pass},

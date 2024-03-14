@@ -13,13 +13,12 @@ namespace luka {
 
 namespace rd {
 
-SwapchainSupass::SwapchainSupass(std::shared_ptr<Config> config,
-                                 std::shared_ptr<Gpu> gpu,
+SwapchainSupass::SwapchainSupass(std::shared_ptr<Gpu> gpu,
                                  std::shared_ptr<Asset> asset,
                                  std::shared_ptr<Camera> camera,
                                  const vk::raii::RenderPass& render_pass,
                                  u32 frame_count)
-    : Subpass{config, gpu, asset, camera, render_pass, frame_count} {
+    : Subpass{gpu, asset, camera, render_pass, frame_count} {
   CreateBindlessDescriptorSets();
   CreateDrawElements();
 }

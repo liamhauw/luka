@@ -31,7 +31,6 @@ class EditorInput {
   void Tick();
 
   void OnKey(i32 key, i32 scancode, i32 action, i32 mod);
-  void OnMouseButton(i32 button, i32 action, i32 mods);
   void OnCursorPos(f64 xpos, f64 ypos);
 
  private:

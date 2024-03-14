@@ -11,7 +11,6 @@
 #include "function/rendering/pass.h"
 #include "function/rendering/subpass.h"
 #include "resource/asset/asset.h"
-#include "resource/config/config.h"
 #include "resource/gpu/gpu.h"
 
 namespace luka {
@@ -20,8 +19,8 @@ namespace rd {
 
 class SwapchainPass : public Pass {
  public:
-  SwapchainPass(std::shared_ptr<Config> config, std::shared_ptr<Gpu> gpu,
-                std::shared_ptr<Asset> asset, std::shared_ptr<Camera> camera,
+  SwapchainPass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
+                std::shared_ptr<Camera> camera,
                 const SwapchainInfo& swapchain_info,
                 const std::vector<vk::Image>& swapchain_images);
   ~SwapchainPass() = default;
@@ -36,7 +35,6 @@ class SwapchainPass : public Pass {
   void CreateClearValues() override;
   void CreateSubpasses() override;
 
-  std::shared_ptr<Config> config_;
   std::shared_ptr<Gpu> gpu_;
   std::shared_ptr<Asset> asset_;
   std::shared_ptr<Camera> camera_;

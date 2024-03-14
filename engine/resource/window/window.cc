@@ -122,6 +122,13 @@ bool Window::IsMouseButtonDown(int button) const {
   return glfwGetMouseButton(glfw_window_, button) == GLFW_PRESS;
 }
 
+bool Window::IsMouseButtonRelease(int button) const {
+  if (button < GLFW_MOUSE_BUTTON_1 || button > GLFW_MOUSE_BUTTON_LAST) {
+    return false;
+  }
+  return glfwGetMouseButton(glfw_window_, button) == GLFW_RELEASE;
+}
+
 void Window::SetCursorPos(f64 xpos, f64 ypos) {
   glfwSetCursorPos(glfw_window_, xpos, ypos);
 }

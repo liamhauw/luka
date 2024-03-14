@@ -22,13 +22,6 @@ EditorInput::EditorInput(std::shared_ptr<Config> config,
           std::forward<decltype(ph3)>(ph3), std::forward<decltype(ph4)>(ph4));
   });
 
-  window_->RegisterOnMouseButtonFunc(
-      [this](auto&& ph1, auto&& ph2, auto&& ph3) {
-        OnMouseButton(std::forward<decltype(ph1)>(ph1),
-                      std::forward<decltype(ph2)>(ph2),
-                      std::forward<decltype(ph3)>(ph3));
-      });
-
   window_->RegisterOnCursorPosFunc([this](auto&& ph1, auto&& ph2) {
     OnCursorPos(std::forward<decltype(ph1)>(ph1),
                 std::forward<decltype(ph2)>(ph2));
@@ -140,34 +133,13 @@ void EditorInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mod*/) {
   }
 }
 
-void EditorInput::OnMouseButton(i32 button, i32 action, i32 mods) {
-  if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-    if (action == GLFW_PRESS) {
-      i32 window_width{0};
-      i32 window_height{0};
-      window_->GetWindowSize(&window_width, &window_height);
-
-      f32 xpos{window_width / 2.0f};
-      f32 ypos{window_height / 2.0f};
-
-      window_->SetCursorPos(xpos, ypos);
-      window_->SetFocusMode(true);
-
-      prev_xpos_ = xpos;
-      prev_ypos_ = ypos;
-
-    } else if (action == GLFW_RELEASE) {
-      window_->SetFocusMode(false);
-    }
-  }
-}
-
 void EditorInput::OnCursorPos(f64 xpos, f64 ypos) {
   if (!config_->GetEditorMode()) {
     return;
   }
 
   if (window_->IsMouseButtonDown(GLFW_MOUSE_BUTTON_RIGHT)) {
+    window_->SetFocusMode(true);
     i32 window_width{0};
     i32 window_height{0};
     window_->GetWindowSize(&window_width, &window_height);
@@ -179,6 +151,8 @@ void EditorInput::OnCursorPos(f64 xpos, f64 ypos) {
         glm::radians(static_cast<f32>(prev_ypos_ - ypos) * angular_velocity)};
 
     camera_->Rotate(yaw, pitch);
+  } else if (window_->IsMouseButtonRelease(GLFW_MOUSE_BUTTON_RIGHT)) {
+    window_->SetFocusMode(false);
   }
 
   prev_xpos_ = xpos;

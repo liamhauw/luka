@@ -9,16 +9,14 @@
 
 namespace luka {
 
-Rendering::Rendering(std::shared_ptr<Config> config,
-                     std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu,
+Rendering::Rendering(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu,
                      std::shared_ptr<Asset> asset,
                      std::shared_ptr<Camera> camera)
-    : config_{config},
-      window_{window},
+    : window_{window},
       gpu_{gpu},
       asset_{asset},
       camera_{camera},
-      context_{config_, window_, gpu_, asset_, camera_} {}
+      context_{window_, gpu_, asset_, camera_} {}
 
 Rendering::~Rendering() { gpu_.reset(); }
 

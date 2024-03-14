@@ -12,14 +12,12 @@
 namespace luka {
 
 namespace rd {
-SwapchainPass::SwapchainPass(std::shared_ptr<Config> config,
-                             std::shared_ptr<Gpu> gpu,
+SwapchainPass::SwapchainPass(std::shared_ptr<Gpu> gpu,
                              std::shared_ptr<Asset> asset,
                              std::shared_ptr<Camera> camera,
                              const SwapchainInfo& swapchain_info,
                              const std::vector<vk::Image>& swapchain_images)
     : Pass{2, {0}, {}, 1},
-      config_{config},
       gpu_{gpu},
       asset_{asset},
       camera_{camera},
@@ -168,7 +166,7 @@ void SwapchainPass::CreateClearValues() {
 
 void SwapchainPass::CreateSubpasses() {
   std::unique_ptr<Subpass> swapchain_subpass{std::make_unique<SwapchainSupass>(
-      config_, gpu_, asset_, camera_, render_pass_, swapchain_images_.size())};
+      gpu_, asset_, camera_, render_pass_, swapchain_images_.size())};
   subpasses_.push_back(std::move(swapchain_subpass));
 }
 
