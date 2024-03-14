@@ -6,7 +6,7 @@
 - Improving load time with pipeline cache
 - Asynchronously load asset using a task-based multi-threading library
 - Recording commands on multiple threads
-- Driving rendering with the frame graph
+- Driving rendering with frame graph
 
 ## Prerequisites
 - Windows/macOS
@@ -41,7 +41,9 @@ Click Run and Debug in the sidebar, and select Windows/macOS Debug/RelWithDebInf
 
 ### Update submodule
 ```shell
+git submodule sync
 git pull --recurse-submodules
+
 git submodule update --remote
 ```
 
