@@ -4,7 +4,7 @@
 - Bindless rendering with descriptor indexing
 - Automating pipeline layout generation with spirv-cross
 - Improving load time with pipeline cache
-- Asynchronously load asset using a task-based multi-threading library
+- Asynchronously loading asset using a task-based multi-threading library
 - Recording commands on multiple threads
 - Driving rendering with frame graph
 
