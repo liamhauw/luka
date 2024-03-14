@@ -6,7 +6,7 @@
 - Improving load time with pipeline cache
 - Asynchronously load asset using a task-based multi-threading library
 - Recording commands on multiple threads
-- Dirving rendering with the frame graph
+- Driving rendering with the frame graph
 
 ## Prerequisites
 - Windows/macOS
