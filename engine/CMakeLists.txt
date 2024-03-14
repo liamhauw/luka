@@ -124,3 +124,10 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 target_link_libraries(${PROJECT_NAME} PRIVATE luka_third_party)
 target_precompile_headers(${PROJECT_NAME} PRIVATE platform/pch.h)
+
+if(APPLE)
+  set_property(
+    TARGET ${PROJECT_NAME}
+    PROPERTY INSTALL_RPATH
+    "/usr/local/lib")
+endif()
