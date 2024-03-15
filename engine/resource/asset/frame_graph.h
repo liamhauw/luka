@@ -7,6 +7,8 @@
 #include "platform/pch.h"
 // clang-format on
 
+#include "core/json.h"
+
 namespace luka {
 
 namespace ast {
@@ -19,7 +21,7 @@ struct Subpass {
 
 struct Pass {
   std::string name;
-  std::vector<u32> subpasses;
+  std::vector<Subpass> subpasses;
 };
 
 class FrameGraph {
@@ -27,6 +29,12 @@ class FrameGraph {
   FrameGraph() = default;
 
   FrameGraph(const std::filesystem::path& frame_graph_path);
+
+  const std::vector<ast::Pass>& GetPasses() const { return passes_; }
+
+ private:
+  json json_;
+  std::vector<Pass> passes_;
 };
 
 }  // namespace ast

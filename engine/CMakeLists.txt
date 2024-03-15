@@ -27,8 +27,6 @@ set(HEADER_FILES
   function/rendering/rendering.h
   function/rendering/spirv.h
   function/rendering/subpass.h
-  function/rendering/swapchain_pass.h
-  function/rendering/swapchain_subpass.h
 
   # platform
   platform/common.h
@@ -104,8 +102,6 @@ set(SOURCE_FILES
   function/rendering/rendering.cc
   function/rendering/spirv.cc
   function/rendering/subpass.cc
-  function/rendering/swapchain_pass.cc
-  function/rendering/swapchain_subpass.cc
 
   # editor
   editor/editor_input/editor_input.cc

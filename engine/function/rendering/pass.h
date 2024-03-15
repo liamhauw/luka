@@ -7,7 +7,10 @@
 #include "platform/pch.h"
 // clang-format on
 
+#include "function/camera/camera.h"
 #include "function/rendering/subpass.h"
+#include "resource/asset/asset.h"
+#include "resource/gpu/gpu.h"
 
 namespace luka {
 
@@ -24,31 +27,34 @@ struct SwapchainInfo {
 
 class Pass {
  public:
-  Pass(u32 attachment_count, const std::vector<u32>& color_attachment_indices,
-       const std::vector<u32>& resolve_attachment_indices,
-       u32 depth_stencil_attachment_index);
-  virtual ~Pass() = default;
+  Pass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
+       std::shared_ptr<Camera> camera, const ast::Pass& ast_pass,
+       const SwapchainInfo& swapchain_info,
+       const std::vector<vk::Image>& swapchain_images);
 
-  virtual void Resize(const SwapchainInfo& swapchain_info,
-                      const std::vector<vk::Image>& swapchain_images) {}
-
-  u32 GetAttachmentCount() const;
-  const std::vector<u32>& GetColorAttachmentIndices() const;
-  const std::vector<u32>& GetResloveAttachmentIndices() const;
-  u32 GetDepthStencilAttachmentIndex() const;
+  void Resize(const SwapchainInfo& swapchain_info,
+              const std::vector<vk::Image>& swapchain_images) {}
 
   const vk::raii::RenderPass& GetRenderPass() const;
   const vk::raii::Framebuffer& GetFramebuffer(u32 frame_index) const;
   const vk::Rect2D& GetRenderArea() const;
   const std::vector<vk::ClearValue>& GetClearValues() const;
-  const std::vector<std::unique_ptr<Subpass>>& GetSubpasses() const;
+  const std::vector<Subpass>& GetSubpasses() const;
 
  protected:
-  virtual void CreateRenderPass() = 0;
-  virtual void CreateFramebuffers() = 0;
-  virtual void CreateRenderArea() = 0;
-  virtual void CreateClearValues() = 0;
-  virtual void CreateSubpasses() = 0;
+  void CreateRenderPass();
+  void CreateFramebuffers();
+  void CreateRenderArea();
+  void CreateClearValues();
+  void CreateSubpasses();
+
+  std::shared_ptr<Gpu> gpu_;
+  std::shared_ptr<Asset> asset_;
+  std::shared_ptr<Camera> camera_;
+
+  const ast::Pass* ast_pass_;
+  SwapchainInfo swapchain_info_;
+  std::vector<vk::Image> swapchain_images_;
 
   u32 attachment_count_;
   std::vector<u32> color_attachment_indices_;
@@ -65,7 +71,7 @@ class Pass {
 
   std::vector<vk::ClearValue> clear_values_;
 
-  std::vector<std::unique_ptr<Subpass>> subpasses_;
+  std::vector<Subpass> subpasses_;
 };
 
 }  // namespace rd

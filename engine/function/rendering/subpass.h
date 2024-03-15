@@ -16,6 +16,11 @@ namespace luka {
 
 namespace rd {
 
+struct PushConstantUniform {
+  glm::mat4 pv;
+  glm::vec3 camera_position;
+};
+
 struct alignas(16) DrawElementUniform {
   glm::mat4 m;
   glm::vec4 base_color_factor;
@@ -53,20 +58,22 @@ struct DrawElement {
 class Subpass {
  public:
   Subpass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
-          std::shared_ptr<Camera> camera,
+          std::shared_ptr<Camera> camera, const ast::Subpass& ast_subpass,
           const vk::raii::RenderPass& render_pass, u32 frame_count);
-  virtual ~Subpass() = default;
 
-  virtual void PushConstants(const vk::raii::CommandBuffer& command_buffer,
-                             vk::PipelineLayout pipeline_layout) = 0;
+  void PushConstants(const vk::raii::CommandBuffer& command_buffer,
+                     vk::PipelineLayout pipeline_layout) const;
 
-  vk::DescriptorSetLayout GetBindlessDescriptorSetLayout();
-  const vk::raii::DescriptorSet& GetBindlessDescriptorSet();
-  std::vector<DrawElement>& GetDrawElements();
+  vk::DescriptorSetLayout GetBindlessDescriptorSetLayout() const;
+  const vk::raii::DescriptorSet& GetBindlessDescriptorSet() const;
+  const std::vector<DrawElement>& GetDrawElements() const;
 
  protected:
-  virtual void CreateBindlessDescriptorSets() = 0;
-  virtual void CreateDrawElements() = 0;
+  void CreateBindlessDescriptorSets();
+  void CreateDrawElements();
+
+  DrawElement CreateDrawElement(const glm::mat4& model_matrix,
+                                const ast::sc::Primitive& primitive);
 
   const SPIRV& RequesetSpirv(const ast::Shader& shader,
                              const std::vector<std::string>& processes,
@@ -92,8 +99,12 @@ class Subpass {
   std::shared_ptr<Gpu> gpu_;
   std::shared_ptr<Asset> asset_;
   std::shared_ptr<Camera> camera_;
+
+  const ast::Subpass* ast_subpass_;
   vk::RenderPass render_pass_;
   u32 frame_count_;
+
+  std::vector<std::string> wanted_textures_{"base_color_texture"};
 
   vk::DescriptorSetLayout bindless_descriptor_set_layout_{nullptr};
   vk::raii::DescriptorSets bindless_descriptor_sets_{nullptr};

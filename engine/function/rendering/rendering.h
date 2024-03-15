@@ -8,7 +8,7 @@
 // clang-format on
 
 #include "function/camera/camera.h"
-#include "function/rendering/swapchain_pass.h"
+#include "function/rendering/pass.h"
 #include "resource/asset/asset.h"
 #include "resource/gpu/gpu.h"
 #include "resource/window/window.h"
@@ -61,7 +61,7 @@ class Rendering {
   vk::Viewport viewport_;
   vk::Rect2D scissor_;
 
-  std::vector<std::unique_ptr<rd::Pass>> passes_;
+  std::vector<rd::Pass> passes_;
 };
 
 }  // namespace luka

@@ -43,7 +43,7 @@ void Rendering::Resize() {
   CreateSwapchain();
   CreateViewportAndScissor();
   for (auto& pass : passes_) {
-    pass->Resize(swapchain_info_, swapchain_images_);
+    pass.Resize(swapchain_info_, swapchain_images_);
   }
 }
 
@@ -109,12 +109,12 @@ void Rendering::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
     gpu_->BeginLabel(command_buffer, "pass_" + std::to_string(i));
 #endif
     // Begin render pass.
-    const std::unique_ptr<rd::Pass>& pass{passes_[i]};
-    const vk::raii::RenderPass& render_pass{pass->GetRenderPass()};
+    const rd::Pass& pass{passes_[i]};
+    const vk::raii::RenderPass& render_pass{pass.GetRenderPass()};
     const vk::raii::Framebuffer& framebuffer{
-        pass->GetFramebuffer(active_frame_index_)};
-    const vk::Rect2D& render_area{pass->GetRenderArea()};
-    const std::vector<vk::ClearValue> clear_values{pass->GetClearValues()};
+        pass.GetFramebuffer(active_frame_index_)};
+    const vk::Rect2D& render_area{pass.GetRenderArea()};
+    const std::vector<vk::ClearValue> clear_values{pass.GetClearValues()};
 
     vk::RenderPassBeginInfo render_pass_bi{*render_pass, *framebuffer,
                                            render_area, clear_values};
@@ -122,13 +122,12 @@ void Rendering::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
                                    vk::SubpassContents::eInline);
 
     // Tarverse subpasses.
-    const std::vector<std::unique_ptr<rd::Subpass>>& subpasses{
-        pass->GetSubpasses()};
+    const std::vector<rd::Subpass>& subpasses{pass.GetSubpasses()};
     for (u32 j{0}; j < subpasses.size(); ++j) {
 #ifndef NDEBUG
       gpu_->BeginLabel(command_buffer, "sub_pass_" + std::to_string(j));
 #endif
-      const std::unique_ptr<rd::Subpass>& subpass{subpasses[j]};
+      const rd::Subpass& subpass{subpasses[j]};
 
       // Next subpass.
       if (j > 0) {
@@ -136,11 +135,12 @@ void Rendering::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
       }
 
       // Traverse draw elements.
-      std::vector<rd::DrawElement>& draw_elements{subpass->GetDrawElements()};
+      const std::vector<rd::DrawElement>& draw_elements{
+          subpass.GetDrawElements()};
 
       vk::Pipeline prev_pipeline{nullptr};
       vk::PipelineLayout prev_pipeline_layout{nullptr};
-      for (rd::DrawElement& draw_element : draw_elements) {
+      for (const rd::DrawElement& draw_element : draw_elements) {
         // Bind pipeline.
         vk::Pipeline pipeline{draw_element.pipeline};
         if (prev_pipeline != pipeline) {
@@ -152,14 +152,14 @@ void Rendering::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
         // Update subpass uniform buffer.
         vk::PipelineLayout pipeline_layout{draw_element.pipeline_layout};
         if (prev_pipeline_layout != pipeline_layout) {
-          subpass->PushConstants(command_buffer, pipeline_layout);
+          subpass.PushConstants(command_buffer, pipeline_layout);
           prev_pipeline_layout = pipeline_layout;
         }
 
         // Bind bindless descriptor sets;
         command_buffer.bindDescriptorSets(
             vk::PipelineBindPoint::eGraphics, pipeline_layout, 0,
-            *(subpass->GetBindlessDescriptorSet()), nullptr);
+            *(subpass.GetBindlessDescriptorSet()), nullptr);
 
         // Bind normal descriptor sets.
         std::vector<vk::DescriptorSet> descriptor_sets;
@@ -361,10 +361,12 @@ void Rendering::CreateViewportAndScissor() {
 }
 
 void Rendering::CreatePasses() {
-  std::unique_ptr<rd::Pass> swapchain_pass{std::make_unique<rd::SwapchainPass>(
-      gpu_, asset_, camera_, swapchain_info_, swapchain_images_)};
-
-  passes_.push_back(std::move(swapchain_pass));
+  const ast::FrameGraph& frame_graph{asset_->GetFrameGraph(0)};
+  const std::vector<ast::Pass>& ast_passes{frame_graph.GetPasses()};
+  for (u32 i{0}; i < ast_passes.size(); ++i) {
+    passes_.emplace_back(gpu_, asset_, camera_, ast_passes[i], swapchain_info_,
+                         swapchain_images_);
+  }
 }
 
 }  // namespace luka
