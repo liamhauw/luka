@@ -146,7 +146,6 @@ class Gpu {
   void CreatePhysicalDevice();
   void CreateDevice();
   void CreateAllocator();
-  void CreateTransferCommandObjects();
   void CreateDescriptorPool();
 
   void SetObjectName(vk::ObjectType object_type, u64 handle,
@@ -183,10 +182,6 @@ class Gpu {
   vk::raii::Queue present_queue_{nullptr};
 
   VmaAllocator allocator_;
-
-  const u32 kTransferCommandBufferCount{4};
-  vk::raii::CommandPool transfer_command_pool_{nullptr};
-  vk::raii::CommandBuffers transfer_command_buffers_{nullptr};
 
   vk::raii::DescriptorPool bindless_descriptor_pool_{nullptr};
   vk::raii::DescriptorPool normal_descriptor_pool_{nullptr};

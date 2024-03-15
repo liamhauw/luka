@@ -18,7 +18,6 @@ Gpu::Gpu(std::shared_ptr<Window> window) : window_{window} {
   CreatePhysicalDevice();
   CreateDevice();
   CreateAllocator();
-  CreateTransferCommandObjects();
   CreateDescriptorPool();
 }
 
@@ -746,21 +745,6 @@ void Gpu::CreateAllocator() {
       .vulkanApiVersion = VK_API_VERSION_1_3,
   };
   vmaCreateAllocator(&allocator_ci, &allocator_);
-}
-
-void Gpu::CreateTransferCommandObjects() {
-  vk::CommandPoolCreateInfo command_pool_ci{
-      vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-      transfer_queue_index_.value()};
-
-  transfer_command_pool_ = vk::raii::CommandPool{device_, command_pool_ci};
-
-  vk::CommandBufferAllocateInfo command_buffer_allocate_info{
-      *transfer_command_pool_, vk::CommandBufferLevel::ePrimary,
-      kTransferCommandBufferCount};
-
-  transfer_command_buffers_ =
-      vk::raii::CommandBuffers{device_, command_buffer_allocate_info};
 }
 
 void Gpu::CreateDescriptorPool() {
