@@ -2,11 +2,22 @@
   "passes": [
     {
       "name": "swapchain_pass",
+      "attachments": {
+        "color": [
+          {
+            "name": "swapchain_image"
+          }
+        ],
+        "depth_stencil": {
+          "name": "depth_stencil_image"
+        }
+      },
       "subpasses": [
         {
           "name": "swapchain_subpass",
           "scenes": [
-            0
+            0,
+            1
           ],
           "shaders": {
             "vertex": 0,

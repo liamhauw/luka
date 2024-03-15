@@ -33,7 +33,7 @@ class Pass {
        const std::vector<vk::Image>& swapchain_images);
 
   void Resize(const SwapchainInfo& swapchain_info,
-              const std::vector<vk::Image>& swapchain_images) {}
+              const std::vector<vk::Image>& swapchain_images);
 
   const vk::raii::RenderPass& GetRenderPass() const;
   const vk::raii::Framebuffer& GetFramebuffer(u32 frame_index) const;
@@ -42,6 +42,7 @@ class Pass {
   const std::vector<Subpass>& GetSubpasses() const;
 
  protected:
+  void ParseAttachmentInfos();
   void CreateRenderPass();
   void CreateFramebuffers();
   void CreateRenderArea();
@@ -56,11 +57,13 @@ class Pass {
   SwapchainInfo swapchain_info_;
   std::vector<vk::Image> swapchain_images_;
 
-  u32 attachment_count_;
-  std::vector<u32> color_attachment_indices_;
-  std::vector<u32> resolve_attachment_indices_;
-  u32 depth_stencil_attachment_index_;
-
+  const std::vector<ast::AttachmentInfo>* color_attachment_infos_{nullptr};
+  const ast::AttachmentInfo* resolve_attachment_info_{nullptr};
+  const ast::AttachmentInfo* depth_stencil_attachment_info_{nullptr};
+  u32 color_attachment_count_{0};
+  u32 resolve_attachment_count_{0};
+  u32 depth_stencil_attachment_count_{0};
+  u32 attachment_count_{0};
   vk::raii::RenderPass render_pass_{nullptr};
 
   std::vector<std::vector<gpu::Image>> images_;

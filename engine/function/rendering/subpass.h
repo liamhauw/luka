@@ -109,6 +109,8 @@ class Subpass {
   vk::DescriptorSetLayout bindless_descriptor_set_layout_{nullptr};
   vk::raii::DescriptorSets bindless_descriptor_sets_{nullptr};
 
+  const std::vector<u32>* scenes_{nullptr};
+  const std::unordered_map<std::string, u32>* shaders_{nullptr};
   std::vector<DrawElement> draw_elements_;
 
   std::unordered_map<u64, SPIRV> spirv_shaders_;

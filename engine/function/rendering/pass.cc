@@ -20,16 +20,21 @@ Pass::Pass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
       camera_{camera},
       ast_pass_{&ast_pass},
       swapchain_info_{swapchain_info},
-      swapchain_images_{swapchain_images},
-      attachment_count_{2},
-      color_attachment_indices_{0},
-      resolve_attachment_indices_{},
-      depth_stencil_attachment_index_{1} {
+      swapchain_images_{swapchain_images} {
+  ParseAttachmentInfos();
   CreateRenderPass();
   CreateFramebuffers();
   CreateRenderArea();
   CreateClearValues();
   CreateSubpasses();
+}
+
+void Pass::Resize(const SwapchainInfo& swapchain_info,
+                  const std::vector<vk::Image>& swapchain_images) {
+  swapchain_info_ = swapchain_info;
+  swapchain_images_ = swapchain_images;
+  CreateFramebuffers();
+  CreateRenderArea();
 }
 
 const vk::raii::RenderPass& Pass::GetRenderPass() const { return render_pass_; }
@@ -46,39 +51,78 @@ const std::vector<vk::ClearValue>& Pass::GetClearValues() const {
 
 const std::vector<Subpass>& Pass::GetSubpasses() const { return subpasses_; }
 
+void Pass::ParseAttachmentInfos() {
+  const auto& ast_attachment{ast_pass_->attachments};
+
+  auto ci{ast_attachment.find(ast::AttachmentType::kColor)};
+  if (ci != ast_attachment.end()) {
+    color_attachment_infos_ = &(ci->second);
+    color_attachment_count_ = color_attachment_infos_->size();
+  }
+
+  auto ri{ast_attachment.find(ast::AttachmentType::kResolve)};
+  if (ri != ast_attachment.end()) {
+    resolve_attachment_info_ = &((ri->second)[0]);
+    resolve_attachment_count_ = 1;
+  }
+
+  auto di{ast_attachment.find(ast::AttachmentType::kDepthStencil)};
+  if (di != ast_attachment.end()) {
+    depth_stencil_attachment_info_ = &((di->second)[0]);
+    depth_stencil_attachment_count_ = 1;
+  }
+
+  attachment_count_ = color_attachment_count_ + resolve_attachment_count_ +
+                      depth_stencil_attachment_count_;
+}
+
 void Pass::CreateRenderPass() {
-  std::vector<vk::AttachmentDescription> attachment_descriptions(
-      attachment_count_);
+  std::vector<vk::AttachmentDescription> attachment_descriptions;
 
-  attachment_descriptions[color_attachment_indices_[0]] =
-      vk::AttachmentDescription{
-          vk::AttachmentDescriptionFlags{}, swapchain_info_.color_format,
-          vk::SampleCountFlagBits::e1,      vk::AttachmentLoadOp::eClear,
-          vk::AttachmentStoreOp::eStore,    vk::AttachmentLoadOp::eClear,
-          vk::AttachmentStoreOp::eStore,    vk::ImageLayout::eUndefined,
-          vk::ImageLayout::ePresentSrcKHR};
+  std::vector<vk::AttachmentReference> color_attachment_refs;
+  vk::AttachmentReference resolve_attachment_ref;
+  vk::AttachmentReference depth_stencil_attachment_ref;
 
-  attachment_descriptions[depth_stencil_attachment_index_] =
-      vk::AttachmentDescription{
-          vk::AttachmentDescriptionFlags{},
-          swapchain_info_.depth_stencil_format_,
-          vk::SampleCountFlagBits::e1,
-          vk::AttachmentLoadOp::eClear,
-          vk::AttachmentStoreOp::eStore,
-          vk::AttachmentLoadOp::eClear,
-          vk::AttachmentStoreOp::eStore,
-          vk::ImageLayout::eUndefined,
-          vk::ImageLayout::eDepthStencilAttachmentOptimal};
+  vk::SubpassDescription subpass_description{{},
+                                             vk::PipelineBindPoint::eGraphics};
 
-  vk::AttachmentReference color_attachment_ref{
-      color_attachment_indices_[0], vk::ImageLayout::eColorAttachmentOptimal};
-  vk::AttachmentReference depth_stencil_attachment_ref{
-      depth_stencil_attachment_index_,
-      vk::ImageLayout::eDepthStencilAttachmentOptimal};
+  for (u32 i{0}; i < color_attachment_count_; ++i) {
+    const ast::AttachmentInfo& info{(*color_attachment_infos_)[i]};
+    vk::ImageLayout final_image_layout{
+        info.name == "swapchain_image"
+            ? vk::ImageLayout::ePresentSrcKHR
+            : vk::ImageLayout::eShaderReadOnlyOptimal};
 
-  vk::SubpassDescription subpass_description{
-      {}, vk::PipelineBindPoint::eGraphics, {}, color_attachment_ref,
-      {}, &depth_stencil_attachment_ref};
+    attachment_descriptions.emplace_back(
+        vk::AttachmentDescriptionFlags{}, swapchain_info_.color_format,
+        vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear,
+        vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eClear,
+        vk::AttachmentStoreOp::eStore, vk::ImageLayout::eUndefined,
+        final_image_layout);
+
+    color_attachment_refs.emplace_back(
+        i, vk::ImageLayout::eColorAttachmentOptimal);
+
+    if (i == color_attachment_count_ - 1) {
+      subpass_description.setColorAttachments(color_attachment_refs);
+    }
+  }
+
+  if (depth_stencil_attachment_count_ == 1) {
+    attachment_descriptions.emplace_back(
+        vk::AttachmentDescriptionFlags{}, swapchain_info_.depth_stencil_format_,
+        vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear,
+        vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eClear,
+        vk::AttachmentStoreOp::eStore, vk::ImageLayout::eUndefined,
+        vk::ImageLayout::eDepthStencilAttachmentOptimal);
+
+    depth_stencil_attachment_ref = {
+        color_attachment_count_ + resolve_attachment_count_,
+        vk::ImageLayout::eDepthStencilAttachmentOptimal};
+
+    subpass_description.setPDepthStencilAttachment(
+        &depth_stencil_attachment_ref);
+  }
 
   vk::RenderPassCreateInfo render_pass_ci{
       {}, attachment_descriptions, subpass_description};
@@ -91,56 +135,87 @@ void Pass::CreateFramebuffers() {
   image_views_.clear();
   framebuffers_.clear();
 
-  vk::ImageViewCreateInfo swapchain_image_view_ci{
-      {},
-      {},
-      vk::ImageViewType::e2D,
-      swapchain_info_.color_format,
-      {},
-      {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}};
-
-  vk::ImageCreateInfo depth_image_ci{
-      {},
-      vk::ImageType::e2D,
-      vk::Format::eD32Sfloat,
-      {swapchain_info_.extent.width, swapchain_info_.extent.height, 1},
-      1,
-      1,
-      vk::SampleCountFlagBits::e1,
-      vk::ImageTiling::eOptimal,
-      vk::ImageUsageFlagBits::eDepthStencilAttachment |
-          vk::ImageUsageFlagBits::eTransientAttachment,
-      vk::SharingMode::eExclusive,
-      {},
-      vk::ImageLayout::eUndefined};
-
-  vk::ImageViewCreateInfo depth_image_view_ci{
-      {},
-      {},
-      vk::ImageViewType::e2D,
-      vk::Format::eD32Sfloat,
-      {},
-      {vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1}};
-
   u32 frame_count{static_cast<u32>(swapchain_images_.size())};
   images_.resize(frame_count);
   image_views_.resize(frame_count);
 
   for (u32 i{0}; i < frame_count; ++i) {
-    gpu::Image swapchain_image_gpu{swapchain_images_[i]};
+    std::vector<vk::ImageView> framebuffer_image_views;
+    for (u32 j{0}; j < color_attachment_count_; ++j) {
+      const ast::AttachmentInfo& info{(*color_attachment_infos_)[j]};
+      bool is_swapchain{info.name == "swapchain_image" ? true : false};
+      // Image.
+      gpu::Image color_image;
+      if (is_swapchain) {
+        color_image = swapchain_images_[i];
+      } else {
+        vk::ImageCreateInfo color_image_ci{
+            {},
+            vk::ImageType::e2D,
+            swapchain_info_.color_format,
+            {swapchain_info_.extent.width, swapchain_info_.extent.height, 1},
+            1,
+            1,
+            vk::SampleCountFlagBits::e1,
+            vk::ImageTiling::eOptimal,
+            vk::ImageUsageFlagBits::eColorAttachment,
+            vk::SharingMode::eExclusive,
+            {},
+            vk::ImageLayout::eUndefined};
+        color_image = gpu_->CreateImage(color_image_ci);
+      }
 
-    swapchain_image_view_ci.image = *swapchain_image_gpu;
-    vk::raii::ImageView swapchain_image_view{
-        gpu_->CreateImageView(swapchain_image_view_ci, "swapchain")};
+      // Image view.
+      vk::ImageViewCreateInfo color_image_view_ci{
+          {},
+          *color_image,
+          vk::ImageViewType::e2D,
+          swapchain_info_.color_format,
+          {},
+          {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}};
+      vk::raii::ImageView color_image_view{
+          gpu_->CreateImageView(color_image_view_ci)};
 
-    gpu::Image depth_image{gpu_->CreateImage(depth_image_ci, "depth")};
+      framebuffer_image_views.push_back(*color_image_view);
 
-    depth_image_view_ci.image = *depth_image;
-    vk::raii::ImageView depth_image_view{
-        gpu_->CreateImageView(depth_image_view_ci, "depth")};
+      images_[i].push_back(std::move(color_image));
+      image_views_[i].push_back(std::move(color_image_view));
+    }
 
-    std::vector<vk::ImageView> framebuffer_image_views{*swapchain_image_view,
-                                                       *depth_image_view};
+    if (depth_stencil_attachment_count_ == 1) {
+      vk::ImageCreateInfo depth_stencil_image_ci{
+          {},
+          vk::ImageType::e2D,
+          vk::Format::eD32Sfloat,
+          {swapchain_info_.extent.width, swapchain_info_.extent.height, 1},
+          1,
+          1,
+          vk::SampleCountFlagBits::e1,
+          vk::ImageTiling::eOptimal,
+          vk::ImageUsageFlagBits::eDepthStencilAttachment |
+              vk::ImageUsageFlagBits::eTransientAttachment,
+          vk::SharingMode::eExclusive,
+          {},
+          vk::ImageLayout::eUndefined};
+
+      gpu::Image depth_stencil_image{gpu_->CreateImage(depth_stencil_image_ci)};
+
+      vk::ImageViewCreateInfo depth_stencil_image_view_ci{
+          {},
+          *depth_stencil_image,
+          vk::ImageViewType::e2D,
+          vk::Format::eD32Sfloat,
+          {},
+          {vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1}};
+      vk::raii::ImageView depth_stencil_image_view{
+          gpu_->CreateImageView(depth_stencil_image_view_ci)};
+
+      framebuffer_image_views.emplace_back(*depth_stencil_image_view);
+
+      images_[i].push_back(std::move(depth_stencil_image));
+      image_views_[i].push_back(std::move(depth_stencil_image_view));
+    }
+
     vk::FramebufferCreateInfo framebuffer_ci{{},
                                              *render_pass_,
                                              framebuffer_image_views,
@@ -149,12 +224,6 @@ void Pass::CreateFramebuffers() {
                                              1};
 
     vk::raii::Framebuffer framebuffer{gpu_->CreateFramebuffer(framebuffer_ci)};
-
-    images_[i].push_back(std::move(swapchain_image_gpu));
-    images_[i].push_back(std::move(depth_image));
-
-    image_views_[i].push_back(std::move(swapchain_image_view));
-    image_views_[i].push_back(std::move(depth_image_view));
 
     framebuffers_.push_back(std::move(framebuffer));
   }
@@ -165,11 +234,13 @@ void Pass::CreateRenderArea() {
 }
 
 void Pass::CreateClearValues() {
-  clear_values_.resize(attachment_count_);
-  clear_values_[color_attachment_indices_[0]].color =
-      vk::ClearColorValue{0.0F, 0.0F, 0.0F, 1.0F};
-  clear_values_[depth_stencil_attachment_index_].depthStencil =
-      vk::ClearDepthStencilValue{1.0F, 0};
+  for (u32 i{0}; i < color_attachment_count_; ++i) {
+    clear_values_.emplace_back(vk::ClearColorValue{0.0F, 0.0F, 0.0F, 1.0F});
+  }
+
+  if (depth_stencil_attachment_count_ == 1) {
+    clear_values_.emplace_back(vk::ClearDepthStencilValue{1.0F, 0});
+  }
 }
 
 void Pass::CreateSubpasses() {

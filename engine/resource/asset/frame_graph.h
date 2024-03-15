@@ -13,6 +13,11 @@ namespace luka {
 
 namespace ast {
 
+enum class AttachmentType { kColor, kResolve, kDepthStencil };
+struct AttachmentInfo {
+  std::string name;
+};
+
 struct Subpass {
   std::string name;
   std::vector<u32> scenes;
@@ -21,6 +26,7 @@ struct Subpass {
 
 struct Pass {
   std::string name;
+  std::unordered_map<AttachmentType, std::vector<AttachmentInfo>> attachments;
   std::vector<Subpass> subpasses;
 };
 

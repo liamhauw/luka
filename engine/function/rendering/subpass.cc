@@ -19,7 +19,8 @@ namespace luka {
 namespace rd {
 
 Subpass::Subpass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
-                 std::shared_ptr<Camera> camera, const ast::Subpass& ast_subpass,
+                 std::shared_ptr<Camera> camera,
+                 const ast::Subpass& ast_subpass,
                  const vk::raii::RenderPass& render_pass, u32 frame_count)
     : gpu_{gpu},
       asset_{asset},
@@ -81,45 +82,50 @@ void Subpass::CreateBindlessDescriptorSets() {
 }
 
 void Subpass::CreateDrawElements() {
-  const ast::sc::Scene* scene{asset_->GetScene(0).GetScene()};
-  const std::vector<ast::sc::Node*>& nodes{scene->GetNodes()};
+  scenes_ = &(ast_subpass_->scenes);
+  shaders_ = &(ast_subpass_->shaders);
 
-  std::queue<const ast::sc::Node*> all_nodes;
-  std::unordered_map<const ast::sc::Node*, glm::mat4> node_model_matrix;
+  for (u32 scene_index : *scenes_) {
+    const ast::sc::Scene* scene{asset_->GetScene(scene_index).GetScene()};
+    const std::vector<ast::sc::Node*>& nodes{scene->GetNodes()};
 
-  for (const ast::sc::Node* node : nodes) {
-    all_nodes.push(node);
-  }
+    std::queue<const ast::sc::Node*> all_nodes;
+    std::unordered_map<const ast::sc::Node*, glm::mat4> node_model_matrix;
 
-  while (!all_nodes.empty()) {
-    const ast::sc::Node* cur_node{all_nodes.front()};
-    all_nodes.pop();
-
-    const std::vector<ast::sc::Node*>& cur_node_children{
-        cur_node->GetChildren()};
-    for (const ast::sc::Node* cur_node_child : cur_node_children) {
-      all_nodes.push(cur_node_child);
+    for (const ast::sc::Node* node : nodes) {
+      all_nodes.push(node);
     }
 
-    // Model matrix.
-    glm::mat4 model_matrix{cur_node->GetModelMarix()};
-    const ast::sc::Node* parent_node{cur_node->GetParent()};
-    while (parent_node) {
-      model_matrix *= parent_node->GetModelMarix();
-      parent_node = parent_node->GetParent();
-    }
+    while (!all_nodes.empty()) {
+      const ast::sc::Node* cur_node{all_nodes.front()};
+      all_nodes.pop();
 
-    // Primitives.
-    const ast::sc::Mesh* mesh{cur_node->GetMesh()};
-    if (!mesh) {
-      continue;
-    }
-    const std::vector<ast::sc::Primitive>& primitives{mesh->GetPrimitives()};
+      const std::vector<ast::sc::Node*>& cur_node_children{
+          cur_node->GetChildren()};
+      for (const ast::sc::Node* cur_node_child : cur_node_children) {
+        all_nodes.push(cur_node_child);
+      }
 
-    // Draw elements.
-    for (const ast::sc::Primitive& primitive : primitives) {
-      DrawElement draw_element{CreateDrawElement(model_matrix, primitive)};
-      draw_elements_.push_back(std::move(draw_element));
+      // Model matrix.
+      glm::mat4 model_matrix{cur_node->GetModelMarix()};
+      const ast::sc::Node* parent_node{cur_node->GetParent()};
+      while (parent_node) {
+        model_matrix *= parent_node->GetModelMarix();
+        parent_node = parent_node->GetParent();
+      }
+
+      // Primitives.
+      const ast::sc::Mesh* mesh{cur_node->GetMesh()};
+      if (!mesh) {
+        continue;
+      }
+      const std::vector<ast::sc::Primitive>& primitives{mesh->GetPrimitives()};
+
+      // Draw elements.
+      for (const ast::sc::Primitive& primitive : primitives) {
+        DrawElement draw_element{CreateDrawElement(model_matrix, primitive)};
+        draw_elements_.push_back(std::move(draw_element));
+      }
     }
   }
 }
@@ -160,9 +166,20 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
     THROW("There is no position buffer.");
   }
 
-  const SPIRV& vert_spirv{RequesetSpirv(asset_->GetShader(0), shader_processes,
+  auto vi{shaders_->find("vertex")};
+  if (vi == shaders_->end()) {
+    THROW("There is no vertex shader");
+  }
+  auto fi{shaders_->find("fragment")};
+  if (fi == shaders_->end()) {
+    THROW("There is no fragment shader");
+  }
+
+  const SPIRV& vert_spirv{RequesetSpirv(asset_->GetShader(vi->second),
+                                        shader_processes,
                                         vk::ShaderStageFlagBits::eVertex)};
-  const SPIRV& frag_spirv{RequesetSpirv(asset_->GetShader(1), shader_processes,
+  const SPIRV& frag_spirv{RequesetSpirv(asset_->GetShader(fi->second),
+                                        shader_processes,
                                         vk::ShaderStageFlagBits::eFragment)};
 
   // Pipeline layout.

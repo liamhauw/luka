@@ -123,7 +123,7 @@ Mesh::Mesh(std::shared_ptr<Gpu> gpu,
       primitive.material = material_components.back();
     }
 
-    primitives_.emplace_back(std::move(primitive));
+    primitives_.push_back(std::move(primitive));
   }
 }
 
