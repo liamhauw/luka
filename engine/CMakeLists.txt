@@ -23,7 +23,6 @@ set(HEADER_FILES
   function/camera/camera.h
   function/function_input/function_input.h
   function/function_ui/function_ui.h
-  function/rendering/context.h
   function/rendering/pass.h
   function/rendering/rendering.h
   function/rendering/spirv.h
@@ -101,7 +100,6 @@ set(SOURCE_FILES
   function/camera/camera.cc
   function/function_input/function_input.cc
   function/function_ui/function_ui.cc
-  function/rendering/context.cc
   function/rendering/pass.cc
   function/rendering/rendering.cc
   function/rendering/spirv.cc
