@@ -47,6 +47,9 @@ class SPIRV {
   SPIRV(const ast::Shader& shader, const std::vector<std::string>& processes,
         vk::ShaderStageFlagBits stage, u64 hash_value);
 
+  SPIRV(const std::vector<u32>& spirv, vk::ShaderStageFlagBits stage,
+        u64 hash_value);
+
   vk::ShaderStageFlagBits GetStage() const;
   u64 GetHashValue() const;
 
@@ -69,14 +72,15 @@ class SPIRV {
   u32 ParseOffset(const spirv_cross::CompilerGLSL& compiler,
                   const spirv_cross::Resource& resource);
   u32 ParseLocation(const spirv_cross::CompilerGLSL& compiler,
-                  const spirv_cross::Resource& resource);                
+                    const spirv_cross::Resource& resource);
 
   ast::Shader shader_;
   std::vector<std::string> processes_;
-  vk::ShaderStageFlagBits stage_;
-  u64 hash_value_;
 
   std::vector<u32> spirv_;
+
+  vk::ShaderStageFlagBits stage_;
+  u64 hash_value_;
 
   std::vector<ShaderResource> shader_resources_;
   std::vector<SpecializationConstant> specialization_constants_;

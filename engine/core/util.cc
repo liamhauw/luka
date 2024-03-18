@@ -21,7 +21,7 @@ std::filesystem::path GetPath(const std::string& path) {
   return std::filesystem::path{res};
 }
 
-std::vector<u8> LoadBinary(const std::filesystem::path& binary_path) {
+std::vector<u8> LoadBinaryU8(const std::filesystem::path& binary_path) {
   std::ifstream binary_file(binary_path.string(), std::ios::binary);
   if (!binary_file) {
     THROW("Fail to open {}", binary_path.string());
@@ -43,8 +43,30 @@ std::vector<u8> LoadBinary(const std::filesystem::path& binary_path) {
   return binary_data;
 }
 
-void SaveBinary(const std::vector<u8>& binary_data,
-                const std::filesystem::path& binary_path) {
+std::vector<u32> LoadBinaryU32(const std::filesystem::path& binary_path) {
+  std::ifstream binary_file(binary_path.string(), std::ios::binary);
+  if (!binary_file) {
+    THROW("Fail to open {}", binary_path.string());
+  }
+
+  binary_file.seekg(0, std::ios::end);
+  std::streampos file_size{binary_file.tellg()};
+  binary_file.seekg(0, std::ios::beg);
+
+  std::vector<u32> binary_data(file_size / 4);
+  binary_file.read(reinterpret_cast<char*>(binary_data.data()), file_size);
+
+  if (binary_file.gcount() != file_size) {
+    THROW("Fail to read {}", binary_path.string());
+  }
+
+  binary_file.close();
+
+  return binary_data;
+}
+
+void SaveBinaryU8(const std::vector<u8>& binary_data,
+                  const std::filesystem::path& binary_path) {
   std::ofstream binary_file(binary_path.string(), std::ios::binary);
   if (!binary_file) {
     THROW("Fail to open {}", binary_path.string());
@@ -52,6 +74,18 @@ void SaveBinary(const std::vector<u8>& binary_data,
 
   binary_file.write(reinterpret_cast<const char*>(binary_data.data()),
                     binary_data.size());
+  binary_file.close();
+}
+
+void SaveBinaryU32(const std::vector<u32>& binary_data,
+                   const std::filesystem::path& binary_path) {
+  std::ofstream binary_file(binary_path.string(), std::ios::binary);
+  if (!binary_file) {
+    THROW("Fail to open {}", binary_path.string());
+  }
+
+  binary_file.write(reinterpret_cast<const char*>(binary_data.data()),
+                    binary_data.size() * 4);
   binary_file.close();
 }
 

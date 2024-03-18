@@ -509,7 +509,23 @@ const SPIRV& Subpass::RequesetSpirv(const ast::Shader& shader,
     return it->second;
   }
 
-  SPIRV spirv{shader, processes, shader_stage, hash_value};
+  std::filesystem::path root_path{GetPath(LUKA_ROOT_PATH)};
+  std::filesystem::path cache_path{root_path / "cache"};
+  std::filesystem::path spirv_cache_file{
+      cache_path / ("spirv_" + std::to_string(hash_value) + ".cache")};
+
+  std::vector<u32> spirv_cache_data;
+  if (std::filesystem::exists(spirv_cache_file)) {
+    spirv_cache_data = LoadBinaryU32(spirv_cache_file);
+  } else {
+    spirv_cache_data = shader.CompileToSpirv(processes);
+    if (!std::filesystem::exists(cache_path)) {
+      std::filesystem::create_directories(cache_path);
+    }
+    SaveBinaryU32(spirv_cache_data, spirv_cache_file);
+  }
+
+  SPIRV spirv{spirv_cache_data, shader_stage, hash_value};
 
   auto it1{spirv_shaders_.emplace(hash_value, std::move(spirv))};
 
@@ -593,12 +609,12 @@ const vk::raii::Pipeline& Subpass::RequestPipeline(
   std::filesystem::path root_path{GetPath(LUKA_ROOT_PATH)};
   std::filesystem::path cache_path{root_path / "cache"};
   std::filesystem::path pipeline_cache_file{
-      cache_path / (std::to_string(hash_value) + ".pipeline_cache")};
+      cache_path / ("pipeline_" + std::to_string(hash_value) + ".cache")};
   std::vector<u8> pipeline_cache_data;
 
   bool has_cache{false};
   if (std::filesystem::exists(pipeline_cache_file)) {
-    pipeline_cache_data = LoadBinary(pipeline_cache_file);
+    pipeline_cache_data = LoadBinaryU8(pipeline_cache_file);
 
     vk::PipelineCacheHeaderVersionOne* header_version_one{
         reinterpret_cast<vk::PipelineCacheHeaderVersionOne*>(
@@ -629,7 +645,7 @@ const vk::raii::Pipeline& Subpass::RequestPipeline(
     if (!std::filesystem::exists(cache_path)) {
       std::filesystem::create_directories(cache_path);
     }
-    SaveBinary(pipeline_cache_data, pipeline_cache_file);
+    SaveBinaryU8(pipeline_cache_data, pipeline_cache_file);
   }
 
   auto it1{pipelines_.emplace(hash_value, std::move(pipeline))};

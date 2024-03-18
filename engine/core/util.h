@@ -22,10 +22,13 @@ void HashCombine(u64& seed, const T& value) {
 
 std::filesystem::path GetPath(const std::string& str);
 
-std::vector<u8> LoadBinary(const std::filesystem::path& binary_path);
+std::vector<u8> LoadBinaryU8(const std::filesystem::path& binary_path);
+std::vector<u32> LoadBinaryU32(const std::filesystem::path& binary_path);
 
-void SaveBinary(const std::vector<u8>& binary_data,
-                const std::filesystem::path& binary_path);
+void SaveBinaryU8(const std::vector<u8>& binary_data,
+                  const std::filesystem::path& binary_path);
+void SaveBinaryU32(const std::vector<u32>& binary_data,
+                   const std::filesystem::path& binary_path);
 
 std::string LoadText(const std::filesystem::path& text_path);
 
