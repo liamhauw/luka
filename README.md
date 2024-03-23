@@ -9,11 +9,11 @@
 - Driving rendering with frame graph
 
 ## Prerequisites
-- Windows
+- Windows/macOS
 - Git
 - CMake
 - Ninja
-- MSVC
+- MSVC/Clang/GCC
 - Vulkan SDK
 - VSCode (optional)
 
