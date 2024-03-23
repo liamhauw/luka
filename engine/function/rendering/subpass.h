@@ -24,6 +24,7 @@ struct PushConstantUniform {
 struct alignas(16) DrawElementUniform {
   glm::mat4 m;
   glm::vec4 base_color_factor;
+  glm::uvec4 sampler_indices;
   glm::uvec4 image_indices;
 };
 
@@ -119,8 +120,11 @@ class Subpass {
   std::unordered_map<u64, vk::raii::PipelineLayout> pipeline_layouts_;
   std::unordered_map<u64, vk::raii::ShaderModule> shader_modules_;
   std::unordered_map<u64, vk::raii::Pipeline> pipelines_;
+  std::unordered_map<u64, u32> sampler_indices_;
+  std::unordered_map<u64, u32> image_indices_;
+
+  u32 global_sampler_index_{0};
   u32 global_image_index_{0};
-  std::unordered_map<std::string, u32> image_indices_;
 };
 
 }  // namespace rd

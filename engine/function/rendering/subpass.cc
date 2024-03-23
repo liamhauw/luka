@@ -59,11 +59,12 @@ const std::vector<DrawElement>& Subpass::GetDrawElements() const {
 
 void Subpass::CreateBindlessDescriptorSets() {
   std::vector<vk::DescriptorSetLayoutBinding> descriptor_set_layout_bindings{
-      {0, vk::DescriptorType::eCombinedImageSampler, 1024,
+      {0, vk::DescriptorType::eSampler, 16, vk::ShaderStageFlagBits::eAll},
+      {1, vk::DescriptorType::eSampledImage, 128,
        vk::ShaderStageFlagBits::eAll}};
 
   std::vector<vk::DescriptorBindingFlags> descriptor_binding_flags(
-      1, vk::DescriptorBindingFlagBits::ePartiallyBound);
+      2, vk::DescriptorBindingFlagBits::ePartiallyBound);
 
   vk::DescriptorSetLayoutBindingFlagsCreateInfo
       descriptor_set_layout_binding_flags_ci{descriptor_binding_flags};
@@ -207,8 +208,10 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
   for (const auto& name_shader_resource : name_shader_resources) {
     const auto& shader_resource{name_shader_resource.second};
 
-    if (shader_resource.type == ShaderResourceType::kUniformBuffer ||
-        shader_resource.type == ShaderResourceType::kCombinedImageSampler) {
+    if (shader_resource.type == ShaderResourceType::kSampler ||
+        shader_resource.type == ShaderResourceType::kCombinedImageSampler ||
+        shader_resource.type == ShaderResourceType::kSampledImage ||
+        shader_resource.type == ShaderResourceType::kUniformBuffer) {
       auto it{set_shader_resources.find(shader_resource.set)};
       if (it != set_shader_resources.end()) {
         it->second.push_back(shader_resource);
@@ -417,45 +420,76 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
         gpu_->AllocateNormalDescriptorSets(descriptor_set_allocate_info)};
 
     std::vector<vk::WriteDescriptorSet> write_descriptor_sets;
+    std::vector<vk::DescriptorImageInfo> sampler_infos;
     std::vector<vk::DescriptorImageInfo> image_infos;
     std::vector<vk::DescriptorBufferInfo> buffer_infos;
 
     // 1. Combined image samplers.
+    glm::uvec4 sampler_indices{0};
     glm::uvec4 image_indices{0};
     u32 idx{0};
     for (const auto& wanted_texture : wanted_textures_) {
-      auto it{name_shader_resources.find("global_images")};
-      auto it1{textures.find(wanted_texture)};
-      if (it != name_shader_resources.end() && it1 != textures.end()) {
-        const ShaderResource& shader_resource{it->second};
+      auto global_samplers_it{name_shader_resources.find("global_samplers")};
+      auto global_images_it{name_shader_resources.find("global_images")};
+      auto wanted_texture_it{textures.find(wanted_texture)};
+      if (global_samplers_it != name_shader_resources.end() &&
+          global_images_it != name_shader_resources.end() &&
+          wanted_texture_it != textures.end()) {
+        const ShaderResource& global_samplers_shader_resource{
+            global_samplers_it->second};
+        const ShaderResource& global_images_shader_resource{
+            global_images_it->second};
+        ast::sc::Texture* tex{wanted_texture_it->second};
 
-        ast::sc::Texture* tex{it1->second};
+        ast::sc::Sampler* ast_sampler{tex->GetSampler()};
+        u64 sampler_hash_value{0};
+        HashCombine(sampler_hash_value, ast_sampler);
+        auto it2{sampler_indices_.find(sampler_hash_value)};
+        if (it2 != sampler_indices_.end()) {
+          sampler_indices_[idx] = it2->second;
+        } else {
+          const vk::raii::Sampler& sampler{ast_sampler->GetSampler()};
 
-        ast::sc::Image* image{tex->GetImage()};
-        const std::string& name{image->GetName()};
+          vk::DescriptorImageInfo descriptor_sampler_info{*sampler};
+          sampler_infos.push_back(std::move(descriptor_sampler_info));
 
-        auto it2{image_indices_.find(name)};
-        if (it2 != image_indices_.end()) {
-          image_indices[idx] = it2->second;
+          sampler_indices[idx] = global_sampler_index_++;
+
+          vk::WriteDescriptorSet write_descriptor_set{
+              *(bindless_descriptor_sets_[0]),
+              global_samplers_shader_resource.binding, sampler_indices[idx],
+              vk::DescriptorType::eSampler, sampler_infos.back()};
+
+          write_descriptor_sets.push_back(write_descriptor_set);
+
+          sampler_indices_.emplace(sampler_hash_value, sampler_indices[idx]);
+        }
+
+        ast::sc::Image* ast_image{tex->GetImage()};
+
+        u64 image_hash_value{0};
+        HashCombine(image_hash_value, ast_image);
+        auto it3{image_indices_.find(image_hash_value)};
+        if (it3 != image_indices_.end()) {
+          image_indices[idx] = it3->second;
         } else {
           const vk::raii::ImageView& image_view{
               tex->GetImage()->GetImageView()};
-          const vk::raii::Sampler& sampler{tex->GetSampler()->GetSampler()};
 
           vk::DescriptorImageInfo descriptor_image_info{
-              *sampler, *image_view, vk::ImageLayout::eShaderReadOnlyOptimal};
+              nullptr, *image_view, vk::ImageLayout::eShaderReadOnlyOptimal};
           image_infos.push_back(std::move(descriptor_image_info));
 
           image_indices[idx] = global_image_index_++;
 
           vk::WriteDescriptorSet write_descriptor_set{
-              *(bindless_descriptor_sets_[0]), shader_resource.binding,
-              image_indices[idx], vk::DescriptorType::eCombinedImageSampler,
-              image_infos.back()};
+              *(bindless_descriptor_sets_[0]),
+              global_images_shader_resource.binding, image_indices[idx],
+              vk::DescriptorType::eSampledImage, image_infos.back()};
 
           write_descriptor_sets.push_back(write_descriptor_set);
 
-          image_indices_.emplace(name, image_indices[idx]);
+          image_indices_.emplace(image_hash_value, image_indices[idx]);
         }
         ++idx;
       }
@@ -469,7 +503,8 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
         if (shader_resource.type == ShaderResourceType::kUniformBuffer) {
           if (shader_resource.name == "DrawElementUniform") {
             DrawElementUniform draw_element_uniform{
-                model_matrix, material->GetBaseColorFactor(), image_indices};
+                model_matrix, material->GetBaseColorFactor(), sampler_indices,
+                image_indices};
 
             vk::BufferCreateInfo uniform_buffer_ci{
                 {},

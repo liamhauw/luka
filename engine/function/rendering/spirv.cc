@@ -51,6 +51,48 @@ const std::vector<SpecializationConstant>& SPIRV::GetSpecializationConstants()
 
 void SPIRV::ParseShaderResource(const spirv_cross::CompilerGLSL& compiler) {
   spirv_cross::ShaderResources resources{compiler.get_shader_resources()};
+  // Samplers.
+  const auto& samplers{resources.separate_samplers};
+  for (const auto& sampler : samplers) {
+    ShaderResource shader_resource;
+    shader_resource.name = sampler.name;
+    shader_resource.type = ShaderResourceType::kSampler;
+    shader_resource.stage = stage_;
+    shader_resource.set = ParseSet(compiler, sampler);
+    shader_resource.binding = ParseBinding(compiler, sampler);
+    shader_resource.array_size = ParseArraySize(compiler, sampler);
+
+    shader_resources_.push_back(std::move(shader_resource));
+  }
+
+  // Combined image sampler.
+  const auto& combined_image_samplers{resources.sampled_images};
+  for (const auto& combined_image_sampler : combined_image_samplers) {
+    ShaderResource shader_resource;
+    shader_resource.name = combined_image_sampler.name;
+    shader_resource.type = ShaderResourceType::kCombinedImageSampler;
+    shader_resource.stage = stage_;
+    shader_resource.set = ParseSet(compiler, combined_image_sampler);
+    shader_resource.binding = ParseBinding(compiler, combined_image_sampler);
+    shader_resource.array_size =
+        ParseArraySize(compiler, combined_image_sampler);
+
+    shader_resources_.push_back(std::move(shader_resource));
+  }
+
+  // Sampled images.
+  const auto& sampled_images{resources.separate_images};
+  for (const auto& sampled_image : sampled_images) {
+    ShaderResource shader_resource;
+    shader_resource.name = sampled_image.name;
+    shader_resource.type = ShaderResourceType::kSampledImage;
+    shader_resource.stage = stage_;
+    shader_resource.set = ParseSet(compiler, sampled_image);
+    shader_resource.binding = ParseBinding(compiler, sampled_image);
+    shader_resource.array_size = ParseArraySize(compiler, sampled_image);
+
+    shader_resources_.push_back(std::move(shader_resource));
+  }
 
   // Uniform buffers.
   const auto& uniform_buffers{resources.uniform_buffers};
@@ -63,20 +105,6 @@ void SPIRV::ParseShaderResource(const spirv_cross::CompilerGLSL& compiler) {
     shader_resource.binding = ParseBinding(compiler, uniform_buffer);
     shader_resource.array_size = ParseArraySize(compiler, uniform_buffer);
     shader_resource.size = ParseSize(compiler, uniform_buffer);
-
-    shader_resources_.push_back(std::move(shader_resource));
-  }
-
-  // Sampled images.
-  const auto& sampled_images{resources.sampled_images};
-  for (const auto& sampled_image : sampled_images) {
-    ShaderResource shader_resource;
-    shader_resource.name = sampled_image.name;
-    shader_resource.type = ShaderResourceType::kCombinedImageSampler;
-    shader_resource.stage = stage_;
-    shader_resource.set = ParseSet(compiler, sampled_image);
-    shader_resource.binding = ParseBinding(compiler, sampled_image);
-    shader_resource.array_size = ParseArraySize(compiler, sampled_image);
 
     shader_resources_.push_back(std::move(shader_resource));
   }

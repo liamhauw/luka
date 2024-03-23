@@ -17,8 +17,10 @@ namespace rd {
 
 enum class ShaderResourceType {
   kNone,
-  kUniformBuffer,
+  kSampler,
   kCombinedImageSampler,
+  kSampledImage,
+  kUniformBuffer,
   kPushConstantBuffer,
   kStageInput
 };

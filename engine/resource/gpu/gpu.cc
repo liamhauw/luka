@@ -750,7 +750,8 @@ void Gpu::CreateAllocator() {
 void Gpu::CreateDescriptorPool() {
   // Bindless.
   std::vector<vk::DescriptorPoolSize> bindlessl_pool_sizes{
-      {vk::DescriptorType::eCombinedImageSampler, 1024}};
+      {vk::DescriptorType::eSampler, 128},
+      {vk::DescriptorType::eSampledImage, 1024}};
 
   u32 bindless_max_sets{std::accumulate(
       bindlessl_pool_sizes.begin(), bindlessl_pool_sizes.end(),

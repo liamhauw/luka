@@ -2,11 +2,13 @@
 
 #extension GL_EXT_nonuniform_qualifier : enable
 
-layout ( set = 0, binding = 0 ) uniform sampler2D global_images[];
+layout(set = 0, binding = 0) uniform sampler global_samplers[];
+layout(set = 0, binding = 1) uniform texture2D global_images[];
 
 layout(set = 1, binding = 0) uniform DrawElementUniform {
     mat4 m;
 		vec4 base_color_factor;
+		uvec4 sampler_indices;
 		uvec4 image_indices;
 } draw_element_uniform;
 
@@ -27,7 +29,8 @@ void main(void)
 	vec4 base_color = vec4(1.0, 1.0, 1.0, 1.0);
 
 #ifdef HAS_BASE_COLOR_TEXTURE
-	base_color = texture(global_images[nonuniformEXT(draw_element_uniform.image_indices.x)], i_texcoord_0);
+	uint index = draw_element_uniform.sampler_indices.x;
+  base_color = texture(nonuniformEXT(sampler2D(global_images[draw_element_uniform.image_indices.x], global_samplers[index])), i_texcoord_0);
 #else
 	base_color = draw_element_uniform.base_color_factor;
 #endif
