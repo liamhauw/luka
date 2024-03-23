@@ -120,6 +120,7 @@ class Subpass {
   std::unordered_map<u64, vk::raii::ShaderModule> shader_modules_;
   std::unordered_map<u64, vk::raii::Pipeline> pipelines_;
   u32 global_image_index_{0};
+  std::unordered_map<std::string, u32> image_indices_;
 };
 
 }  // namespace rd

@@ -22,7 +22,7 @@ Image::Image(gpu::Image&& image, vk::raii::ImageView&& image_view,
 Image::Image(std::shared_ptr<Gpu> gpu, const tinygltf::Image& tinygltf_image,
              const vk::raii::CommandBuffer& command_buffer,
              std::vector<gpu::Buffer>& staging_buffers)
-    : Component{""} {
+    : Component{tinygltf_image.uri} {
   // Staging buffer.
   const auto& data{tinygltf_image.image};
   u64 data_size{data.size()};

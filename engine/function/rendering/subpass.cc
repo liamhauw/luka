@@ -431,20 +431,33 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
 
         ast::sc::Texture* tex{it1->second};
 
-        const vk::raii::ImageView& image_view{tex->GetImage()->GetImageView()};
-        const vk::raii::Sampler& sampler{tex->GetSampler()->GetSampler()};
+        ast::sc::Image* image{tex->GetImage()};
+        const std::string& name{image->GetName()};
 
-        vk::DescriptorImageInfo descriptor_image_info{
-            *sampler, *image_view, vk::ImageLayout::eShaderReadOnlyOptimal};
-        image_infos.push_back(std::move(descriptor_image_info));
+        auto it2{image_indices_.find(name)};
+        if (it2 != image_indices_.end()) {
+          image_indices[idx] = it2->second;
+        } else {
+          const vk::raii::ImageView& image_view{
+              tex->GetImage()->GetImageView()};
+          const vk::raii::Sampler& sampler{tex->GetSampler()->GetSampler()};
 
-        image_indices[idx] = global_image_index_++;
-        vk::WriteDescriptorSet write_descriptor_set{
-            *(bindless_descriptor_sets_[0]), shader_resource.binding,
-            image_indices[idx], vk::DescriptorType::eCombinedImageSampler,
-            image_infos.back()};
+          vk::DescriptorImageInfo descriptor_image_info{
+              *sampler, *image_view, vk::ImageLayout::eShaderReadOnlyOptimal};
+          image_infos.push_back(std::move(descriptor_image_info));
+
+          image_indices[idx] = global_image_index_++;
+
+          vk::WriteDescriptorSet write_descriptor_set{
+              *(bindless_descriptor_sets_[0]), shader_resource.binding,
+              image_indices[idx], vk::DescriptorType::eCombinedImageSampler,
+              image_infos.back()};
+
+          write_descriptor_sets.push_back(write_descriptor_set);
+
+          image_indices_.emplace(name, image_indices[idx]);
+        }
         ++idx;
-        write_descriptor_sets.push_back(write_descriptor_set);
       }
     }
 
