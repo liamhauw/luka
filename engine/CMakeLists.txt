@@ -23,13 +23,15 @@ set(HEADER_FILES
   function/camera/camera.h
   function/function_input/function_input.h
   function/function_ui/function_ui.h
-  function/rendering/pass.h
-  function/rendering/rendering.h
-  function/rendering/spirv.h
-  function/rendering/subpass.h
 
   # platform
   platform/common.h
+
+  # rendering
+  rendering/graphics/graphics.h
+  rendering/graphics/pass.h
+  rendering/graphics/spirv.h
+  rendering/graphics/subpass.h
 
   # resource
   resource/asset/scene_component/accessor.h
@@ -98,14 +100,16 @@ set(SOURCE_FILES
   function/camera/camera.cc
   function/function_input/function_input.cc
   function/function_ui/function_ui.cc
-  function/rendering/pass.cc
-  function/rendering/rendering.cc
-  function/rendering/spirv.cc
-  function/rendering/subpass.cc
 
   # editor
   editor/editor_input/editor_input.cc
   editor/editor_ui/editor_ui.cc
+
+  # rendering
+  rendering/graphics/graphics.cc
+  rendering/graphics/pass.cc
+  rendering/graphics/spirv.cc
+  rendering/graphics/subpass.cc
 
   # engine
   engine.cc

@@ -18,11 +18,11 @@ Engine::Engine()
       asset_{std::make_shared<Asset>(config_, task_scheduler_, gpu_)},
       function_input_{std::make_shared<FunctionInput>(config_, window_)},
       camera_{std::make_shared<Camera>(window_)},
-      rendering_{std::make_shared<Rendering>(window_, gpu_, asset_, camera_)},
       function_ui_{std::make_shared<FunctionUi>()},
       editor_input_{
           std::make_shared<EditorInput>(config_, time_, window_, camera_)},
-      editor_ui_{std::make_shared<EditorUi>()} {}
+      editor_ui_{std::make_shared<EditorUi>()},
+      rendering_{std::make_shared<Graphics>(window_, gpu_, asset_, camera_)} {}
 
 void Engine::Run() {
   while (!window_->WindowShouldClose()) {
@@ -34,12 +34,10 @@ void Engine::Run() {
     asset_->Tick();
     function_input_->Tick();
     camera_->Tick();
-    rendering_->Tick();
     function_ui_->Tick();
     editor_input_->Tick();
     editor_ui_->Tick();
-
-    // std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    rendering_->Tick();
   }
 }
 
