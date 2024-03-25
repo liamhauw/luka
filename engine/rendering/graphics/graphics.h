@@ -8,6 +8,7 @@
 // clang-format on
 
 #include "function/camera/camera.h"
+#include "function/function_ui/function_ui.h"
 #include "rendering/graphics/pass.h"
 #include "resource/asset/asset.h"
 #include "resource/gpu/gpu.h"
@@ -18,7 +19,8 @@ namespace luka {
 class Graphics {
  public:
   Graphics(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu,
-           std::shared_ptr<Asset> asset, std::shared_ptr<Camera> camera);
+           std::shared_ptr<Asset> asset, std::shared_ptr<Camera> camera,
+           std::shared_ptr<FunctionUi> function_ui);
 
   ~Graphics();
 
@@ -42,6 +44,7 @@ class Graphics {
   std::shared_ptr<Gpu> gpu_;
   std::shared_ptr<Asset> asset_;
   std::shared_ptr<Camera> camera_;
+  std::shared_ptr<FunctionUi> function_ui_;
 
   gs::SwapchainInfo swapchain_info_;
   vk::raii::SwapchainKHR swapchain_{nullptr};

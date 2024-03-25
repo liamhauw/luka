@@ -60,7 +60,7 @@ class Subpass {
  public:
   Subpass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
           std::shared_ptr<Camera> camera, const ast::Subpass& ast_subpass,
-          const vk::raii::RenderPass& render_pass, u32 frame_count);
+          vk::RenderPass render_pass, u32 frame_count);
 
   void PushConstants(const vk::raii::CommandBuffer& command_buffer,
                      vk::PipelineLayout pipeline_layout) const;

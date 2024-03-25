@@ -28,6 +28,7 @@ set(HEADER_FILES
   platform/common.h
 
   # rendering
+  rendering/compute/compute.h
   rendering/graphics/graphics.h
   rendering/graphics/pass.h
   rendering/graphics/spirv.h
@@ -106,6 +107,7 @@ set(SOURCE_FILES
   editor/editor_ui/editor_ui.cc
 
   # rendering
+  rendering/compute/compute.cc
   rendering/graphics/graphics.cc
   rendering/graphics/pass.cc
   rendering/graphics/spirv.cc

@@ -12,6 +12,7 @@
 #include "function/camera/camera.h"
 #include "function/function_input/function_input.h"
 #include "function/function_ui/function_ui.h"
+#include "rendering/compute/compute.h"
 #include "rendering/graphics/graphics.h"
 #include "resource/asset/asset.h"
 #include "resource/config/config.h"
@@ -40,7 +41,8 @@ class Engine {
   std::shared_ptr<FunctionUi> function_ui_;
   std::shared_ptr<EditorInput> editor_input_;
   std::shared_ptr<EditorUi> editor_ui_;
-  std::shared_ptr<Graphics> rendering_;
+  std::shared_ptr<Compute> compute_;
+  std::shared_ptr<Graphics> graphics_;
 };
 
 }  // namespace luka

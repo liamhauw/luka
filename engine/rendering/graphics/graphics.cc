@@ -10,8 +10,13 @@
 namespace luka {
 
 Graphics::Graphics(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu,
-                   std::shared_ptr<Asset> asset, std::shared_ptr<Camera> camera)
-    : window_{window}, gpu_{gpu}, asset_{asset}, camera_{camera} {
+                   std::shared_ptr<Asset> asset, std::shared_ptr<Camera> camera,
+                   std::shared_ptr<FunctionUi> function_ui)
+    : window_{window},
+      gpu_{gpu},
+      asset_{asset},
+      camera_{camera},
+      function_ui_{function_ui} {
   CreateSwapchain();
   CreateSyncObjects();
   CreateCommandObjects();
@@ -109,7 +114,7 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
 #endif
     // Begin render pass.
     const gs::Pass& pass{passes_[i]};
-    const vk::raii::RenderPass& render_pass{pass.GetRenderPass()};
+    const vk::raii::RenderPass& render_pass{gpu_->GetUiRenderPass()};
     const vk::raii::Framebuffer& framebuffer{
         pass.GetFramebuffer(active_frame_index_)};
     const vk::Rect2D& render_area{pass.GetRenderArea()};
@@ -201,6 +206,8 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
       gpu_->EndLabel(command_buffer);
 #endif
     }
+
+    function_ui_->Render(command_buffer);
 
     // End render pass.
     command_buffer.endRenderPass();

@@ -140,12 +140,17 @@ class Gpu {
 
   vk::PhysicalDeviceProperties GetPhysicalDeviceProperties() const;
 
+  const vk::raii::RenderPass& GetUiRenderPass() const;
+
+  ImGui_ImplVulkan_InitInfo GetImguiVulkanInitInfo() const;
+
  private:
   void CreateInstance();
   void CreateSurface();
   void CreatePhysicalDevice();
   void CreateDevice();
   void CreateAllocator();
+  void CreateUiRenderPass();
   void CreateDescriptorPool();
 
   void SetObjectName(vk::ObjectType object_type, u64 handle,
@@ -182,6 +187,8 @@ class Gpu {
   vk::raii::Queue present_queue_{nullptr};
 
   VmaAllocator allocator_;
+
+  vk::raii::RenderPass ui_render_pass_{nullptr};
 
   vk::raii::DescriptorPool bindless_descriptor_pool_{nullptr};
   vk::raii::DescriptorPool normal_descriptor_pool_{nullptr};

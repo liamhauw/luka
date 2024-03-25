@@ -9,28 +9,28 @@
 #include "platform/pch.h"
 // clang-format on
 
+#include "resource/gpu/gpu.h"
+#include "resource/window/window.h"
+
 namespace luka {
 
 class Gpu;
 
 class FunctionUi {
  public:
-  FunctionUi();
+  FunctionUi(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu);
+
   ~FunctionUi();
 
   void Tick();
-
- private:
-  void Resize();
   void Render(const vk::raii::CommandBuffer& command_buffer);
 
+ private:
   void CreateImgui();
-  void AddViewportImage();
-
   void DestroyImgui();
-  
   void CreateUi();
 
+  std::shared_ptr<Window> window_;
   std::shared_ptr<Gpu> gpu_;
 
   vk::DescriptorSet descriptor_set_;

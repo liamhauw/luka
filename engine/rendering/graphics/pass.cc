@@ -37,7 +37,7 @@ void Pass::Resize(const SwapchainInfo& swapchain_info,
   CreateRenderArea();
 }
 
-const vk::raii::RenderPass& Pass::GetRenderPass() const { return render_pass_; }
+// const vk::raii::RenderPass& Pass::GetRenderPass() const { return render_pass_; }
 
 const vk::raii::Framebuffer& Pass::GetFramebuffer(u32 frame_index) const {
   return framebuffers_[frame_index];
@@ -77,67 +77,67 @@ void Pass::ParseAttachmentInfos() {
 }
 
 void Pass::CreateRenderPass() {
-  std::vector<vk::AttachmentDescription> attachment_descriptions;
+  // std::vector<vk::AttachmentDescription> attachment_descriptions;
 
-  std::vector<vk::AttachmentReference> color_attachment_refs;
-  vk::AttachmentReference resolve_attachment_ref;
-  vk::AttachmentReference depth_stencil_attachment_ref;
+  // std::vector<vk::AttachmentReference> color_attachment_refs;
+  // vk::AttachmentReference resolve_attachment_ref;
+  // vk::AttachmentReference depth_stencil_attachment_ref;
 
-  vk::SubpassDescription subpass_description{{},
-                                             vk::PipelineBindPoint::eGraphics};
+  // vk::SubpassDescription subpass_description{{},
+  //                                            vk::PipelineBindPoint::eGraphics};
 
-  for (u32 i{0}; i < color_attachment_count_; ++i) {
-    const ast::AttachmentInfo& info{(*color_attachment_infos_)[i]};
-    vk::ImageLayout final_image_layout{
-        info.name == "swapchain_image"
-            ? vk::ImageLayout::ePresentSrcKHR
-            : vk::ImageLayout::eShaderReadOnlyOptimal};
+  // for (u32 i{0}; i < color_attachment_count_; ++i) {
+  //   const ast::AttachmentInfo& info{(*color_attachment_infos_)[i]};
+  //   vk::ImageLayout final_image_layout{
+  //       info.name == "swapchain_image"
+  //           ? vk::ImageLayout::ePresentSrcKHR
+  //           : vk::ImageLayout::eShaderReadOnlyOptimal};
 
-    attachment_descriptions.emplace_back(
-        vk::AttachmentDescriptionFlags{}, swapchain_info_.color_format,
-        vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear,
-        vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eClear,
-        vk::AttachmentStoreOp::eStore, vk::ImageLayout::eUndefined,
-        final_image_layout);
+  //   attachment_descriptions.emplace_back(
+  //       vk::AttachmentDescriptionFlags{}, swapchain_info_.color_format,
+  //       vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear,
+  //       vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eClear,
+  //       vk::AttachmentStoreOp::eStore, vk::ImageLayout::eUndefined,
+  //       final_image_layout);
 
-    color_attachment_refs.emplace_back(
-        i, vk::ImageLayout::eColorAttachmentOptimal);
+  //   color_attachment_refs.emplace_back(
+  //       i, vk::ImageLayout::eColorAttachmentOptimal);
 
-    if (i == color_attachment_count_ - 1) {
-      subpass_description.setColorAttachments(color_attachment_refs);
-    }
-  }
+  //   if (i == color_attachment_count_ - 1) {
+  //     subpass_description.setColorAttachments(color_attachment_refs);
+  //   }
+  // }
 
-  if (depth_stencil_attachment_count_ == 1) {
-    attachment_descriptions.emplace_back(
-        vk::AttachmentDescriptionFlags{}, swapchain_info_.depth_stencil_format_,
-        vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear,
-        vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eClear,
-        vk::AttachmentStoreOp::eStore, vk::ImageLayout::eUndefined,
-        vk::ImageLayout::eDepthStencilAttachmentOptimal);
+  // if (depth_stencil_attachment_count_ == 1) {
+  //   attachment_descriptions.emplace_back(
+  //       vk::AttachmentDescriptionFlags{}, swapchain_info_.depth_stencil_format_,
+  //       vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear,
+  //       vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eClear,
+  //       vk::AttachmentStoreOp::eStore, vk::ImageLayout::eUndefined,
+  //       vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
-    depth_stencil_attachment_ref = {
-        color_attachment_count_ + resolve_attachment_count_,
-        vk::ImageLayout::eDepthStencilAttachmentOptimal};
+  //   depth_stencil_attachment_ref = {
+  //       color_attachment_count_ + resolve_attachment_count_,
+  //       vk::ImageLayout::eDepthStencilAttachmentOptimal};
 
-    subpass_description.setPDepthStencilAttachment(
-        &depth_stencil_attachment_ref);
-  }
+  //   subpass_description.setPDepthStencilAttachment(
+  //       &depth_stencil_attachment_ref);
+  // }
 
-  vk::SubpassDependency subpass_dependency{
-      VK_SUBPASS_EXTERNAL,
-      0,
-      vk::PipelineStageFlagBits::eColorAttachmentOutput,
-      vk::PipelineStageFlagBits::eColorAttachmentOutput,
-      vk::AccessFlagBits::eNone,
-      vk::AccessFlagBits::eColorAttachmentRead |
-          vk::AccessFlagBits::eColorAttachmentWrite,
-      vk::DependencyFlagBits::eByRegion};
+  // vk::SubpassDependency subpass_dependency{
+  //     VK_SUBPASS_EXTERNAL,
+  //     0,
+  //     vk::PipelineStageFlagBits::eColorAttachmentOutput,
+  //     vk::PipelineStageFlagBits::eColorAttachmentOutput,
+  //     vk::AccessFlagBits::eNone,
+  //     vk::AccessFlagBits::eColorAttachmentRead |
+  //         vk::AccessFlagBits::eColorAttachmentWrite,
+  //     vk::DependencyFlagBits::eByRegion};
 
-  vk::RenderPassCreateInfo render_pass_ci{
-      {}, attachment_descriptions, subpass_description, subpass_dependency};
+  // vk::RenderPassCreateInfo render_pass_ci{
+  //     {}, attachment_descriptions, subpass_description, subpass_dependency};
 
-  render_pass_ = gpu_->CreateRenderPass(render_pass_ci);
+  render_pass_ = *(gpu_->GetUiRenderPass());
 }
 
 void Pass::CreateFramebuffers() {
@@ -227,7 +227,7 @@ void Pass::CreateFramebuffers() {
     }
 
     vk::FramebufferCreateInfo framebuffer_ci{{},
-                                             *render_pass_,
+                                             render_pass_,
                                              framebuffer_image_views,
                                              swapchain_info_.extent.width,
                                              swapchain_info_.extent.height,

@@ -21,12 +21,12 @@ namespace gs {
 Subpass::Subpass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
                  std::shared_ptr<Camera> camera,
                  const ast::Subpass& ast_subpass,
-                 const vk::raii::RenderPass& render_pass, u32 frame_count)
+                 vk::RenderPass render_pass, u32 frame_count)
     : gpu_{gpu},
       asset_{asset},
       camera_{camera},
       ast_subpass_{&ast_subpass},
-      render_pass_{*render_pass},
+      render_pass_{render_pass},
       frame_count_{frame_count} {
   CreateBindlessDescriptorSets();
   CreateDrawElements();

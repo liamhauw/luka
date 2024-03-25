@@ -18,11 +18,13 @@ Engine::Engine()
       asset_{std::make_shared<Asset>(config_, task_scheduler_, gpu_)},
       function_input_{std::make_shared<FunctionInput>(config_, window_)},
       camera_{std::make_shared<Camera>(window_)},
-      function_ui_{std::make_shared<FunctionUi>()},
+      function_ui_{std::make_shared<FunctionUi>(window_, gpu_)},
       editor_input_{
           std::make_shared<EditorInput>(config_, time_, window_, camera_)},
       editor_ui_{std::make_shared<EditorUi>()},
-      rendering_{std::make_shared<Graphics>(window_, gpu_, asset_, camera_)} {}
+      compute_{std::make_shared<Compute>()},
+      graphics_{std::make_shared<Graphics>(window_, gpu_, asset_, camera_,
+                                           function_ui_)} {}
 
 void Engine::Run() {
   while (!window_->WindowShouldClose()) {
@@ -37,7 +39,8 @@ void Engine::Run() {
     function_ui_->Tick();
     editor_input_->Tick();
     editor_ui_->Tick();
-    rendering_->Tick();
+    compute_->Tick();
+    graphics_->Tick();
   }
 }
 
