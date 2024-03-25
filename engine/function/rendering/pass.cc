@@ -124,8 +124,18 @@ void Pass::CreateRenderPass() {
         &depth_stencil_attachment_ref);
   }
 
+  vk::SubpassDependency subpass_dependency{
+      VK_SUBPASS_EXTERNAL,
+      0,
+      vk::PipelineStageFlagBits::eColorAttachmentOutput,
+      vk::PipelineStageFlagBits::eColorAttachmentOutput,
+      vk::AccessFlagBits::eNone,
+      vk::AccessFlagBits::eColorAttachmentRead |
+          vk::AccessFlagBits::eColorAttachmentWrite,
+      vk::DependencyFlagBits::eByRegion};
+
   vk::RenderPassCreateInfo render_pass_ci{
-      {}, attachment_descriptions, subpass_description};
+      {}, attachment_descriptions, subpass_description, subpass_dependency};
 
   render_pass_ = gpu_->CreateRenderPass(render_pass_ci);
 }

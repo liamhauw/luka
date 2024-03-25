@@ -270,10 +270,10 @@ void Rendering::CreateSwapchain() {
   std::vector<vk::PresentModeKHR> present_modes{gpu_->GetSurfacePresentModes()};
 
   std::vector<vk::PresentModeKHR> requested_present_modes{
-      vk::PresentModeKHR::eMailbox, vk::PresentModeKHR::eFifo,
-      vk::PresentModeKHR::eImmediate};
+      vk::PresentModeKHR::eImmediate, vk::PresentModeKHR::eMailbox,
+      vk::PresentModeKHR::eFifo};
 
-  vk::PresentModeKHR picked_mode{vk::PresentModeKHR::eImmediate};
+  vk::PresentModeKHR picked_mode{vk::PresentModeKHR::eFifo};
   for (const auto& requested_present_mode : requested_present_modes) {
     auto it{std::find_if(present_modes.begin(), present_modes.end(),
                          [requested_present_mode](const vk::PresentModeKHR& p) {

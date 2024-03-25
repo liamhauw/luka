@@ -129,6 +129,8 @@ class Window {
 
   std::shared_ptr<Time> time_;
 
+  u64 tick_count_{0};
+
   GLFWwindow* glfw_window_{nullptr};
   bool window_resized_{false};
   bool window_iconified_{false};

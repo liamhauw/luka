@@ -60,11 +60,17 @@ Window::~Window() {
 }
 
 void Window::Tick() {
-  f64 delta_time{time_->GetDeltaTime()};
-  std::string title{std::string{"luka "} +
-                    std::to_string(static_cast<i32>(1.0 / delta_time)) +
-                    " fps"};
-  glfwSetWindowTitle(glfw_window_, title.c_str());
+  ++tick_count_;
+  if (tick_count_ == 60) {
+    tick_count_ = 0;
+    f64 delta_time{time_->GetDeltaTime()};
+    std::string title{
+        std::string{"luka "} +
+        std::to_string(static_cast<u32>(delta_time * 1000)) + " ms " +
+        std::to_string(static_cast<u32>(1.0 / delta_time)) + " fps"};
+    glfwSetWindowTitle(glfw_window_, title.c_str());
+  }
+
   glfwPollEvents();
 }
 
