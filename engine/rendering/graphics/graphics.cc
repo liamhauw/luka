@@ -17,7 +17,7 @@ Graphics::Graphics(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu,
       asset_{asset},
       camera_{camera},
       function_ui_{function_ui} {
-  CreateSwapchain();
+  GetSwapchain();
   CreateSyncObjects();
   CreateCommandObjects();
   CreateViewportAndScissor();
@@ -44,10 +44,10 @@ void Graphics::Tick() {
 
 void Graphics::Resize() {
   gpu_->WaitIdle();
-  CreateSwapchain();
+  GetSwapchain();
   CreateViewportAndScissor();
   for (auto& pass : passes_) {
-    pass.Resize(swapchain_info_, swapchain_images_);
+    pass.Resize(*swapchain_info_, swapchain_images_);
   }
 }
 
@@ -59,7 +59,7 @@ void Graphics::Render() {
 
 const vk::raii::CommandBuffer& Graphics::Begin() {
   vk::Result result;
-  std::tie(result, active_frame_index_) = swapchain_.acquireNextImage(
+  std::tie(result, active_frame_index_) = swapchain_->acquireNextImage(
       UINT64_MAX, *(acquired_semaphores_[acquired_semaphore_index_]), nullptr);
 
   const vk::raii::Fence& command_finished_fence{
@@ -90,7 +90,7 @@ void Graphics::End(const vk::raii::CommandBuffer& command_buffer) {
                         *(command_finished_fences_[active_frame_index_]));
 
   vk::PresentInfoKHR present_info{
-      *(render_finished_semaphores_[active_frame_index_]), *swapchain_,
+      *(render_finished_semaphores_[active_frame_index_]), **swapchain_,
       active_frame_index_};
 
   const vk::raii::Queue& present_queue{gpu_->GetPresentQueue()};
@@ -217,113 +217,10 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
   }
 }
 
-void Graphics::CreateSwapchain() {
-  // Clear
-  swapchain_.clear();
-
-  // Image count.
-  const vk::SurfaceCapabilitiesKHR& surface_capabilities{
-      gpu_->GetSurfaceCapabilities()};
-  swapchain_info_.image_count = surface_capabilities.minImageCount + 1;
-  if (surface_capabilities.maxImageCount > 0 &&
-      swapchain_info_.image_count > surface_capabilities.maxImageCount) {
-    swapchain_info_.image_count = surface_capabilities.maxImageCount;
-  }
-
-  // Format and color space.
-  const std::vector<vk::SurfaceFormatKHR>& surface_formats{
-      gpu_->GetSurfaceFormats()};
-
-  vk::SurfaceFormatKHR picked_format{surface_formats[0]};
-
-  std::vector<vk::Format> requested_formats{vk::Format::eR8G8B8A8Srgb,
-                                            vk::Format::eB8G8R8A8Srgb};
-  vk::ColorSpaceKHR requested_color_space{vk::ColorSpaceKHR::eSrgbNonlinear};
-  for (const auto& requested_format : requested_formats) {
-    auto it{std::find_if(surface_formats.begin(), surface_formats.end(),
-                         [requested_format, requested_color_space](
-                             const vk::SurfaceFormatKHR& f) {
-                           return (f.format == requested_format) &&
-                                  (f.colorSpace == requested_color_space);
-                         })};
-    if (it != surface_formats.end()) {
-      picked_format = *it;
-      break;
-    }
-  }
-
-  swapchain_info_.color_format = picked_format.format;
-  swapchain_info_.color_space = picked_format.colorSpace;
-
-  // Extent.
-  if (surface_capabilities.currentExtent.width ==
-      std::numeric_limits<u32>::max()) {
-    i32 width{0};
-    i32 height{0};
-    window_->GetFramebufferSize(&width, &height);
-
-    swapchain_info_.extent.width = std::clamp(
-        static_cast<u32>(width), surface_capabilities.minImageExtent.width,
-        surface_capabilities.maxImageExtent.width);
-    swapchain_info_.extent.height = std::clamp(
-        static_cast<u32>(height), surface_capabilities.minImageExtent.height,
-        surface_capabilities.maxImageExtent.height);
-  } else {
-    swapchain_info_.extent = surface_capabilities.currentExtent;
-  }
-
-  // Present mode.
-  std::vector<vk::PresentModeKHR> present_modes{gpu_->GetSurfacePresentModes()};
-
-  std::vector<vk::PresentModeKHR> requested_present_modes{
-      vk::PresentModeKHR::eMailbox, vk::PresentModeKHR::eImmediate,
-      vk::PresentModeKHR::eFifo};
-
-  vk::PresentModeKHR picked_mode{vk::PresentModeKHR::eFifo};
-  for (const auto& requested_present_mode : requested_present_modes) {
-    auto it{std::find_if(present_modes.begin(), present_modes.end(),
-                         [requested_present_mode](const vk::PresentModeKHR& p) {
-                           return p == requested_present_mode;
-                         })};
-    if (it != present_modes.end()) {
-      picked_mode = *it;
-      break;
-    }
-  }
-  swapchain_info_.present_mode = picked_mode;
-
-  // Create swapchain
-  vk::SwapchainCreateInfoKHR swapchain_ci{
-      {},
-      {},
-      swapchain_info_.image_count,
-      swapchain_info_.color_format,
-      swapchain_info_.color_space,
-      swapchain_info_.extent,
-      1,
-      vk::ImageUsageFlagBits::eColorAttachment,
-      vk::SharingMode::eExclusive,
-      {},
-      surface_capabilities.currentTransform,
-      vk::CompositeAlphaFlagBitsKHR::eOpaque,
-      swapchain_info_.present_mode,
-      VK_TRUE,
-      {}};
-
-  u32 graphics_queue_index{gpu_->GetGraphicsQueueIndex()};
-  u32 present_queue_index{gpu_->GetPresentQueueIndex()};
-
-  if (graphics_queue_index != present_queue_index) {
-    u32 queue_family_indices[2]{graphics_queue_index, present_queue_index};
-    swapchain_ci.imageSharingMode = vk::SharingMode::eConcurrent;
-    swapchain_ci.queueFamilyIndexCount = 2;
-    swapchain_ci.pQueueFamilyIndices = queue_family_indices;
-  }
-
-  swapchain_ = gpu_->CreateSwapchain(swapchain_ci);
-
-  swapchain_images_ = swapchain_.getImages();
-
+void Graphics::GetSwapchain() {
+  swapchain_info_ = &(gpu_->GetSwapchainInfo());
+  swapchain_ = &(gpu_->GetSwapchain());
+  swapchain_images_ = swapchain_->getImages();
   frame_count_ = swapchain_images_.size();
 }
 
@@ -353,8 +250,8 @@ void Graphics::CreateCommandObjects() {
 }
 
 void Graphics::CreateViewportAndScissor() {
-  u32 target_width{swapchain_info_.extent.width};
-  u32 target_height{swapchain_info_.extent.height};
+  u32 target_width{swapchain_info_->extent.width};
+  u32 target_height{swapchain_info_->extent.height};
 
   viewport_ = vk::Viewport{0.0F,
                            0.0F,
@@ -370,7 +267,7 @@ void Graphics::CreatePasses() {
   const ast::FrameGraph& frame_graph{asset_->GetFrameGraph(0)};
   const std::vector<ast::Pass>& ast_passes{frame_graph.GetPasses()};
   for (u32 i{0}; i < ast_passes.size(); ++i) {
-    passes_.emplace_back(gpu_, asset_, camera_, ast_passes[i], swapchain_info_,
+    passes_.emplace_back(gpu_, asset_, camera_, ast_passes[i], *swapchain_info_,
                          swapchain_images_);
   }
 }

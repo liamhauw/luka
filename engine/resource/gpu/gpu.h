@@ -18,12 +18,25 @@
 
 namespace luka {
 
+struct SwapchainInfo {
+  u32 image_count;
+  vk::Format color_format;
+  vk::ColorSpaceKHR color_space;
+  vk::Extent2D extent;
+  vk::PresentModeKHR present_mode;
+  vk::Format depth_stencil_format_{vk::Format::eD32Sfloat};
+};
+
 class Gpu {
  public:
   Gpu(std::shared_ptr<Window> window);
   ~Gpu();
 
   void Tick();
+
+  void Resize();
+
+  vk::PhysicalDeviceProperties GetPhysicalDeviceProperties() const;
 
   gpu::Buffer CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
                            const void* data, bool map = false,
@@ -119,26 +132,21 @@ class Gpu {
   void BeginLabel(const vk::raii::CommandBuffer& command_buffer,
                   const std::string& label,
                   const std::array<f32, 4>& color = {0.8F, 0.7F, 1.0F, 1.0F});
-
   void EndLabel(const vk::raii::CommandBuffer& command_buffer);
 
-  const vk::raii::Queue& GetGraphicsQueue() const;
-
-  const vk::raii::Queue& GetPresentQueue() const;
-
   u32 GetGraphicsQueueIndex() const;
-
+  u32 GetComputeQueueIndex() const;
   u32 GetTransferQueueIndex() const;
-
   u32 GetPresentQueueIndex() const;
 
-  vk::SurfaceCapabilitiesKHR GetSurfaceCapabilities() const;
+  const vk::raii::Queue& GetGraphicsQueue() const;
+  const vk::raii::Queue& GetComputeQueue() const;
+  const vk::raii::Queue& GetTransferQueue() const;
+  const vk::raii::Queue& GetPresentQueue() const;
 
-  std::vector<vk::SurfaceFormatKHR> GetSurfaceFormats() const;
+  const SwapchainInfo& GetSwapchainInfo() const;
 
-  std::vector<vk::PresentModeKHR> GetSurfacePresentModes() const;
-
-  vk::PhysicalDeviceProperties GetPhysicalDeviceProperties() const;
+  const vk::raii::SwapchainKHR& GetSwapchain() const;
 
   const vk::raii::RenderPass& GetUiRenderPass() const;
 
@@ -150,6 +158,7 @@ class Gpu {
   void CreatePhysicalDevice();
   void CreateDevice();
   void CreateAllocator();
+  void CreateSwapchain();
   void CreateUiRenderPass();
   void CreateDescriptorPool();
 
@@ -187,6 +196,9 @@ class Gpu {
   vk::raii::Queue present_queue_{nullptr};
 
   VmaAllocator allocator_;
+
+  SwapchainInfo swapchain_info_;
+  vk::raii::SwapchainKHR swapchain_{nullptr};
 
   vk::raii::RenderPass ui_render_pass_{nullptr};
 

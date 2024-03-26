@@ -30,7 +30,7 @@ class Graphics {
   void Render();
 
  private:
-  void CreateSwapchain();
+  void GetSwapchain();
   void CreateSyncObjects();
   void CreateCommandObjects();
   void CreateViewportAndScissor();
@@ -46,8 +46,8 @@ class Graphics {
   std::shared_ptr<Camera> camera_;
   std::shared_ptr<FunctionUi> function_ui_;
 
-  gs::SwapchainInfo swapchain_info_;
-  vk::raii::SwapchainKHR swapchain_{nullptr};
+  const SwapchainInfo* swapchain_info_;
+  const vk::raii::SwapchainKHR* swapchain_{nullptr};
   std::vector<vk::Image> swapchain_images_;
   u32 frame_count_{0};
 

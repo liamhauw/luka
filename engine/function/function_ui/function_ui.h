@@ -23,6 +23,7 @@ class FunctionUi {
   ~FunctionUi();
 
   void Tick();
+  
   void Render(const vk::raii::CommandBuffer& command_buffer);
 
  private:
