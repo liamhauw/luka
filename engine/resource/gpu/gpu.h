@@ -11,7 +11,9 @@
 
 #include <tiny_gltf.h>
 
-#include "imgui_impl_vulkan.h"
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_vulkan.h"
+#include "imgui.h"
 #include "resource/gpu/buffer.h"
 #include "resource/gpu/image.h"
 #include "resource/window/window.h"
@@ -35,6 +37,8 @@ class Gpu {
   void Tick();
 
   void Resize();
+
+  void RenderUi(const vk::raii::CommandBuffer& command_buffer);
 
   vk::PhysicalDeviceProperties GetPhysicalDeviceProperties() const;
 
@@ -157,10 +161,15 @@ class Gpu {
   void CreateSurface();
   void CreatePhysicalDevice();
   void CreateDevice();
-  void CreateAllocator();
   void CreateSwapchain();
-  void CreateUiRenderPass();
   void CreateDescriptorPool();
+  void CreateAllocator();
+  void CreateUi();
+
+  void DestroyUi();
+  void DestroyAllocator();
+
+  void UpdateUi();
 
   void SetObjectName(vk::ObjectType object_type, u64 handle,
                      const std::string& name, const std::string& suffix = {});

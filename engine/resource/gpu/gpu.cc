@@ -17,22 +17,40 @@ Gpu::Gpu(std::shared_ptr<Window> window) : window_{window} {
   CreateSurface();
   CreatePhysicalDevice();
   CreateDevice();
-  CreateAllocator();
   CreateSwapchain();
-  CreateUiRenderPass();
   CreateDescriptorPool();
+  CreateAllocator();
+  CreateUi();
 }
 
 Gpu::~Gpu() {
   WaitIdle();
-  vmaDestroyAllocator(allocator_);
+  DestroyUi();
+  DestroyAllocator();
 }
 
-void Gpu::Tick() {}
+void Gpu::Tick() {
+  if (window_->GetIconified()) {
+    return;
+  }
+
+  if (window_->GetFramebufferResized()) {
+    Resize();
+  }
+
+  UpdateUi();
+}
 
 void Gpu::Resize() {
   device_.waitIdle();
   CreateSwapchain();
+}
+
+void Gpu::RenderUi(const vk::raii::CommandBuffer& command_buffer) {
+  ImGui::Render();
+  ImDrawData* draw_data{ImGui::GetDrawData()};
+  ImGui_ImplVulkan_RenderDrawData(
+      draw_data, static_cast<VkCommandBuffer>(*command_buffer));
 }
 
 vk::PhysicalDeviceProperties Gpu::GetPhysicalDeviceProperties() const {
@@ -764,17 +782,6 @@ void Gpu::CreateDevice() {
   present_queue_ = vk::raii::Queue{device_, present_queue_index_.value(), 0};
 }
 
-void Gpu::CreateAllocator() {
-  VmaAllocatorCreateInfo allocator_ci{
-      .flags = 0,
-      .physicalDevice = static_cast<VkPhysicalDevice>(*physical_device_),
-      .device = static_cast<VkDevice>(*device_),
-      .instance = static_cast<VkInstance>(*instance_),
-      .vulkanApiVersion = VK_API_VERSION_1_3,
-  };
-  vmaCreateAllocator(&allocator_ci, &allocator_);
-}
-
 void Gpu::CreateSwapchain() {
   // Clear
   swapchain_.clear();
@@ -882,49 +889,6 @@ void Gpu::CreateSwapchain() {
   swapchain_ = CreateSwapchain(swapchain_ci);
 }
 
-void Gpu::CreateUiRenderPass() {
-  std::vector<vk::AttachmentDescription> attachment_descriptions;
-
-  attachment_descriptions.emplace_back(
-      vk::AttachmentDescriptionFlags{}, swapchain_info_.color_format,
-      vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear,
-      vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eClear,
-      vk::AttachmentStoreOp::eStore, vk::ImageLayout::eUndefined,
-      vk::ImageLayout::ePresentSrcKHR);
-
-  attachment_descriptions.emplace_back(
-      vk::AttachmentDescriptionFlags{}, swapchain_info_.depth_stencil_format_,
-      vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear,
-      vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eClear,
-      vk::AttachmentStoreOp::eStore, vk::ImageLayout::eUndefined,
-      vk::ImageLayout::eDepthStencilAttachmentOptimal);
-
-  vk::AttachmentReference color_attachment_refs{
-      0, vk::ImageLayout::eColorAttachmentOptimal};
-
-  vk::AttachmentReference depth_stencil_attachment_ref{
-      1, vk::ImageLayout::eDepthStencilAttachmentOptimal};
-
-  vk::SubpassDescription subpass_description{
-      {}, vk::PipelineBindPoint::eGraphics, {}, color_attachment_refs,
-      {}, &depth_stencil_attachment_ref};
-
-  vk::SubpassDependency subpass_dependency{
-      VK_SUBPASS_EXTERNAL,
-      0,
-      vk::PipelineStageFlagBits::eColorAttachmentOutput,
-      vk::PipelineStageFlagBits::eColorAttachmentOutput,
-      vk::AccessFlagBits::eNone,
-      vk::AccessFlagBits::eColorAttachmentRead |
-          vk::AccessFlagBits::eColorAttachmentWrite,
-      vk::DependencyFlagBits::eByRegion};
-
-  vk::RenderPassCreateInfo render_pass_ci{
-      {}, attachment_descriptions, subpass_description, subpass_dependency};
-
-  ui_render_pass_ = CreateRenderPass(render_pass_ci);
-}
-
 void Gpu::CreateDescriptorPool() {
   // Bindless.
   std::vector<vk::DescriptorPoolSize> bindlessl_pool_sizes{
@@ -969,6 +933,102 @@ void Gpu::CreateDescriptorPool() {
       normal_pool_sizes};
   normal_descriptor_pool_ =
       vk::raii::DescriptorPool{device_, normal_descriptor_pool_ci};
+}
+
+void Gpu::CreateAllocator() {
+  VmaAllocatorCreateInfo allocator_ci{
+      .flags = 0,
+      .physicalDevice = static_cast<VkPhysicalDevice>(*physical_device_),
+      .device = static_cast<VkDevice>(*device_),
+      .instance = static_cast<VkInstance>(*instance_),
+      .vulkanApiVersion = VK_API_VERSION_1_3,
+  };
+  vmaCreateAllocator(&allocator_ci, &allocator_);
+}
+
+void Gpu::CreateUi() {
+  // Ui render pass.
+  std::vector<vk::AttachmentDescription> attachment_descriptions;
+
+  attachment_descriptions.emplace_back(
+      vk::AttachmentDescriptionFlags{}, swapchain_info_.color_format,
+      vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear,
+      vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eClear,
+      vk::AttachmentStoreOp::eStore, vk::ImageLayout::eUndefined,
+      vk::ImageLayout::ePresentSrcKHR);
+
+  attachment_descriptions.emplace_back(
+      vk::AttachmentDescriptionFlags{}, swapchain_info_.depth_stencil_format_,
+      vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear,
+      vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eClear,
+      vk::AttachmentStoreOp::eStore, vk::ImageLayout::eUndefined,
+      vk::ImageLayout::eDepthStencilAttachmentOptimal);
+
+  vk::AttachmentReference color_attachment_refs{
+      0, vk::ImageLayout::eColorAttachmentOptimal};
+
+  vk::AttachmentReference depth_stencil_attachment_ref{
+      1, vk::ImageLayout::eDepthStencilAttachmentOptimal};
+
+  vk::SubpassDescription subpass_description{
+      {}, vk::PipelineBindPoint::eGraphics, {}, color_attachment_refs,
+      {}, &depth_stencil_attachment_ref};
+
+  vk::SubpassDependency subpass_dependency{
+      VK_SUBPASS_EXTERNAL,
+      0,
+      vk::PipelineStageFlagBits::eColorAttachmentOutput,
+      vk::PipelineStageFlagBits::eColorAttachmentOutput,
+      vk::AccessFlagBits::eNone,
+      vk::AccessFlagBits::eColorAttachmentRead |
+          vk::AccessFlagBits::eColorAttachmentWrite,
+      vk::DependencyFlagBits::eByRegion};
+
+  vk::RenderPassCreateInfo render_pass_ci{
+      {}, attachment_descriptions, subpass_description, subpass_dependency};
+
+  ui_render_pass_ = CreateRenderPass(render_pass_ci);
+
+  // ImGui.
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+
+  ImGuiIO& io = ImGui::GetIO();
+  io.IniFilename = nullptr;
+  io.ConfigFlags = ImGuiConfigFlags_NavEnableKeyboard;
+
+  ImGui_ImplGlfw_InitForVulkan(window_->GetGlfwWindow(), true);
+
+  ImGui_ImplVulkan_InitInfo init_info{
+      .Instance = static_cast<VkInstance>(*instance_),
+      .PhysicalDevice = static_cast<VkPhysicalDevice>(*physical_device_),
+      .Device = static_cast<VkDevice>(*device_),
+      .QueueFamily = graphics_queue_index_.value(),
+      .Queue = static_cast<VkQueue>(*graphics_queue_),
+      .DescriptorPool = static_cast<VkDescriptorPool>(*normal_descriptor_pool_),
+      .RenderPass = static_cast<VkRenderPass>(*ui_render_pass_),
+      .MinImageCount = 3,
+      .ImageCount = 3,
+      .MSAASamples = VK_SAMPLE_COUNT_1_BIT,
+      .PipelineCache = nullptr,
+      .Subpass = 0,
+  };
+
+  ImGui_ImplVulkan_Init(&init_info);
+}
+
+void Gpu::DestroyUi() {
+  ImGui_ImplVulkan_Shutdown();
+  ImGui_ImplGlfw_Shutdown();
+  ImGui::DestroyContext();
+}
+
+void Gpu::DestroyAllocator() { vmaDestroyAllocator(allocator_); }
+
+void Gpu::UpdateUi() {
+  ImGui_ImplVulkan_NewFrame();
+  ImGui_ImplGlfw_NewFrame();
+  ImGui::NewFrame();
 }
 
 void Gpu::SetObjectName(vk::ObjectType object_type, u64 handle,

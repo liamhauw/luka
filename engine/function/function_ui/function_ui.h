@@ -1,7 +1,5 @@
-/*
-  SPDX license identifier: MIT.
-  Copyright (C) 2023 Liam Hauw.
-*/
+// SPDX license identifier: MIT.
+// Copyright (C) 2023-present Liam Hauw.
 
 #pragma once
 
@@ -9,32 +7,20 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "resource/gpu/gpu.h"
-#include "resource/window/window.h"
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_vulkan.h"
+#include "imgui.h"
 
 namespace luka {
 
-class Gpu;
-
 class FunctionUi {
  public:
-  FunctionUi(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu);
-
-  ~FunctionUi();
+  FunctionUi();
 
   void Tick();
-  
-  void Render(const vk::raii::CommandBuffer& command_buffer);
 
  private:
-  void CreateImgui();
-  void DestroyImgui();
   void CreateUi();
-
-  std::shared_ptr<Window> window_;
-  std::shared_ptr<Gpu> gpu_;
-
-  vk::DescriptorSet descriptor_set_;
 };
 
 }  // namespace luka

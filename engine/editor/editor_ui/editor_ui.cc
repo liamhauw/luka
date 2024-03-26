@@ -9,6 +9,13 @@
 
 namespace luka {
 
-void EditorUi::Tick() {}
+EditorUi::EditorUi() {}
+
+void EditorUi::Tick() { CreateUi(); }
+
+void EditorUi::CreateUi() {
+  bool show_demo_window{true};
+  ImGui::ShowDemoWindow(&show_demo_window);
+}
 
 }  // namespace luka

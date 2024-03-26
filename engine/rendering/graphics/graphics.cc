@@ -207,7 +207,7 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
 #endif
     }
 
-    function_ui_->Render(command_buffer);
+    gpu_->RenderUi(command_buffer);
 
     // End render pass.
     command_buffer.endRenderPass();

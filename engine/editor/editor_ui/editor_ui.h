@@ -7,11 +7,20 @@
 #include "platform/pch.h"
 // clang-format on
 
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_vulkan.h"
+#include "imgui.h"
+
 namespace luka {
 
 class EditorUi {
  public:
+  EditorUi();
+
   void Tick();
+
+ private:
+  void CreateUi();
 };
 
 }  // namespace luka
