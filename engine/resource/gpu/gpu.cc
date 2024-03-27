@@ -19,13 +19,13 @@ Gpu::Gpu(std::shared_ptr<Window> window) : window_{window} {
   CreateDevice();
   CreateSwapchain();
   CreateDescriptorPool();
-  CreateAllocator();
-  CreateUi();
+  CreateVmaAllocator();
+  CreateImgui();
 }
 
 Gpu::~Gpu() {
   WaitIdle();
-  DestroyUi();
+  DestroyImgui();
   DestroyAllocator();
 }
 
@@ -38,7 +38,7 @@ void Gpu::Tick() {
     Resize();
   }
 
-  UpdateUi();
+  UpdateImgui();
 }
 
 void Gpu::Resize() {
@@ -935,7 +935,7 @@ void Gpu::CreateDescriptorPool() {
       vk::raii::DescriptorPool{device_, normal_descriptor_pool_ci};
 }
 
-void Gpu::CreateAllocator() {
+void Gpu::CreateVmaAllocator() {
   VmaAllocatorCreateInfo allocator_ci{
       .flags = 0,
       .physicalDevice = static_cast<VkPhysicalDevice>(*physical_device_),
@@ -946,7 +946,7 @@ void Gpu::CreateAllocator() {
   vmaCreateAllocator(&allocator_ci, &allocator_);
 }
 
-void Gpu::CreateUi() {
+void Gpu::CreateImgui() {
   // Ui render pass.
   std::vector<vk::AttachmentDescription> attachment_descriptions;
 
@@ -1017,7 +1017,7 @@ void Gpu::CreateUi() {
   ImGui_ImplVulkan_Init(&init_info);
 }
 
-void Gpu::DestroyUi() {
+void Gpu::DestroyImgui() {
   ImGui_ImplVulkan_Shutdown();
   ImGui_ImplGlfw_Shutdown();
   ImGui::DestroyContext();
@@ -1025,7 +1025,7 @@ void Gpu::DestroyUi() {
 
 void Gpu::DestroyAllocator() { vmaDestroyAllocator(allocator_); }
 
-void Gpu::UpdateUi() {
+void Gpu::UpdateImgui() {
   ImGui_ImplVulkan_NewFrame();
   ImGui_ImplGlfw_NewFrame();
   ImGui::NewFrame();

@@ -36,8 +36,6 @@ class Gpu {
 
   void Tick();
 
-  void Resize();
-
   void RenderUi(const vk::raii::CommandBuffer& command_buffer);
 
   vk::PhysicalDeviceProperties GetPhysicalDeviceProperties() const;
@@ -163,13 +161,15 @@ class Gpu {
   void CreateDevice();
   void CreateSwapchain();
   void CreateDescriptorPool();
-  void CreateAllocator();
-  void CreateUi();
+  void CreateVmaAllocator();
+  void CreateImgui();
 
-  void DestroyUi();
+  void DestroyImgui();
   void DestroyAllocator();
 
-  void UpdateUi();
+  void Resize();
+
+  void UpdateImgui();
 
   void SetObjectName(vk::ObjectType object_type, u64 handle,
                      const std::string& name, const std::string& suffix = {});

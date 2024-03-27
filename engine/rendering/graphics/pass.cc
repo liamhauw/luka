@@ -54,23 +54,23 @@ const std::vector<Subpass>& Pass::GetSubpasses() const { return subpasses_; }
 void Pass::ParseAttachmentInfos() {
   const auto& ast_attachment{ast_pass_->attachments};
 
-  auto ci{ast_attachment.find(ast::AttachmentType::kColor)};
-  if (ci != ast_attachment.end()) {
-    color_attachment_infos_ = &(ci->second);
-    color_attachment_count_ = color_attachment_infos_->size();
-  }
+  // auto ci{ast_attachment.find(ast::AttachmentType::kColor)};
+  // if (ci != ast_attachment.end()) {
+  //   color_attachment_infos_ = &(ci->second);
+  //   color_attachment_count_ = color_attachment_infos_->size();
+  // }
 
-  auto ri{ast_attachment.find(ast::AttachmentType::kResolve)};
-  if (ri != ast_attachment.end()) {
-    resolve_attachment_info_ = &((ri->second)[0]);
-    resolve_attachment_count_ = 1;
-  }
+  // auto ri{ast_attachment.find(ast::AttachmentType::kResolve)};
+  // if (ri != ast_attachment.end()) {
+  //   resolve_attachment_info_ = &((ri->second)[0]);
+  //   resolve_attachment_count_ = 1;
+  // }
 
-  auto di{ast_attachment.find(ast::AttachmentType::kDepthStencil)};
-  if (di != ast_attachment.end()) {
-    depth_stencil_attachment_info_ = &((di->second)[0]);
-    depth_stencil_attachment_count_ = 1;
-  }
+  // auto di{ast_attachment.find(ast::AttachmentType::kDepthStencil)};
+  // if (di != ast_attachment.end()) {
+  //   depth_stencil_attachment_info_ = &((di->second)[0]);
+  //   depth_stencil_attachment_count_ = 1;
+  // }
 
   attachment_count_ = color_attachment_count_ + resolve_attachment_count_ +
                       depth_stencil_attachment_count_;
@@ -152,7 +152,7 @@ void Pass::CreateFramebuffers() {
   for (u32 i{0}; i < frame_count; ++i) {
     std::vector<vk::ImageView> framebuffer_image_views;
     for (u32 j{0}; j < color_attachment_count_; ++j) {
-      const ast::AttachmentInfo& info{(*color_attachment_infos_)[j]};
+      const ast::Attachment& info{(*color_attachment_infos_)[j]};
       bool is_swapchain{info.name == "swapchain_image" ? true : false};
       // Image.
       gpu::Image color_image;

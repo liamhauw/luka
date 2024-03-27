@@ -48,9 +48,9 @@ class Pass {
   SwapchainInfo swapchain_info_;
   std::vector<vk::Image> swapchain_images_;
 
-  const std::vector<ast::AttachmentInfo>* color_attachment_infos_{nullptr};
-  const ast::AttachmentInfo* resolve_attachment_info_{nullptr};
-  const ast::AttachmentInfo* depth_stencil_attachment_info_{nullptr};
+  const std::vector<ast::Attachment>* color_attachment_infos_{nullptr};
+  const ast::Attachment* resolve_attachment_info_{nullptr};
+  const ast::Attachment* depth_stencil_attachment_info_{nullptr};
   u32 color_attachment_count_{0};
   u32 resolve_attachment_count_{0};
   u32 depth_stencil_attachment_count_{0};

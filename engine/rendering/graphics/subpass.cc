@@ -83,8 +83,8 @@ void Subpass::CreateBindlessDescriptorSets() {
 }
 
 void Subpass::CreateDrawElements() {
-  scenes_ = &(ast_subpass_->scenes);
-  shaders_ = &(ast_subpass_->shaders);
+  // scenes_ = &(ast_subpass_->scenes);
+  // shaders_ = &(ast_subpass_->shaders);
 
   for (u32 scene_index : *scenes_) {
     const ast::sc::Scene* scene{asset_->GetScene(scene_index).GetScene()};

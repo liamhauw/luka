@@ -1,4 +1,15 @@
 {
+  "scenes": [
+    "box/Box.gltf"
+  ],
+  "shaders": [
+    "default/geometry.vert",
+    "default/geometry.frag",
+    "default/lighting.vert",
+    "default/lighting.frag",
+    "default/ui.vert",
+    "default/ui.frag"
+  ],
   "frame_graphs": [
     "default.json"
   ]

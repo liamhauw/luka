@@ -26,10 +26,10 @@ class Graphics {
 
   void Tick();
 
+ private:
   void Resize();
   void Render();
 
- private:
   void GetSwapchain();
   void CreateSyncObjects();
   void CreateCommandObjects();

@@ -1,17 +1,7 @@
 {
-  "scenes": [
-    "box/Box.gltf"
-  ],
-  "shaders": [
-    "geometry.vert",
-    "geometry.frag",
-    "lighting.vert",
-    "lighting.frag"
-  ],
   "passes": [
     {
       "name": "deferred_pass",
-      "type": 0,
       "attachments": [
         {
           "name": "base_color"
@@ -30,7 +20,7 @@
         {
           "name": "geometry",
           "attachments": {
-            "color": [
+            "colors": [
               0,
               1
             ],
@@ -47,10 +37,10 @@
         {
           "name": "lighting",
           "attachments": {
-            "color": [
+            "colors": [
               3
             ],
-            "input": [
+            "inputs": [
               0,
               1,
               2
@@ -64,9 +54,26 @@
       ]
     },
     {
-      "name": "ui",
-      "type": 100,
-      "input_image": "color"
+      "name": "swapchain",
+      "attachments": [
+        {
+          "name": "swapchain"
+        }
+      ],
+      "subpasses": [
+        {
+          "name": "ui",
+          "attachments": {
+            "colors": [
+              0
+            ]
+          },
+          "shaders": {
+            "vertex": 4,
+            "fragment": 5
+          }
+        }
+      ]
     }
   ]
 }

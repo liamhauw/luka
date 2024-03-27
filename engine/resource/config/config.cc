@@ -19,24 +19,24 @@ Config::Config() {
   config_json_ = json::parse(config_file);
 
   if (config_json_.contains("scenes")) {
-    const json& scene_jsons{config_json_["scenes"]};
-    for (const json& scene_json : scene_jsons) {
+    const json& scenes_json{config_json_["scenes"]};
+    for (const json& scene_json : scenes_json) {
       std::string uri{scene_json.template get<std::string>()};
       scene_paths_.emplace_back(scene_path_ / GetPath(uri));
     }
   }
 
   if (config_json_.contains("shaders")) {
-    const json& shader_jsons{config_json_["shaders"]};
-    for (const json& shader_json : shader_jsons) {
+    const json& shaders_json{config_json_["shaders"]};
+    for (const json& shader_json : shaders_json) {
       std::string uri{shader_json.template get<std::string>()};
       shader_paths_.emplace_back(shader_path_ / GetPath(uri));
     }
   }
 
   if (config_json_.contains("frame_graphs")) {
-    const json& frame_graph_jsons{config_json_["frame_graphs"]};
-    for (const json& frame_graph_json : frame_graph_jsons) {
+    const json& frame_graphs_json{config_json_["frame_graphs"]};
+    for (const json& frame_graph_json : frame_graphs_json) {
       std::string uri{frame_graph_json.template get<std::string>()};
       frame_graph_paths_.emplace_back(frame_graph_path_ / GetPath(uri));
     }

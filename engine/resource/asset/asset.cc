@@ -7,6 +7,8 @@
 
 #include "resource/asset/asset.h"
 
+#include "core/log.h"
+
 namespace luka {
 
 AssetAsync::AssetAsync(std::shared_ptr<Config> config, std::shared_ptr<Gpu> gpu,

@@ -41,7 +41,6 @@ class AssetAsync {
 
   std::shared_ptr<Config> config_;
   std::shared_ptr<Gpu> gpu_;
-
   u32 thread_count_;
 
   const std::vector<std::filesystem::path>* cfg_scene_paths_;

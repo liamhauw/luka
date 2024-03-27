@@ -21,8 +21,8 @@ FrameGraph::FrameGraph(const std::filesystem::path& frame_graph_path) {
   json_ = json::parse(frame_graph_file);
 
   if (json_.contains("passes")) {
-    const json& pass_jsons{json_["passes"]};
-    for (const auto& pass_json : pass_jsons) {
+    const json& passes_json{json_["passes"]};
+    for (const auto& pass_json : passes_json) {
       ast::Pass pass;
       // Pass name.
       if (pass_json.contains("name")) {
@@ -31,70 +31,66 @@ FrameGraph::FrameGraph(const std::filesystem::path& frame_graph_path) {
 
       // Pass attachments.
       if (pass_json.contains("attachments")) {
-        const json& attachment_jsons{pass_json["attachments"]};
-        if (attachment_jsons.contains("color")) {
-          const json& color_jsons{attachment_jsons["color"]};
-          std::vector<AttachmentInfo> infos;
+        const json& attachments_json{pass_json["attachments"]};
 
-          for (const auto& color_json : color_jsons) {
-            AttachmentInfo info;
-            if (color_json.contains("name")) {
-              info.name = color_json["name"].template get<std::string>();
-            }
-            infos.push_back(std::move(info));
+        for (const auto& attachment_json : attachments_json) {
+          std::string name;
+          if (attachment_json.contains("name")) {
+            name = attachment_json["name"].template get<std::string>();
           }
-
-          pass.attachments.emplace(AttachmentType::kColor, std::move(infos));
-        }
-
-        if (attachment_jsons.contains("resolve")) {
-          const json& resolve_json{attachment_jsons["depth_stencil"]};
-          std::vector<AttachmentInfo> infos(1);
-          if (resolve_json.contains("name")) {
-            infos[0].name = resolve_json["name"].template get<std::string>();
-          }
-          pass.attachments.emplace(AttachmentType::kResolve, std::move(infos));
-        }
-
-        if (attachment_jsons.contains("depth_stencil")) {
-          const json& depth_stencil_json{attachment_jsons["depth_stencil"]};
-          std::vector<AttachmentInfo> infos(1);
-          if (depth_stencil_json.contains("name")) {
-            infos[0].name =
-                depth_stencil_json["name"].template get<std::string>();
-          }
-          pass.attachments.emplace(AttachmentType::kDepthStencil,
-                                   std::move(infos));
+          pass.attachments.emplace_back(name);
         }
       }
 
       // Pase subpasses.
       if (pass_json.contains("subpasses")) {
-        const json& subpass_jsons{pass_json["subpasses"]};
-        for (const json& subpass_json : subpass_jsons) {
+        const json& subpasses_json{pass_json["subpasses"]};
+        for (const json& subpass_json : subpasses_json) {
           ast::Subpass subpass;
 
           if (subpass_json.contains("name")) {
             subpass.name = subpass_json["name"].template get<std::string>();
           }
 
+          if (subpass_json.contains("attachments")) {
+            const json& attachments_json{subpass_json["attachments"]};
+            if (attachments_json.contains("colors")) {
+              std::vector<u32> color_attachments;
+              const json& colors_json{attachments_json["colors"]};
+              for (const auto& color_json : colors_json) {
+                u32 index{color_json.template get<u32>()};
+                color_attachments.push_back(index);
+              }
+              subpass.attachments.emplace(AttachmentType::kColor,
+                                          color_attachments);
+            }
+
+            if (attachments_json.contains("depth_stencil")) {
+              const json& depth_stencil_json{attachments_json["depth_stencil"]};
+              u32 index{depth_stencil_json.template get<u32>()};
+              subpass.attachments.emplace(AttachmentType::kDepthStencil,
+                                          std::vector{index});
+            }
+          }
+
           if (subpass_json.contains("scenes")) {
-            const json& scene_jsons{subpass_json["scenes"]};
-            for (const auto& scene_json : scene_jsons) {
-              u32 scene{scene_json.template get<u32>()};
-              subpass.scenes.push_back(scene);
+            const json& scenes_json{subpass_json["scenes"]};
+            for (const auto& scene_json : scenes_json) {
+              u32 index{scene_json.template get<u32>()};
+              subpass.scenes.push_back(index);
             }
           }
 
           if (subpass_json.contains("shaders")) {
-            const json& shader_jsons{subpass_json["shaders"]};
-            if (shader_jsons.contains("vertex")) {
-              u32 shader{shader_jsons["vertex"].template get<u32>()};
-              subpass.shaders.emplace("vertex", shader);
+            const json& shaders_json{subpass_json["shaders"]};
+            if (shaders_json.contains("vertex")) {
+              u32 index{shaders_json["vertex"].template get<u32>()};
+              subpass.shaders.emplace(ShaderType::kVertex, index);
             }
-            if (shader_jsons.contains("fragment")) {
-              u32 shader{shader_jsons["fragment"].template get<u32>()};
-              subpass.shaders.emplace("fragment", shader);
+
+            if (shaders_json.contains("fragment")) {
+              u32 index{shaders_json["fragment"].template get<u32>()};
+              subpass.shaders.emplace(ShaderType::kFragment, index);
             }
           }
           pass.subpasses.push_back(std::move(subpass));
