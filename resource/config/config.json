@@ -1,14 +1,4 @@
 {
-  "scenes": [
-    "sponza/Sponza.gltf",
-    "box/Box.gltf",
-    "box/Box.gltf",
-    "box/Box.gltf"
-  ],
-  "shaders": [
-    "base/shader.vert",
-    "base/shader.frag"
-  ],
   "frame_graphs": [
     "default.json"
   ]

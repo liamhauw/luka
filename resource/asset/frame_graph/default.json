@@ -1,30 +1,72 @@
 {
+  "scenes": [
+    "box/Box.gltf"
+  ],
+  "shaders": [
+    "geometry.vert",
+    "geometry.frag",
+    "lighting.vert",
+    "lighting.frag"
+  ],
   "passes": [
     {
-      "name": "swapchain_pass",
-      "attachments": {
-        "color": [
-          {
-            "name": "swapchain_image"
-          }
-        ],
-        "depth_stencil": {
-          "name": "depth_stencil_image"
+      "name": "deferred_pass",
+      "type": 0,
+      "attachments": [
+        {
+          "name": "base_color"
+        },
+        {
+          "name": "normal"
+        },
+        {
+          "name": "depth"
+        },
+        {
+          "name": "color"
         }
-      },
+      ],
       "subpasses": [
         {
-          "name": "swapchain_subpass",
+          "name": "geometry",
+          "attachments": {
+            "color": [
+              0,
+              1
+            ],
+            "depth_stencil": 2
+          },
           "scenes": [
-            0,
-            1
+            0
           ],
           "shaders": {
             "vertex": 0,
             "fragment": 1
           }
+        },
+        {
+          "name": "lighting",
+          "attachments": {
+            "color": [
+              3
+            ],
+            "input": [
+              0,
+              1,
+              2
+            ]
+          },
+          "shaders": {
+            "vertex": 2,
+            "fragment": 3
+          }
         }
       ]
+    },
+    {
+      "name": "ui",
+      "type": 100,
+      "input_image": "color"
     }
   ]
 }
