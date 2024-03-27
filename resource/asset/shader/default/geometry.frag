@@ -1,3 +1,6 @@
+// SPDX license identifier: MIT.
+// Copyright (C) 2023-present Liam Hauw.
+
 #version 450
 
 #extension GL_EXT_nonuniform_qualifier : enable

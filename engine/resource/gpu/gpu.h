@@ -26,7 +26,6 @@ struct SwapchainInfo {
   vk::ColorSpaceKHR color_space;
   vk::Extent2D extent;
   vk::PresentModeKHR present_mode;
-  vk::Format depth_stencil_format_{vk::Format::eD32Sfloat};
 };
 
 class Gpu {
@@ -150,7 +149,7 @@ class Gpu {
 
   const vk::raii::SwapchainKHR& GetSwapchain() const;
 
-  const vk::raii::RenderPass& GetUiRenderPass() const;
+  vk::raii::RenderPass GetUiRenderPass();
 
   ImGui_ImplVulkan_InitInfo GetImguiVulkanInitInfo() const;
 
@@ -168,7 +167,6 @@ class Gpu {
   void DestroyAllocator();
 
   void Resize();
-
   void UpdateImgui();
 
   void SetObjectName(vk::ObjectType object_type, u64 handle,

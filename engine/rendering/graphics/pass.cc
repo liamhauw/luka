@@ -13,6 +13,16 @@ namespace gs {
 
 Pass::Pass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
            std::shared_ptr<Camera> camera, const ast::Pass& ast_pass,
+           const SwapchainInfo& swapchain_info) {
+  CreateRenderPass();
+  CreateFramebuffers();
+  CreateRenderArea();
+  CreateClearValues();
+  CreateSubpasses();
+}
+
+Pass::Pass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
+           std::shared_ptr<Camera> camera, const ast::Pass& ast_pass,
            const SwapchainInfo& swapchain_info,
            const std::vector<vk::Image>& swapchain_images)
     : gpu_{gpu},
@@ -21,8 +31,6 @@ Pass::Pass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
       ast_pass_{&ast_pass},
       swapchain_info_{swapchain_info},
       swapchain_images_{swapchain_images} {
-  ParseAttachmentInfos();
-  CreateRenderPass();
   CreateFramebuffers();
   CreateRenderArea();
   CreateClearValues();
@@ -37,7 +45,8 @@ void Pass::Resize(const SwapchainInfo& swapchain_info,
   CreateRenderArea();
 }
 
-// const vk::raii::RenderPass& Pass::GetRenderPass() const { return render_pass_; }
+// const vk::raii::RenderPass& Pass::GetRenderPass() const { return
+// render_pass_; }
 
 const vk::raii::Framebuffer& Pass::GetFramebuffer(u32 frame_index) const {
   return framebuffers_[frame_index];
@@ -51,33 +60,14 @@ const std::vector<vk::ClearValue>& Pass::GetClearValues() const {
 
 const std::vector<Subpass>& Pass::GetSubpasses() const { return subpasses_; }
 
-void Pass::ParseAttachmentInfos() {
-  const auto& ast_attachment{ast_pass_->attachments};
-
-  // auto ci{ast_attachment.find(ast::AttachmentType::kColor)};
-  // if (ci != ast_attachment.end()) {
-  //   color_attachment_infos_ = &(ci->second);
-  //   color_attachment_count_ = color_attachment_infos_->size();
-  // }
-
-  // auto ri{ast_attachment.find(ast::AttachmentType::kResolve)};
-  // if (ri != ast_attachment.end()) {
-  //   resolve_attachment_info_ = &((ri->second)[0]);
-  //   resolve_attachment_count_ = 1;
-  // }
-
-  // auto di{ast_attachment.find(ast::AttachmentType::kDepthStencil)};
-  // if (di != ast_attachment.end()) {
-  //   depth_stencil_attachment_info_ = &((di->second)[0]);
-  //   depth_stencil_attachment_count_ = 1;
-  // }
-
-  attachment_count_ = color_attachment_count_ + resolve_attachment_count_ +
-                      depth_stencil_attachment_count_;
-}
-
 void Pass::CreateRenderPass() {
-  // std::vector<vk::AttachmentDescription> attachment_descriptions;
+  std::vector<vk::AttachmentDescription> attachment_descriptions;
+
+  const std::vector<ast::Attachment>& ast_attachments{ast_pass_->attachments};
+  for (const auto& ast_attachment : ast_attachments) {
+    vk::Format format{ast_attachment.format};
+    
+  }
 
   // std::vector<vk::AttachmentReference> color_attachment_refs;
   // vk::AttachmentReference resolve_attachment_ref;
@@ -110,10 +100,11 @@ void Pass::CreateRenderPass() {
 
   // if (depth_stencil_attachment_count_ == 1) {
   //   attachment_descriptions.emplace_back(
-  //       vk::AttachmentDescriptionFlags{}, swapchain_info_.depth_stencil_format_,
-  //       vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear,
-  //       vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eClear,
-  //       vk::AttachmentStoreOp::eStore, vk::ImageLayout::eUndefined,
+  //       vk::AttachmentDescriptionFlags{},
+  //       swapchain_info_.depth_stencil_format_, vk::SampleCountFlagBits::e1,
+  //       vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore,
+  //       vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore,
+  //       vk::ImageLayout::eUndefined,
   //       vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
   //   depth_stencil_attachment_ref = {
@@ -136,9 +127,9 @@ void Pass::CreateRenderPass() {
 
   // vk::RenderPassCreateInfo render_pass_ci{
   //     {}, attachment_descriptions, subpass_description, subpass_dependency};
-
-  render_pass_ = *(gpu_->GetUiRenderPass());
 }
+
+void Pass::GetUiRenderPass() { render_pass_ = gpu_->GetUiRenderPass(); }
 
 void Pass::CreateFramebuffers() {
   images_.clear();
@@ -227,7 +218,7 @@ void Pass::CreateFramebuffers() {
     }
 
     vk::FramebufferCreateInfo framebuffer_ci{{},
-                                             render_pass_,
+                                             *render_pass_,
                                              framebuffer_image_views,
                                              swapchain_info_.extent.width,
                                              swapchain_info_.extent.height,
@@ -257,7 +248,7 @@ void Pass::CreateSubpasses() {
   const std::vector<ast::Subpass>& ast_subpasses{ast_pass_->subpasses};
   for (u32 i{0}; i < ast_subpasses.size(); ++i) {
     subpasses_.emplace_back(gpu_, asset_, camera_, ast_subpasses[i],
-                            render_pass_, swapchain_images_.size());
+                            *render_pass_, swapchain_images_.size());
   }
 }
 

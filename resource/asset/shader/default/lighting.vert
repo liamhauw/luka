@@ -1,3 +1,8 @@
+// SPDX license identifier: MIT.
+// Copyright (C) 2023-present Liam Hauw.
+
+#version 450
+
 layout(location = 0) out vec2 o_texcoord_0;
 
 void main() {

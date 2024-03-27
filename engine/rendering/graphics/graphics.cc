@@ -266,9 +266,13 @@ void Graphics::CreateViewportAndScissor() {
 void Graphics::CreatePasses() {
   const ast::FrameGraph& frame_graph{asset_->GetFrameGraph(0)};
   const std::vector<ast::Pass>& ast_passes{frame_graph.GetPasses()};
-  for (u32 i{0}; i < ast_passes.size(); ++i) {
-    passes_.emplace_back(gpu_, asset_, camera_, ast_passes[i], *swapchain_info_,
-                         swapchain_images_);
+  for (const auto& ast_pass : ast_passes) {
+    if (ast_pass.name != "ui") {
+      passes_.emplace_back(gpu_, asset_, camera_, ast_pass, *swapchain_info_);
+    } else {
+      passes_.emplace_back(gpu_, asset_, camera_, ast_pass, *swapchain_info_,
+                           swapchain_images_);
+    }
   }
 }
 

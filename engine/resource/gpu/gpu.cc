@@ -484,8 +484,8 @@ const SwapchainInfo& Gpu::GetSwapchainInfo() const { return swapchain_info_; }
 
 const vk::raii::SwapchainKHR& Gpu::GetSwapchain() const { return swapchain_; }
 
-const vk::raii::RenderPass& Gpu::GetUiRenderPass() const {
-  return ui_render_pass_;
+vk::raii::RenderPass Gpu::GetUiRenderPass() {
+  return std::move(ui_render_pass_);
 }
 
 ImGui_ImplVulkan_InitInfo Gpu::GetImguiVulkanInitInfo() const {
@@ -957,22 +957,11 @@ void Gpu::CreateImgui() {
       vk::AttachmentStoreOp::eStore, vk::ImageLayout::eUndefined,
       vk::ImageLayout::ePresentSrcKHR);
 
-  attachment_descriptions.emplace_back(
-      vk::AttachmentDescriptionFlags{}, swapchain_info_.depth_stencil_format_,
-      vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear,
-      vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eClear,
-      vk::AttachmentStoreOp::eStore, vk::ImageLayout::eUndefined,
-      vk::ImageLayout::eDepthStencilAttachmentOptimal);
-
   vk::AttachmentReference color_attachment_refs{
       0, vk::ImageLayout::eColorAttachmentOptimal};
 
-  vk::AttachmentReference depth_stencil_attachment_ref{
-      1, vk::ImageLayout::eDepthStencilAttachmentOptimal};
-
   vk::SubpassDescription subpass_description{
-      {}, vk::PipelineBindPoint::eGraphics, {}, color_attachment_refs,
-      {}, &depth_stencil_attachment_ref};
+      {}, vk::PipelineBindPoint::eGraphics, {}, color_attachment_refs};
 
   vk::SubpassDependency subpass_dependency{
       VK_SUBPASS_EXTERNAL,

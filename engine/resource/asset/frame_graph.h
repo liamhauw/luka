@@ -19,13 +19,14 @@ enum class ShaderType { kVertex, kFragment };
 
 struct Attachment {
   std::string name;
+  vk::Format format;
 };
 
 struct Subpass {
   std::string name;
   std::unordered_map<AttachmentType, std::vector<u32>> attachments;
   std::vector<u32> scenes;
-  std::unordered_map<ShaderType, u32> shaders;
+  std::unordered_map<vk::ShaderStageFlags, u32> shaders;
 };
 
 struct Pass {

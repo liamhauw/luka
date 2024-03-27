@@ -20,6 +20,10 @@ class Pass {
  public:
   Pass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
        std::shared_ptr<Camera> camera, const ast::Pass& ast_pass,
+       const SwapchainInfo& swapchain_info);
+
+  Pass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
+       std::shared_ptr<Camera> camera, const ast::Pass& ast_pass,
        const SwapchainInfo& swapchain_info,
        const std::vector<vk::Image>& swapchain_images);
 
@@ -33,8 +37,9 @@ class Pass {
   const std::vector<Subpass>& GetSubpasses() const;
 
  protected:
-  void ParseAttachmentInfos();
   void CreateRenderPass();
+  void GetUiRenderPass();
+
   void CreateFramebuffers();
   void CreateRenderArea();
   void CreateClearValues();
@@ -55,7 +60,7 @@ class Pass {
   u32 resolve_attachment_count_{0};
   u32 depth_stencil_attachment_count_{0};
   u32 attachment_count_{0};
-  vk::RenderPass render_pass_{nullptr};
+  vk::raii::RenderPass render_pass_{nullptr};
 
   std::vector<std::vector<gpu::Image>> images_;
   std::vector<std::vector<vk::raii::ImageView>> image_views_;

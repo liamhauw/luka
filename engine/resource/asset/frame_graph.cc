@@ -38,7 +38,19 @@ FrameGraph::FrameGraph(const std::filesystem::path& frame_graph_path) {
           if (attachment_json.contains("name")) {
             name = attachment_json["name"].template get<std::string>();
           }
-          pass.attachments.emplace_back(name);
+          vk::Format format{vk::Format::eR8G8B8A8Unorm};
+          if (attachment_json.contains("format")) {
+            std::string fmt{
+                attachment_json["format"].template get<std::string>()};
+            if (fmt == "R8B8B8A8Unorm") {
+              format = vk::Format::eR8G8B8A8Unorm;
+            } else if (fmt == "A2R10G10B10UnormPack32") {
+              format = vk::Format::eA2R10G10B10UnormPack32;
+            } else if (fmt == "D32Sfloat") {
+              format = vk::Format::eD32Sfloat;
+            }
+          }
+          pass.attachments.emplace_back(name, format);
         }
       }
 

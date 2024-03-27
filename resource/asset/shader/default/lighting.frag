@@ -1,3 +1,8 @@
+// SPDX license identifier: MIT.
+// Copyright (C) 2023-present Liam Hauw.
+
+#version 450
+
 layout(input_attachment_index = 0, binding = 0) uniform subpassInput i_base_color;
 layout(input_attachment_index = 1, binding = 1) uniform subpassInput i_normal;
 layout(input_attachment_index = 2, binding = 2) uniform subpassInput i_depth;
