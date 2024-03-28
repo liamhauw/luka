@@ -19,18 +19,22 @@ namespace luka {
 namespace gs {
 
 Subpass::Subpass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
-                 std::shared_ptr<Camera> camera,
-                 const ast::Subpass& ast_subpass,
-                 vk::RenderPass render_pass, u32 frame_count)
+                 std::shared_ptr<Camera> camera, u32 frame_count,
+                 vk::RenderPass render_pass, const ast::Subpass& ast_subpass)
     : gpu_{gpu},
       asset_{asset},
       camera_{camera},
-      ast_subpass_{&ast_subpass},
+      frame_count_{frame_count},
       render_pass_{render_pass},
-      frame_count_{frame_count} {
+      ast_subpass_{&ast_subpass},
+      name_{ast_subpass_->name},
+      scenes_{&(ast_subpass_->scenes)},
+      shaders_{&(ast_subpass_->shaders)} {
   CreateBindlessDescriptorSets();
   CreateDrawElements();
 }
+
+const std::string& Subpass::GetName() const { return name_; }
 
 void Subpass::PushConstants(const vk::raii::CommandBuffer& command_buffer,
                             vk::PipelineLayout pipeline_layout) const {
@@ -43,6 +47,10 @@ void Subpass::PushConstants(const vk::raii::CommandBuffer& command_buffer,
   command_buffer.pushConstants<PushConstantUniform>(
       pipeline_layout, vk::ShaderStageFlagBits::eVertex, 0,
       push_constant_uniform);
+}
+
+bool Subpass::HasBindlessDescriptorSet() const {
+  return has_bindless_descriptor_set_;
 }
 
 vk::DescriptorSetLayout Subpass::GetBindlessDescriptorSetLayout() const {
@@ -58,6 +66,12 @@ const std::vector<DrawElement>& Subpass::GetDrawElements() const {
 }
 
 void Subpass::CreateBindlessDescriptorSets() {
+  if (ast_subpass_->scenes.empty()) {
+    return;
+  }
+
+  has_bindless_descriptor_set_ = true;
+
   std::vector<vk::DescriptorSetLayoutBinding> descriptor_set_layout_bindings{
       {0, vk::DescriptorType::eSampler, 16, vk::ShaderStageFlagBits::eAll},
       {1, vk::DescriptorType::eSampledImage, 128,
@@ -83,8 +97,9 @@ void Subpass::CreateBindlessDescriptorSets() {
 }
 
 void Subpass::CreateDrawElements() {
-  // scenes_ = &(ast_subpass_->scenes);
-  // shaders_ = &(ast_subpass_->shaders);
+  if (scenes_->empty()) {
+    draw_elements_.push_back(CreateDrawElement());
+  }
 
   for (u32 scene_index : *scenes_) {
     const ast::sc::Scene* scene{asset_->GetScene(scene_index).GetScene()};
@@ -124,58 +139,58 @@ void Subpass::CreateDrawElements() {
 
       // Draw elements.
       for (const ast::sc::Primitive& primitive : primitives) {
-        DrawElement draw_element{CreateDrawElement(model_matrix, primitive)};
+        DrawElement draw_element{
+            CreateDrawElement(true, model_matrix, primitive)};
         draw_elements_.push_back(std::move(draw_element));
       }
     }
   }
 }
 
-DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
+DrawElement Subpass::CreateDrawElement(bool has_primitive,
+                                       const glm::mat4& model_matrix,
                                        const ast::sc::Primitive& primitive) {
   DrawElement draw_element;
 
-  // Primitive info.
-  const auto& vertex_attributes{primitive.vertex_attributes};
-  const auto& index_attribute{primitive.index_attribute};
-  bool has_index{primitive.has_index};
-  const ast::sc::Material* material{primitive.material};
+  draw_element.has_primitive = has_primitive;
 
   // Shaders.
+  std::vector<std::string> wanted_textures{"base_color_texture"};
   std::vector<std::string> shader_processes;
-  const std::map<std::string, ast::sc::Texture*>& textures{
-      material->GetTextures()};
-  for (std::string wanted_texture : wanted_textures_) {
-    auto it{textures.find(wanted_texture)};
-    if (it != textures.end()) {
-      std::transform(wanted_texture.begin(), wanted_texture.end(),
-                     wanted_texture.begin(), ::toupper);
-      shader_processes.push_back("DHAS_" + wanted_texture);
+  if (has_primitive) {
+    const std::map<std::string, ast::sc::Texture*>& textures{
+        primitive.material->GetTextures()};
+    for (std::string wanted_texture : wanted_textures) {
+      auto it{textures.find(wanted_texture)};
+      if (it != textures.end()) {
+        std::transform(wanted_texture.begin(), wanted_texture.end(),
+                       wanted_texture.begin(), ::toupper);
+        shader_processes.push_back("DHAS_" + wanted_texture);
+      }
+    }
+
+    bool has_position_buffer{false};
+    for (const auto& vertex_buffer_attribute : primitive.vertex_attributes) {
+      std::string name{vertex_buffer_attribute.first};
+      if (name == "POSITION") {
+        has_position_buffer = true;
+      }
+      std::transform(name.begin(), name.end(), name.begin(), ::toupper);
+      shader_processes.push_back("DHAS_" + name + "_BUFFER");
+    }
+    if (!has_position_buffer) {
+      THROW("There is no position buffer.");
     }
   }
 
-  bool has_position_buffer{false};
-  for (const auto& vertex_buffer_attribute : vertex_attributes) {
-    std::string name{vertex_buffer_attribute.first};
-    if (name == "POSITION") {
-      has_position_buffer = true;
-    }
-    std::transform(name.begin(), name.end(), name.begin(), ::toupper);
-    shader_processes.push_back("DHAS_" + name + "_BUFFER");
-  }
-  if (!has_position_buffer) {
-    THROW("There is no position buffer.");
-  }
-
-  auto vi{shaders_->find("vertex")};
+  auto vi{shaders_->find(vk::ShaderStageFlagBits::eVertex)};
   if (vi == shaders_->end()) {
     THROW("There is no vertex shader");
   }
-  auto fi{shaders_->find("fragment")};
+  auto fi{shaders_->find(vk::ShaderStageFlagBits::eFragment)};
   if (fi == shaders_->end()) {
     THROW("There is no fragment shader");
   }
-
   const SPIRV& vert_spirv{RequesetSpirv(asset_->GetShader(vi->second),
                                         shader_processes,
                                         vk::ShaderStageFlagBits::eVertex)};
@@ -183,9 +198,9 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
                                         shader_processes,
                                         vk::ShaderStageFlagBits::eFragment)};
 
-  // Pipeline layout.
   std::vector<const SPIRV*> spirv_shaders{&vert_spirv, &frag_spirv};
 
+  // Pipeline layout.
   std::unordered_map<std::string, ShaderResource> name_shader_resources;
 
   for (const auto* spirv_shader : spirv_shaders) {
@@ -267,14 +282,22 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
     set_layouts.push_back(*descriptor_set_layout);
   }
 
-  std::vector<vk::DescriptorSetLayout> set_layouts_with_bindless{
-      bindless_descriptor_set_layout_};
-  for (vk::DescriptorSetLayout set_layout : set_layouts) {
-    set_layouts_with_bindless.push_back(set_layout);
+  vk::PipelineLayoutCreateInfo pipeline_layout_ci;
+  if (has_primitive) {
+    std::vector<vk::DescriptorSetLayout> set_layouts_with_bindless{
+        bindless_descriptor_set_layout_};
+    for (vk::DescriptorSetLayout set_layout : set_layouts) {
+      set_layouts_with_bindless.push_back(set_layout);
+    }
+    pipeline_layout_ci.setSetLayouts(set_layouts_with_bindless);
+  } else {
+    pipeline_layout_ci.setSetLayouts(set_layouts);
   }
 
-  vk::PipelineLayoutCreateInfo pipeline_layout_ci{
-      {}, set_layouts_with_bindless, push_constant_ranges};
+  if (!push_constant_ranges.empty()) {
+    draw_element.has_push_constant = true;
+    pipeline_layout_ci.setPushConstantRanges(push_constant_ranges);
+  }
 
   const vk::raii::PipelineLayout& pipeline_layout{
       RequestPipelineLayout(pipeline_layout_ci)};
@@ -301,52 +324,54 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
     shader_stage_cis.push_back(std::move(shader_stage_ci));
   }
 
-  std::vector<vk::VertexInputBindingDescription>
-      vertex_input_binding_descriptions;
-  std::vector<vk::VertexInputAttributeDescription>
-      vertex_input_attribute_descriptions;
+  vk::PipelineVertexInputStateCreateInfo vertex_input_state_ci;
+  if (has_primitive) {
+    std::vector<vk::VertexInputBindingDescription>
+        vertex_input_binding_descriptions;
+    std::vector<vk::VertexInputAttributeDescription>
+        vertex_input_attribute_descriptions;
 
-  for (const auto& vertex_buffer_attribute : vertex_attributes) {
-    std::string name{vertex_buffer_attribute.first};
-    const ast::sc::VertexAttribute& vertex_attribute{
-        vertex_buffer_attribute.second};
+    for (const auto& vertex_buffer_attribute : primitive.vertex_attributes) {
+      std::string name{vertex_buffer_attribute.first};
+      const ast::sc::VertexAttribute& vertex_attribute{
+          vertex_buffer_attribute.second};
 
-    std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+      std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 
-    auto it{name_shader_resources.find(name)};
-    if (it == name_shader_resources.end()) {
-      continue;
+      auto it{name_shader_resources.find(name)};
+      if (it == name_shader_resources.end()) {
+        continue;
+      }
+
+      const auto& shader_resource{it->second};
+
+      vk::VertexInputBindingDescription vertex_input_binding_description{
+          shader_resource.location, vertex_attribute.stride};
+      vertex_input_binding_descriptions.push_back(
+          std::move(vertex_input_binding_description));
+
+      vk::VertexInputAttributeDescription vertex_input_attribute_description{
+          shader_resource.location, shader_resource.location,
+          vertex_attribute.format, vertex_attribute.offset};
+      vertex_input_attribute_descriptions.push_back(
+          std::move(vertex_input_attribute_description));
+
+      draw_element.location_vertex_attributes.emplace(shader_resource.location,
+                                                      &vertex_attribute);
+      if (draw_element.vertex_count == 0) {
+        draw_element.vertex_count = vertex_attribute.count;
+      }
     }
 
-    const auto& shader_resource{it->second};
-
-    vk::VertexInputBindingDescription vertex_input_binding_description{
-        shader_resource.location, vertex_attribute.stride};
-    vertex_input_binding_descriptions.push_back(
-        std::move(vertex_input_binding_description));
-
-    vk::VertexInputAttributeDescription vertex_input_attribute_description{
-        shader_resource.location, shader_resource.location,
-        vertex_attribute.format, vertex_attribute.offset};
-    vertex_input_attribute_descriptions.push_back(
-        std::move(vertex_input_attribute_description));
-
-    draw_element.location_vertex_attributes.emplace(shader_resource.location,
-                                                    &vertex_attribute);
-    if (draw_element.vertex_count == 0) {
-      draw_element.vertex_count = vertex_attribute.count;
+    if (primitive.has_index) {
+      draw_element.has_index = true;
+      draw_element.index_attribute = &(primitive.index_attribute);
     }
+    vertex_input_state_ci.setVertexBindingDescriptions(
+        vertex_input_binding_descriptions);
+    vertex_input_state_ci.setVertexAttributeDescriptions(
+        vertex_input_attribute_descriptions);
   }
-
-  if (has_index) {
-    draw_element.has_index = true;
-    draw_element.index_attribute = &index_attribute;
-  }
-
-  vk::PipelineVertexInputStateCreateInfo vertex_input_state_ci{
-      {},
-      vertex_input_binding_descriptions,
-      vertex_input_attribute_descriptions};
 
   vk::PipelineInputAssemblyStateCreateInfo input_assembly_state_ci{
       {}, vk::PrimitiveTopology::eTriangleList};
@@ -427,71 +452,75 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
     // 1. Combined image samplers.
     glm::uvec4 sampler_indices{0};
     glm::uvec4 image_indices{0};
-    u32 idx{0};
-    for (const auto& wanted_texture : wanted_textures_) {
-      auto global_samplers_it{name_shader_resources.find("global_samplers")};
-      auto global_images_it{name_shader_resources.find("global_images")};
-      auto wanted_texture_it{textures.find(wanted_texture)};
-      if (global_samplers_it != name_shader_resources.end() &&
-          global_images_it != name_shader_resources.end() &&
-          wanted_texture_it != textures.end()) {
-        const ShaderResource& global_samplers_shader_resource{
-            global_samplers_it->second};
-        const ShaderResource& global_images_shader_resource{
-            global_images_it->second};
-        ast::sc::Texture* tex{wanted_texture_it->second};
+    if (has_primitive) {
+      const std::map<std::string, ast::sc::Texture*>& textures{
+          primitive.material->GetTextures()};
+      u32 idx{0};
+      for (const auto& wanted_texture : wanted_textures) {
+        auto global_samplers_it{name_shader_resources.find("global_samplers")};
+        auto global_images_it{name_shader_resources.find("global_images")};
+        auto wanted_texture_it{textures.find(wanted_texture)};
+        if (global_samplers_it != name_shader_resources.end() &&
+            global_images_it != name_shader_resources.end() &&
+            wanted_texture_it != textures.end()) {
+          const ShaderResource& global_samplers_shader_resource{
+              global_samplers_it->second};
+          const ShaderResource& global_images_shader_resource{
+              global_images_it->second};
+          ast::sc::Texture* tex{wanted_texture_it->second};
 
-        ast::sc::Sampler* ast_sampler{tex->GetSampler()};
-        u64 sampler_hash_value{0};
-        HashCombine(sampler_hash_value, ast_sampler);
-        auto it2{sampler_indices_.find(sampler_hash_value)};
-        if (it2 != sampler_indices_.end()) {
-          sampler_indices_[idx] = it2->second;
-        } else {
-          const vk::raii::Sampler& sampler{ast_sampler->GetSampler()};
+          ast::sc::Sampler* ast_sampler{tex->GetSampler()};
+          u64 sampler_hash_value{0};
+          HashCombine(sampler_hash_value, ast_sampler);
+          auto it2{sampler_indices_.find(sampler_hash_value)};
+          if (it2 != sampler_indices_.end()) {
+            sampler_indices_[idx] = it2->second;
+          } else {
+            const vk::raii::Sampler& sampler{ast_sampler->GetSampler()};
 
-          vk::DescriptorImageInfo descriptor_sampler_info{*sampler};
-          sampler_infos.push_back(std::move(descriptor_sampler_info));
+            vk::DescriptorImageInfo descriptor_sampler_info{*sampler};
+            sampler_infos.push_back(std::move(descriptor_sampler_info));
 
-          sampler_indices[idx] = global_sampler_index_++;
+            sampler_indices[idx] = global_sampler_index_++;
 
-          vk::WriteDescriptorSet write_descriptor_set{
-              *(bindless_descriptor_sets_[0]),
-              global_samplers_shader_resource.binding, sampler_indices[idx],
-              vk::DescriptorType::eSampler, sampler_infos.back()};
+            vk::WriteDescriptorSet write_descriptor_set{
+                *(bindless_descriptor_sets_[0]),
+                global_samplers_shader_resource.binding, sampler_indices[idx],
+                vk::DescriptorType::eSampler, sampler_infos.back()};
 
-          write_descriptor_sets.push_back(write_descriptor_set);
+            write_descriptor_sets.push_back(write_descriptor_set);
 
-          sampler_indices_.emplace(sampler_hash_value, sampler_indices[idx]);
+            sampler_indices_.emplace(sampler_hash_value, sampler_indices[idx]);
+          }
+
+          ast::sc::Image* ast_image{tex->GetImage()};
+
+          u64 image_hash_value{0};
+          HashCombine(image_hash_value, ast_image);
+          auto it3{image_indices_.find(image_hash_value)};
+          if (it3 != image_indices_.end()) {
+            image_indices[idx] = it3->second;
+          } else {
+            const vk::raii::ImageView& image_view{
+                tex->GetImage()->GetImageView()};
+
+            vk::DescriptorImageInfo descriptor_image_info{
+                nullptr, *image_view, vk::ImageLayout::eShaderReadOnlyOptimal};
+            image_infos.push_back(std::move(descriptor_image_info));
+
+            image_indices[idx] = global_image_index_++;
+
+            vk::WriteDescriptorSet write_descriptor_set{
+                *(bindless_descriptor_sets_[0]),
+                global_images_shader_resource.binding, image_indices[idx],
+                vk::DescriptorType::eSampledImage, image_infos.back()};
+
+            write_descriptor_sets.push_back(write_descriptor_set);
+
+            image_indices_.emplace(image_hash_value, image_indices[idx]);
+          }
+          ++idx;
         }
-
-        ast::sc::Image* ast_image{tex->GetImage()};
-
-        u64 image_hash_value{0};
-        HashCombine(image_hash_value, ast_image);
-        auto it3{image_indices_.find(image_hash_value)};
-        if (it3 != image_indices_.end()) {
-          image_indices[idx] = it3->second;
-        } else {
-          const vk::raii::ImageView& image_view{
-              tex->GetImage()->GetImageView()};
-
-          vk::DescriptorImageInfo descriptor_image_info{
-              nullptr, *image_view, vk::ImageLayout::eShaderReadOnlyOptimal};
-          image_infos.push_back(std::move(descriptor_image_info));
-
-          image_indices[idx] = global_image_index_++;
-
-          vk::WriteDescriptorSet write_descriptor_set{
-              *(bindless_descriptor_sets_[0]),
-              global_images_shader_resource.binding, image_indices[idx],
-              vk::DescriptorType::eSampledImage, image_infos.back()};
-
-          write_descriptor_sets.push_back(write_descriptor_set);
-
-          image_indices_.emplace(image_hash_value, image_indices[idx]);
-        }
-        ++idx;
       }
     }
 
@@ -503,8 +532,8 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
         if (shader_resource.type == ShaderResourceType::kUniformBuffer) {
           if (shader_resource.name == "DrawElementUniform") {
             DrawElementUniform draw_element_uniform{
-                model_matrix, material->GetBaseColorFactor(), sampler_indices,
-                image_indices};
+                model_matrix, primitive.material->GetBaseColorFactor(),
+                sampler_indices, image_indices};
 
             vk::BufferCreateInfo uniform_buffer_ci{
                 {},

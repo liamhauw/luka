@@ -32,8 +32,10 @@ struct DrawElement {
   DrawElement() = default;
 
   DrawElement(DrawElement&& rhs) noexcept
-      : pipeline(std::move(rhs.pipeline)),
-        pipeline_layout(std::move(rhs.pipeline_layout)),
+      : has_primitive{rhs.has_primitive},
+        has_push_constant{rhs.has_push_constant},
+        pipeline_layout{std::move(rhs.pipeline_layout)},
+        pipeline(std::move(rhs.pipeline)),
         location_vertex_attributes(std::move(rhs.location_vertex_attributes)),
         vertex_count(rhs.vertex_count),
         index_attribute(rhs.index_attribute),
@@ -42,6 +44,9 @@ struct DrawElement {
         draw_element_uniform_buffers{
             std::move(rhs.draw_element_uniform_buffers)},
         descriptor_sets(std::move(rhs.descriptor_sets)) {}
+
+  bool has_primitive;
+  bool has_push_constant;
 
   vk::Pipeline pipeline;
   vk::PipelineLayout pipeline_layout;
@@ -59,12 +64,14 @@ struct DrawElement {
 class Subpass {
  public:
   Subpass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
-          std::shared_ptr<Camera> camera, const ast::Subpass& ast_subpass,
-          vk::RenderPass render_pass, u32 frame_count);
+          std::shared_ptr<Camera> camera, u32 frame_count,
+          vk::RenderPass render_pass, const ast::Subpass& ast_subpass);
 
   void PushConstants(const vk::raii::CommandBuffer& command_buffer,
                      vk::PipelineLayout pipeline_layout) const;
 
+  const std::string& GetName() const;
+  bool HasBindlessDescriptorSet() const;
   vk::DescriptorSetLayout GetBindlessDescriptorSetLayout() const;
   const vk::raii::DescriptorSet& GetBindlessDescriptorSet() const;
   const std::vector<DrawElement>& GetDrawElements() const;
@@ -73,8 +80,9 @@ class Subpass {
   void CreateBindlessDescriptorSets();
   void CreateDrawElements();
 
-  DrawElement CreateDrawElement(const glm::mat4& model_matrix,
-                                const ast::sc::Primitive& primitive);
+  DrawElement CreateDrawElement(bool has_primitive = false,
+                                const glm::mat4& model_matrix = {},
+                                const ast::sc::Primitive& primitive = {});
 
   const SPIRV& RequesetSpirv(const ast::Shader& shader,
                              const std::vector<std::string>& processes,
@@ -101,17 +109,18 @@ class Subpass {
   std::shared_ptr<Asset> asset_;
   std::shared_ptr<Camera> camera_;
 
-  const ast::Subpass* ast_subpass_;
-  vk::RenderPass render_pass_;
   u32 frame_count_;
+  vk::RenderPass render_pass_;
+  const ast::Subpass* ast_subpass_;
 
-  std::vector<std::string> wanted_textures_{"base_color_texture"};
+  std::string name_;
+  const std::vector<u32>* scenes_;
+  const std::unordered_map<vk::ShaderStageFlags, u32>* shaders_;
 
+  bool has_bindless_descriptor_set_{false};
   vk::DescriptorSetLayout bindless_descriptor_set_layout_{nullptr};
   vk::raii::DescriptorSets bindless_descriptor_sets_{nullptr};
 
-  const std::vector<u32>* scenes_{nullptr};
-  const std::unordered_map<std::string, u32>* shaders_{nullptr};
   std::vector<DrawElement> draw_elements_;
 
   std::unordered_map<u64, SPIRV> spirv_shaders_;

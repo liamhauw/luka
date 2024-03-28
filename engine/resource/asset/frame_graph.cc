@@ -50,6 +50,11 @@ FrameGraph::FrameGraph(const std::filesystem::path& frame_graph_path) {
               format = vk::Format::eD32Sfloat;
             }
           }
+
+          bool output{false};
+          if (attachment_json.contains("output")) {
+            output = attachment_json["output"].template get<bool>();
+          }
           pass.attachments.emplace_back(name, format);
         }
       }
@@ -97,12 +102,13 @@ FrameGraph::FrameGraph(const std::filesystem::path& frame_graph_path) {
             const json& shaders_json{subpass_json["shaders"]};
             if (shaders_json.contains("vertex")) {
               u32 index{shaders_json["vertex"].template get<u32>()};
-              subpass.shaders.emplace(ShaderType::kVertex, index);
+              subpass.shaders.emplace(vk::ShaderStageFlagBits::eVertex, index);
             }
 
             if (shaders_json.contains("fragment")) {
               u32 index{shaders_json["fragment"].template get<u32>()};
-              subpass.shaders.emplace(ShaderType::kFragment, index);
+              subpass.shaders.emplace(vk::ShaderStageFlagBits::eFragment,
+                                      index);
             }
           }
           pass.subpasses.push_back(std::move(subpass));

@@ -109,12 +109,12 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
   command_buffer.setScissor(0, scissor_);
 
   for (u32 i{0}; i < passes_.size(); ++i) {
+    const gs::Pass& pass{passes_[i]};
 #ifndef NDEBUG
-    gpu_->BeginLabel(command_buffer, "pass_" + std::to_string(i));
+    gpu_->BeginLabel(command_buffer, "pass_" + pass.GetName());
 #endif
     // Begin render pass.
-    const gs::Pass& pass{passes_[i]};
-    const vk::raii::RenderPass& render_pass{gpu_->GetUiRenderPass()};
+    const vk::raii::RenderPass& render_pass{pass.GetRenderPass()};
     const vk::raii::Framebuffer& framebuffer{
         pass.GetFramebuffer(active_frame_index_)};
     const vk::Rect2D& render_area{pass.GetRenderArea()};
@@ -128,10 +128,10 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
     // Tarverse subpasses.
     const std::vector<gs::Subpass>& subpasses{pass.GetSubpasses()};
     for (u32 j{0}; j < subpasses.size(); ++j) {
-#ifndef NDEBUG
-      gpu_->BeginLabel(command_buffer, "sub_pass_" + std::to_string(j));
-#endif
       const gs::Subpass& subpass{subpasses[j]};
+#ifndef NDEBUG
+      gpu_->BeginLabel(command_buffer, "sub_pass_" + subpass.GetName());
+#endif
 
       // Next subpass.
       if (j > 0) {
@@ -155,15 +155,19 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
 
         // Update subpass uniform buffer.
         vk::PipelineLayout pipeline_layout{draw_element.pipeline_layout};
-        if (prev_pipeline_layout != pipeline_layout) {
-          subpass.PushConstants(command_buffer, pipeline_layout);
-          prev_pipeline_layout = pipeline_layout;
+        if (draw_element.has_push_constant) {
+          if (prev_pipeline_layout != pipeline_layout) {
+            subpass.PushConstants(command_buffer, pipeline_layout);
+            prev_pipeline_layout = pipeline_layout;
+          }
         }
 
         // Bind bindless descriptor sets;
-        command_buffer.bindDescriptorSets(
-            vk::PipelineBindPoint::eGraphics, pipeline_layout, 0,
-            *(subpass.GetBindlessDescriptorSet()), nullptr);
+        if (draw_element.has_primitive) {
+          command_buffer.bindDescriptorSets(
+              vk::PipelineBindPoint::eGraphics, pipeline_layout, 0,
+              *(subpass.GetBindlessDescriptorSet()), nullptr);
+        }
 
         // Bind normal descriptor sets.
         std::vector<vk::DescriptorSet> descriptor_sets;
@@ -171,35 +175,41 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
              draw_element.descriptor_sets[active_frame_index_]) {
           descriptor_sets.push_back(*(descriptor_set));
         }
-        command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-                                          pipeline_layout, 1, descriptor_sets,
-                                          nullptr);
-
-        // Bind vertex buffers.
-        const auto& location_vertex_attributes{
-            draw_element.location_vertex_attributes};
-        for (const auto& location_vertex_attribute :
-             location_vertex_attributes) {
-          u32 location{location_vertex_attribute.first};
-          const ast::sc::VertexAttribute* vertex_attribute{
-              location_vertex_attribute.second};
-
-          command_buffer.bindVertexBuffers(
-              location, *(vertex_attribute->buffer), vertex_attribute->offset);
+        if (!descriptor_sets.empty()) {
+          command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+                                            pipeline_layout, 1, descriptor_sets,
+                                            nullptr);
         }
 
-        // Draw.
-        if (!draw_element.has_index) {
-          command_buffer.draw(draw_element.vertex_count, 1, 0, 0);
+        // Bind vertex buffers and draw.
+        if (draw_element.has_primitive) {
+          const auto& location_vertex_attributes{
+              draw_element.location_vertex_attributes};
+          for (const auto& location_vertex_attribute :
+               location_vertex_attributes) {
+            u32 location{location_vertex_attribute.first};
+            const ast::sc::VertexAttribute* vertex_attribute{
+                location_vertex_attribute.second};
+
+            command_buffer.bindVertexBuffers(location,
+                                             *(vertex_attribute->buffer),
+                                             vertex_attribute->offset);
+          }
+
+          if (!draw_element.has_index) {
+            command_buffer.draw(draw_element.vertex_count, 1, 0, 0);
+          } else {
+            const ast::sc::IndexAttribute* index_attribute{
+                draw_element.index_attribute};
+
+            command_buffer.bindIndexBuffer(*(index_attribute->buffer),
+                                           index_attribute->offset,
+                                           index_attribute->index_type);
+
+            command_buffer.drawIndexed(index_attribute->count, 1, 0, 0, 0);
+          }
         } else {
-          const ast::sc::IndexAttribute* index_attribute{
-              draw_element.index_attribute};
-
-          command_buffer.bindIndexBuffer(*(index_attribute->buffer),
-                                         index_attribute->offset,
-                                         index_attribute->index_type);
-
-          command_buffer.drawIndexed(index_attribute->count, 1, 0, 0, 0);
+          command_buffer.draw(3, 1, 0, 0);
         }
       }
 #ifndef NDEBUG
@@ -207,7 +217,9 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
 #endif
     }
 
-    gpu_->RenderUi(command_buffer);
+    if (pass.HasUi()) {
+      gpu_->RenderUi(command_buffer);
+    }
 
     // End render pass.
     command_buffer.endRenderPass();
@@ -268,10 +280,11 @@ void Graphics::CreatePasses() {
   const std::vector<ast::Pass>& ast_passes{frame_graph.GetPasses()};
   for (const auto& ast_pass : ast_passes) {
     if (ast_pass.name != "ui") {
-      passes_.emplace_back(gpu_, asset_, camera_, ast_pass, *swapchain_info_);
+      passes_.emplace_back(gpu_, asset_, camera_, frame_count_, ast_pass,
+                           *swapchain_info_);
     } else {
-      passes_.emplace_back(gpu_, asset_, camera_, ast_pass, *swapchain_info_,
-                           swapchain_images_);
+      passes_.emplace_back(gpu_, asset_, camera_, frame_count_, ast_pass,
+                           *swapchain_info_, swapchain_images_);
     }
   }
 }

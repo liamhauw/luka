@@ -13,13 +13,14 @@ namespace luka {
 
 namespace ast {
 
-enum class AttachmentType { kColor, kResolve, kDepthStencil };
+enum class AttachmentType { kInput, kColor, kResolve, kDepthStencil };
 
 enum class ShaderType { kVertex, kFragment };
 
 struct Attachment {
   std::string name;
   vk::Format format;
+  bool output;
 };
 
 struct Subpass {

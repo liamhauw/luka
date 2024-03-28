@@ -19,18 +19,17 @@ namespace gs {
 class Pass {
  public:
   Pass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
-       std::shared_ptr<Camera> camera, const ast::Pass& ast_pass,
-       const SwapchainInfo& swapchain_info);
-
-  Pass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
-       std::shared_ptr<Camera> camera, const ast::Pass& ast_pass,
-       const SwapchainInfo& swapchain_info,
-       const std::vector<vk::Image>& swapchain_images);
+       std::shared_ptr<Camera> camera, u32 frame_count,
+       const ast::Pass& ast_pass, const SwapchainInfo& swapchain_info,
+       const std::vector<vk::Image>& swapchain_images = {});
 
   void Resize(const SwapchainInfo& swapchain_info,
               const std::vector<vk::Image>& swapchain_images);
 
-  // const vk::raii::RenderPass& GetRenderPass() const;
+  const std::string& GetName() const;
+  bool HasUi() const;
+
+  const vk::raii::RenderPass& GetRenderPass() const;
   const vk::raii::Framebuffer& GetFramebuffer(u32 frame_index) const;
   const vk::Rect2D& GetRenderArea() const;
   const std::vector<vk::ClearValue>& GetClearValues() const;
@@ -38,8 +37,6 @@ class Pass {
 
  protected:
   void CreateRenderPass();
-  void GetUiRenderPass();
-
   void CreateFramebuffers();
   void CreateRenderArea();
   void CreateClearValues();
@@ -48,10 +45,14 @@ class Pass {
   std::shared_ptr<Gpu> gpu_;
   std::shared_ptr<Asset> asset_;
   std::shared_ptr<Camera> camera_;
-
+  
+  u32 frame_count_;
   const ast::Pass* ast_pass_;
   SwapchainInfo swapchain_info_;
   std::vector<vk::Image> swapchain_images_;
+
+  std::string name_;
+  bool has_ui_;
 
   const std::vector<ast::Attachment>* color_attachment_infos_{nullptr};
   const ast::Attachment* resolve_attachment_info_{nullptr};
