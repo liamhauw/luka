@@ -18,18 +18,26 @@ namespace luka {
 
 namespace gs {
 
-Subpass::Subpass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
-                 std::shared_ptr<Camera> camera, u32 frame_count,
-                 vk::RenderPass render_pass, const ast::Subpass& ast_subpass)
+Subpass::Subpass(
+    std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
+    std::shared_ptr<Camera> camera, u32 frame_count, vk::RenderPass render_pass,
+    const std::vector<std::vector<vk::raii::ImageView>>& attachment_image_views,
+    u32 color_attachment_count, const std::vector<ast::Subpass>& ast_subpasses,
+    u32 subpass_index)
     : gpu_{gpu},
       asset_{asset},
       camera_{camera},
       frame_count_{frame_count},
       render_pass_{render_pass},
-      ast_subpass_{&ast_subpass},
+      ast_subpasses_{&ast_subpasses},
+      subpass_index_{subpass_index},
+      attachment_image_views_{&attachment_image_views},
+      color_attachment_count_{color_attachment_count},
+      ast_subpass_{&(*ast_subpasses_)[subpass_index_]},
       name_{ast_subpass_->name},
       scenes_{&(ast_subpass_->scenes)},
-      shaders_{&(ast_subpass_->shaders)} {
+      shaders_{&(ast_subpass_->shaders)},
+      has_primitive_{!scenes_->empty()} {
   CreateBindlessDescriptorSets();
   CreateDrawElements();
 }
@@ -49,10 +57,6 @@ void Subpass::PushConstants(const vk::raii::CommandBuffer& command_buffer,
       push_constant_uniform);
 }
 
-bool Subpass::HasBindlessDescriptorSet() const {
-  return has_bindless_descriptor_set_;
-}
-
 vk::DescriptorSetLayout Subpass::GetBindlessDescriptorSetLayout() const {
   return bindless_descriptor_set_layout_;
 }
@@ -66,11 +70,9 @@ const std::vector<DrawElement>& Subpass::GetDrawElements() const {
 }
 
 void Subpass::CreateBindlessDescriptorSets() {
-  if (ast_subpass_->scenes.empty()) {
-    return;
-  }
-
-  has_bindless_descriptor_set_ = true;
+  // if (!has_primitive_) {
+  //   return;
+  // }
 
   std::vector<vk::DescriptorSetLayoutBinding> descriptor_set_layout_bindings{
       {0, vk::DescriptorType::eSampler, 16, vk::ShaderStageFlagBits::eAll},
@@ -97,7 +99,7 @@ void Subpass::CreateBindlessDescriptorSets() {
 }
 
 void Subpass::CreateDrawElements() {
-  if (scenes_->empty()) {
+  if (!has_primitive_) {
     draw_elements_.push_back(CreateDrawElement());
   }
 
@@ -139,25 +141,23 @@ void Subpass::CreateDrawElements() {
 
       // Draw elements.
       for (const ast::sc::Primitive& primitive : primitives) {
-        DrawElement draw_element{
-            CreateDrawElement(true, model_matrix, primitive)};
+        DrawElement draw_element{CreateDrawElement(model_matrix, primitive)};
         draw_elements_.push_back(std::move(draw_element));
       }
     }
   }
 }
 
-DrawElement Subpass::CreateDrawElement(bool has_primitive,
-                                       const glm::mat4& model_matrix,
+DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
                                        const ast::sc::Primitive& primitive) {
   DrawElement draw_element;
 
-  draw_element.has_primitive = has_primitive;
+  draw_element.has_primitive = has_primitive_;
 
   // Shaders.
   std::vector<std::string> wanted_textures{"base_color_texture"};
   std::vector<std::string> shader_processes;
-  if (has_primitive) {
+  if (has_primitive_) {
     const std::map<std::string, ast::sc::Texture*>& textures{
         primitive.material->GetTextures()};
     for (std::string wanted_texture : wanted_textures) {
@@ -226,7 +226,8 @@ DrawElement Subpass::CreateDrawElement(bool has_primitive,
     if (shader_resource.type == ShaderResourceType::kSampler ||
         shader_resource.type == ShaderResourceType::kCombinedImageSampler ||
         shader_resource.type == ShaderResourceType::kSampledImage ||
-        shader_resource.type == ShaderResourceType::kUniformBuffer) {
+        shader_resource.type == ShaderResourceType::kUniformBuffer ||
+        shader_resource.type == ShaderResourceType::kInputAttachment) {
       auto it{set_shader_resources.find(shader_resource.set)};
       if (it != set_shader_resources.end()) {
         it->second.push_back(shader_resource);
@@ -258,13 +259,17 @@ DrawElement Subpass::CreateDrawElement(bool has_primitive,
 
       if (shader_resource.type == ShaderResourceType::kUniformBuffer) {
         descriptor_type = vk::DescriptorType::eUniformBuffer;
+      } else if (shader_resource.type == ShaderResourceType::kInputAttachment) {
+        descriptor_type = vk::DescriptorType::eInputAttachment;
+      } else if (shader_resource.type ==
+                 ShaderResourceType::kCombinedImageSampler) {
+        descriptor_type = vk::DescriptorType::eCombinedImageSampler;
       } else {
         continue;
       }
 
       vk::DescriptorSetLayoutBinding layout_binding{
-          shader_resource.binding, descriptor_type, shader_resource.array_size,
-          shader_resource.stage};
+          shader_resource.binding, descriptor_type, 1, shader_resource.stage};
 
       layout_bindings.push_back(layout_binding);
     }
@@ -283,15 +288,16 @@ DrawElement Subpass::CreateDrawElement(bool has_primitive,
   }
 
   vk::PipelineLayoutCreateInfo pipeline_layout_ci;
-  if (has_primitive) {
-    std::vector<vk::DescriptorSetLayout> set_layouts_with_bindless{
-        bindless_descriptor_set_layout_};
-    for (vk::DescriptorSetLayout set_layout : set_layouts) {
-      set_layouts_with_bindless.push_back(set_layout);
-    }
+
+  std::vector<vk::DescriptorSetLayout> set_layouts_with_bindless;
+  set_layouts_with_bindless.push_back(bindless_descriptor_set_layout_);
+  for (const auto& set_layout : set_layouts) {
+    set_layouts_with_bindless.push_back(set_layout);
+  }
+
+  if (!set_layouts_with_bindless.empty()) {
+    draw_element.has_descriptor_set = true;
     pipeline_layout_ci.setSetLayouts(set_layouts_with_bindless);
-  } else {
-    pipeline_layout_ci.setSetLayouts(set_layouts);
   }
 
   if (!push_constant_ranges.empty()) {
@@ -325,12 +331,11 @@ DrawElement Subpass::CreateDrawElement(bool has_primitive,
   }
 
   vk::PipelineVertexInputStateCreateInfo vertex_input_state_ci;
-  if (has_primitive) {
-    std::vector<vk::VertexInputBindingDescription>
-        vertex_input_binding_descriptions;
-    std::vector<vk::VertexInputAttributeDescription>
-        vertex_input_attribute_descriptions;
-
+  std::vector<vk::VertexInputBindingDescription>
+      vertex_input_binding_descriptions;
+  std::vector<vk::VertexInputAttributeDescription>
+      vertex_input_attribute_descriptions;
+  if (has_primitive_) {
     for (const auto& vertex_buffer_attribute : primitive.vertex_attributes) {
       std::string name{vertex_buffer_attribute.first};
       const ast::sc::VertexAttribute& vertex_attribute{
@@ -392,6 +397,10 @@ DrawElement Subpass::CreateDrawElement(bool has_primitive,
       0.0F,
       1.0F};
 
+  if (!has_primitive_) {
+    rasterization_state_ci.cullMode = vk::CullModeFlagBits::eNone;
+  }
+
   vk::PipelineMultisampleStateCreateInfo multisample_state_ci{
       {}, vk::SampleCountFlagBits::e1};
 
@@ -402,16 +411,19 @@ DrawElement Subpass::CreateDrawElement(bool has_primitive,
   vk::ColorComponentFlags color_component_flags{
       vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
       vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA};
-  vk::PipelineColorBlendAttachmentState color_blend_attachment_state{
-      VK_FALSE,          vk::BlendFactor::eZero, vk::BlendFactor::eZero,
-      vk::BlendOp::eAdd, vk::BlendFactor::eZero, vk::BlendFactor::eZero,
-      vk::BlendOp::eAdd, color_component_flags};
+  std::vector<vk::PipelineColorBlendAttachmentState>
+      color_blend_attachment_states(
+          color_attachment_count_,
+          vk::PipelineColorBlendAttachmentState{
+              VK_FALSE, vk::BlendFactor::eZero, vk::BlendFactor::eZero,
+              vk::BlendOp::eAdd, vk::BlendFactor::eZero, vk::BlendFactor::eZero,
+              vk::BlendOp::eAdd, color_component_flags});
 
   vk::PipelineColorBlendStateCreateInfo color_blend_state_ci{
       {},
       VK_FALSE,
       vk::LogicOp::eCopy,
-      color_blend_attachment_state,
+      color_blend_attachment_states,
       {{0.0F, 0.0F, 0.0F, 0.0F}}};
 
   std::array<vk::DynamicState, 2> dynamic_states{vk::DynamicState::eViewport,
@@ -432,7 +444,8 @@ DrawElement Subpass::CreateDrawElement(bool has_primitive,
       &color_blend_state_ci,
       &dynamic_state_create_info,
       *pipeline_layout,
-      render_pass_};
+      render_pass_,
+      subpass_index_};
 
   const vk::raii::Pipeline& pipeline{
       RequestPipeline(graphics_pipeline_create_info, pipeline_hash_value)};
@@ -449,10 +462,12 @@ DrawElement Subpass::CreateDrawElement(bool has_primitive,
     std::vector<vk::DescriptorImageInfo> image_infos;
     std::vector<vk::DescriptorBufferInfo> buffer_infos;
 
+    image_infos.reserve(100);
+
     // 1. Combined image samplers.
     glm::uvec4 sampler_indices{0};
     glm::uvec4 image_indices{0};
-    if (has_primitive) {
+    if (has_primitive_) {
       const std::map<std::string, ast::sc::Texture*>& textures{
           primitive.material->GetTextures()};
       u32 idx{0};
@@ -524,7 +539,7 @@ DrawElement Subpass::CreateDrawElement(bool has_primitive,
       }
     }
 
-    // 2. Uniform buffers.
+    // 2. Set resources.
     for (const auto& set_shader_resource : set_shader_resources) {
       u32 set{set_shader_resource.first};
       const auto& shader_resources{set_shader_resource.second};
@@ -564,6 +579,39 @@ DrawElement Subpass::CreateDrawElement(bool has_primitive,
 
             write_descriptor_sets.push_back(write_descriptor_set);
           }
+        } else if (shader_resource.type ==
+                   ShaderResourceType::kInputAttachment) {
+          vk::ImageView image_view{
+              *(*attachment_image_views_)[i][shader_resource
+                                                 .input_attachment_index]};
+          vk::DescriptorImageInfo descriptor_image_info{
+              nullptr, image_view, vk::ImageLayout::eShaderReadOnlyOptimal};
+          image_infos.push_back(std::move(descriptor_image_info));
+
+          vk::WriteDescriptorSet write_descriptor_set{
+              *(descriptor_sets[shader_resource.set - 1]),
+              shader_resource.binding, 0, vk::DescriptorType::eInputAttachment,
+              image_infos.back()};
+
+          write_descriptor_sets.push_back(write_descriptor_set);
+        } else if (shader_resource.type ==
+                   ShaderResourceType::kCombinedImageSampler) {
+          vk::ImageView image_view{
+              gpu_->GetSharedImageView(i, shader_resource.name)};
+          if (!image_view) {
+            THROW("Image view is nullptr");
+          }
+          vk::DescriptorImageInfo descriptor_image_info{
+              *(gpu_->GetSampler()), image_view,
+              vk::ImageLayout::eShaderReadOnlyOptimal};
+          image_infos.push_back(std::move(descriptor_image_info));
+
+          vk::WriteDescriptorSet write_descriptor_set{
+              *(descriptor_sets[shader_resource.set - 1]),
+              shader_resource.binding, 0,
+              vk::DescriptorType::eCombinedImageSampler, image_infos.back()};
+
+          write_descriptor_sets.push_back(write_descriptor_set);
         }
       }
     }

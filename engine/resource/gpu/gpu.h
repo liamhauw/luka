@@ -37,6 +37,13 @@ class Gpu {
 
   void RenderUi(const vk::raii::CommandBuffer& command_buffer);
 
+  void InitSharedImageViews(u32 frame_count);
+  void SetSharedImageView(u32 frame_index, const std::string& name,
+                          vk::ImageView image_view);
+  vk::ImageView GetSharedImageView(u32 frame_index, const std::string& name);
+
+  const vk::raii::Sampler& GetSampler() const;
+
   vk::PhysicalDeviceProperties GetPhysicalDeviceProperties() const;
 
   gpu::Buffer CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
@@ -211,6 +218,11 @@ class Gpu {
 
   vk::raii::DescriptorPool bindless_descriptor_pool_{nullptr};
   vk::raii::DescriptorPool normal_descriptor_pool_{nullptr};
+
+  std::vector<std::unordered_map<std::string, vk::ImageView>>
+      shared_image_views_;
+
+  vk::raii::Sampler sampler_{nullptr};
 };
 
 }  // namespace luka

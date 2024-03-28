@@ -21,6 +21,7 @@ enum class ShaderResourceType {
   kCombinedImageSampler,
   kSampledImage,
   kUniformBuffer,
+  kInputAttachment,
   kPushConstantBuffer,
   kStageInput
 };
@@ -29,6 +30,7 @@ struct ShaderResource {
   std::string name{""};
   ShaderResourceType type{ShaderResourceType::kNone};
   vk::ShaderStageFlags stage{vk::ShaderStageFlagBits::eAll};
+  u32 input_attachment_index{UINT32_MAX};
   u32 set{UINT32_MAX};
   u32 binding{UINT32_MAX};
   u32 array_size{UINT32_MAX};
@@ -63,6 +65,8 @@ class SPIRV {
   void ParseShaderResource(const spirv_cross::CompilerGLSL& compiler);
   void ParseSpecialization(const spirv_cross::CompilerGLSL& compiler);
 
+  u32 ParseInputAttachmentIndex(const spirv_cross::CompilerGLSL& compiler,
+                                const spirv_cross::Resource& resource);
   u32 ParseSet(const spirv_cross::CompilerGLSL& compiler,
                const spirv_cross::Resource& resource);
   u32 ParseBinding(const spirv_cross::CompilerGLSL& compiler,

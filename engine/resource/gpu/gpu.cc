@@ -21,6 +21,27 @@ Gpu::Gpu(std::shared_ptr<Window> window) : window_{window} {
   CreateDescriptorPool();
   CreateVmaAllocator();
   CreateImgui();
+
+  vk::SamplerCreateInfo sampler_ci{
+      vk::SamplerCreateFlags(),                 // flags
+      vk::Filter::eLinear,                      // magFilter
+      vk::Filter::eLinear,                      // minFilter
+      vk::SamplerMipmapMode::eLinear,           // mipmapMode
+      vk::SamplerAddressMode::eRepeat,          // addressModeU
+      vk::SamplerAddressMode::eRepeat,          // addressModeV
+      vk::SamplerAddressMode::eRepeat,          // addressModeW
+      0.0f,                                     // mipLodBias
+      VK_FALSE,                                 // anisotropyEnable
+      1.0f,                                     // maxAnisotropy
+      VK_FALSE,                                 // compareEnable
+      vk::CompareOp::eAlways,                   // compareOp
+      0.0f,                                     // minLod
+      0.0f,                                     // maxLod
+      vk::BorderColor::eFloatTransparentBlack,  // borderColor
+      VK_FALSE                                  // unnormalizedCoordinates
+  };
+
+  sampler_ = CreateSampler(sampler_ci);
 }
 
 Gpu::~Gpu() {
@@ -52,6 +73,26 @@ void Gpu::RenderUi(const vk::raii::CommandBuffer& command_buffer) {
   ImGui_ImplVulkan_RenderDrawData(
       draw_data, static_cast<VkCommandBuffer>(*command_buffer));
 }
+
+void Gpu::InitSharedImageViews(u32 frame_count) {
+  shared_image_views_.resize(frame_count);
+}
+
+void Gpu::SetSharedImageView(u32 frame_index, const std::string& name,
+                             vk::ImageView image_view) {
+  shared_image_views_[frame_index].emplace(name, image_view);
+}
+
+vk::ImageView Gpu::GetSharedImageView(u32 frame_index,
+                                      const std::string& name) {
+  auto it{shared_image_views_[frame_index].find(name)};
+  if (it != shared_image_views_[frame_index].end()) {
+    return it->second;
+  }
+  return nullptr;
+}
+
+const vk::raii::Sampler& Gpu::GetSampler() const { return sampler_; }
 
 vk::PhysicalDeviceProperties Gpu::GetPhysicalDeviceProperties() const {
   return physical_device_.getProperties();

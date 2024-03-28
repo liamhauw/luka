@@ -33,6 +33,7 @@ struct DrawElement {
 
   DrawElement(DrawElement&& rhs) noexcept
       : has_primitive{rhs.has_primitive},
+        has_descriptor_set{rhs.has_descriptor_set},
         has_push_constant{rhs.has_push_constant},
         pipeline_layout{std::move(rhs.pipeline_layout)},
         pipeline(std::move(rhs.pipeline)),
@@ -46,6 +47,7 @@ struct DrawElement {
         descriptor_sets(std::move(rhs.descriptor_sets)) {}
 
   bool has_primitive;
+  bool has_descriptor_set;
   bool has_push_constant;
 
   vk::Pipeline pipeline;
@@ -65,13 +67,16 @@ class Subpass {
  public:
   Subpass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
           std::shared_ptr<Camera> camera, u32 frame_count,
-          vk::RenderPass render_pass, const ast::Subpass& ast_subpass);
+          vk::RenderPass render_pass,
+          const std::vector<std::vector<vk::raii::ImageView>>&
+              attachment_image_views,
+          u32 color_attachment_count,
+          const std::vector<ast::Subpass>& ast_subpasses, u32 subpass_index);
 
   void PushConstants(const vk::raii::CommandBuffer& command_buffer,
                      vk::PipelineLayout pipeline_layout) const;
 
   const std::string& GetName() const;
-  bool HasBindlessDescriptorSet() const;
   vk::DescriptorSetLayout GetBindlessDescriptorSetLayout() const;
   const vk::raii::DescriptorSet& GetBindlessDescriptorSet() const;
   const std::vector<DrawElement>& GetDrawElements() const;
@@ -80,8 +85,7 @@ class Subpass {
   void CreateBindlessDescriptorSets();
   void CreateDrawElements();
 
-  DrawElement CreateDrawElement(bool has_primitive = false,
-                                const glm::mat4& model_matrix = {},
+  DrawElement CreateDrawElement(const glm::mat4& model_matrix = {},
                                 const ast::sc::Primitive& primitive = {});
 
   const SPIRV& RequesetSpirv(const ast::Shader& shader,
@@ -111,11 +115,16 @@ class Subpass {
 
   u32 frame_count_;
   vk::RenderPass render_pass_;
-  const ast::Subpass* ast_subpass_;
+  const std::vector<std::vector<vk::raii::ImageView>>* attachment_image_views_;
+  u32 color_attachment_count_;
+  const std::vector<ast::Subpass>* ast_subpasses_;
+  u32 subpass_index_;
 
+  const ast::Subpass* ast_subpass_;
   std::string name_;
   const std::vector<u32>* scenes_;
-  const std::unordered_map<vk::ShaderStageFlags, u32>* shaders_;
+  const std::unordered_map<vk::ShaderStageFlagBits, u32>* shaders_;
+  bool has_primitive_;
 
   bool has_bindless_descriptor_set_{false};
   vk::DescriptorSetLayout bindless_descriptor_set_layout_{nullptr};

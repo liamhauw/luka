@@ -1,7 +1,7 @@
 {
   "passes": [
     {
-      "name": "deferred_pass",
+      "name": "deferred",
       "attachments": [
         {
           "name": "base_color",
@@ -59,7 +59,7 @@
       ]
     },
     {
-      "name": "swapchain",
+      "name": "ui",
       "attachments": [
         {
           "name": "swapchain"
@@ -76,7 +76,10 @@
           "shaders": {
             "vertex": 4,
             "fragment": 5
-          }
+          },
+          "inputs": [
+            "color"
+          ]
         }
       ]
     }

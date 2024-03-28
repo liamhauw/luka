@@ -42,7 +42,7 @@ void main(void) {
 
   o_base_color = base_color;
 
-  vec3 normal = vec4(1.0, 0.0, 0.0);
+  vec3 normal = vec3(1.0, 0.0, 0.0);
 
 #ifdef HAS_NORMAL_BUFFER
   normal = normalize(i_normal) * 0.5 + 0.5;

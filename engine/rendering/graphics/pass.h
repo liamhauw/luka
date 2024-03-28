@@ -20,8 +20,9 @@ class Pass {
  public:
   Pass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
        std::shared_ptr<Camera> camera, u32 frame_count,
-       const ast::Pass& ast_pass, const SwapchainInfo& swapchain_info,
-       const std::vector<vk::Image>& swapchain_images = {});
+       const SwapchainInfo& swapchain_info,
+       const std::vector<vk::Image>& swapchain_images,
+       const std::vector<ast::Pass>& ast_passes, u32 pass_index);
 
   void Resize(const SwapchainInfo& swapchain_info,
               const std::vector<vk::Image>& swapchain_images);
@@ -45,24 +46,21 @@ class Pass {
   std::shared_ptr<Gpu> gpu_;
   std::shared_ptr<Asset> asset_;
   std::shared_ptr<Camera> camera_;
-  
+
   u32 frame_count_;
-  const ast::Pass* ast_pass_;
   SwapchainInfo swapchain_info_;
   std::vector<vk::Image> swapchain_images_;
+  const std::vector<ast::Pass>* ast_passes_;
+  u32 pass_index_;
 
+  const ast::Pass* ast_pass_;
   std::string name_;
   bool has_ui_;
 
-  const std::vector<ast::Attachment>* color_attachment_infos_{nullptr};
-  const ast::Attachment* resolve_attachment_info_{nullptr};
-  const ast::Attachment* depth_stencil_attachment_info_{nullptr};
-  u32 color_attachment_count_{0};
-  u32 resolve_attachment_count_{0};
-  u32 depth_stencil_attachment_count_{0};
-  u32 attachment_count_{0};
+  std::vector<u32> color_attachment_counts_;
   vk::raii::RenderPass render_pass_{nullptr};
 
+  // For every frame.
   std::vector<std::vector<gpu::Image>> images_;
   std::vector<std::vector<vk::raii::ImageView>> image_views_;
   std::vector<vk::raii::Framebuffer> framebuffers_;

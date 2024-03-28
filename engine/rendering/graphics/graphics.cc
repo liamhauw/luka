@@ -111,7 +111,7 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
   for (u32 i{0}; i < passes_.size(); ++i) {
     const gs::Pass& pass{passes_[i]};
 #ifndef NDEBUG
-    gpu_->BeginLabel(command_buffer, "pass_" + pass.GetName());
+    gpu_->BeginLabel(command_buffer, "Pass " + pass.GetName());
 #endif
     // Begin render pass.
     const vk::raii::RenderPass& render_pass{pass.GetRenderPass()};
@@ -130,7 +130,7 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
     for (u32 j{0}; j < subpasses.size(); ++j) {
       const gs::Subpass& subpass{subpasses[j]};
 #ifndef NDEBUG
-      gpu_->BeginLabel(command_buffer, "sub_pass_" + subpass.GetName());
+      gpu_->BeginLabel(command_buffer, "Subpass " + subpass.GetName());
 #endif
 
       // Next subpass.
@@ -212,13 +212,13 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
           command_buffer.draw(3, 1, 0, 0);
         }
       }
+
+      if (pass.HasUi()) {
+        gpu_->RenderUi(command_buffer);
+      }
 #ifndef NDEBUG
       gpu_->EndLabel(command_buffer);
 #endif
-    }
-
-    if (pass.HasUi()) {
-      gpu_->RenderUi(command_buffer);
     }
 
     // End render pass.
@@ -278,14 +278,12 @@ void Graphics::CreateViewportAndScissor() {
 void Graphics::CreatePasses() {
   const ast::FrameGraph& frame_graph{asset_->GetFrameGraph(0)};
   const std::vector<ast::Pass>& ast_passes{frame_graph.GetPasses()};
-  for (const auto& ast_pass : ast_passes) {
-    if (ast_pass.name != "ui") {
-      passes_.emplace_back(gpu_, asset_, camera_, frame_count_, ast_pass,
-                           *swapchain_info_);
-    } else {
-      passes_.emplace_back(gpu_, asset_, camera_, frame_count_, ast_pass,
-                           *swapchain_info_, swapchain_images_);
-    }
+
+  gpu_->InitSharedImageViews(frame_count_);
+
+  for (u32 i{0}; i < ast_passes.size(); ++i) {
+    passes_.emplace_back(gpu_, asset_, camera_, frame_count_, *swapchain_info_,
+                         swapchain_images_, ast_passes, i);
   }
 }
 

@@ -13,17 +13,20 @@ namespace gs {
 
 Pass::Pass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
            std::shared_ptr<Camera> camera, u32 frame_count,
-           const ast::Pass& ast_pass, const SwapchainInfo& swapchain_info,
-           const std::vector<vk::Image>& swapchain_images)
+           const SwapchainInfo& swapchain_info,
+           const std::vector<vk::Image>& swapchain_images,
+           const std::vector<ast::Pass>& ast_passes, u32 pass_index)
     : gpu_{gpu},
       asset_{asset},
       camera_{camera},
       frame_count_{frame_count},
-      ast_pass_{&ast_pass},
       swapchain_info_{swapchain_info},
       swapchain_images_{swapchain_images},
+      ast_passes_{&ast_passes},
+      pass_index_{pass_index},
+      ast_pass_{&(*ast_passes_)[pass_index_]},
       name_{ast_pass_->name},
-      has_ui_{!swapchain_images.empty()} {
+      has_ui_{name_ == "ui"} {
   CreateRenderPass();
   CreateFramebuffers();
   CreateRenderArea();
@@ -61,6 +64,7 @@ void Pass::CreateRenderPass() {
   // Ui render pass has been created, just move it from gpu to renderpass.
   if (has_ui_) {
     render_pass_ = gpu_->GetUiRenderPass();
+    color_attachment_counts_ = {1};
     return;
   }
 
@@ -73,29 +77,18 @@ void Pass::CreateRenderPass() {
     vk::AttachmentStoreOp store_op{ast_attachment.output
                                        ? vk::AttachmentStoreOp::eStore
                                        : vk::AttachmentStoreOp::eDontCare};
-    vk::ImageLayout final_layout{ast_attachment.output
-                                     ? vk::ImageLayout::eShaderReadOnlyOptimal
-                                     : vk::ImageLayout::eUndefined};
 
-    vk::AttachmentDescription attachment_description{
-        {},
-        format,
-        vk::SampleCountFlagBits::e1,
-        vk::AttachmentLoadOp::eClear,
-        store_op,
-        vk::AttachmentLoadOp::eDontCare,
-        vk::AttachmentStoreOp::eDontCare,
-        vk::ImageLayout::eUndefined,
-        final_layout};
     attachment_descriptions.emplace_back(
         vk::AttachmentDescriptionFlags{}, format, vk::SampleCountFlagBits::e1,
         vk::AttachmentLoadOp::eClear, store_op, vk::AttachmentLoadOp::eDontCare,
         vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined,
-        final_layout);
+        vk::ImageLayout::eShaderReadOnlyOptimal);
   }
 
   const std::vector<ast::Subpass> ast_subpasses{ast_pass_->subpasses};
   u32 subpass_count{static_cast<u32>(ast_subpasses.size())};
+
+  color_attachment_counts_.resize(subpass_count);
 
   std::vector<vk::SubpassDescription> subpass_descriptions(subpass_count);
   std::vector<std::vector<vk::AttachmentReference>> input_references(
@@ -137,8 +130,8 @@ void Pass::CreateRenderPass() {
         u32 at{color_attachments[j]};
         color_references[i][j] = {at, vk::ImageLayout::eColorAttachmentOptimal};
       }
-
-      subpass_description.setInputAttachments(color_references[i]);
+      color_attachment_counts_[i] = color_references[i].size();
+      subpass_description.setColorAttachments(color_references[i]);
     }
 
     // Depth stencil attachment.
@@ -177,6 +170,8 @@ void Pass::CreateRenderPass() {
 
   vk::RenderPassCreateInfo render_pass_ci{
       {}, attachment_descriptions, subpass_descriptions, subpass_dependencies};
+
+  render_pass_ = gpu_->CreateRenderPass(render_pass_ci, ast_pass_->name);
 }
 
 void Pass::CreateFramebuffers() {
@@ -195,8 +190,11 @@ void Pass::CreateFramebuffers() {
       bool is_swapchain{ast_attachment.name == "swapchain" ? true : false};
       gpu::Image image;
       vk::ImageAspectFlags aspect;
+      vk::Format format;
       if (is_swapchain) {
         image = swapchain_images_[i];
+        aspect = vk::ImageAspectFlagBits::eColor;
+        format = swapchain_info_.color_format;
       } else {
         vk::ImageUsageFlags usage{vk::ImageUsageFlagBits::eInputAttachment};
         if (ast_attachment.format != vk::Format::eD32Sfloat) {
@@ -206,11 +204,14 @@ void Pass::CreateFramebuffers() {
           usage |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
           aspect = vk::ImageAspectFlagBits::eDepth;
         }
-
+        if (ast_attachment.output) {
+          usage |= vk::ImageUsageFlagBits::eSampled;
+        }
+        format = ast_attachment.format;
         vk::ImageCreateInfo image_ci{
             {},
             vk::ImageType::e2D,
-            ast_attachment.format,
+            format,
             {swapchain_info_.extent.width, swapchain_info_.extent.height, 1},
             1,
             1,
@@ -224,12 +225,8 @@ void Pass::CreateFramebuffers() {
       }
 
       // Image view.
-      vk::ImageViewCreateInfo image_view_ci{{},
-                                            *image,
-                                            vk::ImageViewType::e2D,
-                                            ast_attachment.format,
-                                            {},
-                                            {aspect, 0, 1, 0, 1}};
+      vk::ImageViewCreateInfo image_view_ci{
+          {}, *image, vk::ImageViewType::e2D, format, {}, {aspect, 0, 1, 0, 1}};
       vk::raii::ImageView image_view{
           gpu_->CreateImageView(image_view_ci, ast_attachment.name)};
 
@@ -237,6 +234,11 @@ void Pass::CreateFramebuffers() {
 
       images_[i].push_back(std::move(image));
       image_views_[i].push_back(std::move(image_view));
+
+      if (ast_attachment.output) {
+        gpu_->SetSharedImageView(i, ast_attachment.name,
+                                 *(image_views_[i].back()));
+      }
     }
 
     vk::FramebufferCreateInfo framebuffer_ci{{},
@@ -271,7 +273,8 @@ void Pass::CreateSubpasses() {
   const std::vector<ast::Subpass>& ast_subpasses{ast_pass_->subpasses};
   for (u32 i{0}; i < ast_subpasses.size(); ++i) {
     subpasses_.emplace_back(gpu_, asset_, camera_, frame_count_, *render_pass_,
-                            ast_subpasses[i]);
+                            image_views_, color_attachment_counts_[i],
+                            ast_subpasses, i);
   }
 }
 

@@ -55,7 +55,7 @@ FrameGraph::FrameGraph(const std::filesystem::path& frame_graph_path) {
           if (attachment_json.contains("output")) {
             output = attachment_json["output"].template get<bool>();
           }
-          pass.attachments.emplace_back(name, format);
+          pass.attachments.emplace_back(name, format, output);
         }
       }
 
@@ -71,6 +71,16 @@ FrameGraph::FrameGraph(const std::filesystem::path& frame_graph_path) {
 
           if (subpass_json.contains("attachments")) {
             const json& attachments_json{subpass_json["attachments"]};
+            if (attachments_json.contains("inputs")) {
+              std::vector<u32> input_attachments;
+              const json& input_jsons{attachments_json["inputs"]};
+              for (const auto& input_json : input_jsons) {
+                u32 index{input_json.template get<u32>()};
+                input_attachments.push_back(index);
+              }
+              subpass.attachments.emplace(AttachmentType::kInput,
+                                          input_attachments);
+            }
             if (attachments_json.contains("colors")) {
               std::vector<u32> color_attachments;
               const json& colors_json{attachments_json["colors"]};
@@ -111,6 +121,14 @@ FrameGraph::FrameGraph(const std::filesystem::path& frame_graph_path) {
                                       index);
             }
           }
+          if (subpass_json.contains("inputs")) {
+            const json& inputs_json{subpass_json["inputs"]};
+            for (const auto& input_json : inputs_json) {
+              std::string name{input_json.template get<std::string>()};
+              subpass.inputs.push_back(name);
+            }
+          }
+
           pass.subpasses.push_back(std::move(subpass));
         }
       }

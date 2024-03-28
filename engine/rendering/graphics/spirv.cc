@@ -109,6 +109,21 @@ void SPIRV::ParseShaderResource(const spirv_cross::CompilerGLSL& compiler) {
     shader_resources_.push_back(std::move(shader_resource));
   }
 
+  // Input attachments.
+  const auto& input_attachments{resources.subpass_inputs};
+  for (const auto& input_attachment : input_attachments) {
+    ShaderResource shader_resource;
+    shader_resource.name = input_attachment.name;
+    shader_resource.type = ShaderResourceType::kInputAttachment;
+    shader_resource.stage = stage_;
+    shader_resource.input_attachment_index =
+        ParseInputAttachmentIndex(compiler, input_attachment);
+    shader_resource.set = ParseSet(compiler, input_attachment);
+    shader_resource.binding = ParseBinding(compiler, input_attachment);
+
+    shader_resources_.push_back(std::move(shader_resource));
+  }
+
   // Push constant buffers.
   const auto& push_constant_buffers{resources.push_constant_buffers};
   for (const auto& push_constant_buffer : push_constant_buffers) {
@@ -145,6 +160,12 @@ void SPIRV::ParseSpecialization(const spirv_cross::CompilerGLSL& compiler) {
 
     specialization_constants_.push_back(sc);
   }
+}
+
+u32 SPIRV::ParseInputAttachmentIndex(const spirv_cross::CompilerGLSL& compiler,
+                                     const spirv_cross::Resource& resource) {
+  return compiler.get_decoration(resource.id,
+                                 spv::DecorationInputAttachmentIndex);
 }
 
 u32 SPIRV::ParseSet(const spirv_cross::CompilerGLSL& compiler,

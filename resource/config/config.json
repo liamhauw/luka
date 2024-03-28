@@ -1,6 +1,6 @@
 {
   "scenes": [
-    "box/Box.gltf"
+    "sponza/Sponza.gltf"
   ],
   "shaders": [
     "default/geometry.vert",
