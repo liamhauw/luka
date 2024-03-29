@@ -42,6 +42,17 @@ Subpass::Subpass(
   CreateDrawElements();
 }
 
+void Subpass::Resize(const std::vector<std::vector<vk::raii::ImageView>>&
+                         attachment_image_views) {
+  if (!need_resize_) {
+    return;
+  }
+  attachment_image_views_ = &attachment_image_views;
+  global_sampler_index_ = 0;
+  global_image_index_ = 0;
+  CreateDrawElements();
+}
+
 const std::string& Subpass::GetName() const { return name_; }
 
 void Subpass::PushConstants(const vk::raii::CommandBuffer& command_buffer,
@@ -67,6 +78,10 @@ const vk::raii::DescriptorSet& Subpass::GetBindlessDescriptorSet() const {
 
 const std::vector<DrawElement>& Subpass::GetDrawElements() const {
   return draw_elements_;
+}
+
+bool Subpass::HasPushConstant() const {
+  return has_push_constant_;
 }
 
 void Subpass::CreateBindlessDescriptorSets() {
@@ -99,6 +114,8 @@ void Subpass::CreateBindlessDescriptorSets() {
 }
 
 void Subpass::CreateDrawElements() {
+  draw_elements_.clear();
+
   if (!has_primitive_) {
     draw_elements_.push_back(CreateDrawElement());
   }
@@ -301,7 +318,7 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
   }
 
   if (!push_constant_ranges.empty()) {
-    draw_element.has_push_constant = true;
+    has_push_constant_ = true;
     pipeline_layout_ci.setPushConstantRanges(push_constant_ranges);
   }
 
@@ -581,6 +598,7 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
           }
         } else if (shader_resource.type ==
                    ShaderResourceType::kInputAttachment) {
+          need_resize_ = true;
           vk::ImageView image_view{
               *(*attachment_image_views_)[i][shader_resource
                                                  .input_attachment_index]};
@@ -596,6 +614,7 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
           write_descriptor_sets.push_back(write_descriptor_set);
         } else if (shader_resource.type ==
                    ShaderResourceType::kCombinedImageSampler) {
+          need_resize_ = true;
           vk::ImageView image_view{
               gpu_->GetSharedImageView(i, shader_resource.name)};
           if (!image_view) {

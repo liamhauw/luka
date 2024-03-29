@@ -34,7 +34,6 @@ struct DrawElement {
   DrawElement(DrawElement&& rhs) noexcept
       : has_primitive{rhs.has_primitive},
         has_descriptor_set{rhs.has_descriptor_set},
-        has_push_constant{rhs.has_push_constant},
         pipeline_layout{std::move(rhs.pipeline_layout)},
         pipeline(std::move(rhs.pipeline)),
         location_vertex_attributes(std::move(rhs.location_vertex_attributes)),
@@ -48,7 +47,6 @@ struct DrawElement {
 
   bool has_primitive;
   bool has_descriptor_set;
-  bool has_push_constant;
 
   vk::Pipeline pipeline;
   vk::PipelineLayout pipeline_layout;
@@ -79,7 +77,11 @@ class Subpass {
   const std::string& GetName() const;
   vk::DescriptorSetLayout GetBindlessDescriptorSetLayout() const;
   const vk::raii::DescriptorSet& GetBindlessDescriptorSet() const;
+  bool HasPushConstant() const;
   const std::vector<DrawElement>& GetDrawElements() const;
+
+  void Resize(const std::vector<std::vector<vk::raii::ImageView>>&
+              attachment_image_views);
 
  protected:
   void CreateBindlessDescriptorSets();
@@ -130,6 +132,8 @@ class Subpass {
   vk::DescriptorSetLayout bindless_descriptor_set_layout_{nullptr};
   vk::raii::DescriptorSets bindless_descriptor_sets_{nullptr};
 
+  bool has_push_constant_{false};
+
   std::vector<DrawElement> draw_elements_;
 
   std::unordered_map<u64, SPIRV> spirv_shaders_;
@@ -143,6 +147,8 @@ class Subpass {
 
   u32 global_sampler_index_{0};
   u32 global_image_index_{0};
+
+  bool need_resize_{false};
 };
 
 }  // namespace gs

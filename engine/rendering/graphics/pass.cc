@@ -40,6 +40,9 @@ void Pass::Resize(const SwapchainInfo& swapchain_info,
   swapchain_images_ = swapchain_images;
   CreateFramebuffers();
   CreateRenderArea();
+  for (u32 i{0}; i < subpasses_.size(); ++i) {
+    subpasses_[i].Resize(image_views_);
+  }
 }
 
 const std::string& Pass::GetName() const { return name_; }

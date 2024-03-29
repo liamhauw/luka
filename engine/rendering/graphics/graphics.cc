@@ -111,7 +111,8 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
   for (u32 i{0}; i < passes_.size(); ++i) {
     const gs::Pass& pass{passes_[i]};
 #ifndef NDEBUG
-    gpu_->BeginLabel(command_buffer, "Pass " + pass.GetName());
+    gpu_->BeginLabel(command_buffer, "Pass " + pass.GetName(),
+                     {0.549F, 0.478F, 0.663F, 1.0F});
 #endif
     // Begin render pass.
     const vk::raii::RenderPass& render_pass{pass.GetRenderPass()};
@@ -130,7 +131,8 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
     for (u32 j{0}; j < subpasses.size(); ++j) {
       const gs::Subpass& subpass{subpasses[j]};
 #ifndef NDEBUG
-      gpu_->BeginLabel(command_buffer, "Subpass " + subpass.GetName());
+      gpu_->BeginLabel(command_buffer, "Subpass " + subpass.GetName(),
+                       {0.443F, 0.573F, 0.745F, 1.0F});
 #endif
 
       // Next subpass.
@@ -144,6 +146,7 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
 
       vk::Pipeline prev_pipeline{nullptr};
       vk::PipelineLayout prev_pipeline_layout{nullptr};
+      vk::DescriptorSet prev_descriptor_set{nullptr};
       for (const gs::DrawElement& draw_element : draw_elements) {
         // Bind pipeline.
         vk::Pipeline pipeline{draw_element.pipeline};
@@ -155,18 +158,22 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
 
         // Update subpass uniform buffer.
         vk::PipelineLayout pipeline_layout{draw_element.pipeline_layout};
-        if (draw_element.has_push_constant) {
-          if (prev_pipeline_layout != pipeline_layout) {
-            subpass.PushConstants(command_buffer, pipeline_layout);
-            prev_pipeline_layout = pipeline_layout;
-          }
+        if (subpass.HasPushConstant() &&
+            prev_pipeline_layout != pipeline_layout) {
+          subpass.PushConstants(command_buffer, pipeline_layout);
+          prev_pipeline_layout = pipeline_layout;
         }
 
         // Bind bindless descriptor sets;
         if (draw_element.has_primitive) {
-          command_buffer.bindDescriptorSets(
-              vk::PipelineBindPoint::eGraphics, pipeline_layout, 0,
-              *(subpass.GetBindlessDescriptorSet()), nullptr);
+          vk::DescriptorSet bindless_descriptor_set{
+              *(subpass.GetBindlessDescriptorSet())};
+          if (prev_descriptor_set != bindless_descriptor_set) {
+            command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+                                              pipeline_layout, 0,
+                                              bindless_descriptor_set, nullptr);
+            prev_descriptor_set = bindless_descriptor_set;
+          }
         }
 
         // Bind normal descriptor sets.
@@ -185,16 +192,21 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
         if (draw_element.has_primitive) {
           const auto& location_vertex_attributes{
               draw_element.location_vertex_attributes};
+
+          std::vector<vk::Buffer> vertex_buffers(
+              location_vertex_attributes.size());
+          std::vector<u64> offsets(location_vertex_attributes.size());
+
           for (const auto& location_vertex_attribute :
                location_vertex_attributes) {
             u32 location{location_vertex_attribute.first};
             const ast::sc::VertexAttribute* vertex_attribute{
                 location_vertex_attribute.second};
 
-            command_buffer.bindVertexBuffers(location,
-                                             *(vertex_attribute->buffer),
-                                             vertex_attribute->offset);
+            vertex_buffers[location] = *(vertex_attribute->buffer);
+            offsets[location] = vertex_attribute->offset;
           }
+          command_buffer.bindVertexBuffers(0, vertex_buffers, offsets);
 
           if (!draw_element.has_index) {
             command_buffer.draw(draw_element.vertex_count, 1, 0, 0);

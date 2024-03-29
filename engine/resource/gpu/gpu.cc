@@ -80,6 +80,10 @@ void Gpu::InitSharedImageViews(u32 frame_count) {
 
 void Gpu::SetSharedImageView(u32 frame_index, const std::string& name,
                              vk::ImageView image_view) {
+  auto it{shared_image_views_[frame_index].find(name)};
+  if (it != shared_image_views_[frame_index].end()) {
+    shared_image_views_[frame_index].erase(it);
+  }
   shared_image_views_[frame_index].emplace(name, image_view);
 }
 
