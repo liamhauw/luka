@@ -86,13 +86,9 @@ const std::vector<DrawElement>& Subpass::GetDrawElements() const {
 bool Subpass::HasPushConstant() const { return has_push_constant_; }
 
 void Subpass::CreateBindlessDescriptorSets() {
-  // if (!has_primitive_) {
-  //   return;
-  // }
-
   std::vector<vk::DescriptorSetLayoutBinding> descriptor_set_layout_bindings{
-      {0, vk::DescriptorType::eSampler, 16, vk::ShaderStageFlagBits::eAll},
-      {1, vk::DescriptorType::eSampledImage, 128,
+      {0, vk::DescriptorType::eSampler, 10, vk::ShaderStageFlagBits::eAll},
+      {1, vk::DescriptorType::eSampledImage, 100,
        vk::ShaderStageFlagBits::eAll}};
 
   std::vector<vk::DescriptorBindingFlags> descriptor_binding_flags(

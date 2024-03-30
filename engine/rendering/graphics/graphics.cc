@@ -79,7 +79,7 @@ void Graphics::End(const vk::raii::CommandBuffer& command_buffer) {
   command_buffer.end();
 
   vk::PipelineStageFlags wait_pipeline_stage{
-      vk::PipelineStageFlagBits::eColorAttachmentOutput};
+      vk::PipelineStageFlagBits::eAllCommands};
   vk::SubmitInfo submit_info{
       *(acquired_semaphores_[acquired_semaphore_index_]), wait_pipeline_stage,
       *command_buffer, *(render_finished_semaphores_[active_frame_index_])};
@@ -192,20 +192,16 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
           const auto& location_vertex_attributes{
               draw_element.location_vertex_attributes};
 
-          std::vector<vk::Buffer> vertex_buffers(
-              location_vertex_attributes.size());
-          std::vector<u64> offsets(location_vertex_attributes.size());
-
           for (const auto& location_vertex_attribute :
                location_vertex_attributes) {
             u32 location{location_vertex_attribute.first};
             const ast::sc::VertexAttribute* vertex_attribute{
                 location_vertex_attribute.second};
 
-            vertex_buffers[location] = *(vertex_attribute->buffer);
-            offsets[location] = vertex_attribute->offset;
+            command_buffer.bindVertexBuffers(location,
+                                             *(vertex_attribute->buffer),
+                                             vertex_attribute->offset);
           }
-          command_buffer.bindVertexBuffers(0, vertex_buffers, offsets);
 
           if (!draw_element.has_index) {
             command_buffer.draw(draw_element.vertex_count, 1, 0, 0);
