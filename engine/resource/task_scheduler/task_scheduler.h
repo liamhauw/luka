@@ -22,7 +22,7 @@ class TaskScheduler {
   void WaitforTask(const enki::ICompletable* completable);
 
  private:
-  const u32 kThreadCount{2};
+  const u32 kThreadCount{3};
   enki::TaskScheduler task_scheduler_;
 };
 

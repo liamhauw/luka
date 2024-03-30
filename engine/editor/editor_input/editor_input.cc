@@ -12,10 +12,10 @@
 namespace luka {
 
 EditorInput::EditorInput(std::shared_ptr<Config> config,
-                         std::shared_ptr<Time> time,
                          std::shared_ptr<Window> window,
+                         std::shared_ptr<Time> time,
                          std::shared_ptr<Camera> camera)
-    : config_{config}, time_{time}, window_{window}, camera_{camera} {
+    : config_{config}, window_{window}, time_{time}, camera_{camera} {
   window_->RegisterOnKeyFunc([this](auto&& ph1, auto&& ph2, auto&& ph3,
                                     auto&& ph4) {
     OnKey(std::forward<decltype(ph1)>(ph1), std::forward<decltype(ph2)>(ph2),

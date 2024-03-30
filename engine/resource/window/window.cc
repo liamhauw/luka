@@ -11,8 +11,7 @@
 
 namespace luka {
 
-Window::Window(std::shared_ptr<Time> time, const WindowInfo& window_info)
-    : time_{time} {
+Window::Window(const WindowInfo& window_info) {
   if (!static_cast<bool>(glfwInit())) {
     THROW("Fail to init glfw.");
   }
@@ -59,20 +58,7 @@ Window::~Window() {
   glfwTerminate();
 }
 
-void Window::Tick() {
-  ++tick_count_;
-  if (tick_count_ == 60) {
-    tick_count_ = 0;
-    f64 delta_time{time_->GetDeltaTime()};
-    std::string title{
-        std::string{"luka "} +
-        std::to_string(static_cast<u32>(delta_time * 1000)) + " ms " +
-        std::to_string(static_cast<u32>(1.0 / delta_time)) + " fps"};
-    glfwSetWindowTitle(glfw_window_, title.c_str());
-  }
-
-  glfwPollEvents();
-}
+void Window::Tick() { glfwPollEvents(); }
 
 GLFWwindow* Window::GetGlfwWindow() const { return glfw_window_; }
 

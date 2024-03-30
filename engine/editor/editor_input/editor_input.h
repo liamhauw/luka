@@ -8,8 +8,8 @@
 // clang-format on
 
 #include "function/camera/camera.h"
+#include "function/time/time.h"
 #include "resource/config/config.h"
-#include "resource/time/time.h"
 #include "resource/window/window.h"
 
 namespace luka {
@@ -25,8 +25,8 @@ enum class EditorCommand : u32 {
 
 class EditorInput {
  public:
-  EditorInput(std::shared_ptr<Config> config, std::shared_ptr<Time> time,
-              std::shared_ptr<Window> window, std::shared_ptr<Camera> camera);
+  EditorInput(std::shared_ptr<Config> config, std::shared_ptr<Window> window,
+              std::shared_ptr<Time> time, std::shared_ptr<Camera> camera);
 
   void Tick();
 
@@ -35,8 +35,8 @@ class EditorInput {
 
  private:
   std::shared_ptr<Config> config_;
-  std::shared_ptr<Time> time_;
   std::shared_ptr<Window> window_;
+  std::shared_ptr<Time> time_;
   std::shared_ptr<Camera> camera_;
 
   f32 prev_xpos_{0};

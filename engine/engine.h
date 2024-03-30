@@ -18,7 +18,7 @@
 #include "resource/config/config.h"
 #include "resource/gpu/gpu.h"
 #include "resource/task_scheduler/task_scheduler.h"
-#include "resource/time/time.h"
+#include "function/time/time.h"
 #include "resource/window/window.h"
 
 namespace luka {
@@ -32,12 +32,12 @@ class Engine {
  private:
   std::shared_ptr<Config> config_;
   std::shared_ptr<TaskScheduler> task_scheduler_;
-  std::shared_ptr<Time> time_;
   std::shared_ptr<Window> window_;
   std::shared_ptr<Gpu> gpu_;
   std::shared_ptr<Asset> asset_;
-  std::shared_ptr<FunctionInput> function_input_;
+  std::shared_ptr<Time> time_;
   std::shared_ptr<Camera> camera_;
+  std::shared_ptr<FunctionInput> function_input_;
   std::shared_ptr<FunctionUi> function_ui_;
   std::shared_ptr<EditorInput> editor_input_;
   std::shared_ptr<EditorUi> editor_ui_;

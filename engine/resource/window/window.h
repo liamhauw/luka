@@ -9,7 +9,7 @@
 #include <GLFW/glfw3.h>
 // clang-format on
 
-#include "resource/time/time.h"
+#include "function/time/time.h"
 
 namespace luka {
 
@@ -37,7 +37,7 @@ class Window {
   using OnScrollFunc = std::function<void(f64, f64)>;
   using OnDropFunc = std::function<void(i32, const char**)>;
 
-  Window(std::shared_ptr<Time> time, const WindowInfo& window_info = {});
+  Window(const WindowInfo& window_info = {});
   ~Window();
 
   void Tick();
@@ -126,10 +126,6 @@ class Window {
   void WindowSize(i32 width, i32 height);
   void WindowIconify(i32 iconified);
   void FramebufferSize(i32 width, i32 height);
-
-  std::shared_ptr<Time> time_;
-
-  u64 tick_count_{0};
 
   GLFWwindow* glfw_window_{nullptr};
   bool window_resized_{false};

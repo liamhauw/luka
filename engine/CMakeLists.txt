@@ -59,7 +59,7 @@ set(HEADER_FILES
   resource/gpu/gpu.h
   resource/gpu/image.h
   resource/task_scheduler/task_scheduler.h
-  resource/time/time.h
+  function/time/time.h
   resource/window/window.h
 
   # engine
@@ -94,7 +94,7 @@ set(SOURCE_FILES
   resource/gpu/gpu.cc
   resource/gpu/image.cc
   resource/task_scheduler/task_scheduler.cc
-  resource/time/time.cc
+  function/time/time.cc
   resource/window/window.cc
 
   # function

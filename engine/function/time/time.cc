@@ -5,7 +5,7 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "resource/time/time.h"
+#include "function/time/time.h"
 
 namespace luka {
 
