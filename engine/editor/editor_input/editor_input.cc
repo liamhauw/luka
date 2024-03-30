@@ -29,6 +29,10 @@ EditorInput::EditorInput(std::shared_ptr<Config> config,
 }
 
 void EditorInput::Tick() {
+  if (window_->GetIconified()) {
+    return;
+  }
+
   f64 delta_time{time_->GetDeltaTime()};
   f32 velocity{2.0F};
 
@@ -76,9 +80,9 @@ void EditorInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mod*/) {
       case GLFW_KEY_ESCAPE:
         window_->SetWindowShouldClose();
         break;
-      case GLFW_KEY_F:
+      case GLFW_KEY_1:
+        LOGI("Change to function mode");
         config_->SetEditorMode(false);
-        window_->SetFocusMode(false);
         break;
       case GLFW_KEY_W:
         editor_command_ |= static_cast<u32>(EditorCommand::kFoward);

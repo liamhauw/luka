@@ -23,7 +23,9 @@ Subpass::Subpass(
     std::shared_ptr<Camera> camera, u32 frame_count, vk::RenderPass render_pass,
     const std::vector<std::vector<vk::raii::ImageView>>& attachment_image_views,
     u32 color_attachment_count, const std::vector<ast::Subpass>& ast_subpasses,
-    u32 subpass_index)
+    u32 subpass_index,
+    std::vector<std::unordered_map<std::string, vk::ImageView>>&
+        shared_image_views)
     : gpu_{gpu},
       asset_{asset},
       camera_{camera},
@@ -31,6 +33,7 @@ Subpass::Subpass(
       render_pass_{render_pass},
       ast_subpasses_{&ast_subpasses},
       subpass_index_{subpass_index},
+      shared_image_views_{&shared_image_views},
       attachment_image_views_{&attachment_image_views},
       color_attachment_count_{color_attachment_count},
       ast_subpass_{&(*ast_subpasses_)[subpass_index_]},
@@ -80,9 +83,7 @@ const std::vector<DrawElement>& Subpass::GetDrawElements() const {
   return draw_elements_;
 }
 
-bool Subpass::HasPushConstant() const {
-  return has_push_constant_;
-}
+bool Subpass::HasPushConstant() const { return has_push_constant_; }
 
 void Subpass::CreateBindlessDescriptorSets() {
   // if (!has_primitive_) {
@@ -615,11 +616,15 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
         } else if (shader_resource.type ==
                    ShaderResourceType::kCombinedImageSampler) {
           need_resize_ = true;
-          vk::ImageView image_view{
-              gpu_->GetSharedImageView(i, shader_resource.name)};
-          if (!image_view) {
+          vk::ImageView image_view{nullptr};
+
+          auto it{(*shared_image_views_)[i].find(shader_resource.name)};
+          if (it != (*shared_image_views_)[i].end()) {
+            image_view = it->second;
+          } else {
             THROW("Image view is nullptr");
           }
+
           vk::DescriptorImageInfo descriptor_image_info{
               *(gpu_->GetSampler()), image_view,
               vk::ImageLayout::eShaderReadOnlyOptimal};

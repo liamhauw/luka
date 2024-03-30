@@ -9,9 +9,21 @@
 
 namespace luka {
 
-EditorUi::EditorUi() {}
+EditorUi::EditorUi(std::shared_ptr<Config> config,
+                   std::shared_ptr<Window> window)
+    : config_{config}, window_{window} {}
 
-void EditorUi::Tick() { CreateUi(); }
+void EditorUi::Tick() {
+  if (window_->GetIconified()) {
+    return;
+  }
+
+  if (!config_->GetEditorMode()) {
+    return;
+  }
+
+  CreateUi();
+}
 
 void EditorUi::CreateUi() {
   bool show_demo_window{true};

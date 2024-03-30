@@ -7,23 +7,30 @@
 
 #include "rendering/graphics/pass.h"
 
+#include "core/log.h"
+
 namespace luka {
 
 namespace gs {
 
 Pass::Pass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
-           std::shared_ptr<Camera> camera, u32 frame_count,
+           std::shared_ptr<Camera> camera,
+           std::shared_ptr<FunctionUi> function_ui, u32 frame_count,
            const SwapchainInfo& swapchain_info,
            const std::vector<vk::Image>& swapchain_images,
-           const std::vector<ast::Pass>& ast_passes, u32 pass_index)
+           const std::vector<ast::Pass>& ast_passes, u32 pass_index,
+           std::vector<std::unordered_map<std::string, vk::ImageView>>&
+               shared_image_views)
     : gpu_{gpu},
       asset_{asset},
       camera_{camera},
+      function_ui_{function_ui},
       frame_count_{frame_count},
       swapchain_info_{swapchain_info},
       swapchain_images_{swapchain_images},
       ast_passes_{&ast_passes},
       pass_index_{pass_index},
+      shared_image_views_{&shared_image_views},
       ast_pass_{&(*ast_passes_)[pass_index_]},
       name_{ast_pass_->name},
       has_ui_{name_ == "ui"} {
@@ -66,7 +73,7 @@ const std::vector<Subpass>& Pass::GetSubpasses() const { return subpasses_; }
 void Pass::CreateRenderPass() {
   // Ui render pass has been created, just move it from gpu to renderpass.
   if (has_ui_) {
-    render_pass_ = gpu_->GetUiRenderPass();
+    render_pass_ = function_ui_->GetUiRenderPass();
     color_attachment_counts_ = {1};
     return;
   }
@@ -239,8 +246,12 @@ void Pass::CreateFramebuffers() {
       image_views_[i].push_back(std::move(image_view));
 
       if (ast_attachment.output) {
-        gpu_->SetSharedImageView(i, ast_attachment.name,
-                                 *(image_views_[i].back()));
+        auto it{(*shared_image_views_)[i].find(ast_attachment.name)};
+        if (it != (*shared_image_views_)[i].end()) {
+          (*shared_image_views_)[i].erase(it);
+        }
+        (*shared_image_views_)[i].emplace(ast_attachment.name,
+                                          *(image_views_[i].back()));
       }
     }
 
@@ -277,7 +288,7 @@ void Pass::CreateSubpasses() {
   for (u32 i{0}; i < ast_subpasses.size(); ++i) {
     subpasses_.emplace_back(gpu_, asset_, camera_, frame_count_, *render_pass_,
                             image_views_, color_attachment_counts_[i],
-                            ast_subpasses, i);
+                            ast_subpasses, i, *shared_image_views_);
   }
 }
 

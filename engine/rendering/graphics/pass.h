@@ -8,6 +8,7 @@
 // clang-format on
 
 #include "function/camera/camera.h"
+#include "function/function_ui/function_ui.h"
 #include "rendering/graphics/subpass.h"
 #include "resource/asset/asset.h"
 #include "resource/gpu/gpu.h"
@@ -19,10 +20,12 @@ namespace gs {
 class Pass {
  public:
   Pass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
-       std::shared_ptr<Camera> camera, u32 frame_count,
-       const SwapchainInfo& swapchain_info,
+       std::shared_ptr<Camera> camera, std::shared_ptr<FunctionUi> function_ui,
+       u32 frame_count, const SwapchainInfo& swapchain_info,
        const std::vector<vk::Image>& swapchain_images,
-       const std::vector<ast::Pass>& ast_passes, u32 pass_index);
+       const std::vector<ast::Pass>& ast_passes, u32 pass_index,
+       std::vector<std::unordered_map<std::string, vk::ImageView>>&
+           shared_image_views);
 
   void Resize(const SwapchainInfo& swapchain_info,
               const std::vector<vk::Image>& swapchain_images);
@@ -46,12 +49,15 @@ class Pass {
   std::shared_ptr<Gpu> gpu_;
   std::shared_ptr<Asset> asset_;
   std::shared_ptr<Camera> camera_;
+  std::shared_ptr<FunctionUi> function_ui_;
 
   u32 frame_count_;
   SwapchainInfo swapchain_info_;
   std::vector<vk::Image> swapchain_images_;
   const std::vector<ast::Pass>* ast_passes_;
   u32 pass_index_;
+  std::vector<std::unordered_map<std::string, vk::ImageView>>*
+      shared_image_views_;
 
   const ast::Pass* ast_pass_;
   std::string name_;

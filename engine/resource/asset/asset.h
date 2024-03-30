@@ -9,7 +9,6 @@
 
 #include <TaskScheduler.h>
 
-#include "core/log.h"
 #include "resource/asset/frame_graph.h"
 #include "resource/asset/scene.h"
 #include "resource/asset/shader.h"

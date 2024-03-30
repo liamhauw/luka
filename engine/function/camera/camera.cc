@@ -19,6 +19,10 @@ Camera::Camera(std::shared_ptr<Window> window)
 }
 
 void Camera::Tick() {
+  if (window_->GetIconified()) {
+    return;
+  }
+
   if (window_->GetFramebufferResized()) {
     projection_matirx_ = glm::perspective(
         glm::radians(60.0F), window_->GetWindowRatio(), 0.1F, 1000.0F);

@@ -9,24 +9,14 @@
 #include "vk_mem_alloc.h"
 // clang-format on
 
+#include <backends/imgui_impl_vulkan.h>
 #include <tiny_gltf.h>
 
-#include "backends/imgui_impl_glfw.h"
-#include "backends/imgui_impl_vulkan.h"
-#include "imgui.h"
 #include "resource/gpu/buffer.h"
 #include "resource/gpu/image.h"
 #include "resource/window/window.h"
 
 namespace luka {
-
-struct SwapchainInfo {
-  u32 image_count;
-  vk::Format color_format;
-  vk::ColorSpaceKHR color_space;
-  vk::Extent2D extent;
-  vk::PresentModeKHR present_mode;
-};
 
 class Gpu {
  public:
@@ -35,16 +25,24 @@ class Gpu {
 
   void Tick();
 
-  void RenderUi(const vk::raii::CommandBuffer& command_buffer);
+  vk::SurfaceCapabilitiesKHR GetSurfaceCapabilities() const;
+  std::vector<vk::SurfaceFormatKHR> GetSurfaceFormats() const;
+  std::vector<vk::PresentModeKHR> GetSurfacePresentModes() const;
+  vk::PhysicalDeviceProperties GetPhysicalDeviceProperties() const;
 
-  void InitSharedImageViews(u32 frame_count);
-  void SetSharedImageView(u32 frame_index, const std::string& name,
-                          vk::ImageView image_view);
-  vk::ImageView GetSharedImageView(u32 frame_index, const std::string& name);
+  u32 GetGraphicsQueueIndex() const;
+  u32 GetComputeQueueIndex() const;
+  u32 GetTransferQueueIndex() const;
+  u32 GetPresentQueueIndex() const;
+
+  const vk::raii::Queue& GetGraphicsQueue() const;
+  const vk::raii::Queue& GetComputeQueue() const;
+  const vk::raii::Queue& GetTransferQueue() const;
+  const vk::raii::Queue& GetPresentQueue() const;
+
+  ImGui_ImplVulkan_InitInfo GetImguiVulkanInitInfo() const;
 
   const vk::raii::Sampler& GetSampler() const;
-
-  vk::PhysicalDeviceProperties GetPhysicalDeviceProperties() const;
 
   gpu::Buffer CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
                            const void* data, bool map = false,
@@ -142,39 +140,16 @@ class Gpu {
                   const std::array<f32, 4>& color = {0.8F, 0.7F, 1.0F, 1.0F});
   void EndLabel(const vk::raii::CommandBuffer& command_buffer);
 
-  u32 GetGraphicsQueueIndex() const;
-  u32 GetComputeQueueIndex() const;
-  u32 GetTransferQueueIndex() const;
-  u32 GetPresentQueueIndex() const;
-
-  const vk::raii::Queue& GetGraphicsQueue() const;
-  const vk::raii::Queue& GetComputeQueue() const;
-  const vk::raii::Queue& GetTransferQueue() const;
-  const vk::raii::Queue& GetPresentQueue() const;
-
-  const SwapchainInfo& GetSwapchainInfo() const;
-
-  const vk::raii::SwapchainKHR& GetSwapchain() const;
-
-  vk::raii::RenderPass GetUiRenderPass();
-
-  ImGui_ImplVulkan_InitInfo GetImguiVulkanInitInfo() const;
-
  private:
   void CreateInstance();
   void CreateSurface();
   void CreatePhysicalDevice();
   void CreateDevice();
-  void CreateSwapchain();
-  void CreateDescriptorPool();
   void CreateVmaAllocator();
-  void CreateImgui();
+  void CreateDescriptorPool();
+  void CreateDefaultResource();
 
-  void DestroyImgui();
   void DestroyAllocator();
-
-  void Resize();
-  void UpdateImgui();
 
   void SetObjectName(vk::ObjectType object_type, u64 handle,
                      const std::string& name, const std::string& suffix = {});
@@ -210,11 +185,6 @@ class Gpu {
   vk::raii::Queue present_queue_{nullptr};
 
   VmaAllocator allocator_;
-
-  SwapchainInfo swapchain_info_;
-  vk::raii::SwapchainKHR swapchain_{nullptr};
-
-  vk::raii::RenderPass ui_render_pass_{nullptr};
 
   vk::raii::DescriptorPool bindless_descriptor_pool_{nullptr};
   vk::raii::DescriptorPool normal_descriptor_pool_{nullptr};

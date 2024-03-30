@@ -18,10 +18,10 @@ Engine::Engine()
       time_{std::make_shared<Time>()},
       camera_{std::make_shared<Camera>(window_)},
       function_input_{std::make_shared<FunctionInput>(config_, window_)},
-      function_ui_{std::make_shared<FunctionUi>()},
+      function_ui_{std::make_shared<FunctionUi>(window_, gpu_)},
       editor_input_{
           std::make_shared<EditorInput>(config_, window_, time_, camera_)},
-      editor_ui_{std::make_shared<EditorUi>()},
+      editor_ui_{std::make_shared<EditorUi>(config_, window_)},
       compute_{std::make_shared<Compute>()},
       graphics_{std::make_shared<Graphics>(window_, gpu_, asset_, camera_,
                                            function_ui_)} {}

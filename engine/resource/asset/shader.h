@@ -7,7 +7,7 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "glslang/Public/ShaderLang.h"
+#include <glslang/Public/ShaderLang.h>
 
 namespace luka {
 

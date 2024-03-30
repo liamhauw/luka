@@ -13,9 +13,8 @@ namespace luka {
 
 namespace ast::sc {
 
-Node::Node(glm::mat4&& model_matrix, Mesh* mesh, Light* light,
-           Camera* camera, const std::vector<i32>& child_indices,
-           const std::string& name)
+Node::Node(glm::mat4&& model_matrix, Mesh* mesh, Light* light, Camera* camera,
+           const std::vector<i32>& child_indices, const std::string& name)
     : Component{name},
       model_matrix_{std::move(model_matrix)},
       mesh_{mesh},
@@ -55,8 +54,8 @@ Node::Node(const std::vector<Light*>& light_components,
     }
 
     model_matrix_ = glm::translate(glm::mat4(1.0F), translation) *
-                       glm::mat4_cast(rotation) *
-                       glm::scale(glm::mat4(1.0F), scale);
+                    glm::mat4_cast(rotation) *
+                    glm::scale(glm::mat4(1.0F), scale);
   }
 
   // Mesh.

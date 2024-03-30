@@ -17,90 +17,69 @@ Gpu::Gpu(std::shared_ptr<Window> window) : window_{window} {
   CreateSurface();
   CreatePhysicalDevice();
   CreateDevice();
-  CreateSwapchain();
-  CreateDescriptorPool();
   CreateVmaAllocator();
-  CreateImgui();
-
-  vk::SamplerCreateInfo sampler_ci{
-      vk::SamplerCreateFlags(),                 // flags
-      vk::Filter::eLinear,                      // magFilter
-      vk::Filter::eLinear,                      // minFilter
-      vk::SamplerMipmapMode::eLinear,           // mipmapMode
-      vk::SamplerAddressMode::eRepeat,          // addressModeU
-      vk::SamplerAddressMode::eRepeat,          // addressModeV
-      vk::SamplerAddressMode::eRepeat,          // addressModeW
-      0.0f,                                     // mipLodBias
-      VK_FALSE,                                 // anisotropyEnable
-      1.0f,                                     // maxAnisotropy
-      VK_FALSE,                                 // compareEnable
-      vk::CompareOp::eAlways,                   // compareOp
-      0.0f,                                     // minLod
-      0.0f,                                     // maxLod
-      vk::BorderColor::eFloatTransparentBlack,  // borderColor
-      VK_FALSE                                  // unnormalizedCoordinates
-  };
-
-  sampler_ = CreateSampler(sampler_ci);
+  CreateDescriptorPool();
+  CreateDefaultResource();
 }
 
 Gpu::~Gpu() {
-  WaitIdle();
-  DestroyImgui();
   DestroyAllocator();
 }
 
-void Gpu::Tick() {
-  if (window_->GetIconified()) {
-    return;
-  }
-
-  if (window_->GetFramebufferResized()) {
-    Resize();
-  }
-
-  UpdateImgui();
-}
-
-void Gpu::Resize() {
-  device_.waitIdle();
-  CreateSwapchain();
-}
-
-void Gpu::RenderUi(const vk::raii::CommandBuffer& command_buffer) {
-  ImGui::Render();
-  ImDrawData* draw_data{ImGui::GetDrawData()};
-  ImGui_ImplVulkan_RenderDrawData(
-      draw_data, static_cast<VkCommandBuffer>(*command_buffer));
-}
-
-void Gpu::InitSharedImageViews(u32 frame_count) {
-  shared_image_views_.resize(frame_count);
-}
-
-void Gpu::SetSharedImageView(u32 frame_index, const std::string& name,
-                             vk::ImageView image_view) {
-  auto it{shared_image_views_[frame_index].find(name)};
-  if (it != shared_image_views_[frame_index].end()) {
-    shared_image_views_[frame_index].erase(it);
-  }
-  shared_image_views_[frame_index].emplace(name, image_view);
-}
-
-vk::ImageView Gpu::GetSharedImageView(u32 frame_index,
-                                      const std::string& name) {
-  auto it{shared_image_views_[frame_index].find(name)};
-  if (it != shared_image_views_[frame_index].end()) {
-    return it->second;
-  }
-  return nullptr;
-}
-
-const vk::raii::Sampler& Gpu::GetSampler() const { return sampler_; }
+void Gpu::Tick() {}
 
 vk::PhysicalDeviceProperties Gpu::GetPhysicalDeviceProperties() const {
   return physical_device_.getProperties();
 }
+
+vk::SurfaceCapabilitiesKHR Gpu::GetSurfaceCapabilities() const {
+  return physical_device_.getSurfaceCapabilitiesKHR(*surface_);
+}
+
+std::vector<vk::SurfaceFormatKHR> Gpu::GetSurfaceFormats() const {
+  return physical_device_.getSurfaceFormatsKHR(*surface_);
+}
+
+std::vector<vk::PresentModeKHR> Gpu::GetSurfacePresentModes() const {
+  return physical_device_.getSurfacePresentModesKHR(*surface_);
+}
+
+u32 Gpu::GetGraphicsQueueIndex() const { return graphics_queue_index_.value(); }
+
+u32 Gpu::GetComputeQueueIndex() const { return compute_queue_index_.value(); }
+
+u32 Gpu::GetTransferQueueIndex() const { return transfer_queue_index_.value(); }
+
+u32 Gpu::GetPresentQueueIndex() const { return present_queue_index_.value(); }
+
+const vk::raii::Queue& Gpu::GetGraphicsQueue() const { return graphics_queue_; }
+
+const vk::raii::Queue& Gpu::GetComputeQueue() const { return compute_queue_; }
+
+const vk::raii::Queue& Gpu::GetTransferQueue() const { return transfer_queue_; }
+
+const vk::raii::Queue& Gpu::GetPresentQueue() const { return present_queue_; }
+
+ImGui_ImplVulkan_InitInfo Gpu::GetImguiVulkanInitInfo() const {
+  ImGui_ImplVulkan_InitInfo init_info{
+      .Instance = static_cast<VkInstance>(*instance_),
+      .PhysicalDevice = static_cast<VkPhysicalDevice>(*physical_device_),
+      .Device = static_cast<VkDevice>(*device_),
+      .QueueFamily = graphics_queue_index_.value(),
+      .Queue = static_cast<VkQueue>(*graphics_queue_),
+      .DescriptorPool = static_cast<VkDescriptorPool>(*normal_descriptor_pool_),
+      .RenderPass = nullptr,
+      .MinImageCount = 3,
+      .ImageCount = 3,
+      .MSAASamples = VK_SAMPLE_COUNT_1_BIT,
+      .PipelineCache = nullptr,
+      .Subpass = 0,
+  };
+
+  return init_info;
+}
+
+const vk::raii::Sampler& Gpu::GetSampler() const { return sampler_; }
 
 gpu::Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
                               const void* data, bool map,
@@ -509,49 +488,6 @@ void Gpu::EndLabel(const vk::raii::CommandBuffer& command_buffer) {
   command_buffer.endDebugUtilsLabelEXT();
 }
 
-u32 Gpu::GetGraphicsQueueIndex() const { return graphics_queue_index_.value(); }
-
-u32 Gpu::GetComputeQueueIndex() const { return compute_queue_index_.value(); }
-
-u32 Gpu::GetTransferQueueIndex() const { return transfer_queue_index_.value(); }
-
-u32 Gpu::GetPresentQueueIndex() const { return present_queue_index_.value(); }
-
-const vk::raii::Queue& Gpu::GetGraphicsQueue() const { return graphics_queue_; }
-
-const vk::raii::Queue& Gpu::GetComputeQueue() const { return compute_queue_; }
-
-const vk::raii::Queue& Gpu::GetTransferQueue() const { return transfer_queue_; }
-
-const vk::raii::Queue& Gpu::GetPresentQueue() const { return present_queue_; }
-
-const SwapchainInfo& Gpu::GetSwapchainInfo() const { return swapchain_info_; }
-
-const vk::raii::SwapchainKHR& Gpu::GetSwapchain() const { return swapchain_; }
-
-vk::raii::RenderPass Gpu::GetUiRenderPass() {
-  return std::move(ui_render_pass_);
-}
-
-ImGui_ImplVulkan_InitInfo Gpu::GetImguiVulkanInitInfo() const {
-  ImGui_ImplVulkan_InitInfo init_info{
-      .Instance = static_cast<VkInstance>(*instance_),
-      .PhysicalDevice = static_cast<VkPhysicalDevice>(*physical_device_),
-      .Device = static_cast<VkDevice>(*device_),
-      .QueueFamily = graphics_queue_index_.value(),
-      .Queue = static_cast<VkQueue>(*graphics_queue_),
-      .DescriptorPool = static_cast<VkDescriptorPool>(*normal_descriptor_pool_),
-      .RenderPass = static_cast<VkRenderPass>(*ui_render_pass_),
-      .MinImageCount = 3,
-      .ImageCount = 3,
-      .MSAASamples = VK_SAMPLE_COUNT_1_BIT,
-      .PipelineCache = nullptr,
-      .Subpass = 0,
-  };
-
-  return init_info;
-}
-
 void Gpu::CreateInstance() {
   vk::InstanceCreateFlags flags;
 #ifdef __APPLE__
@@ -827,111 +763,15 @@ void Gpu::CreateDevice() {
   present_queue_ = vk::raii::Queue{device_, present_queue_index_.value(), 0};
 }
 
-void Gpu::CreateSwapchain() {
-  // Clear
-  swapchain_.clear();
-
-  // Image count.
-  const vk::SurfaceCapabilitiesKHR& surface_capabilities{
-      physical_device_.getSurfaceCapabilitiesKHR(*surface_)};
-  swapchain_info_.image_count = surface_capabilities.minImageCount + 1;
-  if (surface_capabilities.maxImageCount > 0 &&
-      swapchain_info_.image_count > surface_capabilities.maxImageCount) {
-    swapchain_info_.image_count = surface_capabilities.maxImageCount;
-  }
-
-  // Format and color space.
-  const std::vector<vk::SurfaceFormatKHR>& surface_formats{
-      physical_device_.getSurfaceFormatsKHR(*surface_)};
-
-  vk::SurfaceFormatKHR picked_format{surface_formats[0]};
-
-  std::vector<vk::Format> requested_formats{vk::Format::eR8G8B8A8Srgb,
-                                            vk::Format::eB8G8R8A8Srgb};
-  vk::ColorSpaceKHR requested_color_space{vk::ColorSpaceKHR::eSrgbNonlinear};
-  for (const auto& requested_format : requested_formats) {
-    auto it{std::find_if(surface_formats.begin(), surface_formats.end(),
-                         [requested_format, requested_color_space](
-                             const vk::SurfaceFormatKHR& f) {
-                           return (f.format == requested_format) &&
-                                  (f.colorSpace == requested_color_space);
-                         })};
-    if (it != surface_formats.end()) {
-      picked_format = *it;
-      break;
-    }
-  }
-
-  swapchain_info_.color_format = picked_format.format;
-  swapchain_info_.color_space = picked_format.colorSpace;
-
-  // Extent.
-  if (surface_capabilities.currentExtent.width ==
-      std::numeric_limits<u32>::max()) {
-    i32 width{0};
-    i32 height{0};
-    window_->GetFramebufferSize(&width, &height);
-
-    swapchain_info_.extent.width = std::clamp(
-        static_cast<u32>(width), surface_capabilities.minImageExtent.width,
-        surface_capabilities.maxImageExtent.width);
-    swapchain_info_.extent.height = std::clamp(
-        static_cast<u32>(height), surface_capabilities.minImageExtent.height,
-        surface_capabilities.maxImageExtent.height);
-  } else {
-    swapchain_info_.extent = surface_capabilities.currentExtent;
-  }
-
-  // Present mode.
-  std::vector<vk::PresentModeKHR> present_modes{
-      physical_device_.getSurfacePresentModesKHR(*surface_)};
-
-  std::vector<vk::PresentModeKHR> requested_present_modes{
-      vk::PresentModeKHR::eMailbox, vk::PresentModeKHR::eImmediate,
-      vk::PresentModeKHR::eFifo};
-
-  vk::PresentModeKHR picked_mode{vk::PresentModeKHR::eFifo};
-  for (const auto& requested_present_mode : requested_present_modes) {
-    auto it{std::find_if(present_modes.begin(), present_modes.end(),
-                         [requested_present_mode](const vk::PresentModeKHR& p) {
-                           return p == requested_present_mode;
-                         })};
-    if (it != present_modes.end()) {
-      picked_mode = *it;
-      break;
-    }
-  }
-  swapchain_info_.present_mode = picked_mode;
-
-  // Create swapchain
-  vk::SwapchainCreateInfoKHR swapchain_ci{
-      {},
-      {},
-      swapchain_info_.image_count,
-      swapchain_info_.color_format,
-      swapchain_info_.color_space,
-      swapchain_info_.extent,
-      1,
-      vk::ImageUsageFlagBits::eColorAttachment,
-      vk::SharingMode::eExclusive,
-      {},
-      surface_capabilities.currentTransform,
-      vk::CompositeAlphaFlagBitsKHR::eOpaque,
-      swapchain_info_.present_mode,
-      VK_TRUE,
-      {}};
-
-  u32 graphics_queue_index{graphics_queue_index_.value()};
-  u32 present_queue_index{present_queue_index_.value()};
-
-  if (graphics_queue_index != present_queue_index) {
-    u32 queue_family_indices[2]{graphics_queue_index, present_queue_index};
-    swapchain_ci.imageSharingMode = vk::SharingMode::eConcurrent;
-    swapchain_ci.queueFamilyIndexCount = 2;
-    swapchain_ci.pQueueFamilyIndices = queue_family_indices;
-  }
-
-  swapchain_ = CreateSwapchain(swapchain_ci);
+void Gpu::CreateVmaAllocator() {
+  VmaAllocatorCreateInfo allocator_ci{
+      .flags = 0,
+      .physicalDevice = static_cast<VkPhysicalDevice>(*physical_device_),
+      .device = static_cast<VkDevice>(*device_),
+      .instance = static_cast<VkInstance>(*instance_),
+      .vulkanApiVersion = VK_API_VERSION_1_3,
+  };
+  vmaCreateAllocator(&allocator_ci, &allocator_);
 }
 
 void Gpu::CreateDescriptorPool() {
@@ -980,90 +820,28 @@ void Gpu::CreateDescriptorPool() {
       vk::raii::DescriptorPool{device_, normal_descriptor_pool_ci};
 }
 
-void Gpu::CreateVmaAllocator() {
-  VmaAllocatorCreateInfo allocator_ci{
-      .flags = 0,
-      .physicalDevice = static_cast<VkPhysicalDevice>(*physical_device_),
-      .device = static_cast<VkDevice>(*device_),
-      .instance = static_cast<VkInstance>(*instance_),
-      .vulkanApiVersion = VK_API_VERSION_1_3,
-  };
-  vmaCreateAllocator(&allocator_ci, &allocator_);
-}
+void Gpu::CreateDefaultResource() {
+  vk::SamplerCreateInfo sampler_ci{vk::SamplerCreateFlags(),
+                                   vk::Filter::eLinear,
+                                   vk::Filter::eLinear,
+                                   vk::SamplerMipmapMode::eLinear,
+                                   vk::SamplerAddressMode::eRepeat,
+                                   vk::SamplerAddressMode::eRepeat,
+                                   vk::SamplerAddressMode::eRepeat,
+                                   0.0f,
+                                   VK_FALSE,
+                                   1.0f,
+                                   VK_FALSE,
+                                   vk::CompareOp::eAlways,
+                                   0.0f,
+                                   0.0f,
+                                   vk::BorderColor::eFloatTransparentBlack,
+                                   VK_FALSE};
 
-void Gpu::CreateImgui() {
-  // Ui render pass.
-  std::vector<vk::AttachmentDescription> attachment_descriptions;
-
-  attachment_descriptions.emplace_back(
-      vk::AttachmentDescriptionFlags{}, swapchain_info_.color_format,
-      vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear,
-      vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eClear,
-      vk::AttachmentStoreOp::eStore, vk::ImageLayout::eUndefined,
-      vk::ImageLayout::ePresentSrcKHR);
-
-  vk::AttachmentReference color_attachment_refs{
-      0, vk::ImageLayout::eColorAttachmentOptimal};
-
-  vk::SubpassDescription subpass_description{
-      {}, vk::PipelineBindPoint::eGraphics, {}, color_attachment_refs};
-
-  vk::SubpassDependency subpass_dependency{
-      VK_SUBPASS_EXTERNAL,
-      0,
-      vk::PipelineStageFlagBits::eColorAttachmentOutput,
-      vk::PipelineStageFlagBits::eColorAttachmentOutput,
-      vk::AccessFlagBits::eNone,
-      vk::AccessFlagBits::eColorAttachmentRead |
-          vk::AccessFlagBits::eColorAttachmentWrite,
-      vk::DependencyFlagBits::eByRegion};
-
-  vk::RenderPassCreateInfo render_pass_ci{
-      {}, attachment_descriptions, subpass_description, subpass_dependency};
-
-  ui_render_pass_ = CreateRenderPass(render_pass_ci);
-
-  // ImGui.
-  IMGUI_CHECKVERSION();
-  ImGui::CreateContext();
-
-  ImGuiIO& io = ImGui::GetIO();
-  io.IniFilename = nullptr;
-  io.ConfigFlags = ImGuiConfigFlags_NavEnableKeyboard;
-
-  ImGui_ImplGlfw_InitForVulkan(window_->GetGlfwWindow(), true);
-
-  ImGui_ImplVulkan_InitInfo init_info{
-      .Instance = static_cast<VkInstance>(*instance_),
-      .PhysicalDevice = static_cast<VkPhysicalDevice>(*physical_device_),
-      .Device = static_cast<VkDevice>(*device_),
-      .QueueFamily = graphics_queue_index_.value(),
-      .Queue = static_cast<VkQueue>(*graphics_queue_),
-      .DescriptorPool = static_cast<VkDescriptorPool>(*normal_descriptor_pool_),
-      .RenderPass = static_cast<VkRenderPass>(*ui_render_pass_),
-      .MinImageCount = 3,
-      .ImageCount = 3,
-      .MSAASamples = VK_SAMPLE_COUNT_1_BIT,
-      .PipelineCache = nullptr,
-      .Subpass = 0,
-  };
-
-  ImGui_ImplVulkan_Init(&init_info);
-}
-
-void Gpu::DestroyImgui() {
-  ImGui_ImplVulkan_Shutdown();
-  ImGui_ImplGlfw_Shutdown();
-  ImGui::DestroyContext();
+  sampler_ = CreateSampler(sampler_ci);
 }
 
 void Gpu::DestroyAllocator() { vmaDestroyAllocator(allocator_); }
-
-void Gpu::UpdateImgui() {
-  ImGui_ImplVulkan_NewFrame();
-  ImGui_ImplGlfw_NewFrame();
-  ImGui::NewFrame();
-}
 
 void Gpu::SetObjectName(vk::ObjectType object_type, u64 handle,
                         const std::string& name, const std::string& suffix) {

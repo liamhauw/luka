@@ -7,6 +7,8 @@
 
 #include "rendering/graphics/graphics.h"
 
+#include "core/log.h"
+
 namespace luka {
 
 Graphics::Graphics(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu,
@@ -24,10 +26,7 @@ Graphics::Graphics(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu,
   CreatePasses();
 }
 
-Graphics::~Graphics() {
-  gpu_->WaitIdle();
-  gpu_.reset();
-}
+Graphics::~Graphics() { gpu_->WaitIdle(); }
 
 void Graphics::Tick() {
   if (window_->GetIconified()) {
@@ -226,7 +225,7 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
       }
 
       if (pass.HasUi()) {
-        gpu_->RenderUi(command_buffer);
+        function_ui_->Render(command_buffer);
       }
 #ifndef NDEBUG
       gpu_->EndLabel(command_buffer);
@@ -242,8 +241,8 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
 }
 
 void Graphics::GetSwapchain() {
-  swapchain_info_ = &(gpu_->GetSwapchainInfo());
-  swapchain_ = &(gpu_->GetSwapchain());
+  swapchain_info_ = &(function_ui_->GetSwapchainInfo());
+  swapchain_ = &(function_ui_->GetSwapchain());
   swapchain_images_ = swapchain_->getImages();
   frame_count_ = swapchain_images_.size();
 }
@@ -291,11 +290,12 @@ void Graphics::CreatePasses() {
   const ast::FrameGraph& frame_graph{asset_->GetFrameGraph(0)};
   const std::vector<ast::Pass>& ast_passes{frame_graph.GetPasses()};
 
-  gpu_->InitSharedImageViews(frame_count_);
+  shared_image_views_.resize(frame_count_);
 
   for (u32 i{0}; i < ast_passes.size(); ++i) {
-    passes_.emplace_back(gpu_, asset_, camera_, frame_count_, *swapchain_info_,
-                         swapchain_images_, ast_passes, i);
+    passes_.emplace_back(gpu_, asset_, camera_, function_ui_, frame_count_,
+                         *swapchain_info_, swapchain_images_, ast_passes, i,
+                         shared_image_views_);
   }
 }
 

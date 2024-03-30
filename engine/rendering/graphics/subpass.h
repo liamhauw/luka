@@ -69,7 +69,9 @@ class Subpass {
           const std::vector<std::vector<vk::raii::ImageView>>&
               attachment_image_views,
           u32 color_attachment_count,
-          const std::vector<ast::Subpass>& ast_subpasses, u32 subpass_index);
+          const std::vector<ast::Subpass>& ast_subpasses, u32 subpass_index,
+          std::vector<std::unordered_map<std::string, vk::ImageView>>&
+              shared_image_views);
 
   void PushConstants(const vk::raii::CommandBuffer& command_buffer,
                      vk::PipelineLayout pipeline_layout) const;
@@ -81,7 +83,7 @@ class Subpass {
   const std::vector<DrawElement>& GetDrawElements() const;
 
   void Resize(const std::vector<std::vector<vk::raii::ImageView>>&
-              attachment_image_views);
+                  attachment_image_views);
 
  protected:
   void CreateBindlessDescriptorSets();
@@ -121,6 +123,8 @@ class Subpass {
   u32 color_attachment_count_;
   const std::vector<ast::Subpass>* ast_subpasses_;
   u32 subpass_index_;
+  std::vector<std::unordered_map<std::string, vk::ImageView>>*
+      shared_image_views_;
 
   const ast::Subpass* ast_subpass_;
   std::string name_;

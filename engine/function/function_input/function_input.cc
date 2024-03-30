@@ -41,9 +41,9 @@ void FunctionInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mods*/) {
       case GLFW_KEY_ESCAPE:
         window_->SetWindowShouldClose();
         break;
-      case GLFW_KEY_E:
+      case GLFW_KEY_2:
+        LOGI("Change to eidtor mode");
         config_->SetEditorMode(true);
-        window_->SetFocusMode(true);
         break;
       case GLFW_KEY_W:
         function_command_ |= static_cast<u32>(FunctionCommand::kForward);

@@ -65,6 +65,8 @@ class Graphics {
   vk::Rect2D scissor_;
 
   std::vector<gs::Pass> passes_;
+  std::vector<std::unordered_map<std::string, vk::ImageView>>
+      shared_image_views_;
 };
 
 }  // namespace luka

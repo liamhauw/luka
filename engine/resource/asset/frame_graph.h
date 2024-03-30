@@ -15,8 +15,6 @@ namespace ast {
 
 enum class AttachmentType { kInput, kColor, kResolve, kDepthStencil };
 
-enum class ShaderType { kVertex, kFragment };
-
 struct Attachment {
   std::string name;
   vk::Format format;
