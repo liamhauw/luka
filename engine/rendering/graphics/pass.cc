@@ -192,7 +192,7 @@ void Pass::CreateFramebuffers() {
 
     const std::vector<ast::Attachment>& ast_attachments{ast_pass_->attachments};
     for (const auto& ast_attachment : ast_attachments) {
-      bool is_swapchain{ast_attachment.name == "swapchain" ? true : false};
+      bool is_swapchain{ast_attachment.name == "swapchain"};
       gpu::Image image;
       vk::ImageAspectFlags aspect;
       vk::Format format;

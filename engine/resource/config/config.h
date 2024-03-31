@@ -39,7 +39,7 @@ class Config {
   std::vector<std::filesystem::path> scene_paths_;
   std::vector<std::filesystem::path> shader_paths_;
   std::vector<std::filesystem::path> frame_graph_paths_;
-  u32 frame_graph_index_;
+  u32 frame_graph_index_{0};
 
   bool editor_mode_{true};
 };

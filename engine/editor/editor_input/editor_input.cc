@@ -143,7 +143,6 @@ void EditorInput::OnCursorPos(f64 xpos, f64 ypos) {
   }
 
   if (window_->IsMouseButtonDown(GLFW_MOUSE_BUTTON_RIGHT)) {
-    window_->SetFocusMode(true);
     i32 window_width{0};
     i32 window_height{0};
     window_->GetWindowSize(&window_width, &window_height);
@@ -155,8 +154,6 @@ void EditorInput::OnCursorPos(f64 xpos, f64 ypos) {
         glm::radians(static_cast<f32>(prev_ypos_ - ypos) * angular_velocity)};
 
     camera_->Rotate(yaw, pitch);
-  } else if (window_->IsMouseButtonRelease(GLFW_MOUSE_BUTTON_RIGHT)) {
-    window_->SetFocusMode(false);
   }
 
   prev_xpos_ = xpos;
