@@ -27,7 +27,7 @@ struct DrawElmentVertexInfo {
   std::vector<u64> offsets;
 };
 
-struct alignas(16) DrawElementUniform {
+struct DrawElementUniform {
   glm::mat4 m;
   glm::vec4 base_color_factor;
   glm::uvec4 sampler_indices;
@@ -39,20 +39,19 @@ struct DrawElement {
 
   DrawElement(DrawElement&& rhs) noexcept
       : has_primitive{rhs.has_primitive},
-        pipeline_layout{std::move(rhs.pipeline_layout)},
-        pipeline(std::move(rhs.pipeline)),
+        pipeline_layout{rhs.pipeline_layout},
         vertex_infos(std::move(rhs.vertex_infos)),
         vertex_count(rhs.vertex_count),
-        index_attribute(rhs.index_attribute),
         has_index(rhs.has_index),
+        index_attribute(rhs.index_attribute),
+        pipeline(rhs.pipeline),
         uniforms{std::move(rhs.uniforms)},
-        uniform_buffers{
-            std::move(rhs.uniform_buffers)},
+        uniform_buffers{std::move(rhs.uniform_buffers)},
         descriptor_sets(std::move(rhs.descriptor_sets)) {}
 
   bool has_primitive;
   const vk::raii::PipelineLayout* pipeline_layout;
-  std::vector<DrawElmentVertexInfo> vertex_infos;  
+  std::vector<DrawElmentVertexInfo> vertex_infos;
   u64 vertex_count;
   bool has_index;
   const ast::sc::IndexAttribute* index_attribute;
@@ -76,17 +75,15 @@ class Subpass {
           std::vector<std::unordered_map<std::string, vk::ImageView>>&
               shared_image_views);
 
-  void PushConstants(const vk::raii::CommandBuffer& command_buffer,
-                     vk::PipelineLayout pipeline_layout) const;
-
-  const std::string& GetName() const;
-  vk::DescriptorSetLayout GetBindlessDescriptorSetLayout() const;
-  const vk::raii::DescriptorSet& GetBindlessDescriptorSet() const;
-  bool HasPushConstant() const;
-  const std::vector<DrawElement>& GetDrawElements() const;
-
   void Resize(const std::vector<std::vector<vk::raii::ImageView>>&
                   attachment_image_views);
+
+  const std::string& GetName() const;
+  const std::vector<DrawElement>& GetDrawElements() const;
+  bool HasPushConstant() const;
+  void PushConstants(const vk::raii::CommandBuffer& command_buffer,
+                     vk::PipelineLayout pipeline_layout) const;
+  const vk::raii::DescriptorSet& GetBindlessDescriptorSet() const;
 
  protected:
   void CreateBindlessDescriptorSets();
@@ -98,23 +95,23 @@ class Subpass {
   const SPIRV& RequesetSpirv(const ast::Shader& shader,
                              const std::vector<std::string>& processes,
                              vk::ShaderStageFlagBits shader_stage,
-                             const std::string& name = {});
+                             const std::string& name = {}, i32 index = -1);
 
   const vk::raii::DescriptorSetLayout& RequestDescriptorSetLayout(
       const vk::DescriptorSetLayoutCreateInfo& descriptor_set_layout_ci,
-      const std::string& name = {});
+      const std::string& name = {}, i32 index = -1);
 
   const vk::raii::PipelineLayout& RequestPipelineLayout(
       const vk::PipelineLayoutCreateInfo& pipeline_layout_ci,
-      const std::string& name = {});
+      const std::string& name = {}, i32 index = -1);
 
   const vk::raii::ShaderModule& RequestShaderModule(
       const vk::ShaderModuleCreateInfo& shader_module_ci, u64 hash_value,
-      const std::string& name = {});
+      const std::string& name = {}, i32 index = -1);
 
   const vk::raii::Pipeline& RequestPipeline(
       const vk::GraphicsPipelineCreateInfo& graphics_pipeline_ci,
-      u64 hash_value, const std::string& name = {});
+      u64 hash_value, const std::string& name = {}, i32 index = -1);
 
   std::shared_ptr<Gpu> gpu_;
   std::shared_ptr<Asset> asset_;

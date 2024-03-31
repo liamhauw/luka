@@ -46,72 +46,73 @@ class Gpu {
 
   gpu::Buffer CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
                            const void* data, bool map = false,
-                           const std::string& name = {});
+                           const std::string& name = {}, i32 index = -1);
 
   gpu::Buffer CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
                            const gpu::Buffer& staging_buffer,
                            const vk::raii::CommandBuffer& command_buffer,
-                           const std::string& name = {});
+                           const std::string& name = {}, i32 index = -1);
 
   gpu::Image CreateImage(const vk::ImageCreateInfo& image_ci,
-                         const std::string& name = {});
+                         const std::string& name = {}, i32 index = -1);
 
   gpu::Image CreateImage(const vk::ImageCreateInfo& image_ci,
                          const vk::ImageLayout new_layout,
                          const gpu::Buffer& staging_buffer,
                          const vk::raii::CommandBuffer& command_buffer,
                          const tinygltf::Image& tinygltf_image,
-                         const std::string& name = {});
+                         const std::string& name = {}, i32 index = -1);
 
   vk::raii::ImageView CreateImageView(
       const vk::ImageViewCreateInfo& image_view_ci,
-      const std::string& name = {});
+      const std::string& name = {}, i32 index = -1);
 
   vk::raii::Sampler CreateSampler(const vk::SamplerCreateInfo sampler_ci,
-                                  const std::string& name = {});
+                                  const std::string& name = {}, i32 index = -1);
 
   vk::raii::SwapchainKHR CreateSwapchain(
-      vk::SwapchainCreateInfoKHR swapchain_ci, const std::string& name = {});
+      vk::SwapchainCreateInfoKHR swapchain_ci, const std::string& name = {},
+      i32 index = -1);
 
   vk::raii::Semaphore CreateSemaphoreLuka(
-      const vk::SemaphoreCreateInfo& semaphore_ci,
-      const std::string& name = {});
+      const vk::SemaphoreCreateInfo& semaphore_ci, const std::string& name = {},
+      i32 index = -1);
 
   vk::raii::Fence CreateFence(const vk::FenceCreateInfo& fence_ci,
-                              const std::string& name = {});
+                              const std::string& name = {}, i32 index = -1);
 
   vk::raii::CommandPool CreateCommandPool(
       const vk::CommandPoolCreateInfo& command_pool_ci,
-      const std::string& name = {});
+      const std::string& name = {}, i32 index = -1);
 
   vk::raii::RenderPass CreateRenderPass(
       const vk::RenderPassCreateInfo& render_pass_ci,
-      const std::string& name = {});
+      const std::string& name = {}, i32 index = -1);
 
   vk::raii::Framebuffer CreateFramebuffer(
       const vk::FramebufferCreateInfo& framebuffer_ci,
-      const std::string& name = {});
+      const std::string& name = {}, i32 index = -1);
 
   vk::raii::DescriptorSetLayout CreateDescriptorSetLayout(
       const vk::DescriptorSetLayoutCreateInfo& descriptor_set_layout_ci,
-      const std::string& name = {});
+      const std::string& name = {}, i32 index = -1);
 
   vk::raii::PipelineLayout CreatePipelineLayout(
       const vk::PipelineLayoutCreateInfo& pipeline_layout_ci,
-      const std::string& name = {});
+      const std::string& name = {}, i32 index = -1);
 
   vk::raii::ShaderModule CreateShaderModule(
       const vk::ShaderModuleCreateInfo& shader_module_ci,
-      const std::string& name = {});
+      const std::string& name = {}, i32 index = -1);
 
   vk::raii::PipelineCache CreatePipelineCache(
       const vk::PipelineCacheCreateInfo& pipeline_cache_ci,
-      const std::string& name = {});
+      const std::string& name = {}, i32 index = -1);
 
   vk::raii::Pipeline CreatePipeline(
       const vk::GraphicsPipelineCreateInfo& graphics_pipeline_ci,
       const vk::raii::PipelineCache& pipeline_cache = nullptr,
-      const std::string& name = {});
+      const std::string& name = {}, i32 index = -1);
 
   vk::raii::CommandBuffers AllocateCommandBuffers(
       const vk::CommandBufferAllocateInfo& command_buffer_ai,
@@ -152,7 +153,8 @@ class Gpu {
   void DestroyAllocator();
 
   void SetObjectName(vk::ObjectType object_type, u64 handle,
-                     const std::string& name, const std::string& suffix = {});
+                     const std::string& name, const std::string& prefix = {},
+                     const std::string& suffix = {});
 
   static VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(
       VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,

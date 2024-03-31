@@ -31,11 +31,11 @@ Subpass::Subpass(
       camera_{camera},
       frame_count_{frame_count},
       render_pass_{render_pass},
+      attachment_image_views_{&attachment_image_views},
+      color_attachment_count_{color_attachment_count},
       ast_subpasses_{&ast_subpasses},
       subpass_index_{subpass_index},
       shared_image_views_{&shared_image_views},
-      attachment_image_views_{&attachment_image_views},
-      color_attachment_count_{color_attachment_count},
       ast_subpass_{&(*ast_subpasses_)[subpass_index_]},
       name_{ast_subpass_->name},
       scenes_{&(ast_subpass_->scenes)},
@@ -58,6 +58,12 @@ void Subpass::Resize(const std::vector<std::vector<vk::raii::ImageView>>&
 
 const std::string& Subpass::GetName() const { return name_; }
 
+const std::vector<DrawElement>& Subpass::GetDrawElements() const {
+  return draw_elements_;
+}
+
+bool Subpass::HasPushConstant() const { return has_push_constant_; }
+
 void Subpass::PushConstants(const vk::raii::CommandBuffer& command_buffer,
                             vk::PipelineLayout pipeline_layout) const {
   const glm::mat4& view{camera_->GetViewMatrix()};
@@ -71,19 +77,9 @@ void Subpass::PushConstants(const vk::raii::CommandBuffer& command_buffer,
       push_constant_uniform);
 }
 
-vk::DescriptorSetLayout Subpass::GetBindlessDescriptorSetLayout() const {
-  return bindless_descriptor_set_layout_;
-}
-
 const vk::raii::DescriptorSet& Subpass::GetBindlessDescriptorSet() const {
   return bindless_descriptor_sets_.front();
 }
-
-const std::vector<DrawElement>& Subpass::GetDrawElements() const {
-  return draw_elements_;
-}
-
-bool Subpass::HasPushConstant() const { return has_push_constant_; }
 
 void Subpass::CreateBindlessDescriptorSets() {
   std::vector<vk::DescriptorSetLayoutBinding> descriptor_set_layout_bindings{
@@ -107,7 +103,7 @@ void Subpass::CreateBindlessDescriptorSets() {
   vk::DescriptorSetAllocateInfo bindless_descriptor_set_allocate_info{
       nullptr, bindless_descriptor_set_layout_};
   bindless_descriptor_sets_ = gpu_->AllocateBindlessDescriptorSets(
-      bindless_descriptor_set_allocate_info);
+      bindless_descriptor_set_allocate_info, name_ + "_bindless");
 }
 
 void Subpass::CreateDrawElements() {
@@ -115,6 +111,7 @@ void Subpass::CreateDrawElements() {
 
   if (!has_primitive_) {
     draw_elements_.push_back(CreateDrawElement());
+    return;
   }
 
   for (u32 scene_index : *scenes_) {
@@ -205,12 +202,13 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
   if (fi == shaders_->end()) {
     THROW("There is no fragment shader");
   }
-  const SPIRV& vert_spirv{RequesetSpirv(asset_->GetShader(vi->second),
-                                        shader_processes,
-                                        vk::ShaderStageFlagBits::eVertex)};
-  const SPIRV& frag_spirv{RequesetSpirv(asset_->GetShader(fi->second),
-                                        shader_processes,
-                                        vk::ShaderStageFlagBits::eFragment)};
+  const SPIRV& vert_spirv{
+      RequesetSpirv(asset_->GetShader(vi->second), shader_processes,
+                    vk::ShaderStageFlagBits::eVertex, name_ + " vertex"),
+  };
+  const SPIRV& frag_spirv{
+      RequesetSpirv(asset_->GetShader(fi->second), shader_processes,
+                    vk::ShaderStageFlagBits::eFragment, name_ + " fragment")};
 
   std::vector<const SPIRV*> spirv_shaders{&vert_spirv, &frag_spirv};
 
@@ -296,7 +294,7 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
                                                                layout_bindings};
 
     const vk::raii::DescriptorSetLayout& descriptor_set_layout{
-        RequestDescriptorSetLayout(descriptor_set_layout_ci)};
+        RequestDescriptorSetLayout(descriptor_set_layout_ci, name_, set)};
 
     set_layouts.push_back(*descriptor_set_layout);
   }
@@ -319,7 +317,7 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
   }
 
   const vk::raii::PipelineLayout& pipeline_layout{
-      RequestPipelineLayout(pipeline_layout_ci)};
+      RequestPipelineLayout(pipeline_layout_ci, name_)};
 
   draw_element.pipeline_layout = &pipeline_layout;
 
@@ -335,7 +333,7 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
     vk::ShaderModuleCreateInfo shader_module_ci{
         {}, spirv.size() * 4, spirv.data()};
     const vk::raii::ShaderModule& shader_module{
-        RequestShaderModule(shader_module_ci, shader_module_hash_value)};
+        RequestShaderModule(shader_module_ci, shader_module_hash_value, name_)};
 
     vk::PipelineShaderStageCreateInfo shader_stage_ci{
         {}, spirv_shader->GetStage(), *shader_module, "main", nullptr};
@@ -479,15 +477,15 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
       render_pass_,
       subpass_index_};
 
-  const vk::raii::Pipeline& pipeline{
-      RequestPipeline(graphics_pipeline_create_info, pipeline_hash_value)};
+  const vk::raii::Pipeline& pipeline{RequestPipeline(
+      graphics_pipeline_create_info, pipeline_hash_value, name_)};
   draw_element.pipeline = &pipeline;
 
   // Descriptor set.
   for (u32 i{0}; i < frame_count_; ++i) {
     vk::DescriptorSetAllocateInfo descriptor_set_allocate_info{{}, set_layouts};
-    vk::raii::DescriptorSets descriptor_sets{
-        gpu_->AllocateNormalDescriptorSets(descriptor_set_allocate_info)};
+    vk::raii::DescriptorSets descriptor_sets{gpu_->AllocateNormalDescriptorSets(
+        descriptor_set_allocate_info, name_ + "_normal")};
 
     std::vector<vk::WriteDescriptorSet> write_descriptor_sets;
     std::vector<vk::DescriptorImageInfo> sampler_infos;
@@ -663,7 +661,7 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
 const SPIRV& Subpass::RequesetSpirv(const ast::Shader& shader,
                                     const std::vector<std::string>& processes,
                                     vk::ShaderStageFlagBits shader_stage,
-                                    const std::string& name) {
+                                    const std::string& name, i32 index) {
   u64 hash_value{shader.GetHashValue(processes)};
 
   auto it{spirv_shaders_.find(hash_value)};
@@ -696,7 +694,7 @@ const SPIRV& Subpass::RequesetSpirv(const ast::Shader& shader,
 
 const vk::raii::DescriptorSetLayout& Subpass::RequestDescriptorSetLayout(
     const vk::DescriptorSetLayoutCreateInfo& descriptor_set_layout_ci,
-    const std::string& name) {
+    const std::string& name, i32 index) {
   u64 hash_value{0};
   HashCombine(hash_value, descriptor_set_layout_ci.flags);
   for (u32 i{0}; i < descriptor_set_layout_ci.bindingCount; ++i) {
@@ -709,7 +707,7 @@ const vk::raii::DescriptorSetLayout& Subpass::RequestDescriptorSetLayout(
   }
 
   vk::raii::DescriptorSetLayout descriptor_set_layout{
-      gpu_->CreateDescriptorSetLayout(descriptor_set_layout_ci, name)};
+      gpu_->CreateDescriptorSetLayout(descriptor_set_layout_ci, name, index)};
 
   auto it1{descriptor_set_layouts_.emplace(hash_value,
                                            std::move(descriptor_set_layout))};
@@ -719,7 +717,7 @@ const vk::raii::DescriptorSetLayout& Subpass::RequestDescriptorSetLayout(
 
 const vk::raii::PipelineLayout& Subpass::RequestPipelineLayout(
     const vk::PipelineLayoutCreateInfo& pipeline_layout_ci,
-    const std::string& name) {
+    const std::string& name, i32 index) {
   u64 hash_value{0};
   HashCombine(hash_value, pipeline_layout_ci.flags);
   for (u32 i{0}; i < pipeline_layout_ci.setLayoutCount; ++i) {
@@ -735,7 +733,7 @@ const vk::raii::PipelineLayout& Subpass::RequestPipelineLayout(
   }
 
   vk::raii::PipelineLayout pipeline_layout{
-      gpu_->CreatePipelineLayout(pipeline_layout_ci, name)};
+      gpu_->CreatePipelineLayout(pipeline_layout_ci, name, index)};
 
   auto it1{pipeline_layouts_.emplace(hash_value, std::move(pipeline_layout))};
 
@@ -744,14 +742,14 @@ const vk::raii::PipelineLayout& Subpass::RequestPipelineLayout(
 
 const vk::raii::ShaderModule& Subpass::RequestShaderModule(
     const vk::ShaderModuleCreateInfo& shader_module_ci, u64 hash_value,
-    const std::string& name) {
+    const std::string& name, i32 index) {
   auto it{shader_modules_.find(hash_value)};
   if (it != shader_modules_.end()) {
     return it->second;
   }
 
   vk::raii::ShaderModule shader_module{
-      gpu_->CreateShaderModule(shader_module_ci, name)};
+      gpu_->CreateShaderModule(shader_module_ci, name, index)};
 
   auto it1{shader_modules_.emplace(hash_value, std::move(shader_module))};
 
@@ -760,7 +758,7 @@ const vk::raii::ShaderModule& Subpass::RequestShaderModule(
 
 const vk::raii::Pipeline& Subpass::RequestPipeline(
     const vk::GraphicsPipelineCreateInfo& graphics_pipeline_ci, u64 hash_value,
-    const std::string& name) {
+    const std::string& name, i32 index) {
   auto it{pipelines_.find(hash_value)};
   if (it != pipelines_.end()) {
     return it->second;
@@ -797,10 +795,10 @@ const vk::raii::Pipeline& Subpass::RequestPipeline(
   }
 
   vk::raii::PipelineCache pipeline_cache{
-      gpu_->CreatePipelineCache(pipeline_cache_ci)};
+      gpu_->CreatePipelineCache(pipeline_cache_ci, name, index)};
 
   vk::raii::Pipeline pipeline{
-      gpu_->CreatePipeline(graphics_pipeline_ci, pipeline_cache, name)};
+      gpu_->CreatePipeline(graphics_pipeline_ci, pipeline_cache, name, index)};
 
   if (!has_cache) {
     std::vector<u8> pipeline_cache_data{pipeline_cache.getData()};

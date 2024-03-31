@@ -81,13 +81,13 @@ const vk::raii::Sampler& Gpu::GetSampler() const { return sampler_; }
 
 gpu::Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
                               const void* data, bool map,
-                              const std::string& name) {
+                              const std::string& name, i32 index) {
   gpu::Buffer buffer{allocator_, buffer_ci, true};
 
 #ifndef NDEBUG
   SetObjectName(vk::ObjectType::eBuffer,
                 reinterpret_cast<uint64_t>(static_cast<VkBuffer>(*buffer)),
-                name, "Buffer");
+                name, "Buffer", index == -1 ? "" : std::to_string(index));
 #endif
 
   void* mapped_data{buffer.Map()};
@@ -102,13 +102,13 @@ gpu::Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
 gpu::Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
                               const gpu::Buffer& staging_buffer,
                               const vk::raii::CommandBuffer& command_buffer,
-                              const std::string& name) {
+                              const std::string& name, i32 index) {
   gpu::Buffer buffer{allocator_, buffer_ci};
 
 #ifndef NDEBUG
   SetObjectName(vk::ObjectType::eBuffer,
                 reinterpret_cast<uint64_t>(static_cast<VkBuffer>(*buffer)),
-                name, "Buffer");
+                name, "Buffer", index == -1 ? "" : std::to_string(index));
 #endif
   if (*staging_buffer) {
     vk::BufferCopy buffer_copy{0, 0, buffer_ci.size};
@@ -119,13 +119,13 @@ gpu::Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
 }
 
 gpu::Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
-                            const std::string& name) {
+                            const std::string& name, i32 index) {
   gpu::Image image{allocator_, image_ci};
 
 #ifndef NDEBUG
   SetObjectName(vk::ObjectType::eImage,
                 reinterpret_cast<u64>(static_cast<VkImage>(*image)), name,
-                "Image");
+                "Image", index == -1 ? "" : std::to_string(index));
 #endif
 
   return image;
@@ -136,13 +136,13 @@ gpu::Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
                             const gpu::Buffer& staging_buffer,
                             const vk::raii::CommandBuffer& command_buffer,
                             const tinygltf::Image& tinygltf_image,
-                            const std::string& name) {
+                            const std::string& name, i32 index) {
   gpu::Image image{allocator_, image_ci};
 
 #ifndef NDEBUG
   SetObjectName(vk::ObjectType::eImage,
                 reinterpret_cast<u64>(static_cast<VkImage>(*image)), name,
-                "Image");
+                "Image", index == -1 ? "" : std::to_string(index));
 #endif
   vk::ImageAspectFlagBits flag_bits;
   if (image_ci.usage & vk::ImageUsageFlagBits::eDepthStencilAttachment) {
@@ -218,33 +218,35 @@ gpu::Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
 }
 
 vk::raii::ImageView Gpu::CreateImageView(
-    const vk::ImageViewCreateInfo& image_view_ci, const std::string& name) {
+    const vk::ImageViewCreateInfo& image_view_ci, const std::string& name,
+    i32 index) {
   vk::raii::ImageView image_view{vk::raii::ImageView{device_, image_view_ci}};
 
 #ifndef NDEBUG
   SetObjectName(vk::ObjectType::eImageView,
                 reinterpret_cast<u64>(static_cast<VkImageView>(*image_view)),
-                name, "Image View");
+                name, "Image View", index == -1 ? "" : std::to_string(index));
 #endif
 
   return image_view;
 }
 
 vk::raii::Sampler Gpu::CreateSampler(const vk::SamplerCreateInfo sampler_ci,
-                                     const std::string& name) {
+                                     const std::string& name, i32 index) {
   vk::raii::Sampler sampler{device_, sampler_ci};
 
 #ifndef NDEBUG
   SetObjectName(vk::ObjectType::eSampler,
                 reinterpret_cast<uint64_t>(static_cast<VkSampler>(*sampler)),
-                name, "Sampler");
+                name, "Sampler", index == -1 ? "" : std::to_string(index));
 #endif
 
   return sampler;
 }
 
 vk::raii::SwapchainKHR Gpu::CreateSwapchain(
-    vk::SwapchainCreateInfoKHR swapchain_ci, const std::string& name) {
+    vk::SwapchainCreateInfoKHR swapchain_ci, const std::string& name,
+    i32 index) {
   swapchain_ci.surface = *surface_;
   vk::raii::SwapchainKHR swapchain{device_, swapchain_ci};
 
@@ -252,76 +254,80 @@ vk::raii::SwapchainKHR Gpu::CreateSwapchain(
   SetObjectName(
       vk::ObjectType::eSwapchainKHR,
       reinterpret_cast<uint64_t>(static_cast<VkSwapchainKHR>(*swapchain)), name,
-      "Swapchain");
+      "Swapchain", index == -1 ? "" : std::to_string(index));
 #endif
 
   return swapchain;
 }
 
 vk::raii::Semaphore Gpu::CreateSemaphoreLuka(
-    const vk::SemaphoreCreateInfo& semaphore_ci, const std::string& name) {
+    const vk::SemaphoreCreateInfo& semaphore_ci, const std::string& name,
+    i32 index) {
   vk::raii::Semaphore semaphore{device_, semaphore_ci};
 
 #ifndef NDEBUG
   SetObjectName(
       vk::ObjectType::eSemaphore,
       reinterpret_cast<uint64_t>(static_cast<VkSemaphore>(*semaphore)), name,
-      "Semaphore");
+      "Semaphore", index == -1 ? "" : std::to_string(index));
 #endif
 
   return semaphore;
 }
 
 vk::raii::Fence Gpu::CreateFence(const vk::FenceCreateInfo& fence_ci,
-                                 const std::string& name) {
+                                 const std::string& name, i32 index) {
   vk::raii::Fence fence{device_, fence_ci};
 
 #ifndef NDEBUG
   SetObjectName(vk::ObjectType::eFence,
                 reinterpret_cast<uint64_t>(static_cast<VkFence>(*fence)), name,
-                "Fence");
+                "Fence", index == -1 ? "" : std::to_string(index));
 #endif
 
   return fence;
 }
 
 vk::raii::CommandPool Gpu::CreateCommandPool(
-    const vk::CommandPoolCreateInfo& command_pool_ci, const std::string& name) {
+    const vk::CommandPoolCreateInfo& command_pool_ci, const std::string& name,
+    i32 index) {
   vk::raii::CommandPool command_pool{device_, command_pool_ci};
 
 #ifndef NDEBUG
   SetObjectName(
       vk::ObjectType::eCommandPool,
       reinterpret_cast<uint64_t>(static_cast<VkCommandPool>(*command_pool)),
-      name, "Command Pool");
+      name, "Command Pool", index == -1 ? "" : std::to_string(index));
 #endif
 
   return command_pool;
 }
 
 vk::raii::RenderPass Gpu::CreateRenderPass(
-    const vk::RenderPassCreateInfo& render_pass_ci, const std::string& name) {
+    const vk::RenderPassCreateInfo& render_pass_ci, const std::string& name,
+    i32 index) {
   vk::raii::RenderPass render_pass{device_, render_pass_ci};
 
 #ifndef NDEBUG
   SetObjectName(
       vk::ObjectType::eRenderPass,
       reinterpret_cast<uint64_t>(static_cast<VkRenderPass>(*render_pass)), name,
-      "Render Pass");
+      "Render Pass", index == -1 ? "" : std::to_string(index));
 #endif
 
   return render_pass;
 }
 
 vk::raii::Framebuffer Gpu::CreateFramebuffer(
-    const vk::FramebufferCreateInfo& framebuffer_ci, const std::string& name) {
+    const vk::FramebufferCreateInfo& framebuffer_ci, const std::string& name,
+    i32 index) {
   vk::raii::Framebuffer framebuffer{device_, framebuffer_ci};
 
 #ifndef NDEBUG
   SetObjectName(
       vk::ObjectType::eFramebuffer,
       reinterpret_cast<uint64_t>(static_cast<VkFramebuffer>(*framebuffer)),
-      name, "Framebuffer");
+      name, "Framebuffer", index == -1 ? "" : std::to_string(index));
 #endif
 
   return framebuffer;
@@ -329,14 +335,15 @@ vk::raii::Framebuffer Gpu::CreateFramebuffer(
 
 vk::raii::DescriptorSetLayout Gpu::CreateDescriptorSetLayout(
     const vk::DescriptorSetLayoutCreateInfo& descriptor_set_layout_ci,
-    const std::string& name) {
+    const std::string& name, i32 index) {
   vk::raii::DescriptorSetLayout descriptor_set_layout{device_,
                                                       descriptor_set_layout_ci};
 #ifndef NDEBUG
   SetObjectName(vk::ObjectType::eDescriptorSetLayout,
                 reinterpret_cast<uint64_t>(
                     static_cast<VkDescriptorSetLayout>(*descriptor_set_layout)),
-                name, "Descriptor Set Layout");
+                name, "Descriptor Set Layout",
+                index == -1 ? "" : std::to_string(index));
 #endif
 
   return descriptor_set_layout;
@@ -344,55 +351,57 @@ vk::raii::DescriptorSetLayout Gpu::CreateDescriptorSetLayout(
 
 vk::raii::PipelineLayout Gpu::CreatePipelineLayout(
     const vk::PipelineLayoutCreateInfo& pipeline_layout_ci,
-    const std::string& name) {
+    const std::string& name, i32 index) {
   vk::raii::PipelineLayout pipeline_layout{device_, pipeline_layout_ci};
 
 #ifndef NDEBUG
   SetObjectName(vk::ObjectType::ePipelineLayout,
                 reinterpret_cast<uint64_t>(
                     static_cast<VkPipelineLayout>(*pipeline_layout)),
-                name, "Pipeline Layout");
+                name, "Pipeline Layout",
+                index == -1 ? "" : std::to_string(index));
 #endif
   return pipeline_layout;
 }
 
 vk::raii::ShaderModule Gpu::CreateShaderModule(
-    const vk::ShaderModuleCreateInfo& shader_module_ci,
-    const std::string& name) {
+    const vk::ShaderModuleCreateInfo& shader_module_ci, const std::string& name,
+    i32 index) {
   vk::raii::ShaderModule shader_module{device_, shader_module_ci};
 
 #ifndef NDEBUG
   SetObjectName(
       vk::ObjectType::eShaderModule,
       reinterpret_cast<uint64_t>(static_cast<VkShaderModule>(*shader_module)),
-      name, "Shader Module");
+      name, "Shader Module", index == -1 ? "" : std::to_string(index));
 #endif
   return shader_module;
 }
 
 vk::raii::PipelineCache Gpu::CreatePipelineCache(
     const vk::PipelineCacheCreateInfo& pipeline_cache_ci,
-    const std::string& name) {
+    const std::string& name, i32 index) {
   vk::raii::PipelineCache pipeline_cache{device_, pipeline_cache_ci};
 
 #ifndef NDEBUG
   SetObjectName(
       vk::ObjectType::ePipelineCache,
       reinterpret_cast<uint64_t>(static_cast<VkPipelineCache>(*pipeline_cache)),
-      name, "Pipeline Cache");
+      name, "Pipeline Cache", index == -1 ? "" : std::to_string(index));
 #endif
   return pipeline_cache;
 }
 
 vk::raii::Pipeline Gpu::CreatePipeline(
     const vk::GraphicsPipelineCreateInfo& graphics_pipeline_ci,
-    const vk::raii::PipelineCache& pipeline_cache, const std::string& name) {
+    const vk::raii::PipelineCache& pipeline_cache, const std::string& name,
+    i32 index) {
   vk::raii::Pipeline pipeline{device_, pipeline_cache, graphics_pipeline_ci};
 
 #ifndef NDEBUG
   SetObjectName(vk::ObjectType::ePipeline,
                 reinterpret_cast<uint64_t>(static_cast<VkPipeline>(*pipeline)),
-                name, "Pipeline");
+                name, "Pipeline", index == -1 ? "" : std::to_string(index));
 #endif
 
   return pipeline;
@@ -408,7 +417,7 @@ vk::raii::CommandBuffers Gpu::AllocateCommandBuffers(
     SetObjectName(vk::ObjectType::eCommandBuffer,
                   reinterpret_cast<uint64_t>(
                       static_cast<VkCommandBuffer>(*command_buffers[i])),
-                  name, "Command Buffer" + std::to_string(i));
+                  name, "Command Buffer", std::to_string(i));
   }
 #endif
 
@@ -427,7 +436,7 @@ vk::raii::DescriptorSets Gpu::AllocateBindlessDescriptorSets(
     SetObjectName(vk::ObjectType::eDescriptorSet,
                   reinterpret_cast<uint64_t>(
                       static_cast<VkDescriptorSet>(*(descriptor_sets[i]))),
-                  name, "Descriptor Set " + std::to_string(i));
+                  name, "Descriptor Set", std::to_string(i));
   }
 
 #endif
@@ -447,7 +456,7 @@ vk::raii::DescriptorSets Gpu::AllocateNormalDescriptorSets(
     SetObjectName(vk::ObjectType::eDescriptorSet,
                   reinterpret_cast<uint64_t>(
                       static_cast<VkDescriptorSet>(*(descriptor_sets[i]))),
-                  name, "Descriptor Set " + std::to_string(i));
+                  name, "Descriptor Set", std::to_string(i));
   }
 
 #endif
@@ -842,12 +851,19 @@ void Gpu::CreateDefaultResource() {
 void Gpu::DestroyAllocator() { vmaDestroyAllocator(allocator_); }
 
 void Gpu::SetObjectName(vk::ObjectType object_type, u64 handle,
-                        const std::string& name, const std::string& suffix) {
-  if (!name.empty()) {
-    std::string name_suffix{suffix + " " + name};
-    vk::DebugUtilsObjectNameInfoEXT buffer_name_info{object_type, handle,
-                                                     name_suffix.c_str()};
-    device_.setDebugUtilsObjectNameEXT(buffer_name_info);
+                        const std::string& name, const std::string& prefix,
+                        const std::string& suffix) {
+  std::string object_name{name};
+  if (!prefix.empty()) {
+    object_name = prefix + " " + object_name;
+  }
+  if (!suffix.empty()) {
+    object_name = object_name + " " + suffix;
+  }
+  if (!object_name.empty()) {
+    vk::DebugUtilsObjectNameInfoEXT object_name_info{object_type, handle,
+                                                     object_name.c_str()};
+    device_.setDebugUtilsObjectNameEXT(object_name_info);
   }
 }
 

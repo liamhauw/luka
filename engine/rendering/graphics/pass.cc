@@ -176,7 +176,7 @@ void Pass::CreateRenderPass() {
   vk::RenderPassCreateInfo render_pass_ci{
       {}, attachment_descriptions, subpass_descriptions, subpass_dependencies};
 
-  render_pass_ = gpu_->CreateRenderPass(render_pass_ci, ast_pass_->name);
+  render_pass_ = gpu_->CreateRenderPass(render_pass_ci, name_);
 }
 
 void Pass::CreateFramebuffers() {
@@ -226,14 +226,14 @@ void Pass::CreateFramebuffers() {
             vk::SharingMode::eExclusive,
             {},
             vk::ImageLayout::eUndefined};
-        image = gpu_->CreateImage(image_ci, ast_attachment.name);
+        image = gpu_->CreateImage(image_ci, ast_attachment.name, i);
       }
 
       // Image view.
       vk::ImageViewCreateInfo image_view_ci{
           {}, *image, vk::ImageViewType::e2D, format, {}, {aspect, 0, 1, 0, 1}};
       vk::raii::ImageView image_view{
-          gpu_->CreateImageView(image_view_ci, ast_attachment.name)};
+          gpu_->CreateImageView(image_view_ci, ast_attachment.name, i)};
 
       framebuffer_image_views.push_back(*image_view);
 
@@ -257,7 +257,8 @@ void Pass::CreateFramebuffers() {
                                              swapchain_info_.extent.height,
                                              1};
 
-    vk::raii::Framebuffer framebuffer{gpu_->CreateFramebuffer(framebuffer_ci)};
+    vk::raii::Framebuffer framebuffer{
+        gpu_->CreateFramebuffer(framebuffer_ci, name_, i)};
 
     framebuffers_.push_back(std::move(framebuffer));
   }

@@ -20,7 +20,6 @@ SPIRV::SPIRV(const ast::Shader& shader,
       stage_{stage},
       hash_value_{hash_value} {
   spirv_cross::CompilerGLSL compiler{spirv_};
-
   ParseShaderResource(compiler);
   ParseSpecialization(compiler);
 }
@@ -29,7 +28,6 @@ SPIRV::SPIRV(const std::vector<u32>& spirv, vk::ShaderStageFlagBits stage,
              u64 hash_value)
     : spirv_{spirv}, stage_{stage}, hash_value_{hash_value} {
   spirv_cross::CompilerGLSL compiler{spirv_};
-
   ParseShaderResource(compiler);
   ParseSpecialization(compiler);
 }

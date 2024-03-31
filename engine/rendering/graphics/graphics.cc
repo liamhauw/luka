@@ -150,14 +150,6 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
           prev_pipeline_layout = pipeline_layout;
         }
 
-        // Bind pipeline.
-        const vk::raii::Pipeline* pipeline{draw_element.pipeline};
-        if (prev_pipeline != pipeline) {
-          command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
-                                      **pipeline);
-          prev_pipeline = pipeline;
-        }
-
         // Bind bindless descriptor sets;
         const vk::raii::DescriptorSet& bindless_descriptor_set{
             subpass.GetBindlessDescriptorSet()};
@@ -166,6 +158,14 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
                                             **pipeline_layout, 0,
                                             *bindless_descriptor_set, nullptr);
           prev_descriptor_set = &bindless_descriptor_set;
+        }
+
+        // Bind pipeline.
+        const vk::raii::Pipeline* pipeline{draw_element.pipeline};
+        if (prev_pipeline != pipeline) {
+          command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
+                                      **pipeline);
+          prev_pipeline = pipeline;
         }
 
         // Bind normal descriptor sets.
@@ -235,12 +235,12 @@ void Graphics::CreateSyncObjects() {
   vk::SemaphoreCreateInfo semaphore_ci;
   vk::FenceCreateInfo fence_ci{vk::FenceCreateFlagBits::eSignaled};
   for (u32 i{0}; i < frame_count_; ++i) {
-    image_acquired_semaphores_.push_back(gpu_->CreateSemaphoreLuka(
-        semaphore_ci, "image_acquired_" + std::to_string(i)));
-    render_finished_semaphores_.push_back(gpu_->CreateSemaphoreLuka(
-        semaphore_ci, "render_finished_" + std::to_string(i)));
+    image_acquired_semaphores_.push_back(
+        gpu_->CreateSemaphoreLuka(semaphore_ci, "image_acquired", i));
+    render_finished_semaphores_.push_back(
+        gpu_->CreateSemaphoreLuka(semaphore_ci, "render_finished", i));
     command_finished_fences_.push_back(
-        gpu_->CreateFence(fence_ci, "command_finished_" + std::to_string(i)));
+        gpu_->CreateFence(fence_ci, "command_finished", i));
   }
 }
 
@@ -251,12 +251,12 @@ void Graphics::CreateCommandObjects() {
   vk::CommandBufferAllocateInfo command_buffer_ai{
       nullptr, vk::CommandBufferLevel::ePrimary, 1};
   for (u32 i{0}; i < frame_count_; ++i) {
-    command_pools_.push_back(gpu_->CreateCommandPool(
-        command_pool_ci, "graphics_" + std::to_string(i)));
+    command_pools_.push_back(
+        gpu_->CreateCommandPool(command_pool_ci, "graphics"));
 
     command_buffer_ai.commandPool = *(command_pools_.back());
-    command_buffers_.push_back(gpu_->AllocateCommandBuffers(
-        command_buffer_ai, "graphics_" + std::to_string(i)));
+    command_buffers_.push_back(
+        gpu_->AllocateCommandBuffers(command_buffer_ai, "graphics"));
   }
 }
 

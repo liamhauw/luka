@@ -82,9 +82,7 @@ class SPIRV {
 
   ast::Shader shader_;
   std::vector<std::string> processes_;
-
   std::vector<u32> spirv_;
-
   vk::ShaderStageFlagBits stage_;
   u64 hash_value_;
 
