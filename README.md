@@ -1,12 +1,14 @@
-# luka engine
+# luka
+A rendering framework with modular components, including platform, core, resource, function, editor, and rendering.
 
 ## Features
-- Bindless rendering with descriptor indexing
-- Automating pipeline layout generation with spirv-cross
-- Improving load time with pipeline cache
+- Following the RAII principle with vulkan raii.
 - Asynchronously loading asset using a task-based multi-threading library
 - Recording commands on multiple threads
 - Driving rendering with frame graph
+- Automating pipeline layout generation with spirv-cross
+- Improving load time with pipeline cache
+- Bindless rendering with descriptor indexing
 
 ## Prerequisites
 - Windows/macOS
