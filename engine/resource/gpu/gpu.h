@@ -137,7 +137,7 @@ class Gpu {
 
   void BeginLabel(const vk::raii::CommandBuffer& command_buffer,
                   const std::string& label,
-                  const std::array<f32, 4>& color = {0.8F, 0.7F, 1.0F, 1.0F});
+                  const std::array<f32, 4>& color = {1.0F, 1.0F, 1.0F, 1.0F});
   void EndLabel(const vk::raii::CommandBuffer& command_buffer);
 
  private:

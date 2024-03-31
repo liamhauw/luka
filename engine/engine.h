@@ -12,13 +12,13 @@
 #include "function/camera/camera.h"
 #include "function/function_input/function_input.h"
 #include "function/function_ui/function_ui.h"
+#include "function/time/time.h"
 #include "rendering/compute/compute.h"
 #include "rendering/graphics/graphics.h"
 #include "resource/asset/asset.h"
 #include "resource/config/config.h"
 #include "resource/gpu/gpu.h"
 #include "resource/task_scheduler/task_scheduler.h"
-#include "function/time/time.h"
 #include "resource/window/window.h"
 
 namespace luka {

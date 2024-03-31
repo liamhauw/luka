@@ -22,9 +22,7 @@ Gpu::Gpu(std::shared_ptr<Window> window) : window_{window} {
   CreateDefaultResource();
 }
 
-Gpu::~Gpu() {
-  DestroyAllocator();
-}
+Gpu::~Gpu() { DestroyAllocator(); }
 
 void Gpu::Tick() {}
 
@@ -295,7 +293,7 @@ vk::raii::CommandPool Gpu::CreateCommandPool(
   SetObjectName(
       vk::ObjectType::eCommandPool,
       reinterpret_cast<uint64_t>(static_cast<VkCommandPool>(*command_pool)),
-      name, "Command_pool");
+      name, "Command Pool");
 #endif
 
   return command_pool;

@@ -54,21 +54,16 @@ void Pass::Resize(const SwapchainInfo& swapchain_info,
 
 const std::string& Pass::GetName() const { return name_; }
 
-bool Pass::HasUi() const { return has_ui_; }
-
-const vk::raii::RenderPass& Pass::GetRenderPass() const { return render_pass_; }
-
-const vk::raii::Framebuffer& Pass::GetFramebuffer(u32 frame_index) const {
-  return framebuffers_[frame_index];
-}
-
-const vk::Rect2D& Pass::GetRenderArea() const { return render_area_; }
-
-const std::vector<vk::ClearValue>& Pass::GetClearValues() const {
-  return clear_values_;
+vk::RenderPassBeginInfo Pass::GetRenderPassBeginInfo(u32 frame_index) const {
+  vk::RenderPassBeginInfo render_pass_begin_info{*render_pass_,
+                                                 *(framebuffers_[frame_index]),
+                                                 render_area_, clear_values_};
+  return render_pass_begin_info;
 }
 
 const std::vector<Subpass>& Pass::GetSubpasses() const { return subpasses_; }
+
+bool Pass::HasUi() const { return has_ui_; }
 
 void Pass::CreateRenderPass() {
   // Ui render pass has been created, just move it from gpu to renderpass.

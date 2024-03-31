@@ -31,13 +31,9 @@ class Pass {
               const std::vector<vk::Image>& swapchain_images);
 
   const std::string& GetName() const;
-  bool HasUi() const;
-
-  const vk::raii::RenderPass& GetRenderPass() const;
-  const vk::raii::Framebuffer& GetFramebuffer(u32 frame_index) const;
-  const vk::Rect2D& GetRenderArea() const;
-  const std::vector<vk::ClearValue>& GetClearValues() const;
+  vk::RenderPassBeginInfo GetRenderPassBeginInfo(u32 frame_index) const;
   const std::vector<Subpass>& GetSubpasses() const;
+  bool HasUi() const;
 
  protected:
   void CreateRenderPass();
