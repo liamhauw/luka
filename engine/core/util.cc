@@ -109,4 +109,30 @@ std::vector<f32> D2FVector(const std::vector<f64>& dvector) {
   return fvector;
 }
 
+std::vector<std::vector<u32>> SplitVector(const std::vector<u32>& input) {
+  std::vector<std::vector<u32>> result;
+  if (input.empty()) {
+    return result;
+  }
+
+  std::vector<u32> sorted{input};
+  std::sort(sorted.begin(), sorted.end());
+
+  std::vector<u32> current;
+  current.push_back(sorted[0]);
+
+  for (size_t i = 1; i < sorted.size(); ++i) {
+    if (sorted[i] == (current.back() + 1)) {
+      current.push_back(sorted[i]);
+    } else {
+      result.push_back(current);
+      current.clear();
+      current.push_back(sorted[i]);
+    }
+  }
+
+  result.push_back(current);
+  return result;
+}
+
 }  // namespace luka

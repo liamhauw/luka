@@ -310,7 +310,6 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
   }
 
   if (!set_layouts_with_bindless.empty()) {
-    draw_element.has_descriptor_set = true;
     pipeline_layout_ci.setSetLayouts(set_layouts_with_bindless);
   }
 
@@ -322,7 +321,7 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
   const vk::raii::PipelineLayout& pipeline_layout{
       RequestPipelineLayout(pipeline_layout_ci)};
 
-  draw_element.pipeline_layout = *pipeline_layout;
+  draw_element.pipeline_layout = &pipeline_layout;
 
   // Pipeline.
   std::vector<vk::PipelineShaderStageCreateInfo> shader_stage_cis;
@@ -350,6 +349,7 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
   std::vector<vk::VertexInputAttributeDescription>
       vertex_input_attribute_descriptions;
   if (has_primitive_) {
+    std::map<u32, const ast::sc::VertexAttribute*> vertex_location_attributes;
     for (const auto& vertex_buffer_attribute : primitive.vertex_attributes) {
       std::string name{vertex_buffer_attribute.first};
       const ast::sc::VertexAttribute& vertex_attribute{
@@ -375,11 +375,29 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
       vertex_input_attribute_descriptions.push_back(
           std::move(vertex_input_attribute_description));
 
-      draw_element.location_vertex_attributes.emplace(shader_resource.location,
-                                                      &vertex_attribute);
+      vertex_location_attributes.emplace(shader_resource.location,
+                                         &vertex_attribute);
       if (draw_element.vertex_count == 0) {
         draw_element.vertex_count = vertex_attribute.count;
       }
+    }
+
+    std::vector<u32> locations;
+    for (const auto& vertex_location_attribute : vertex_location_attributes) {
+      locations.push_back(vertex_location_attribute.first);
+    }
+    std::vector<std::vector<u32>> splited_locations{SplitVector(locations)};
+
+    for (const auto& splited : splited_locations) {
+      std::vector<vk::Buffer> buffers;
+      std::vector<u64> offsets;
+      for (const auto& location : splited) {
+        const auto* vertex_attribute{vertex_location_attributes.at(location)};
+        buffers.push_back(*(vertex_attribute->buffer));
+        offsets.push_back(vertex_attribute->offset);
+      }
+      draw_element.vertex_infos.push_back(
+          DrawElmentVertexInfo{splited.front(), buffers, offsets});
     }
 
     if (primitive.has_index) {
@@ -463,7 +481,7 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
 
   const vk::raii::Pipeline& pipeline{
       RequestPipeline(graphics_pipeline_create_info, pipeline_hash_value)};
-  draw_element.pipeline = *pipeline;
+  draw_element.pipeline = &pipeline;
 
   // Descriptor set.
   for (u32 i{0}; i < frame_count_; ++i) {
@@ -586,9 +604,8 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
                 nullptr,
                 buffer_infos.back()};
 
-            draw_element.draw_element_uniforms.push_back(
-                std::move(draw_element_uniform));
-            draw_element.draw_element_uniform_buffers.push_back(
+            draw_element.uniforms.push_back(std::move(draw_element_uniform));
+            draw_element.uniform_buffers.push_back(
                 std::move(draw_element_uniform_buffer));
 
             write_descriptor_sets.push_back(write_descriptor_set);

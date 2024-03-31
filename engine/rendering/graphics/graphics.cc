@@ -11,10 +11,12 @@
 
 namespace luka {
 
-Graphics::Graphics(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu,
+Graphics::Graphics(std::shared_ptr<Config> config,
+                   std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu,
                    std::shared_ptr<Asset> asset, std::shared_ptr<Camera> camera,
                    std::shared_ptr<FunctionUi> function_ui)
-    : window_{window},
+    : config_{config},
+      window_{window},
       gpu_{gpu},
       asset_{asset},
       camera_{camera},
@@ -135,64 +137,58 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
       const std::vector<gs::DrawElement>& draw_elements{
           subpass.GetDrawElements()};
 
-      vk::Pipeline prev_pipeline{nullptr};
-      vk::PipelineLayout prev_pipeline_layout{nullptr};
-      vk::DescriptorSet prev_descriptor_set{nullptr};
+      const vk::raii::PipelineLayout* prev_pipeline_layout{nullptr};
+      const vk::raii::Pipeline* prev_pipeline{nullptr};
+      const vk::raii::DescriptorSet* prev_descriptor_set{nullptr};
       for (const gs::DrawElement& draw_element : draw_elements) {
-        // Bind pipeline.
-        vk::Pipeline pipeline{draw_element.pipeline};
-        if (prev_pipeline != pipeline) {
-          command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
-                                      pipeline);
-          prev_pipeline = pipeline;
-        }
-
-        // Update subpass uniform buffer.
-        vk::PipelineLayout pipeline_layout{draw_element.pipeline_layout};
+        // Push constants.
+        const vk::raii::PipelineLayout* pipeline_layout{
+            draw_element.pipeline_layout};
         if (subpass.HasPushConstant() &&
             prev_pipeline_layout != pipeline_layout) {
-          subpass.PushConstants(command_buffer, pipeline_layout);
+          subpass.PushConstants(command_buffer, **pipeline_layout);
           prev_pipeline_layout = pipeline_layout;
         }
 
+        // Bind pipeline.
+        const vk::raii::Pipeline* pipeline{draw_element.pipeline};
+        if (prev_pipeline != pipeline) {
+          command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
+                                      **pipeline);
+          prev_pipeline = pipeline;
+        }
+
         // Bind bindless descriptor sets;
-        if (draw_element.has_primitive) {
-          vk::DescriptorSet bindless_descriptor_set{
-              *(subpass.GetBindlessDescriptorSet())};
-          if (prev_descriptor_set != bindless_descriptor_set) {
-            command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-                                              pipeline_layout, 0,
-                                              bindless_descriptor_set, nullptr);
-            prev_descriptor_set = bindless_descriptor_set;
-          }
+        const vk::raii::DescriptorSet& bindless_descriptor_set{
+            subpass.GetBindlessDescriptorSet()};
+        if (prev_descriptor_set != &bindless_descriptor_set) {
+          command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+                                            **pipeline_layout, 0,
+                                            *bindless_descriptor_set, nullptr);
+          prev_descriptor_set = &bindless_descriptor_set;
         }
 
         // Bind normal descriptor sets.
-        std::vector<vk::DescriptorSet> descriptor_sets;
-        for (const auto& descriptor_set :
-             draw_element.descriptor_sets[frame_index_]) {
-          descriptor_sets.push_back(*(descriptor_set));
-        }
+        const vk::raii::DescriptorSets& descriptor_sets{
+            draw_element.descriptor_sets[frame_index_]};
         if (!descriptor_sets.empty()) {
+          std::vector<vk::DescriptorSet> vk_descriptor_sets;
+          for (const auto& descriptor_set : descriptor_sets) {
+            vk_descriptor_sets.push_back(*(descriptor_set));
+          }
           command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-                                            pipeline_layout, 1, descriptor_sets,
-                                            nullptr);
+                                            **pipeline_layout, 1,
+                                            vk_descriptor_sets, nullptr);
         }
 
-        // Bind vertex buffers and draw.
+        // Draw.
         if (draw_element.has_primitive) {
-          const auto& location_vertex_attributes{
-              draw_element.location_vertex_attributes};
+          const std::vector<gs::DrawElmentVertexInfo> vertex_infos{
+              draw_element.vertex_infos};
 
-          for (const auto& location_vertex_attribute :
-               location_vertex_attributes) {
-            u32 location{location_vertex_attribute.first};
-            const ast::sc::VertexAttribute* vertex_attribute{
-                location_vertex_attribute.second};
-
-            command_buffer.bindVertexBuffers(location,
-                                             *(vertex_attribute->buffer),
-                                             vertex_attribute->offset);
+          for (const auto& vertex_info : vertex_infos) {
+            command_buffer.bindVertexBuffers(
+                vertex_info.location, vertex_info.buffers, vertex_info.offsets);
           }
 
           if (!draw_element.has_index) {
@@ -279,7 +275,8 @@ void Graphics::CreateViewportAndScissor() {
 }
 
 void Graphics::CreatePasses() {
-  const ast::FrameGraph& frame_graph{asset_->GetFrameGraph(0)};
+  u32 frame_graph_index{config_->GetFrameGraphIndex()};
+  const ast::FrameGraph& frame_graph{asset_->GetFrameGraph(frame_graph_index)};
   const std::vector<ast::Pass>& ast_passes{frame_graph.GetPasses()};
 
   shared_image_views_.resize(frame_count_);

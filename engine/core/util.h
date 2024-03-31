@@ -34,4 +34,6 @@ std::string LoadText(const std::filesystem::path& text_path);
 
 std::vector<f32> D2FVector(const std::vector<f64>& dvector);
 
+std::vector<std::vector<u32>> SplitVector(const std::vector<u32>& input);
+
 }  // namespace luka

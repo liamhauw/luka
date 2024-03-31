@@ -11,6 +11,7 @@
 #include "function/function_ui/function_ui.h"
 #include "rendering/graphics/pass.h"
 #include "resource/asset/asset.h"
+#include "resource/config/config.h"
 #include "resource/gpu/gpu.h"
 #include "resource/window/window.h"
 
@@ -18,8 +19,9 @@ namespace luka {
 
 class Graphics {
  public:
-  Graphics(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu,
-           std::shared_ptr<Asset> asset, std::shared_ptr<Camera> camera,
+  Graphics(std::shared_ptr<Config> config, std::shared_ptr<Window> window,
+           std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
+           std::shared_ptr<Camera> camera,
            std::shared_ptr<FunctionUi> function_ui);
 
   ~Graphics();
@@ -40,6 +42,7 @@ class Graphics {
   void End(const vk::raii::CommandBuffer& command_buffer);
   void TarversePasses(const vk::raii::CommandBuffer& command_buffer);
 
+  std::shared_ptr<Config> config_;
   std::shared_ptr<Window> window_;
   std::shared_ptr<Gpu> gpu_;
   std::shared_ptr<Asset> asset_;

@@ -41,6 +41,10 @@ Config::Config() {
       frame_graph_paths_.emplace_back(frame_graph_path_ / GetPath(uri));
     }
   }
+
+  if (config_json_.contains("frame_graph")) {
+    frame_graph_index_ = config_json_["frame_graph"].template get<u32>();
+  }
 }
 
 void Config::Tick() {}

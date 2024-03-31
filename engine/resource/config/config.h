@@ -22,6 +22,7 @@ class Config {
   const std::vector<std::filesystem::path>& GetScenePaths() const;
   const std::vector<std::filesystem::path>& GetShaderPaths() const;
   const std::vector<std::filesystem::path>& GetFrameGraphPaths() const;
+  u32 GetFrameGraphIndex() const;
 
   bool GetEditorMode() const;
   void SetEditorMode(bool editor_mode);
@@ -38,6 +39,7 @@ class Config {
   std::vector<std::filesystem::path> scene_paths_;
   std::vector<std::filesystem::path> shader_paths_;
   std::vector<std::filesystem::path> frame_graph_paths_;
+  u32 frame_graph_index_;
 
   bool editor_mode_{true};
 };

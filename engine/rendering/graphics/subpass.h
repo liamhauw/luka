@@ -21,6 +21,12 @@ struct PushConstantUniform {
   glm::vec3 camera_position;
 };
 
+struct DrawElmentVertexInfo {
+  u32 location;
+  std::vector<vk::Buffer> buffers;
+  std::vector<u64> offsets;
+};
+
 struct alignas(16) DrawElementUniform {
   glm::mat4 m;
   glm::vec4 base_color_factor;
@@ -33,31 +39,28 @@ struct DrawElement {
 
   DrawElement(DrawElement&& rhs) noexcept
       : has_primitive{rhs.has_primitive},
-        has_descriptor_set{rhs.has_descriptor_set},
         pipeline_layout{std::move(rhs.pipeline_layout)},
         pipeline(std::move(rhs.pipeline)),
-        location_vertex_attributes(std::move(rhs.location_vertex_attributes)),
+        vertex_infos(std::move(rhs.vertex_infos)),
         vertex_count(rhs.vertex_count),
         index_attribute(rhs.index_attribute),
         has_index(rhs.has_index),
-        draw_element_uniforms{std::move(rhs.draw_element_uniforms)},
-        draw_element_uniform_buffers{
-            std::move(rhs.draw_element_uniform_buffers)},
+        uniforms{std::move(rhs.uniforms)},
+        uniform_buffers{
+            std::move(rhs.uniform_buffers)},
         descriptor_sets(std::move(rhs.descriptor_sets)) {}
 
   bool has_primitive;
-  bool has_descriptor_set;
-
-  vk::Pipeline pipeline;
-  vk::PipelineLayout pipeline_layout;
-  std::map<u32, const ast::sc::VertexAttribute*> location_vertex_attributes;
+  const vk::raii::PipelineLayout* pipeline_layout;
+  std::vector<DrawElmentVertexInfo> vertex_infos;  
   u64 vertex_count;
-  const ast::sc::IndexAttribute* index_attribute;
   bool has_index;
+  const ast::sc::IndexAttribute* index_attribute;
+  const vk::raii::Pipeline* pipeline;
 
   // For every frame.
-  std::vector<DrawElementUniform> draw_element_uniforms;
-  std::vector<gpu::Buffer> draw_element_uniform_buffers;
+  std::vector<DrawElementUniform> uniforms;
+  std::vector<gpu::Buffer> uniform_buffers;
   std::vector<vk::raii::DescriptorSets> descriptor_sets;
 };
 
