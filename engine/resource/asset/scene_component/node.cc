@@ -13,10 +13,11 @@ namespace luka {
 
 namespace ast::sc {
 
-Node::Node(glm::mat4&& model_matrix, Mesh* mesh, Light* light, Camera* camera,
-           const std::vector<i32>& child_indices, const std::string& name)
+Node::Node(glm::mat4&& tinygltf_matrix, const Mesh* mesh, const Light* light,
+           const Camera* camera, const std::vector<i32>& child_indices,
+           const std::string& name)
     : Component{name},
-      model_matrix_{std::move(model_matrix)},
+      model_matrix_{std::move(tinygltf_matrix)},
       mesh_{mesh},
       light_{light},
       camera_{camera},
@@ -96,7 +97,7 @@ const std::vector<i32>& Node::GetChildIndices() const { return child_indices_; }
 
 const std::vector<Node*>& Node::GetChildren() const { return children_; }
 
-Node* Node::GetParent() const { return parent_; }
+const Node* Node::GetParent() const { return parent_; }
 
 const glm::mat4& Node::GetModelMarix() const { return model_matrix_; }
 

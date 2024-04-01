@@ -517,7 +517,7 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
               global_images_it->second};
           ast::sc::Texture* tex{wanted_texture_it->second};
 
-          ast::sc::Sampler* ast_sampler{tex->GetSampler()};
+          const ast::sc::Sampler* ast_sampler{tex->GetSampler()};
           u64 sampler_hash_value{0};
           HashCombine(sampler_hash_value, ast_sampler);
           auto it2{sampler_indices_.find(sampler_hash_value)};
@@ -541,7 +541,7 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
             sampler_indices_.emplace(sampler_hash_value, sampler_indices[idx]);
           }
 
-          ast::sc::Image* ast_image{tex->GetImage()};
+          const ast::sc::Image* ast_image{tex->GetImage()};
 
           u64 image_hash_value{0};
           HashCombine(image_hash_value, ast_image);
@@ -549,8 +549,7 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
           if (it3 != image_indices_.end()) {
             image_indices[idx] = it3->second;
           } else {
-            const vk::raii::ImageView& image_view{
-                tex->GetImage()->GetImageView()};
+            const vk::raii::ImageView& image_view{ast_image->GetImageView()};
 
             vk::DescriptorImageInfo descriptor_image_info{
                 nullptr, *image_view, vk::ImageLayout::eShaderReadOnlyOptimal};

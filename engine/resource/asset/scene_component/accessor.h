@@ -19,7 +19,7 @@ namespace ast::sc {
 
 class Accessor : public Component {
  public:
-  Accessor(BufferView* buffer_view, u64 byte_offset, bool normalized,
+  Accessor(const BufferView* buffer_view, u64 byte_offset, bool normalized,
            u32 component_type, u64 count, u32 type,
            const std::string& name = {});
 
@@ -39,7 +39,7 @@ class Accessor : public Component {
   u32 GetByteStride(u32 buffer_view_byte_stride);
   vk::Format ParseFormat();
 
-  BufferView* buffer_view_;
+  const BufferView* buffer_view_;
   u64 byte_offset_;
   bool normalized_;
   u32 component_type_;

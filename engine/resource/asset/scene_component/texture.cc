@@ -11,7 +11,8 @@ namespace luka {
 
 namespace ast::sc {
 
-Texture::Texture(Image* image, Sampler* sampler, const std::string& name)
+Texture::Texture(const Image* image, const Sampler* sampler,
+                 const std::string& name)
     : Component{name}, image_{image}, sampler_{sampler} {}
 
 Texture::Texture(const std::vector<Image*>& image_components,
@@ -33,9 +34,9 @@ Texture::Texture(const std::vector<Image*>& image_components,
 
 std::type_index Texture::GetType() { return typeid(Texture); }
 
-Image* Texture::GetImage() { return image_; }
+const Image* Texture::GetImage() const { return image_; }
 
-Sampler* Texture::GetSampler() { return sampler_; }
+const Sampler* Texture::GetSampler() const { return sampler_; }
 
 }  // namespace ast::sc
 

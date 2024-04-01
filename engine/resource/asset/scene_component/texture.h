@@ -17,7 +17,8 @@ namespace ast::sc {
 
 class Texture : public Component {
  public:
-  Texture(Image* image, Sampler* sampler, const std::string& name = {});
+  Texture(const Image* image, const Sampler* sampler,
+          const std::string& name = {});
 
   Texture(const std::vector<Image*>& image_components,
           const std::vector<Sampler*>& sampler_components,
@@ -26,12 +27,12 @@ class Texture : public Component {
   virtual ~Texture() = default;
   std::type_index GetType() override;
 
-  Image* GetImage();
-  Sampler* GetSampler();
+  const Image* GetImage() const;
+  const Sampler* GetSampler() const;
 
  private:
-  Image* image_;
-  Sampler* sampler_;
+  const Image* image_;
+  const Sampler* sampler_;
 };
 
 }  // namespace ast::sc

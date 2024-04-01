@@ -21,8 +21,9 @@ namespace ast::sc {
 
 class Node : public Component {
  public:
-  Node(glm::mat4&& tinygltf_matrix, Mesh* mesh, Light* light, Camera* camera,
-       const std::vector<i32>& child_indices, const std::string& name = {});
+  Node(glm::mat4&& tinygltf_matrix, const Mesh* mesh, const Light* light,
+       const Camera* camera, const std::vector<i32>& child_indices,
+       const std::string& name = {});
 
   Node(const std::vector<Light*>& light_components,
        const std::vector<Camera*>& camera_components,
@@ -38,20 +39,20 @@ class Node : public Component {
 
   const std::vector<i32>& GetChildIndices() const;
   const std::vector<Node*>& GetChildren() const;
-  Node* GetParent() const;
+  const Node* GetParent() const;
 
   const glm::mat4& GetModelMarix() const;
   const Mesh* GetMesh() const;
 
  private:
   glm::mat4 model_matrix_;
-  Mesh* mesh_;
-  Light* light_;
-  Camera* camera_;
+  const Mesh* mesh_;
+  const Light* light_;
+  const Camera* camera_;
   std::vector<i32> child_indices_;
   std::vector<Node*> children_;
 
-  Node* parent_{nullptr};
+  const Node* parent_{nullptr};
 };
 
 }  // namespace ast::sc

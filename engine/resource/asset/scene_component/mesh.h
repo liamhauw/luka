@@ -47,7 +47,7 @@ struct Primitive {
   std::map<std::string, VertexAttribute> vertex_attributes;
   IndexAttribute index_attribute;
   bool has_index{false};
-  Material* material;
+  const Material* material;
 };
 
 class Mesh : public Component {

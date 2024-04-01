@@ -11,7 +11,7 @@ namespace luka {
 
 namespace ast::sc {
 
-BufferView::BufferView(Buffer* buffer, u64 byte_offset, u64 byte_length,
+BufferView::BufferView(const Buffer* buffer, u64 byte_offset, u64 byte_length,
                        u64 byte_stride, const std::string& name)
     : Component{name},
       buffer_{buffer},
@@ -29,7 +29,7 @@ BufferView::BufferView(const std::vector<ast::sc::Buffer*>& buffer_components,
 
 std::type_index BufferView::GetType() { return typeid(BufferView); }
 
-Buffer* BufferView::GetBuffer() const { return buffer_; }
+const Buffer* BufferView::GetBuffer() const { return buffer_; }
 
 u64 BufferView::GetByteOffset() const { return byte_offset_; }
 

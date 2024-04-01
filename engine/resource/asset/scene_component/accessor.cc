@@ -14,8 +14,8 @@ namespace luka {
 
 namespace ast::sc {
 
-Accessor::Accessor(BufferView* buffer_view, u64 byte_offset, bool normalized,
-                   u32 component_type, u64 count, u32 type,
+Accessor::Accessor(const BufferView* buffer_view, u64 byte_offset,
+                   bool normalized, u32 component_type, u64 count, u32 type,
                    const std::string& name)
     : Component{name},
       buffer_view_{buffer_view},
