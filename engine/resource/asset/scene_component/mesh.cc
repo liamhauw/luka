@@ -8,6 +8,7 @@
 #include "resource/asset/scene_component/mesh.h"
 
 #include "core/log.h"
+#include "core/util.h"
 
 namespace luka {
 
@@ -25,8 +26,9 @@ Mesh::Mesh(std::shared_ptr<Gpu> gpu,
     : Component{tinygltf_mesh.name} {
   const std::vector<tinygltf::Primitive> tinygltf_primitives{
       tinygltf_mesh.primitives};
+  for (u32 i{0}; i < tinygltf_primitives.size(); ++i) {
+    const auto& tinygltf_primitive{tinygltf_primitives[i]};
 
-  for (const auto& tinygltf_primitive : tinygltf_primitives) {
     Primitive primitive;
 
     // Vertex.
@@ -52,8 +54,14 @@ Mesh::Mesh(std::shared_ptr<Gpu> gpu,
           gpu->CreateBuffer(staging_buffer_ci, buffer_data)};
       staging_buffers.push_back(std::move(staging_buffer));
 
-      gpu::Buffer buffer{
-          gpu->CreateBuffer(buffer_ci, staging_buffers.back(), command_buffer)};
+      std::string buffer_name;
+      if (!tinygltf_mesh.name.empty()) {
+        buffer_name = tinygltf_mesh.name + " ";
+      }
+      buffer_name += ToLower(attribute_name);
+
+      gpu::Buffer buffer{gpu->CreateBuffer(buffer_ci, staging_buffers.back(),
+                                           command_buffer, buffer_name, i)};
 
       vk::Format format{accessor->GetFormat()};
       u32 stride{accessor->GetStride()};
@@ -107,8 +115,14 @@ Mesh::Mesh(std::shared_ptr<Gpu> gpu,
           gpu->CreateBuffer(staging_buffer_ci, buffer_data)};
       staging_buffers.push_back(std::move(staging_buffer));
 
-      gpu::Buffer buffer{
-          gpu->CreateBuffer(buffer_ci, staging_buffers.back(), command_buffer)};
+      std::string buffer_name;
+      if (!tinygltf_mesh.name.empty()) {
+        buffer_name = tinygltf_mesh.name + " ";
+      }
+      buffer_name += "index";
+
+      gpu::Buffer buffer{gpu->CreateBuffer(buffer_ci, staging_buffers.back(),
+                                           command_buffer, buffer_name, i)};
 
       u64 index_count{accessor->GetCount()};
 

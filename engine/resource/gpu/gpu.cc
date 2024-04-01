@@ -333,6 +333,20 @@ vk::raii::Framebuffer Gpu::CreateFramebuffer(
   return framebuffer;
 }
 
+vk::raii::DescriptorPool Gpu::CreateDescriptorPool(
+    const vk::DescriptorPoolCreateInfo& descriptor_pool_ci,
+    const std::string& name, i32 index) {
+  vk::raii::DescriptorPool descriptor_pool{device_, descriptor_pool_ci};
+#ifndef NDEBUG
+  SetObjectName(vk::ObjectType::eDescriptorPool,
+                reinterpret_cast<uint64_t>(
+                    static_cast<VkDescriptorPool>(*descriptor_pool)),
+                name, "Descriptor Pool",
+                index == -1 ? "" : std::to_string(index));
+#endif
+  return descriptor_pool;
+}
+
 vk::raii::DescriptorSetLayout Gpu::CreateDescriptorSetLayout(
     const vk::DescriptorSetLayoutCreateInfo& descriptor_set_layout_ci,
     const std::string& name, i32 index) {
@@ -342,7 +356,7 @@ vk::raii::DescriptorSetLayout Gpu::CreateDescriptorSetLayout(
   SetObjectName(vk::ObjectType::eDescriptorSetLayout,
                 reinterpret_cast<uint64_t>(
                     static_cast<VkDescriptorSetLayout>(*descriptor_set_layout)),
-                name, "Descriptor Set Layout",
+                name, "Descriptor Layout",
                 index == -1 ? "" : std::to_string(index));
 #endif
 
@@ -401,7 +415,8 @@ vk::raii::Pipeline Gpu::CreatePipeline(
 #ifndef NDEBUG
   SetObjectName(vk::ObjectType::ePipeline,
                 reinterpret_cast<uint64_t>(static_cast<VkPipeline>(*pipeline)),
-                name, "Pipeline", index == -1 ? "" : std::to_string(index));
+                name, "Graphics Pipeline",
+                index == -1 ? "" : std::to_string(index));
 #endif
 
   return pipeline;
@@ -409,7 +424,7 @@ vk::raii::Pipeline Gpu::CreatePipeline(
 
 vk::raii::CommandBuffers Gpu::AllocateCommandBuffers(
     const vk::CommandBufferAllocateInfo& command_buffer_ai,
-    const std::string& name) {
+    const std::string& name, i32 index) {
   vk::raii::CommandBuffers command_buffers{device_, command_buffer_ai};
 
 #ifndef NDEBUG
@@ -417,7 +432,8 @@ vk::raii::CommandBuffers Gpu::AllocateCommandBuffers(
     SetObjectName(vk::ObjectType::eCommandBuffer,
                   reinterpret_cast<uint64_t>(
                       static_cast<VkCommandBuffer>(*command_buffers[i])),
-                  name, "Command Buffer", std::to_string(i));
+                  name, "Command Buffer",
+                  index == -1 ? "" : std::to_string(index));
   }
 #endif
 
@@ -426,7 +442,7 @@ vk::raii::CommandBuffers Gpu::AllocateCommandBuffers(
 
 vk::raii::DescriptorSets Gpu::AllocateBindlessDescriptorSets(
     vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
-    const std::string& name) {
+    const std::string& name, i32 index) {
   descriptor_set_allocate_info.descriptorPool = *bindless_descriptor_pool_;
   vk::raii::DescriptorSets descriptor_sets{device_,
                                            descriptor_set_allocate_info};
@@ -436,7 +452,8 @@ vk::raii::DescriptorSets Gpu::AllocateBindlessDescriptorSets(
     SetObjectName(vk::ObjectType::eDescriptorSet,
                   reinterpret_cast<uint64_t>(
                       static_cast<VkDescriptorSet>(*(descriptor_sets[i]))),
-                  name, "Descriptor Set", std::to_string(i));
+                  name, "Descriptor Set",
+                  index == -1 ? "" : std::to_string(index));
   }
 
 #endif
@@ -446,7 +463,7 @@ vk::raii::DescriptorSets Gpu::AllocateBindlessDescriptorSets(
 
 vk::raii::DescriptorSets Gpu::AllocateNormalDescriptorSets(
     vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
-    const std::string& name) {
+    const std::string& name, i32 index) {
   descriptor_set_allocate_info.descriptorPool = *normal_descriptor_pool_;
   vk::raii::DescriptorSets descriptor_sets{device_,
                                            descriptor_set_allocate_info};
@@ -456,7 +473,8 @@ vk::raii::DescriptorSets Gpu::AllocateNormalDescriptorSets(
     SetObjectName(vk::ObjectType::eDescriptorSet,
                   reinterpret_cast<uint64_t>(
                       static_cast<VkDescriptorSet>(*(descriptor_sets[i]))),
-                  name, "Descriptor Set", std::to_string(i));
+                  name, "Descriptor Set",
+                  index == -1 ? "" : std::to_string(index));
   }
 
 #endif
@@ -763,11 +781,36 @@ void Gpu::CreateDevice() {
 
   device_ = vk::raii::Device{physical_device_, device_ci};
 
+#ifndef NDEBUG
+  SetObjectName(vk::ObjectType::eDevice,
+                reinterpret_cast<uint64_t>(static_cast<VkDevice>(*device_)),
+                "luka", "Device");
+#endif
+
   // Create queue.
   graphics_queue_ = vk::raii::Queue{device_, graphics_queue_index_.value(), 0};
   compute_queue_ = vk::raii::Queue{device_, compute_queue_index_.value(), 0};
   transfer_queue_ = vk::raii::Queue{device_, transfer_queue_index_.value(), 0};
   present_queue_ = vk::raii::Queue{device_, present_queue_index_.value(), 0};
+
+#ifndef NDEBUG
+  SetObjectName(
+      vk::ObjectType::eQueue,
+      reinterpret_cast<uint64_t>(static_cast<VkQueue>(*graphics_queue_)),
+      "graphics", "Queue");
+  SetObjectName(
+      vk::ObjectType::eQueue,
+      reinterpret_cast<uint64_t>(static_cast<VkQueue>(*compute_queue_)),
+      "compute", "Queue");
+  SetObjectName(
+      vk::ObjectType::eQueue,
+      reinterpret_cast<uint64_t>(static_cast<VkQueue>(*transfer_queue_)),
+      "transfer", "Queue");
+  SetObjectName(
+      vk::ObjectType::eQueue,
+      reinterpret_cast<uint64_t>(static_cast<VkQueue>(*present_queue_)),
+      "present", "Queue");
+#endif
 }
 
 void Gpu::CreateVmaAllocator() {
@@ -798,7 +841,7 @@ void Gpu::CreateDescriptorPool() {
           vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
       bindless_max_sets, bindlessl_pool_sizes};
   bindless_descriptor_pool_ =
-      vk::raii::DescriptorPool{device_, bindless_descriptor_pool_ci};
+      CreateDescriptorPool(bindless_descriptor_pool_ci, "bindless");
 
   // Normal.
   std::vector<vk::DescriptorPoolSize> normal_pool_sizes{
@@ -824,7 +867,7 @@ void Gpu::CreateDescriptorPool() {
       vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, normal_max_sets,
       normal_pool_sizes};
   normal_descriptor_pool_ =
-      vk::raii::DescriptorPool{device_, normal_descriptor_pool_ci};
+      CreateDescriptorPool(normal_descriptor_pool_ci, "normal");
 }
 
 void Gpu::CreateDefaultResource() {
@@ -845,7 +888,7 @@ void Gpu::CreateDefaultResource() {
                                    vk::BorderColor::eFloatTransparentBlack,
                                    VK_FALSE};
 
-  sampler_ = CreateSampler(sampler_ci);
+  sampler_ = CreateSampler(sampler_ci, "default");
 }
 
 void Gpu::DestroyAllocator() { vmaDestroyAllocator(allocator_); }
@@ -853,6 +896,10 @@ void Gpu::DestroyAllocator() { vmaDestroyAllocator(allocator_); }
 void Gpu::SetObjectName(vk::ObjectType object_type, u64 handle,
                         const std::string& name, const std::string& prefix,
                         const std::string& suffix) {
+  if (name.empty()) {
+    return;
+  }
+
   std::string object_name{name};
   if (!prefix.empty()) {
     object_name = prefix + " " + object_name;
@@ -860,11 +907,10 @@ void Gpu::SetObjectName(vk::ObjectType object_type, u64 handle,
   if (!suffix.empty()) {
     object_name = object_name + " " + suffix;
   }
-  if (!object_name.empty()) {
-    vk::DebugUtilsObjectNameInfoEXT object_name_info{object_type, handle,
-                                                     object_name.c_str()};
-    device_.setDebugUtilsObjectNameEXT(object_name_info);
-  }
+
+  vk::DebugUtilsObjectNameInfoEXT object_name_info{object_type, handle,
+                                                   object_name.c_str()};
+  device_.setDebugUtilsObjectNameEXT(object_name_info);
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL Gpu::DebugUtilsMessengerCallback(

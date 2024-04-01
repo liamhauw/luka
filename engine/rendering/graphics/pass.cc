@@ -66,7 +66,7 @@ const std::vector<Subpass>& Pass::GetSubpasses() const { return subpasses_; }
 bool Pass::HasUi() const { return has_ui_; }
 
 void Pass::CreateRenderPass() {
-  // Ui render pass has been created, just move it from gpu to renderpass.
+  // Ui render pass has been created, just move it.
   if (has_ui_) {
     render_pass_ = function_ui_->GetUiRenderPass();
     color_attachment_counts_ = {1};
@@ -226,14 +226,14 @@ void Pass::CreateFramebuffers() {
             vk::SharingMode::eExclusive,
             {},
             vk::ImageLayout::eUndefined};
-        image = gpu_->CreateImage(image_ci, ast_attachment.name, i);
+        image = gpu_->CreateImage(image_ci, ast_attachment.name);
       }
 
       // Image view.
       vk::ImageViewCreateInfo image_view_ci{
           {}, *image, vk::ImageViewType::e2D, format, {}, {aspect, 0, 1, 0, 1}};
       vk::raii::ImageView image_view{
-          gpu_->CreateImageView(image_view_ci, ast_attachment.name, i)};
+          gpu_->CreateImageView(image_view_ci, ast_attachment.name)};
 
       framebuffer_image_views.push_back(*image_view);
 
@@ -258,7 +258,7 @@ void Pass::CreateFramebuffers() {
                                              1};
 
     vk::raii::Framebuffer framebuffer{
-        gpu_->CreateFramebuffer(framebuffer_ci, name_, i)};
+        gpu_->CreateFramebuffer(framebuffer_ci, name_)};
 
     framebuffers_.push_back(std::move(framebuffer));
   }

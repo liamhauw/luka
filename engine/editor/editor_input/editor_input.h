@@ -15,12 +15,13 @@
 namespace luka {
 
 enum class EditorCommand : u32 {
-  kFoward = 1 << 0,    // W
-  kBackward = 1 << 1,  // S
-  kLeft = 1 << 2,      // A
-  kRight = 1 << 3,     // D
-  kUp = 1 << 4,        // Q
-  kDown = 1 << 5       // E
+  kFoward = 1 << 0,                     // W
+  kBackward = 1 << 1,                   // S
+  kLeft = 1 << 2,                       // A
+  kRight = 1 << 3,                      // D
+  kUp = 1 << 4,                         // Q
+  kDown = 1 << 5,                       // E
+  kInvalid = static_cast<u32>(1 << 31)  // Lost focus
 };
 
 class EditorInput {

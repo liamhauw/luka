@@ -36,4 +36,6 @@ std::vector<f32> D2FVector(const std::vector<f64>& dvector);
 
 std::vector<std::vector<u32>> SplitVector(const std::vector<u32>& input);
 
+std::string ToLower(const std::string& str);
+
 }  // namespace luka

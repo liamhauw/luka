@@ -135,4 +135,11 @@ std::vector<std::vector<u32>> SplitVector(const std::vector<u32>& input) {
   return result;
 }
 
+std::string ToLower(const std::string& str) {
+  std::string result{str};
+  std::transform(result.begin(), result.end(), result.begin(),
+                 [](auto c) { return std::tolower(c); });
+  return result;
+}
+
 }  // namespace luka

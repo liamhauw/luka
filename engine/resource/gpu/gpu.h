@@ -93,6 +93,10 @@ class Gpu {
       const vk::FramebufferCreateInfo& framebuffer_ci,
       const std::string& name = {}, i32 index = -1);
 
+  vk::raii::DescriptorPool CreateDescriptorPool(
+      const vk::DescriptorPoolCreateInfo& descriptor_pool_ci,
+      const std::string& name = {}, i32 index = -1);
+
   vk::raii::DescriptorSetLayout CreateDescriptorSetLayout(
       const vk::DescriptorSetLayoutCreateInfo& descriptor_set_layout_ci,
       const std::string& name = {}, i32 index = -1);
@@ -116,15 +120,15 @@ class Gpu {
 
   vk::raii::CommandBuffers AllocateCommandBuffers(
       const vk::CommandBufferAllocateInfo& command_buffer_ai,
-      const std::string& name = {});
+      const std::string& name = {}, i32 index = -1);
 
   vk::raii::DescriptorSets AllocateBindlessDescriptorSets(
       vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
-      const std::string& name = {});
+      const std::string& name = {}, i32 index = -1);
 
   vk::raii::DescriptorSets AllocateNormalDescriptorSets(
       vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
-      const std::string& name = {});
+      const std::string& name = {}, i32 index = -1);
 
   void UpdateDescriptorSets(const std::vector<vk::WriteDescriptorSet>& writes);
 

@@ -35,20 +35,6 @@ struct DrawElementUniform {
 };
 
 struct DrawElement {
-  DrawElement() = default;
-
-  DrawElement(DrawElement&& rhs) noexcept
-      : has_primitive{rhs.has_primitive},
-        pipeline_layout{rhs.pipeline_layout},
-        vertex_infos(std::move(rhs.vertex_infos)),
-        vertex_count(rhs.vertex_count),
-        has_index(rhs.has_index),
-        index_attribute(rhs.index_attribute),
-        pipeline(rhs.pipeline),
-        uniforms{std::move(rhs.uniforms)},
-        uniform_buffers{std::move(rhs.uniform_buffers)},
-        descriptor_sets(std::move(rhs.descriptor_sets)) {}
-
   bool has_primitive;
   const vk::raii::PipelineLayout* pipeline_layout;
   std::vector<DrawElmentVertexInfo> vertex_infos;
@@ -90,12 +76,12 @@ class Subpass {
   void CreateDrawElements();
 
   DrawElement CreateDrawElement(const glm::mat4& model_matrix = {},
-                                const ast::sc::Primitive& primitive = {});
+                                const ast::sc::Primitive& primitive = {},
+                                u32 primitive_index = -1);
 
   const SPIRV& RequesetSpirv(const ast::Shader& shader,
                              const std::vector<std::string>& processes,
-                             vk::ShaderStageFlagBits shader_stage,
-                             const std::string& name = {}, i32 index = -1);
+                             vk::ShaderStageFlagBits shader_stage);
 
   const vk::raii::DescriptorSetLayout& RequestDescriptorSetLayout(
       const vk::DescriptorSetLayoutCreateInfo& descriptor_set_layout_ci,

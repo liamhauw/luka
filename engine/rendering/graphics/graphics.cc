@@ -110,6 +110,7 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
   command_buffer.setViewport(0, viewport_);
   command_buffer.setScissor(0, scissor_);
 
+  // Tarverse passes.
   for (const auto& pass : passes_) {
 #ifndef NDEBUG
     gpu_->BeginLabel(command_buffer, "Pass " + pass.GetName(),
@@ -208,9 +209,11 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
         }
       }
 
+      // Ui.
       if (pass.HasUi()) {
         function_ui_->Render(command_buffer);
       }
+
 #ifndef NDEBUG
       gpu_->EndLabel(command_buffer);
 #endif
@@ -236,11 +239,11 @@ void Graphics::CreateSyncObjects() {
   vk::FenceCreateInfo fence_ci{vk::FenceCreateFlagBits::eSignaled};
   for (u32 i{0}; i < frame_count_; ++i) {
     image_acquired_semaphores_.push_back(
-        gpu_->CreateSemaphoreLuka(semaphore_ci, "image_acquired", i));
+        gpu_->CreateSemaphoreLuka(semaphore_ci, "image_acquired"));
     render_finished_semaphores_.push_back(
-        gpu_->CreateSemaphoreLuka(semaphore_ci, "render_finished", i));
+        gpu_->CreateSemaphoreLuka(semaphore_ci, "render_finished"));
     command_finished_fences_.push_back(
-        gpu_->CreateFence(fence_ci, "command_finished", i));
+        gpu_->CreateFence(fence_ci, "command_finished"));
   }
 }
 

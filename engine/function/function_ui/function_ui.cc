@@ -177,7 +177,7 @@ void FunctionUi::CreateImgui() {
   vk::RenderPassCreateInfo render_pass_ci{
       {}, attachment_descriptions, subpass_description, subpass_dependency};
 
-  ui_render_pass_ = gpu_->CreateRenderPass(render_pass_ci);
+  ui_render_pass_ = gpu_->CreateRenderPass(render_pass_ci, "ui");
 
   // ImGui.
   IMGUI_CHECKVERSION();

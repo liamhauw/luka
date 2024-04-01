@@ -1,7 +1,7 @@
 {
   "scenes": [
     "box/Box.gltf",
-    "damaged/DamagedHelmet.gltf"
+    "sponza/Sponza.gltf"
   ],
   "shaders": [
     "default/geometry.vert",
