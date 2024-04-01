@@ -123,9 +123,18 @@ gpu::Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
   gpu::Image image{allocator_, image_ci};
 
 #ifndef NDEBUG
+  std::string prefix;
+  if (image_ci.imageType == vk::ImageType::e1D) {
+    prefix = "1D Image";
+  } else if (image_ci.imageType == vk::ImageType::e2D) {
+    prefix = "2D Image";
+  } else if (image_ci.imageType == vk::ImageType::e3D) {
+    prefix = "3D Image";
+  }
+
   SetObjectName(vk::ObjectType::eImage,
                 reinterpret_cast<u64>(static_cast<VkImage>(*image)), name,
-                "Image", index == -1 ? "" : std::to_string(index));
+                prefix, index == -1 ? "" : std::to_string(index));
 #endif
 
   return image;
@@ -140,9 +149,18 @@ gpu::Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
   gpu::Image image{allocator_, image_ci};
 
 #ifndef NDEBUG
+  std::string prefix;
+  if (image_ci.imageType == vk::ImageType::e1D) {
+    prefix = "1D Image";
+  } else if (image_ci.imageType == vk::ImageType::e2D) {
+    prefix = "2D Image";
+  } else if (image_ci.imageType == vk::ImageType::e3D) {
+    prefix = "3D Image";
+  }
+
   SetObjectName(vk::ObjectType::eImage,
                 reinterpret_cast<u64>(static_cast<VkImage>(*image)), name,
-                "Image", index == -1 ? "" : std::to_string(index));
+                prefix, index == -1 ? "" : std::to_string(index));
 #endif
   vk::ImageAspectFlagBits flag_bits;
   if (image_ci.usage & vk::ImageUsageFlagBits::eDepthStencilAttachment) {
