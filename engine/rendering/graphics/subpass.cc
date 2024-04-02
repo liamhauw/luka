@@ -41,6 +41,7 @@ Subpass::Subpass(
       scenes_{&(ast_subpass_->scenes)},
       shaders_{&(ast_subpass_->shaders)},
       has_primitive_{!scenes_->empty()} {
+  CreateSubpassAndBindlessDescriptorSets();
   CreateDrawElements();
 }
 
@@ -55,6 +56,23 @@ void Subpass::Resize(const std::vector<std::vector<vk::raii::ImageView>>&
   CreateDrawElements();
 }
 
+void Subpass::Update(u32 frame_index) {
+  const glm::mat4& view{camera_->GetViewMatrix()};
+  const glm::mat4& projection{camera_->GetProjectionMatrix()};
+  const glm::vec3& camera_position{camera_->GetPosition()};
+
+  glm::mat4 pv{projection * view};
+  glm::mat4 inverse_vp{glm::inverse(pv)};
+
+  subpass_uniforms_[frame_index] =
+      SubpassUniform{pv, inverse_vp, glm::vec4{camera_position, 1.0F},
+                     glm::vec4{5.0, 5.0, 5.0, 1.0F}};
+  void* mapped{subpass_uniform_buffers_[frame_index].Map()};
+  memcpy(mapped,
+         reinterpret_cast<const void*>(&(subpass_uniforms_[frame_index])),
+         sizeof(SubpassUniform));
+}
+
 const std::string& Subpass::GetName() const { return name_; }
 
 const std::vector<DrawElement>& Subpass::GetDrawElements() const {
@@ -66,21 +84,97 @@ bool Subpass::HasPushConstant() const { return has_push_constant_; }
 void Subpass::PushConstants(const vk::raii::CommandBuffer& command_buffer,
                             vk::PipelineLayout pipeline_layout) const {}
 
-bool Subpass::HasSubpassDescriptorSet() const {
-  return has_subpass_descriptor_set_;
-}
-
 const vk::raii::DescriptorSet& Subpass::GetSubpassDescriptorSet(
     u32 frame_index) const {
   return subpass_descriptor_sets_[frame_index];
 }
 
-bool Subpass::HasBindlessDescriptorSet() const {
-  return has_bindless_descriptor_set_;
-}
-
 const vk::raii::DescriptorSet& Subpass::GetBindlessDescriptorSet() const {
   return bindless_descriptor_set_;
+}
+
+void Subpass::CreateSubpassAndBindlessDescriptorSets() {
+  // Subpass.
+  {
+    std::vector<vk::DescriptorSetLayoutBinding> bindings{
+        {0, vk::DescriptorType::eUniformBuffer, 1,
+         vk::ShaderStageFlagBits::eAll}};
+    vk::DescriptorSetLayoutCreateInfo subpass_descriptor_set_layout_ci{
+        {}, bindings};
+
+    subpass_descriptor_set_layout_ = gpu_->CreateDescriptorSetLayout(
+        subpass_descriptor_set_layout_ci, name_ + "_subpass");
+
+    std::vector<vk::DescriptorSetLayout> subpass_descriptor_set_layouts(
+        frame_count_, *subpass_descriptor_set_layout_);
+    vk::DescriptorSetAllocateInfo subpass_descriptor_set_allocate_info{
+        nullptr, subpass_descriptor_set_layouts};
+    subpass_descriptor_sets_ = gpu_->AllocateNormalDescriptorSets(
+        subpass_descriptor_set_allocate_info, name_ + "_subpass");
+
+    const glm::mat4& view{camera_->GetViewMatrix()};
+    const glm::mat4& projection{camera_->GetProjectionMatrix()};
+    const glm::vec3& camera_position{camera_->GetPosition()};
+
+    glm::mat4 pv{projection * view};
+    glm::mat4 inverse_vp{glm::inverse(pv)};
+
+    for (u32 i{0}; i < frame_count_; ++i) {
+      SubpassUniform subpass_uniform{pv, inverse_vp,
+                                     glm::vec4{camera_position, 1.0F},
+                                     glm::vec4{5.0, 5.0, 5.0, 1.0F}};
+
+      vk::BufferCreateInfo uniform_buffer_ci{
+          {},
+          sizeof(SubpassUniform),
+          vk::BufferUsageFlagBits::eUniformBuffer,
+          vk::SharingMode::eExclusive};
+
+      gpu::Buffer subpass_uniform_buffer{gpu_->CreateBuffer(
+          uniform_buffer_ci, &subpass_uniform, true, "subpass_uniform")};
+
+      vk::DescriptorBufferInfo descriptor_buffer_info{
+          *subpass_uniform_buffer, 0, sizeof(SubpassUniform)};
+
+      vk::WriteDescriptorSet write_descriptor_set{
+          *subpass_descriptor_sets_[i],       0,       0,
+          vk::DescriptorType::eUniformBuffer, nullptr, descriptor_buffer_info};
+
+      subpass_uniforms_.push_back(std::move(subpass_uniform));
+      subpass_uniform_buffers_.push_back(std::move(subpass_uniform_buffer));
+
+      std::vector<vk::WriteDescriptorSet> write_descriptor_sets;
+
+      write_descriptor_sets.push_back(write_descriptor_set);
+
+      gpu_->UpdateDescriptorSets(write_descriptor_sets);
+    }
+  }
+
+  // Bindless.
+  {
+    std::vector<vk::DescriptorSetLayoutBinding> bindings{
+        {0, vk::DescriptorType::eSampler, 8, vk::ShaderStageFlagBits::eAll},
+        {1, vk::DescriptorType::eSampledImage, 32,
+         vk::ShaderStageFlagBits::eAll}};
+
+    std::vector<vk::DescriptorBindingFlags> binding_flags(
+        2, vk::DescriptorBindingFlagBits::ePartiallyBound);
+
+    vk::DescriptorSetLayoutBindingFlagsCreateInfo binding_flags_ci{
+        binding_flags};
+
+    vk::DescriptorSetLayoutCreateInfo bindless_descriptor_set_layout_ci{
+        vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool, bindings,
+        &binding_flags_ci};
+    bindless_descriptor_set_layout_ = gpu_->CreateDescriptorSetLayout(
+        bindless_descriptor_set_layout_ci, name_ + "_bindless");
+
+    vk::DescriptorSetAllocateInfo bindless_descriptor_set_allocate_info{
+        nullptr, *bindless_descriptor_set_layout_};
+    bindless_descriptor_set_ = gpu_->AllocateBindlessDescriptorSet(
+        bindless_descriptor_set_allocate_info, name_ + "_bindless");
+  }
 }
 
 void Subpass::CreateDrawElements() {
@@ -237,137 +331,65 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
 
   std::sort(sorted_sets.begin(), sorted_sets.end());
 
-  std::vector<vk::DescriptorSetLayout> set_layouts;
+  std::vector<vk::DescriptorSetLayout> set_layouts{
+      *subpass_descriptor_set_layout_, *bindless_descriptor_set_layout_};
 
   for (u32 set : sorted_sets) {
+    if (set <= 1) {
+      continue;
+    }
+
     const auto& shader_resources{set_shader_resources.at(set)};
     const vk::raii::DescriptorSetLayout* descriptor_set_layout{nullptr};
-    if (set == 0) {
-      if (!has_subpass_descriptor_set_) {
-        std::vector<vk::DescriptorSetLayoutBinding> bindings;
-        for (const auto& shader_resource : shader_resources) {
-          vk::DescriptorType descriptor_type;
 
-          if (shader_resource.type == ShaderResourceType::kUniformBuffer) {
-            descriptor_type = vk::DescriptorType::eUniformBuffer;
-          } else if (shader_resource.type ==
-                     ShaderResourceType::kInputAttachment) {
-            descriptor_type = vk::DescriptorType::eInputAttachment;
-          } else if (shader_resource.type ==
-                     ShaderResourceType::kCombinedImageSampler) {
-            descriptor_type = vk::DescriptorType::eCombinedImageSampler;
-          } else {
-            continue;
-          }
+    std::vector<vk::DescriptorSetLayoutBinding> bindings;
+    for (const auto& shader_resource : shader_resources) {
+      vk::DescriptorType descriptor_type;
 
-          vk::DescriptorSetLayoutBinding binding{shader_resource.binding,
-                                                 descriptor_type, 1,
-                                                 shader_resource.stage};
-
-          bindings.push_back(binding);
-        }
-
-        if (bindings.empty()) {
-          continue;
-        }
-
-        vk::DescriptorSetLayoutCreateInfo subpass_descriptor_set_layout_ci{
-            {}, bindings};
-
-        subpass_descriptor_set_layout_ = gpu_->CreateDescriptorSetLayout(
-            subpass_descriptor_set_layout_ci, name_ + "_subpass");
-
-        std::vector<vk::DescriptorSetLayout> subpass_descriptor_set_layouts(
-            frame_count_, *subpass_descriptor_set_layout_);
-        vk::DescriptorSetAllocateInfo subpass_descriptor_set_allocate_info{
-            nullptr, subpass_descriptor_set_layouts};
-        subpass_descriptor_sets_ = gpu_->AllocateNormalDescriptorSets(
-            subpass_descriptor_set_allocate_info, name_ + "_subpass");
-
-        has_subpass_descriptor_set_ = true;
-        update_subpass_descriptor_sets_ =
-            std::vector<bool>(frame_count_, false);
-      }
-      descriptor_set_layout = &subpass_descriptor_set_layout_;
-    } else if (set == 1) {
-      if (!has_bindless_descriptor_set_) {
-        std::vector<vk::DescriptorSetLayoutBinding> bindings{
-            {0, vk::DescriptorType::eSampler, 8, vk::ShaderStageFlagBits::eAll},
-            {1, vk::DescriptorType::eSampledImage, 32,
-             vk::ShaderStageFlagBits::eAll}};
-
-        std::vector<vk::DescriptorBindingFlags> binding_flags(
-            2, vk::DescriptorBindingFlagBits::ePartiallyBound);
-
-        vk::DescriptorSetLayoutBindingFlagsCreateInfo binding_flags_ci{
-            binding_flags};
-
-        vk::DescriptorSetLayoutCreateInfo bindless_descriptor_set_layout_ci{
-            vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool,
-            bindings, &binding_flags_ci};
-        bindless_descriptor_set_layout_ = gpu_->CreateDescriptorSetLayout(
-            bindless_descriptor_set_layout_ci, name_ + "_bindless");
-
-        vk::DescriptorSetAllocateInfo bindless_descriptor_set_allocate_info{
-            nullptr, *bindless_descriptor_set_layout_};
-        bindless_descriptor_set_ = gpu_->AllocateBindlessDescriptorSet(
-            bindless_descriptor_set_allocate_info, name_ + "_bindless");
-
-        has_bindless_descriptor_set_ = true;
-      }
-
-      descriptor_set_layout = &bindless_descriptor_set_layout_;
-    } else {
-      std::vector<vk::DescriptorSetLayoutBinding> bindings;
-      for (const auto& shader_resource : shader_resources) {
-        vk::DescriptorType descriptor_type;
-
-        if (shader_resource.type == ShaderResourceType::kUniformBuffer) {
-          descriptor_type = vk::DescriptorType::eUniformBuffer;
-        } else if (shader_resource.type ==
-                   ShaderResourceType::kInputAttachment) {
-          descriptor_type = vk::DescriptorType::eInputAttachment;
-        } else if (shader_resource.type ==
-                   ShaderResourceType::kCombinedImageSampler) {
-          descriptor_type = vk::DescriptorType::eCombinedImageSampler;
-        } else {
-          continue;
-        }
-
-        vk::DescriptorSetLayoutBinding binding{
-            shader_resource.binding, descriptor_type, 1, shader_resource.stage};
-
-        bindings.push_back(binding);
-      }
-
-      if (bindings.empty()) {
+      if (shader_resource.type == ShaderResourceType::kUniformBuffer) {
+        descriptor_type = vk::DescriptorType::eUniformBuffer;
+      } else if (shader_resource.type == ShaderResourceType::kInputAttachment) {
+        descriptor_type = vk::DescriptorType::eInputAttachment;
+      } else if (shader_resource.type ==
+                 ShaderResourceType::kCombinedImageSampler) {
+        descriptor_type = vk::DescriptorType::eCombinedImageSampler;
+      } else {
         continue;
       }
 
-      vk::DescriptorSetLayoutCreateInfo draw_element_descriptor_set_layout_ci{
-          {}, bindings};
+      vk::DescriptorSetLayoutBinding binding{
+          shader_resource.binding, descriptor_type, 1, shader_resource.stage};
 
-      const vk::raii::DescriptorSetLayout* draw_element_descriptor_set_layout =
-          &(RequestDescriptorSetLayout(draw_element_descriptor_set_layout_ci,
-                                       name_ + "_draw_element"));
-
-      descriptor_set_layout = draw_element_descriptor_set_layout;
-
-      for (u32 i{0}; i < frame_count_; ++i) {
-        vk::DescriptorSetAllocateInfo draw_element_descriptor_set_allocate_info{
-            nullptr, **draw_element_descriptor_set_layout};
-
-        vk::raii::DescriptorSets draw_element_descriptor_sets{
-            gpu_->AllocateNormalDescriptorSets(
-                draw_element_descriptor_set_allocate_info,
-                name_ + "_draw_element")};
-
-        draw_element.descriptor_sets.push_back(
-            std::move(draw_element_descriptor_sets));
-      }
-
-      draw_element.has_descriptor_set = true;
+      bindings.push_back(binding);
     }
+
+    if (bindings.empty()) {
+      continue;
+    }
+
+    vk::DescriptorSetLayoutCreateInfo draw_element_descriptor_set_layout_ci{
+        {}, bindings};
+
+    const vk::raii::DescriptorSetLayout* draw_element_descriptor_set_layout =
+        &(RequestDescriptorSetLayout(draw_element_descriptor_set_layout_ci,
+                                     name_ + "_draw_element"));
+
+    descriptor_set_layout = draw_element_descriptor_set_layout;
+
+    for (u32 i{0}; i < frame_count_; ++i) {
+      vk::DescriptorSetAllocateInfo draw_element_descriptor_set_allocate_info{
+          nullptr, **draw_element_descriptor_set_layout};
+
+      vk::raii::DescriptorSets draw_element_descriptor_sets{
+          gpu_->AllocateNormalDescriptorSets(
+              draw_element_descriptor_set_allocate_info,
+              name_ + "_draw_element", primitive_index)};
+
+      draw_element.descriptor_sets.push_back(
+          std::move(draw_element_descriptor_sets));
+    }
+
+    draw_element.has_descriptor_set = true;
 
     set_layouts.push_back(**descriptor_set_layout);
   }
@@ -375,7 +397,6 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
   vk::PipelineLayoutCreateInfo pipeline_layout_ci;
 
   if (!set_layouts.empty()) {
-    has_descriptor_set_ = true;
     pipeline_layout_ci.setSetLayouts(set_layouts);
   }
 
@@ -549,137 +570,97 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
       graphics_pipeline_create_info, pipeline_hash_value, name_)};
   draw_element.pipeline = &pipeline;
 
-  // Descriptor set.
-  for (u32 i{0}; i < frame_count_; ++i) {
-    std::vector<vk::WriteDescriptorSet> write_descriptor_sets;
-    std::vector<vk::DescriptorImageInfo> sampler_infos;
-    std::vector<vk::DescriptorImageInfo> image_infos;
-    std::vector<vk::DescriptorBufferInfo> buffer_infos;
+  // Update descriptor sets.
+  std::vector<vk::WriteDescriptorSet> write_descriptor_sets;
+  std::vector<vk::DescriptorImageInfo> sampler_infos;
+  std::vector<vk::DescriptorImageInfo> image_infos;
+  std::vector<vk::DescriptorBufferInfo> buffer_infos;
 
-    image_infos.reserve(100);
-    buffer_infos.reserve(100);
+  image_infos.reserve(100);
+  buffer_infos.reserve(100);
 
-    // Bindless.
-    glm::uvec4 sampler_indices{0};
-    glm::uvec4 image_indices{0};
-    if (has_primitive_) {
-      const std::map<std::string, ast::sc::Texture*>& textures{
-          primitive.material->GetTextures()};
-      u32 idx{0};
-      for (const auto& wanted_texture : wanted_textures) {
-        auto global_samplers_it{name_shader_resources.find("global_samplers")};
-        auto global_images_it{name_shader_resources.find("global_images")};
-        auto wanted_texture_it{textures.find(wanted_texture)};
-        if (global_samplers_it != name_shader_resources.end() &&
-            global_images_it != name_shader_resources.end() &&
-            wanted_texture_it != textures.end()) {
-          const ShaderResource& global_samplers_shader_resource{
-              global_samplers_it->second};
-          const ShaderResource& global_images_shader_resource{
-              global_images_it->second};
-          ast::sc::Texture* tex{wanted_texture_it->second};
+  // Bindless.
+  glm::uvec4 sampler_indices{0};
+  glm::uvec4 image_indices{0};
+  if (has_primitive_) {
+    const std::map<std::string, ast::sc::Texture*>& textures{
+        primitive.material->GetTextures()};
+    u32 idx{0};
+    for (const auto& wanted_texture : wanted_textures) {
+      auto global_samplers_it{name_shader_resources.find("global_samplers")};
+      auto global_images_it{name_shader_resources.find("global_images")};
+      auto wanted_texture_it{textures.find(wanted_texture)};
+      if (global_samplers_it != name_shader_resources.end() &&
+          global_images_it != name_shader_resources.end() &&
+          wanted_texture_it != textures.end()) {
+        const ShaderResource& global_samplers_shader_resource{
+            global_samplers_it->second};
+        const ShaderResource& global_images_shader_resource{
+            global_images_it->second};
+        ast::sc::Texture* tex{wanted_texture_it->second};
 
-          const ast::sc::Sampler* ast_sampler{tex->GetSampler()};
-          u64 sampler_hash_value{0};
-          HashCombine(sampler_hash_value, ast_sampler);
-          auto it2{sampler_indices_.find(sampler_hash_value)};
-          if (it2 != sampler_indices_.end()) {
-            sampler_indices_[idx] = it2->second;
-          } else {
-            const vk::raii::Sampler& sampler{ast_sampler->GetSampler()};
+        const ast::sc::Sampler* ast_sampler{tex->GetSampler()};
+        u64 sampler_hash_value{0};
+        HashCombine(sampler_hash_value, ast_sampler);
+        auto it2{sampler_indices_.find(sampler_hash_value)};
+        if (it2 != sampler_indices_.end()) {
+          sampler_indices_[idx] = it2->second;
+        } else {
+          const vk::raii::Sampler& sampler{ast_sampler->GetSampler()};
 
-            vk::DescriptorImageInfo descriptor_sampler_info{*sampler};
-            sampler_infos.push_back(std::move(descriptor_sampler_info));
+          vk::DescriptorImageInfo descriptor_sampler_info{*sampler};
+          sampler_infos.push_back(std::move(descriptor_sampler_info));
 
-            sampler_indices[idx] = global_sampler_index_++;
+          sampler_indices[idx] = global_sampler_index_++;
 
-            vk::WriteDescriptorSet write_descriptor_set{
-                *(bindless_descriptor_set_),
-                global_samplers_shader_resource.binding, sampler_indices[idx],
-                vk::DescriptorType::eSampler, sampler_infos.back()};
+          vk::WriteDescriptorSet write_descriptor_set{
+              *(bindless_descriptor_set_),
+              global_samplers_shader_resource.binding, sampler_indices[idx],
+              vk::DescriptorType::eSampler, sampler_infos.back()};
 
-            write_descriptor_sets.push_back(write_descriptor_set);
+          write_descriptor_sets.push_back(write_descriptor_set);
 
-            sampler_indices_.emplace(sampler_hash_value, sampler_indices[idx]);
-          }
-
-          const ast::sc::Image* ast_image{tex->GetImage()};
-
-          u64 image_hash_value{0};
-          HashCombine(image_hash_value, ast_image);
-          auto it3{image_indices_.find(image_hash_value)};
-          if (it3 != image_indices_.end()) {
-            image_indices[idx] = it3->second;
-          } else {
-            const vk::raii::ImageView& image_view{ast_image->GetImageView()};
-
-            vk::DescriptorImageInfo descriptor_image_info{
-                nullptr, *image_view, vk::ImageLayout::eShaderReadOnlyOptimal};
-            image_infos.push_back(std::move(descriptor_image_info));
-
-            image_indices[idx] = global_image_index_++;
-
-            vk::WriteDescriptorSet write_descriptor_set{
-                *bindless_descriptor_set_,
-                global_images_shader_resource.binding, image_indices[idx],
-                vk::DescriptorType::eSampledImage, image_infos.back()};
-
-            write_descriptor_sets.push_back(write_descriptor_set);
-
-            image_indices_.emplace(image_hash_value, image_indices[idx]);
-          }
-          ++idx;
+          sampler_indices_.emplace(sampler_hash_value, sampler_indices[idx]);
         }
+
+        const ast::sc::Image* ast_image{tex->GetImage()};
+
+        u64 image_hash_value{0};
+        HashCombine(image_hash_value, ast_image);
+        auto it3{image_indices_.find(image_hash_value)};
+        if (it3 != image_indices_.end()) {
+          image_indices[idx] = it3->second;
+        } else {
+          const vk::raii::ImageView& image_view{ast_image->GetImageView()};
+
+          vk::DescriptorImageInfo descriptor_image_info{
+              nullptr, *image_view, vk::ImageLayout::eShaderReadOnlyOptimal};
+          image_infos.push_back(std::move(descriptor_image_info));
+
+          image_indices[idx] = global_image_index_++;
+
+          vk::WriteDescriptorSet write_descriptor_set{
+              *bindless_descriptor_set_, global_images_shader_resource.binding,
+              image_indices[idx], vk::DescriptorType::eSampledImage,
+              image_infos.back()};
+
+          write_descriptor_sets.push_back(write_descriptor_set);
+
+          image_indices_.emplace(image_hash_value, image_indices[idx]);
+        }
+        ++idx;
       }
     }
+  }
 
-    // 2. Subpass and draw element.
+  // 2. Draw element.
+  for (u32 i{0}; i < frame_count_; ++i) {
     for (const auto& set_shader_resource : set_shader_resources) {
       u32 set{set_shader_resource.first};
       const auto& shader_resources{set_shader_resource.second};
       for (const auto& shader_resource : shader_resources) {
         if (shader_resource.type == ShaderResourceType::kUniformBuffer) {
-          if (shader_resource.name == "SubpassUniform" &&
-              !update_subpass_descriptor_sets_[i]) {
-            const glm::mat4& view{camera_->GetViewMatrix()};
-            const glm::mat4& projection{camera_->GetProjectionMatrix()};
-            const glm::vec3& camera_position{camera_->GetPosition()};
-
-            glm::mat4 pv{projection * view};
-            glm::mat4 inverse_vp{glm::inverse(pv)};
-
-            SubpassUniform subpass_uniform{pv, inverse_vp,
-                                           glm::vec4{camera_position, 1.0F},
-                                           glm::vec4{5.0, 5.0, 5.0, 1.0F}};
-
-            vk::BufferCreateInfo uniform_buffer_ci{
-                {},
-                sizeof(SubpassUniform),
-                vk::BufferUsageFlagBits::eUniformBuffer,
-                vk::SharingMode::eExclusive};
-
-            gpu::Buffer subpass_uniform_buffer{gpu_->CreateBuffer(
-                uniform_buffer_ci, &subpass_uniform, false, "subpass_uniform")};
-
-            vk::DescriptorBufferInfo descriptor_buffer_info{
-                *subpass_uniform_buffer, 0, sizeof(SubpassUniform)};
-            buffer_infos.push_back(std::move(descriptor_buffer_info));
-
-            vk::WriteDescriptorSet write_descriptor_set{
-                *subpass_descriptor_sets_[i],
-                shader_resource.binding,
-                0,
-                vk::DescriptorType::eUniformBuffer,
-                nullptr,
-                buffer_infos.back()};
-
-            subpass_uniforms_.push_back(std::move(subpass_uniform));
-            subpass_uniform_buffers_.push_back(
-                std::move(subpass_uniform_buffer));
-
-            write_descriptor_sets.push_back(write_descriptor_set);
-
-          } else if (shader_resource.name == "DrawElementUniform") {
+          if (shader_resource.name == "DrawElementUniform") {
             DrawElementUniform draw_element_uniform{
                 model_matrix, primitive.material->GetBaseColorFactor(),
                 sampler_indices, image_indices};

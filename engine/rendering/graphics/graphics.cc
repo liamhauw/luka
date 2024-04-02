@@ -54,7 +54,8 @@ void Graphics::Resize() {
 
 void Graphics::Render() {
   const vk::raii::CommandBuffer& command_buffer{Begin()};
-  TarversePasses(command_buffer);
+  UpdatePasses();
+  DrawPasses(command_buffer);
   End(command_buffer);
 }
 
@@ -73,14 +74,11 @@ const vk::raii::CommandBuffer& Graphics::Begin() {
   const vk::raii::CommandBuffer& command_buffer{
       command_buffers_[frame_index_][0]};
   command_buffer.reset({});
-  command_buffer.begin({});
 
   return command_buffer;
 }
 
 void Graphics::End(const vk::raii::CommandBuffer& command_buffer) {
-  command_buffer.end();
-
   vk::PipelineStageFlags wait_pipeline_stage{
       vk::PipelineStageFlagBits::eColorAttachmentOutput};
   vk::SubmitInfo submit_info{
@@ -105,7 +103,18 @@ void Graphics::End(const vk::raii::CommandBuffer& command_buffer) {
       (image_acquired_semaphore_index_ + 1) % frame_count_;
 }
 
-void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
+void Graphics::UpdatePasses() {
+  for (auto& pass : passes_) {
+    std::vector<gs::Subpass>& subpasses{pass.GetSubpasses()};
+    for (auto& subpass : subpasses) {
+      subpass.Update(frame_index_);
+    }
+  }
+}
+
+void Graphics::DrawPasses(const vk::raii::CommandBuffer& command_buffer) {
+  command_buffer.begin({});
+
   // Set viewport and scissor.
   command_buffer.setViewport(0, viewport_);
   command_buffer.setScissor(0, scissor_);
@@ -138,10 +147,8 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
       const std::vector<gs::DrawElement>& draw_elements{
           subpass.GetDrawElements()};
 
-      const vk::raii::PipelineLayout* prev_pipeline_layout{nullptr};
       const vk::raii::Pipeline* prev_pipeline{nullptr};
-      const vk::raii::DescriptorSet* prev_subpass_descriptor_set{nullptr};
-      const vk::raii::DescriptorSet* prev_bindless_descriptor_set{nullptr};
+      const vk::raii::PipelineLayout* prev_pipeline_layout{nullptr};
       for (const gs::DrawElement& draw_element : draw_elements) {
         // Bind pipeline.
         const vk::raii::Pipeline* pipeline{draw_element.pipeline};
@@ -151,46 +158,30 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
           prev_pipeline = pipeline;
         }
 
-        // Pipeline layout.
+        // Push constants, subpass and bindless descriptor sets.
         const vk::raii::PipelineLayout* pipeline_layout{
             draw_element.pipeline_layout};
-        prev_pipeline_layout = pipeline_layout;
-
-        // Push constants.
-        if (subpass.HasPushConstant()) {
-          if (prev_pipeline_layout != pipeline_layout) {
+        if (prev_pipeline_layout != pipeline_layout) {
+          if (subpass.HasPushConstant()) {
             subpass.PushConstants(command_buffer, **pipeline_layout);
-            prev_pipeline_layout = pipeline_layout;
           }
-        }
 
-        // Bind subpass descriptor set.
-        if (subpass.HasSubpassDescriptorSet()) {
           const vk::raii::DescriptorSet& subpass_descriptor_set{
               subpass.GetSubpassDescriptorSet(frame_index_)};
-          if (prev_pipeline_layout != pipeline_layout ||
-              prev_subpass_descriptor_set != &subpass_descriptor_set) {
-            command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-                                              **pipeline_layout, 0,
-                                              *subpass_descriptor_set, nullptr);
-            prev_subpass_descriptor_set = &subpass_descriptor_set;
-          }
-        }
-
-        // Bind bindless descriptor set;
-        if (subpass.HasBindlessDescriptorSet()) {
           const vk::raii::DescriptorSet& bindless_descriptor_set{
               subpass.GetBindlessDescriptorSet()};
-          if (prev_pipeline_layout != pipeline_layout ||
-              prev_bindless_descriptor_set != &bindless_descriptor_set) {
-            command_buffer.bindDescriptorSets(
-                vk::PipelineBindPoint::eGraphics, **pipeline_layout, 1,
-                *bindless_descriptor_set, nullptr);
-            prev_bindless_descriptor_set = &bindless_descriptor_set;
-          }
+
+          std::vector<vk::DescriptorSet> descriptor_sets{
+              *subpass_descriptor_set, *bindless_descriptor_set};
+
+          command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+                                            **pipeline_layout, 0,
+                                            descriptor_sets, nullptr);
+
+          prev_pipeline_layout = pipeline_layout;
         }
 
-        // Bind normal descriptor sets.
+        // Bind draw element descriptor sets.
         if (draw_element.has_descriptor_set) {
           const vk::raii::DescriptorSets& descriptor_sets{
               draw_element.descriptor_sets[frame_index_]};
@@ -247,6 +238,8 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
     gpu_->EndLabel(command_buffer);
 #endif
   }
+
+  command_buffer.end();
 }
 
 void Graphics::GetSwapchain() {

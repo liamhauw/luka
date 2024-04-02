@@ -36,11 +36,13 @@ class Graphics {
   void CreatePasses();
 
   void Resize();
+
   void Render();
 
   const vk::raii::CommandBuffer& Begin();
   void End(const vk::raii::CommandBuffer& command_buffer);
-  void TarversePasses(const vk::raii::CommandBuffer& command_buffer);
+  void UpdatePasses();
+  void DrawPasses(const vk::raii::CommandBuffer& command_buffer);
 
   std::shared_ptr<Config> config_;
   std::shared_ptr<Window> window_;

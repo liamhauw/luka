@@ -52,6 +52,8 @@ void Pass::Resize(const SwapchainInfo& swapchain_info,
   }
 }
 
+std::vector<Subpass>& Pass::GetSubpasses() { return subpasses_; }
+
 const std::string& Pass::GetName() const { return name_; }
 
 vk::RenderPassBeginInfo Pass::GetRenderPassBeginInfo(u32 frame_index) const {

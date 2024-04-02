@@ -67,19 +67,20 @@ class Subpass {
   void Resize(const std::vector<std::vector<vk::raii::ImageView>>&
                   attachment_image_views);
 
+  void Update(u32 frame_index);
+
   const std::string& GetName() const;
   const std::vector<DrawElement>& GetDrawElements() const;
   bool HasPushConstant() const;
   void PushConstants(const vk::raii::CommandBuffer& command_buffer,
                      vk::PipelineLayout pipeline_layout) const;
-  bool HasSubpassDescriptorSet() const;
   const vk::raii::DescriptorSet& GetSubpassDescriptorSet(u32 frame_index) const;
-  bool HasBindlessDescriptorSet() const;
   const vk::raii::DescriptorSet& GetBindlessDescriptorSet() const;
 
  protected:
   void CreateDrawElements();
 
+  void CreateSubpassAndBindlessDescriptorSets();
   DrawElement CreateDrawElement(const glm::mat4& model_matrix = {},
                                 const ast::sc::Primitive& primitive = {},
                                 u32 primitive_index = -1);
@@ -123,18 +124,14 @@ class Subpass {
   const std::unordered_map<vk::ShaderStageFlagBits, u32>* shaders_;
   bool has_primitive_;
 
-  bool has_subpass_descriptor_set_{false};
   vk::raii::DescriptorSetLayout subpass_descriptor_set_layout_{nullptr};
   vk::raii::DescriptorSets subpass_descriptor_sets_{nullptr};
-  std::vector<bool> update_subpass_descriptor_sets_;
   std::vector<SubpassUniform> subpass_uniforms_;
   std::vector<gpu::Buffer> subpass_uniform_buffers_;
 
-  bool has_bindless_descriptor_set_{false};
   vk::raii::DescriptorSetLayout bindless_descriptor_set_layout_{nullptr};
   vk::raii::DescriptorSet bindless_descriptor_set_{nullptr};
 
-  bool has_descriptor_set_{false};
   bool has_push_constant_{false};
 
   std::unordered_map<u64, SPIRV> spirv_shaders_;

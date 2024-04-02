@@ -30,6 +30,8 @@ class Pass {
   void Resize(const SwapchainInfo& swapchain_info,
               const std::vector<vk::Image>& swapchain_images);
 
+  std::vector<Subpass>& GetSubpasses();
+
   const std::string& GetName() const;
   vk::RenderPassBeginInfo GetRenderPassBeginInfo(u32 frame_index) const;
   const std::vector<Subpass>& GetSubpasses() const;
