@@ -18,13 +18,15 @@ namespace gs {
 
 struct PushConstantUniform {
   glm::mat4 pv;
-  glm::vec3 camera_position;
+  glm::vec4 camera_position;
+  glm::vec4 light_position;
 };
 
-struct DrawElmentVertexInfo {
-  u32 location;
-  std::vector<vk::Buffer> buffers;
-  std::vector<u64> offsets;
+struct SubpassUniform {
+  glm::mat4 pv;
+  glm::mat4 inverse_pv;
+  glm::vec4 camera_position;
+  glm::vec4 light_position;
 };
 
 struct DrawElementUniform {
@@ -32,6 +34,12 @@ struct DrawElementUniform {
   glm::vec4 base_color_factor;
   glm::uvec4 sampler_indices;
   glm::uvec4 image_indices;
+};
+
+struct DrawElmentVertexInfo {
+  u32 location;
+  std::vector<vk::Buffer> buffers;
+  std::vector<u64> offsets;
 };
 
 struct DrawElement {
@@ -72,7 +80,6 @@ class Subpass {
   const vk::raii::DescriptorSet& GetBindlessDescriptorSet() const;
 
  protected:
-  void CreateBindlessDescriptorSets();
   void CreateDrawElements();
 
   DrawElement CreateDrawElement(const glm::mat4& model_matrix = {},
@@ -118,13 +125,17 @@ class Subpass {
   const std::unordered_map<vk::ShaderStageFlagBits, u32>* shaders_;
   bool has_primitive_;
 
+  bool has_subpass_descriptor_set_{false};
+  const vk::raii::DescriptorSetLayout* subpass_descriptor_set_layout_{nullptr};
+  vk::raii::DescriptorSets subpass_descriptor_sets_{nullptr};
+  std::vector<bool> update_subpass_descriptor_set_;
   bool has_bindless_descriptor_set_{false};
-  vk::DescriptorSetLayout bindless_descriptor_set_layout_{nullptr};
+  const vk::raii::DescriptorSetLayout* bindless_descriptor_set_layout_{nullptr};
   vk::raii::DescriptorSets bindless_descriptor_sets_{nullptr};
 
+  bool has_descriptor_set_{false};
   bool has_push_constant_{false};
 
-  std::vector<DrawElement> draw_elements_;
 
   std::unordered_map<u64, SPIRV> spirv_shaders_;
   std::unordered_map<u64, vk::raii::DescriptorSetLayout>
@@ -139,6 +150,8 @@ class Subpass {
   u32 global_image_index_{0};
 
   bool need_resize_{false};
+
+  std::vector<DrawElement> draw_elements_;
 };
 
 }  // namespace gs

@@ -3,7 +3,7 @@
 
 #version 450
 
-layout(set = 1, binding = 0) uniform sampler2D color;
+layout(set = 2, binding = 0) uniform sampler2D color;
 
 layout(location = 0) in vec2 i_texcoord_0;
 layout(location = 0) out vec4 o_color;

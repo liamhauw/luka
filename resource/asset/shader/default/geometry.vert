@@ -3,13 +3,15 @@
 
 #version 450
 
-layout(push_constant, std430) uniform PushConstantUniform {
+layout(set = 0, binding = 0) uniform SubpassUniform {
   mat4 pv;
-  vec3 camera_position;
+  mat4 inverse_pv;
+  vec4 camera_position;
+  vec4 light_position;
 }
-push_constant_uniform;
+subpass_uniform;
 
-layout(set = 1, binding = 0) uniform DrawElementUniform {
+layout(set = 2, binding = 0) uniform DrawElementUniform {
   mat4 m;
   vec4 base_color_factor;
   uvec4 texture_indices;
@@ -38,5 +40,5 @@ void main(void) {
 #endif
 
   gl_Position =
-      push_constant_uniform.pv * draw_element_uniform.m * vec4(position, 1.0);
+      subpass_uniform.pv * draw_element_uniform.m * vec4(position, 1.0);
 }
