@@ -122,7 +122,15 @@ class Gpu {
       const vk::CommandBufferAllocateInfo& command_buffer_ai,
       const std::string& name = {}, i32 index = -1);
 
+  vk::raii::DescriptorSet AllocateBindlessDescriptorSet(
+      vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
+      const std::string& name = {}, i32 index = -1);
+
   vk::raii::DescriptorSets AllocateBindlessDescriptorSets(
+      vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
+      const std::string& name = {}, i32 index = -1);
+
+  vk::raii::DescriptorSet AllocateNormalDescriptorSet(
       vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
       const std::string& name = {}, i32 index = -1);
 

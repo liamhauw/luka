@@ -140,27 +140,9 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
 
       const vk::raii::PipelineLayout* prev_pipeline_layout{nullptr};
       const vk::raii::Pipeline* prev_pipeline{nullptr};
-      const vk::raii::DescriptorSet* prev_descriptor_set{nullptr};
+      const vk::raii::DescriptorSet* prev_subpass_descriptor_set{nullptr};
+      const vk::raii::DescriptorSet* prev_bindless_descriptor_set{nullptr};
       for (const gs::DrawElement& draw_element : draw_elements) {
-        // Push constants.
-        const vk::raii::PipelineLayout* pipeline_layout{
-            draw_element.pipeline_layout};
-        if (subpass.HasPushConstant() &&
-            prev_pipeline_layout != pipeline_layout) {
-          subpass.PushConstants(command_buffer, **pipeline_layout);
-          prev_pipeline_layout = pipeline_layout;
-        }
-
-        // Bind bindless descriptor sets;
-        const vk::raii::DescriptorSet& bindless_descriptor_set{
-            subpass.GetBindlessDescriptorSet()};
-        if (prev_descriptor_set != &bindless_descriptor_set) {
-          command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-                                            **pipeline_layout, 0,
-                                            *bindless_descriptor_set, nullptr);
-          prev_descriptor_set = &bindless_descriptor_set;
-        }
-
         // Bind pipeline.
         const vk::raii::Pipeline* pipeline{draw_element.pipeline};
         if (prev_pipeline != pipeline) {
@@ -169,16 +151,56 @@ void Graphics::TarversePasses(const vk::raii::CommandBuffer& command_buffer) {
           prev_pipeline = pipeline;
         }
 
+        // Pipeline layout.
+        const vk::raii::PipelineLayout* pipeline_layout{
+            draw_element.pipeline_layout};
+        prev_pipeline_layout = pipeline_layout;
+
+        // Push constants.
+        if (subpass.HasPushConstant()) {
+          if (prev_pipeline_layout != pipeline_layout) {
+            subpass.PushConstants(command_buffer, **pipeline_layout);
+            prev_pipeline_layout = pipeline_layout;
+          }
+        }
+
+        // Bind subpass descriptor set.
+        if (subpass.HasSubpassDescriptorSet()) {
+          const vk::raii::DescriptorSet& subpass_descriptor_set{
+              subpass.GetSubpassDescriptorSet(frame_index_)};
+          if (prev_pipeline_layout != pipeline_layout ||
+              prev_subpass_descriptor_set != &subpass_descriptor_set) {
+            command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+                                              **pipeline_layout, 0,
+                                              *subpass_descriptor_set, nullptr);
+            prev_subpass_descriptor_set = &subpass_descriptor_set;
+          }
+        }
+
+        // Bind bindless descriptor set;
+        if (subpass.HasBindlessDescriptorSet()) {
+          const vk::raii::DescriptorSet& bindless_descriptor_set{
+              subpass.GetBindlessDescriptorSet()};
+          if (prev_pipeline_layout != pipeline_layout ||
+              prev_bindless_descriptor_set != &bindless_descriptor_set) {
+            command_buffer.bindDescriptorSets(
+                vk::PipelineBindPoint::eGraphics, **pipeline_layout, 1,
+                *bindless_descriptor_set, nullptr);
+            prev_bindless_descriptor_set = &bindless_descriptor_set;
+          }
+        }
+
         // Bind normal descriptor sets.
-        const vk::raii::DescriptorSets& descriptor_sets{
-            draw_element.descriptor_sets[frame_index_]};
-        if (!descriptor_sets.empty()) {
+        if (draw_element.has_descriptor_set) {
+          const vk::raii::DescriptorSets& descriptor_sets{
+              draw_element.descriptor_sets[frame_index_]};
+
           std::vector<vk::DescriptorSet> vk_descriptor_sets;
           for (const auto& descriptor_set : descriptor_sets) {
             vk_descriptor_sets.push_back(*(descriptor_set));
           }
           command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-                                            **pipeline_layout, 1,
+                                            **pipeline_layout, 2,
                                             vk_descriptor_sets, nullptr);
         }
 

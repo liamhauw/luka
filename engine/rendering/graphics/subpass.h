@@ -16,12 +16,6 @@ namespace luka {
 
 namespace gs {
 
-struct PushConstantUniform {
-  glm::mat4 pv;
-  glm::vec4 camera_position;
-  glm::vec4 light_position;
-};
-
 struct SubpassUniform {
   glm::mat4 pv;
   glm::mat4 inverse_pv;
@@ -44,6 +38,7 @@ struct DrawElmentVertexInfo {
 
 struct DrawElement {
   bool has_primitive;
+  bool has_descriptor_set{false};
   const vk::raii::PipelineLayout* pipeline_layout;
   std::vector<DrawElmentVertexInfo> vertex_infos;
   u64 vertex_count;
@@ -77,6 +72,9 @@ class Subpass {
   bool HasPushConstant() const;
   void PushConstants(const vk::raii::CommandBuffer& command_buffer,
                      vk::PipelineLayout pipeline_layout) const;
+  bool HasSubpassDescriptorSet() const;
+  const vk::raii::DescriptorSet& GetSubpassDescriptorSet(u32 frame_index) const;
+  bool HasBindlessDescriptorSet() const;
   const vk::raii::DescriptorSet& GetBindlessDescriptorSet() const;
 
  protected:
@@ -86,9 +84,9 @@ class Subpass {
                                 const ast::sc::Primitive& primitive = {},
                                 u32 primitive_index = -1);
 
-  const SPIRV& RequesetSpirv(const ast::Shader& shader,
-                             const std::vector<std::string>& processes,
-                             vk::ShaderStageFlagBits shader_stage);
+  const SPIRV& RequestSpirv(const ast::Shader& shader,
+                            const std::vector<std::string>& processes,
+                            vk::ShaderStageFlagBits shader_stage);
 
   const vk::raii::DescriptorSetLayout& RequestDescriptorSetLayout(
       const vk::DescriptorSetLayoutCreateInfo& descriptor_set_layout_ci,
@@ -126,16 +124,18 @@ class Subpass {
   bool has_primitive_;
 
   bool has_subpass_descriptor_set_{false};
-  const vk::raii::DescriptorSetLayout* subpass_descriptor_set_layout_{nullptr};
+  vk::raii::DescriptorSetLayout subpass_descriptor_set_layout_{nullptr};
   vk::raii::DescriptorSets subpass_descriptor_sets_{nullptr};
-  std::vector<bool> update_subpass_descriptor_set_;
+  std::vector<bool> update_subpass_descriptor_sets_;
+  std::vector<SubpassUniform> subpass_uniforms_;
+  std::vector<gpu::Buffer> subpass_uniform_buffers_;
+
   bool has_bindless_descriptor_set_{false};
-  const vk::raii::DescriptorSetLayout* bindless_descriptor_set_layout_{nullptr};
-  vk::raii::DescriptorSets bindless_descriptor_sets_{nullptr};
+  vk::raii::DescriptorSetLayout bindless_descriptor_set_layout_{nullptr};
+  vk::raii::DescriptorSet bindless_descriptor_set_{nullptr};
 
   bool has_descriptor_set_{false};
   bool has_push_constant_{false};
-
 
   std::unordered_map<u64, SPIRV> spirv_shaders_;
   std::unordered_map<u64, vk::raii::DescriptorSetLayout>

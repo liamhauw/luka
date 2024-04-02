@@ -64,48 +64,24 @@ const std::vector<DrawElement>& Subpass::GetDrawElements() const {
 bool Subpass::HasPushConstant() const { return has_push_constant_; }
 
 void Subpass::PushConstants(const vk::raii::CommandBuffer& command_buffer,
-                            vk::PipelineLayout pipeline_layout) const {
-  const glm::mat4& view{camera_->GetViewMatrix()};
-  const glm::mat4& projection{camera_->GetProjectionMatrix()};
-  const glm::vec3& camera_position{camera_->GetPosition()};
+                            vk::PipelineLayout pipeline_layout) const {}
 
-  PushConstantUniform push_constant_uniform{projection * view,
-                                            glm::vec4{camera_position, 1.0F},
-                                            glm::vec4{5.0, 5.0, 5.0, 1.0F}};
+bool Subpass::HasSubpassDescriptorSet() const {
+  return has_subpass_descriptor_set_;
+}
 
-  command_buffer.pushConstants<PushConstantUniform>(
-      pipeline_layout, vk::ShaderStageFlagBits::eAll, 0, push_constant_uniform);
+const vk::raii::DescriptorSet& Subpass::GetSubpassDescriptorSet(
+    u32 frame_index) const {
+  return subpass_descriptor_sets_[frame_index];
+}
+
+bool Subpass::HasBindlessDescriptorSet() const {
+  return has_bindless_descriptor_set_;
 }
 
 const vk::raii::DescriptorSet& Subpass::GetBindlessDescriptorSet() const {
-  return bindless_descriptor_sets_.front();
+  return bindless_descriptor_set_;
 }
-
-// void Subpass::CreateBindlessDescriptorSets() {
-//   std::vector<vk::DescriptorSetLayoutBinding> descriptor_set_layout_bindings{
-//       {0, vk::DescriptorType::eSampler, 8, vk::ShaderStageFlagBits::eAll},
-//       {1, vk::DescriptorType::eSampledImage, 32,
-//        vk::ShaderStageFlagBits::eAll}};
-
-//   std::vector<vk::DescriptorBindingFlags> descriptor_binding_flags(
-//       2, vk::DescriptorBindingFlagBits::ePartiallyBound);
-
-//   vk::DescriptorSetLayoutBindingFlagsCreateInfo
-//       descriptor_set_layout_binding_flags_ci{descriptor_binding_flags};
-
-//   vk::DescriptorSetLayoutCreateInfo bindless_descriptor_set_layout_ci{
-//       vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool,
-//       descriptor_set_layout_bindings,
-//       &descriptor_set_layout_binding_flags_ci};
-
-//   bindless_descriptor_set_layout_ = *(RequestDescriptorSetLayout(
-//       bindless_descriptor_set_layout_ci, "bindless_" + name_));
-
-//   vk::DescriptorSetAllocateInfo bindless_descriptor_set_allocate_info{
-//       nullptr, bindless_descriptor_set_layout_};
-//   bindless_descriptor_sets_ = gpu_->AllocateBindlessDescriptorSets(
-//       bindless_descriptor_set_allocate_info, "bindless_" + name_);
-// }
 
 void Subpass::CreateDrawElements() {
   draw_elements_.clear();
@@ -206,12 +182,12 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
     THROW("There is no fragment shader");
   }
   const SPIRV& vert_spirv{
-      RequesetSpirv(asset_->GetShader(vi->second), shader_processes,
-                    vk::ShaderStageFlagBits::eVertex),
+      RequestSpirv(asset_->GetShader(vi->second), shader_processes,
+                   vk::ShaderStageFlagBits::eVertex),
   };
-  const SPIRV& frag_spirv{RequesetSpirv(asset_->GetShader(fi->second),
-                                        shader_processes,
-                                        vk::ShaderStageFlagBits::eFragment)};
+  const SPIRV& frag_spirv{RequestSpirv(asset_->GetShader(fi->second),
+                                       shader_processes,
+                                       vk::ShaderStageFlagBits::eFragment)};
 
   std::vector<const SPIRV*> spirv_shaders{&vert_spirv, &frag_spirv};
 
@@ -234,6 +210,7 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
 
   std::unordered_map<u32, std::vector<ShaderResource>> set_shader_resources;
   std::vector<vk::PushConstantRange> push_constant_ranges;
+  std::vector<u32> sorted_sets;
 
   for (const auto& name_shader_resource : name_shader_resources) {
     const auto& shader_resource{name_shader_resource.second};
@@ -249,6 +226,7 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
       } else {
         set_shader_resources.emplace(
             shader_resource.set, std::vector<ShaderResource>{shader_resource});
+        sorted_sets.push_back(shader_resource.set);
       }
     } else if (shader_resource.type ==
                ShaderResourceType::kPushConstantBuffer) {
@@ -257,48 +235,16 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
     }
   }
 
+  std::sort(sorted_sets.begin(), sorted_sets.end());
+
   std::vector<vk::DescriptorSetLayout> set_layouts;
 
-  for (const auto& set_shader_resource : set_shader_resources) {
-    u32 set{set_shader_resource.first};
-
+  for (u32 set : sorted_sets) {
+    const auto& shader_resources{set_shader_resources.at(set)};
     const vk::raii::DescriptorSetLayout* descriptor_set_layout{nullptr};
-    if (set == 1) {
-      if (!has_bindless_descriptor_set_) {
-        std::vector<vk::DescriptorSetLayoutBinding>
-            descriptor_set_layout_bindings{
-                {0, vk::DescriptorType::eSampler, 8,
-                 vk::ShaderStageFlagBits::eAll},
-                {1, vk::DescriptorType::eSampledImage, 32,
-                 vk::ShaderStageFlagBits::eAll}};
-
-        std::vector<vk::DescriptorBindingFlags> descriptor_binding_flags(
-            2, vk::DescriptorBindingFlagBits::ePartiallyBound);
-
-        vk::DescriptorSetLayoutBindingFlagsCreateInfo
-            descriptor_set_layout_binding_flags_ci{descriptor_binding_flags};
-
-        vk::DescriptorSetLayoutCreateInfo bindless_descriptor_set_layout_ci{
-            vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool,
-            descriptor_set_layout_bindings,
-            &descriptor_set_layout_binding_flags_ci};
-        bindless_descriptor_set_layout_ = &(RequestDescriptorSetLayout(
-            bindless_descriptor_set_layout_ci, name_ + "_bindless"));
-
-        vk::DescriptorSetAllocateInfo bindless_descriptor_set_allocate_info{
-            nullptr, **bindless_descriptor_set_layout_};
-        bindless_descriptor_sets_ = gpu_->AllocateBindlessDescriptorSets(
-            bindless_descriptor_set_allocate_info, name_ + "_bindless_");
-
-        has_bindless_descriptor_set_ = true;
-      }
-
-      descriptor_set_layout = bindless_descriptor_set_layout_;
-    } else {
-      if ((set == 0 && !has_subpass_descriptor_set_) || set >= 1) {
-        const auto& shader_resources{set_shader_resource.second};
-
-        std::vector<vk::DescriptorSetLayoutBinding> layout_bindings;
+    if (set == 0) {
+      if (!has_subpass_descriptor_set_) {
+        std::vector<vk::DescriptorSetLayoutBinding> bindings;
         for (const auto& shader_resource : shader_resources) {
           vk::DescriptorType descriptor_type;
 
@@ -314,44 +260,113 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
             continue;
           }
 
-          vk::DescriptorSetLayoutBinding layout_binding{shader_resource.binding,
-                                                        descriptor_type, 1,
-                                                        shader_resource.stage};
+          vk::DescriptorSetLayoutBinding binding{shader_resource.binding,
+                                                 descriptor_type, 1,
+                                                 shader_resource.stage};
 
-          layout_bindings.push_back(layout_binding);
+          bindings.push_back(binding);
         }
 
-        if (layout_bindings.empty()) {
+        if (bindings.empty()) {
           continue;
         }
 
-        vk::DescriptorSetLayoutCreateInfo descriptor_set_layout_ci{
-            {}, layout_bindings};
+        vk::DescriptorSetLayoutCreateInfo subpass_descriptor_set_layout_ci{
+            {}, bindings};
 
-        std::string layout_name;
-        if (set == 0) {
-          layout_name = "subpass";
-        } else {
-          layout_name = "draw_element";
-        }
+        subpass_descriptor_set_layout_ = gpu_->CreateDescriptorSetLayout(
+            subpass_descriptor_set_layout_ci, name_ + "_subpass");
 
-        descriptor_set_layout = &(RequestDescriptorSetLayout(
-            descriptor_set_layout_ci, name_ + "_" + layout_name));
-
-        if (set == 0) {
-          subpass_descriptor_set_layout_ = descriptor_set_layout;
-        }
-      }
-
-      if (set == 0 && !has_subpass_descriptor_set_) {
+        std::vector<vk::DescriptorSetLayout> subpass_descriptor_set_layouts(
+            frame_count_, *subpass_descriptor_set_layout_);
         vk::DescriptorSetAllocateInfo subpass_descriptor_set_allocate_info{
-            nullptr, **descriptor_set_layout};
+            nullptr, subpass_descriptor_set_layouts};
         subpass_descriptor_sets_ = gpu_->AllocateNormalDescriptorSets(
-            subpass_descriptor_set_allocate_info, name_ + "_" + layout_name);
+            subpass_descriptor_set_allocate_info, name_ + "_subpass");
 
         has_subpass_descriptor_set_ = true;
-        update_subpass_descriptor_set_ = std::vector<bool>(frame_count_, false);
+        update_subpass_descriptor_sets_ =
+            std::vector<bool>(frame_count_, false);
       }
+      descriptor_set_layout = &subpass_descriptor_set_layout_;
+    } else if (set == 1) {
+      if (!has_bindless_descriptor_set_) {
+        std::vector<vk::DescriptorSetLayoutBinding> bindings{
+            {0, vk::DescriptorType::eSampler, 8, vk::ShaderStageFlagBits::eAll},
+            {1, vk::DescriptorType::eSampledImage, 32,
+             vk::ShaderStageFlagBits::eAll}};
+
+        std::vector<vk::DescriptorBindingFlags> binding_flags(
+            2, vk::DescriptorBindingFlagBits::ePartiallyBound);
+
+        vk::DescriptorSetLayoutBindingFlagsCreateInfo binding_flags_ci{
+            binding_flags};
+
+        vk::DescriptorSetLayoutCreateInfo bindless_descriptor_set_layout_ci{
+            vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool,
+            bindings, &binding_flags_ci};
+        bindless_descriptor_set_layout_ = gpu_->CreateDescriptorSetLayout(
+            bindless_descriptor_set_layout_ci, name_ + "_bindless");
+
+        vk::DescriptorSetAllocateInfo bindless_descriptor_set_allocate_info{
+            nullptr, *bindless_descriptor_set_layout_};
+        bindless_descriptor_set_ = gpu_->AllocateBindlessDescriptorSet(
+            bindless_descriptor_set_allocate_info, name_ + "_bindless");
+
+        has_bindless_descriptor_set_ = true;
+      }
+
+      descriptor_set_layout = &bindless_descriptor_set_layout_;
+    } else {
+      std::vector<vk::DescriptorSetLayoutBinding> bindings;
+      for (const auto& shader_resource : shader_resources) {
+        vk::DescriptorType descriptor_type;
+
+        if (shader_resource.type == ShaderResourceType::kUniformBuffer) {
+          descriptor_type = vk::DescriptorType::eUniformBuffer;
+        } else if (shader_resource.type ==
+                   ShaderResourceType::kInputAttachment) {
+          descriptor_type = vk::DescriptorType::eInputAttachment;
+        } else if (shader_resource.type ==
+                   ShaderResourceType::kCombinedImageSampler) {
+          descriptor_type = vk::DescriptorType::eCombinedImageSampler;
+        } else {
+          continue;
+        }
+
+        vk::DescriptorSetLayoutBinding binding{
+            shader_resource.binding, descriptor_type, 1, shader_resource.stage};
+
+        bindings.push_back(binding);
+      }
+
+      if (bindings.empty()) {
+        continue;
+      }
+
+      vk::DescriptorSetLayoutCreateInfo draw_element_descriptor_set_layout_ci{
+          {}, bindings};
+
+      const vk::raii::DescriptorSetLayout* draw_element_descriptor_set_layout =
+          &(RequestDescriptorSetLayout(draw_element_descriptor_set_layout_ci,
+                                       name_ + "_draw_element"));
+
+      descriptor_set_layout = draw_element_descriptor_set_layout;
+
+      for (u32 i{0}; i < frame_count_; ++i) {
+        vk::DescriptorSetAllocateInfo draw_element_descriptor_set_allocate_info{
+            nullptr, **draw_element_descriptor_set_layout};
+
+        vk::raii::DescriptorSets draw_element_descriptor_sets{
+            gpu_->AllocateNormalDescriptorSets(
+                draw_element_descriptor_set_allocate_info,
+                name_ + "_draw_element")};
+
+        draw_element.descriptor_sets.push_back(
+            std::move(draw_element_descriptor_sets));
+      }
+
+      draw_element.has_descriptor_set = true;
     }
 
     set_layouts.push_back(**descriptor_set_layout);
@@ -536,16 +551,13 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
 
   // Descriptor set.
   for (u32 i{0}; i < frame_count_; ++i) {
-    vk::DescriptorSetAllocateInfo descriptor_set_allocate_info{{}, set_layouts};
-    vk::raii::DescriptorSets descriptor_sets{gpu_->AllocateNormalDescriptorSets(
-        descriptor_set_allocate_info, "normal_" + name_, primitive_index)};
-
     std::vector<vk::WriteDescriptorSet> write_descriptor_sets;
     std::vector<vk::DescriptorImageInfo> sampler_infos;
     std::vector<vk::DescriptorImageInfo> image_infos;
     std::vector<vk::DescriptorBufferInfo> buffer_infos;
 
     image_infos.reserve(100);
+    buffer_infos.reserve(100);
 
     // Bindless.
     glm::uvec4 sampler_indices{0};
@@ -582,7 +594,7 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
             sampler_indices[idx] = global_sampler_index_++;
 
             vk::WriteDescriptorSet write_descriptor_set{
-                *(bindless_descriptor_sets_[0]),
+                *(bindless_descriptor_set_),
                 global_samplers_shader_resource.binding, sampler_indices[idx],
                 vk::DescriptorType::eSampler, sampler_infos.back()};
 
@@ -608,7 +620,7 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
             image_indices[idx] = global_image_index_++;
 
             vk::WriteDescriptorSet write_descriptor_set{
-                *(bindless_descriptor_sets_[0]),
+                *bindless_descriptor_set_,
                 global_images_shader_resource.binding, image_indices[idx],
                 vk::DescriptorType::eSampledImage, image_infos.back()};
 
@@ -627,7 +639,8 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
       const auto& shader_resources{set_shader_resource.second};
       for (const auto& shader_resource : shader_resources) {
         if (shader_resource.type == ShaderResourceType::kUniformBuffer) {
-          if (shader_resource.name == "SubpassUniform") {
+          if (shader_resource.name == "SubpassUniform" &&
+              !update_subpass_descriptor_sets_[i]) {
             const glm::mat4& view{camera_->GetViewMatrix()};
             const glm::mat4& projection{camera_->GetProjectionMatrix()};
             const glm::vec3& camera_position{camera_->GetPosition()};
@@ -653,12 +666,18 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
             buffer_infos.push_back(std::move(descriptor_buffer_info));
 
             vk::WriteDescriptorSet write_descriptor_set{
-                *subpass_descriptor_sets_[0],
+                *subpass_descriptor_sets_[i],
                 shader_resource.binding,
                 0,
                 vk::DescriptorType::eUniformBuffer,
                 nullptr,
                 buffer_infos.back()};
+
+            subpass_uniforms_.push_back(std::move(subpass_uniform));
+            subpass_uniform_buffers_.push_back(
+                std::move(subpass_uniform_buffer));
+
+            write_descriptor_sets.push_back(write_descriptor_set);
 
           } else if (shader_resource.name == "DrawElementUniform") {
             DrawElementUniform draw_element_uniform{
@@ -680,7 +699,7 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
             buffer_infos.push_back(std::move(descriptor_buffer_info));
 
             vk::WriteDescriptorSet write_descriptor_set{
-                *(descriptor_sets[shader_resource.set - 2]),
+                *(draw_element.descriptor_sets[i][shader_resource.set - 2]),
                 shader_resource.binding,
                 0,
                 vk::DescriptorType::eUniformBuffer,
@@ -704,7 +723,7 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
           image_infos.push_back(std::move(descriptor_image_info));
 
           vk::WriteDescriptorSet write_descriptor_set{
-              *(descriptor_sets[shader_resource.set - 2]),
+              *(draw_element.descriptor_sets[i][shader_resource.set - 2]),
               shader_resource.binding, 0, vk::DescriptorType::eInputAttachment,
               image_infos.back()};
 
@@ -727,7 +746,7 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
           image_infos.push_back(std::move(descriptor_image_info));
 
           vk::WriteDescriptorSet write_descriptor_set{
-              *(descriptor_sets[shader_resource.set - 2]),
+              *(draw_element.descriptor_sets[i][shader_resource.set - 2]),
               shader_resource.binding, 0,
               vk::DescriptorType::eCombinedImageSampler, image_infos.back()};
 
@@ -737,15 +756,14 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
     }
 
     gpu_->UpdateDescriptorSets(write_descriptor_sets);
-    draw_element.descriptor_sets.push_back(std::move(descriptor_sets));
   }
 
   return draw_element;
 }
 
-const SPIRV& Subpass::RequesetSpirv(const ast::Shader& shader,
-                                    const std::vector<std::string>& processes,
-                                    vk::ShaderStageFlagBits shader_stage) {
+const SPIRV& Subpass::RequestSpirv(const ast::Shader& shader,
+                                   const std::vector<std::string>& processes,
+                                   vk::ShaderStageFlagBits shader_stage) {
   u64 hash_value{shader.GetHashValue(processes)};
 
   auto it{spirv_shaders_.find(hash_value)};
