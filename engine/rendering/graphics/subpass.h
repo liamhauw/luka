@@ -92,6 +92,31 @@ class Subpass {
                                 const ast::sc::Primitive& primitive = {},
                                 u32 primitive_index = -1);
 
+  void ParseShaderResources(
+      const ast::sc::Primitive& primitive, std::vector<const SPIRV*>& spirvs,
+      std::unordered_map<std::string, ShaderResource>& name_shader_resources,
+      std::unordered_map<u32, std::vector<ShaderResource>>&
+          set_shader_resources,
+      std::vector<u32>& sorted_sets,
+      std::vector<vk::PushConstantRange>& push_constant_ranges);
+
+  void CreatePipelineResources(
+      const glm::mat4& model_matrix, const ast::sc::Primitive& primitive,
+      u32 primitive_index,
+      const std::unordered_map<std::string, ShaderResource>&
+          name_shader_resources,
+      const std::unordered_map<u32, std::vector<ShaderResource>>&
+          set_shader_resources,
+      const std::vector<u32>& sorted_sets,
+      const std::vector<vk::PushConstantRange>& push_constant_ranges,
+      DrawElement& draw_element);
+
+  void CreatePipeline(const ast::sc::Primitive& primitive,
+                      const std::vector<const SPIRV*>& spirvs,
+                      const std::unordered_map<std::string, ShaderResource>&
+                          name_shader_resources,
+                      DrawElement& draw_element);
+
   const SPIRV& RequestSpirv(const ast::Shader& shader,
                             const std::vector<std::string>& processes,
                             vk::ShaderStageFlagBits shader_stage);
@@ -132,8 +157,9 @@ class Subpass {
   bool has_primitive_;
 
   std::vector<std::string> wanted_textures_{"base_color_texture"};
-
-  bool has_push_constant_{false};
+  u32 bindless_sampler_index_{0};
+  u32 bindless_image_index_{0};
+  bool need_resize_{false};
 
   bool has_subpass_descriptor_set_{false};
   u32 subpass_descriptor_set_index_;
@@ -150,10 +176,8 @@ class Subpass {
 
   u32 draw_element_descriptor_set_index_;
 
-  u32 bindless_sampler_index_{0};
-  u32 bindless_image_index_{0};
+  bool has_push_constant_{false};
 
-  bool need_resize_{false};
 
   std::unordered_map<u64, SPIRV> spirv_shaders_;
   std::unordered_map<u64, vk::raii::DescriptorSetLayout>
