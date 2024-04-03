@@ -5,8 +5,8 @@
 
 #extension GL_EXT_nonuniform_qualifier : enable
 
-layout(set = 1, binding = 0) uniform sampler global_samplers[];
-layout(set = 1, binding = 1) uniform texture2D global_images[];
+layout(set = 1, binding = 0) uniform sampler bindless_samplers[];
+layout(set = 1, binding = 1) uniform texture2D bindless_images[];
 
 layout(set = 2, binding = 0) uniform DrawElementUniform {
   mat4 m;
@@ -32,10 +32,11 @@ void main(void) {
 
 #ifdef HAS_BASE_COLOR_TEXTURE
   uint index = draw_element_uniform.sampler_indices.x;
-  base_color = texture(nonuniformEXT(sampler2D(
-                           global_images[draw_element_uniform.image_indices.x],
-                           global_samplers[index])),
-                       i_texcoord_0);
+  base_color =
+      texture(nonuniformEXT(sampler2D(
+                  bindless_images[draw_element_uniform.image_indices.x],
+                  bindless_samplers[index])),
+              i_texcoord_0);
 #else
   base_color = draw_element_uniform.base_color_factor;
 #endif

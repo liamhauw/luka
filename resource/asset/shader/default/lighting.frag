@@ -11,12 +11,9 @@ layout(set = 0, binding = 0) uniform SubpassUniform {
 }
 subpass_uniform;
 
-layout(set = 1, binding = 0) uniform sampler global_samplers[];
-layout(set = 1, binding = 1) uniform texture2D global_images[];
-
-layout(input_attachment_index = 0, set = 2, binding = 0) uniform subpassInput i_base_color;
-layout(input_attachment_index = 1, set = 2, binding = 1) uniform subpassInput i_normal;
-layout(input_attachment_index = 2, set = 2, binding = 2) uniform subpassInput i_depth;
+layout(input_attachment_index = 0, set = 0, binding = 1) uniform subpassInput i_base_color;
+layout(input_attachment_index = 1, set = 0, binding = 2) uniform subpassInput i_normal;
+layout(input_attachment_index = 2, set = 0, binding = 3) uniform subpassInput i_depth;
 
 layout(location = 0) in vec2 i_texcoord_0;
 layout(location = 0) out vec4 o_color;

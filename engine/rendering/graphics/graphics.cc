@@ -166,23 +166,35 @@ void Graphics::DrawPasses(const vk::raii::CommandBuffer& command_buffer) {
             subpass.PushConstants(command_buffer, **pipeline_layout);
           }
 
-          const vk::raii::DescriptorSet& subpass_descriptor_set{
-              subpass.GetSubpassDescriptorSet(frame_index_)};
-          const vk::raii::DescriptorSet& bindless_descriptor_set{
-              subpass.GetBindlessDescriptorSet()};
+          if (subpass.HasSubpassDescriptorSet()) {
+            u32 subpass_descriptor_set_index{
+                subpass.GetSubpassDescriptorSetIndex()};
+            const vk::raii::DescriptorSet& subpass_descriptor_set{
+                subpass.GetSubpassDescriptorSet(frame_index_)};
+            command_buffer.bindDescriptorSets(
+                vk::PipelineBindPoint::eGraphics, **pipeline_layout,
+                subpass_descriptor_set_index, *subpass_descriptor_set, nullptr);
+          }
 
-          std::vector<vk::DescriptorSet> descriptor_sets{
-              *subpass_descriptor_set, *bindless_descriptor_set};
-
-          command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-                                            **pipeline_layout, 0,
-                                            descriptor_sets, nullptr);
+          if (subpass.HasBindlessDescriptorSet()) {
+            u32 bindless_descriptor_set_index{
+                subpass.GetBindlessDescriptorSetIndex()};
+            const vk::raii::DescriptorSet& bindless_descriptor_set{
+                subpass.GetBindlessDescriptorSet()};
+            command_buffer.bindDescriptorSets(
+                vk::PipelineBindPoint::eGraphics, **pipeline_layout,
+                bindless_descriptor_set_index, *bindless_descriptor_set,
+                nullptr);
+          }
 
           prev_pipeline_layout = pipeline_layout;
         }
 
         // Bind draw element descriptor sets.
         if (draw_element.has_descriptor_set) {
+          u32 draw_element_descriptor_set_index{
+              subpass.GetDrawElementDescriptorSetIndex()};
+
           const vk::raii::DescriptorSets& descriptor_sets{
               draw_element.descriptor_sets[frame_index_]};
 
@@ -190,9 +202,9 @@ void Graphics::DrawPasses(const vk::raii::CommandBuffer& command_buffer) {
           for (const auto& descriptor_set : descriptor_sets) {
             vk_descriptor_sets.push_back(*(descriptor_set));
           }
-          command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-                                            **pipeline_layout, 2,
-                                            vk_descriptor_sets, nullptr);
+          command_buffer.bindDescriptorSets(
+              vk::PipelineBindPoint::eGraphics, **pipeline_layout,
+              draw_element_descriptor_set_index, vk_descriptor_sets, nullptr);
         }
 
         // Draw.
