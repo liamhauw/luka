@@ -390,13 +390,14 @@ void Subpass::CreatePipelineResources(
                 vk::DescriptorBufferInfo descriptor_buffer_info{
                     *subpass_uniform_buffer, 0, sizeof(SubpassUniform)};
 
+                buffer_infos.push_back(std::move(descriptor_buffer_info));
                 vk::WriteDescriptorSet write_descriptor_set{
                     *subpass_descriptor_sets_[i],
                     shader_resource.binding,
                     0,
                     vk::DescriptorType::eUniformBuffer,
                     nullptr,
-                    descriptor_buffer_info};
+                    buffer_infos.back()};
 
                 subpass_uniforms_.push_back(std::move(subpass_uniform));
                 subpass_uniform_buffers_.push_back(
