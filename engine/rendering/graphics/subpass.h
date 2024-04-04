@@ -31,23 +31,23 @@ struct DrawElementUniform {
 };
 
 struct DrawElmentVertexInfo {
-  u32 location;
+  u32 location{UINT32_MAX};
   std::vector<vk::Buffer> buffers;
   std::vector<u64> offsets;
 };
 
 struct DrawElement {
-  bool has_primitive;
+  bool has_primitive{false};
   bool has_descriptor_set{false};
-  const vk::raii::PipelineLayout* pipeline_layout;
+  const vk::raii::PipelineLayout* pipeline_layout{nullptr};
   std::vector<vk::raii::DescriptorSets> descriptor_sets;
   std::vector<DrawElementUniform> uniforms;
   std::vector<gpu::Buffer> uniform_buffers;
-  u64 vertex_count;
+  u64 vertex_count{UINT64_MAX};
   std::vector<DrawElmentVertexInfo> vertex_infos;
-  bool has_index;
-  const ast::sc::IndexAttribute* index_attribute;
-  const vk::raii::Pipeline* pipeline;
+  bool has_index{false};
+  const ast::sc::IndexAttribute* index_attribute{nullptr};
+  const vk::raii::Pipeline* pipeline{nullptr};
 };
 
 class Subpass {
@@ -156,28 +156,27 @@ class Subpass {
   const std::unordered_map<vk::ShaderStageFlagBits, u32>* shaders_;
   bool has_primitive_;
 
-  std::vector<std::string> wanted_textures_{"base_color_texture"};
-  u32 bindless_sampler_index_{0};
-  u32 bindless_image_index_{0};
   bool need_resize_{false};
 
   bool has_subpass_descriptor_set_{false};
-  u32 subpass_descriptor_set_index_;
-  vk::raii::DescriptorSetLayout subpass_descriptor_set_layout_{nullptr};
+  u32 subpass_descriptor_set_index_{UINT32_MAX};
+  const vk::raii::DescriptorSetLayout* subpass_descriptor_set_layout_{nullptr};
   vk::raii::DescriptorSets subpass_descriptor_sets_{nullptr};
   std::vector<SubpassUniform> subpass_uniforms_;
   std::vector<gpu::Buffer> subpass_uniform_buffers_;
   bool subpass_desciptor_set_updated_{false};
 
   bool has_bindless_descriptor_set_{false};
-  u32 bindless_descriptor_set_index_;
-  vk::raii::DescriptorSetLayout bindless_descriptor_set_layout_{nullptr};
+  u32 bindless_descriptor_set_index_{UINT32_MAX};
+  const vk::raii::DescriptorSetLayout* bindless_descriptor_set_layout_{nullptr};
   vk::raii::DescriptorSet bindless_descriptor_set_{nullptr};
+  std::vector<std::string> wanted_textures_{"base_color_texture"};
+  u32 bindless_sampler_index_{0};
+  u32 bindless_image_index_{0};
 
-  u32 draw_element_descriptor_set_index_;
+  u32 draw_element_descriptor_set_index_{UINT32_MAX};
 
   bool has_push_constant_{false};
-
 
   std::unordered_map<u64, SPIRV> spirv_shaders_;
   std::unordered_map<u64, vk::raii::DescriptorSetLayout>

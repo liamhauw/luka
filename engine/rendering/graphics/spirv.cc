@@ -63,7 +63,7 @@ void SPIRV::ParseShaderResource(const spirv_cross::CompilerGLSL& compiler) {
     shader_resources_.push_back(std::move(shader_resource));
   }
 
-  // Combined image sampler.
+  // Combined image samplers.
   const auto& combined_image_samplers{resources.sampled_images};
   for (const auto& combined_image_sampler : combined_image_samplers) {
     ShaderResource shader_resource;

@@ -458,68 +458,6 @@ vk::raii::CommandBuffers Gpu::AllocateCommandBuffers(
   return command_buffers;
 }
 
-vk::raii::DescriptorSet Gpu::AllocateBindlessDescriptorSet(
-    vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
-    const std::string& name, i32 index) {
-  if (descriptor_set_allocate_info.descriptorSetCount != 1) {
-    LOGW("Descriptor set count is not 1");
-  }
-  descriptor_set_allocate_info.descriptorPool = *bindless_descriptor_pool_;
-  vk::raii::DescriptorSets descriptor_sets{device_,
-                                           descriptor_set_allocate_info};
-
-#ifndef NDEBUG
-  SetObjectName(vk::ObjectType::eDescriptorSet,
-                reinterpret_cast<uint64_t>(
-                    static_cast<VkDescriptorSet>(*(descriptor_sets[0]))),
-                name, "Descriptor Set",
-                index == -1 ? "" : std::to_string(index));
-#endif
-
-  return std::move(descriptor_sets[0]);
-}
-
-vk::raii::DescriptorSets Gpu::AllocateBindlessDescriptorSets(
-    vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
-    const std::string& name, i32 index) {
-  descriptor_set_allocate_info.descriptorPool = *bindless_descriptor_pool_;
-  vk::raii::DescriptorSets descriptor_sets{device_,
-                                           descriptor_set_allocate_info};
-
-#ifndef NDEBUG
-  for (u32 i{0}; i < descriptor_sets.size(); ++i) {
-    SetObjectName(vk::ObjectType::eDescriptorSet,
-                  reinterpret_cast<uint64_t>(
-                      static_cast<VkDescriptorSet>(*(descriptor_sets[i]))),
-                  name, "Descriptor Set",
-                  index == -1 ? "" : std::to_string(index));
-  }
-
-#endif
-
-  return descriptor_sets;
-}
-
-vk::raii::DescriptorSet Gpu::AllocateNormalDescriptorSet(
-    vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
-    const std::string& name, i32 index) {
-  descriptor_set_allocate_info.descriptorPool = *normal_descriptor_pool_;
-  vk::raii::DescriptorSets descriptor_sets{device_,
-                                           descriptor_set_allocate_info};
-
-#ifndef NDEBUG
-
-  SetObjectName(vk::ObjectType::eDescriptorSet,
-                reinterpret_cast<uint64_t>(
-                    static_cast<VkDescriptorSet>(*(descriptor_sets[0]))),
-                name, "Descriptor Set",
-                index == -1 ? "" : std::to_string(index));
-
-#endif
-
-  return std::move(descriptor_sets[0]);
-}
-
 vk::raii::DescriptorSets Gpu::AllocateNormalDescriptorSets(
     vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
     const std::string& name, i32 index) {
@@ -539,6 +477,27 @@ vk::raii::DescriptorSets Gpu::AllocateNormalDescriptorSets(
 #endif
 
   return descriptor_sets;
+}
+
+vk::raii::DescriptorSet Gpu::AllocateBindlessDescriptorSet(
+    vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
+    const std::string& name, i32 index) {
+  if (descriptor_set_allocate_info.descriptorSetCount != 1) {
+    LOGW("Descriptor set count is not 1");
+  }
+  descriptor_set_allocate_info.descriptorPool = *bindless_descriptor_pool_;
+  vk::raii::DescriptorSets descriptor_sets{device_,
+                                           descriptor_set_allocate_info};
+
+#ifndef NDEBUG
+  SetObjectName(vk::ObjectType::eDescriptorSet,
+                reinterpret_cast<uint64_t>(
+                    static_cast<VkDescriptorSet>(*(descriptor_sets[0]))),
+                name, "Descriptor Set",
+                index == -1 ? "" : std::to_string(index));
+#endif
+
+  return std::move(descriptor_sets[0]);
 }
 
 void Gpu::UpdateDescriptorSets(

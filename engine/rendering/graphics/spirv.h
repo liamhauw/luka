@@ -27,7 +27,7 @@ enum class ShaderResourceType {
 };
 
 struct ShaderResource {
-  std::string name{""};
+  std::string name;
   ShaderResourceType type{ShaderResourceType::kNone};
   vk::ShaderStageFlags stage{vk::ShaderStageFlagBits::eAll};
   u32 input_attachment_index{UINT32_MAX};
@@ -40,7 +40,7 @@ struct ShaderResource {
 };
 
 struct SpecializationConstant {
-  std::string name{""};
+  std::string name;
   u32 constant_id{UINT32_MAX};
 };
 

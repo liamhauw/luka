@@ -120,7 +120,6 @@ void Subpass::CreateDrawElements() {
 
   if (!has_primitive_) {
     draw_elements_.push_back(CreateDrawElement());
-
   } else {
     for (u32 scene_index : *scenes_) {
       const ast::sc::Scene* scene{asset_->GetScene(scene_index).GetScene()};
@@ -305,6 +304,7 @@ void Subpass::CreatePipelineResources(
   std::vector<vk::DescriptorBufferInfo> buffer_infos;
   image_infos.reserve(100);
   buffer_infos.reserve(100);
+
   glm::uvec4 sampler_indices{0};
   glm::uvec4 image_indices{0};
 
@@ -319,6 +319,7 @@ void Subpass::CreatePipelineResources(
     if (resource_name.find("subpass") != std::string::npos) {
       // Create descriptor set.
       if (!has_subpass_descriptor_set_) {
+        has_subpass_descriptor_set_ = true;
         subpass_descriptor_set_index_ = set;
 
         std::vector<vk::DescriptorSetLayoutBinding> bindings;
@@ -348,13 +349,11 @@ void Subpass::CreatePipelineResources(
         vk::DescriptorSetLayoutCreateInfo subpass_descriptor_set_layout_ci{
             {}, bindings};
 
-        subpass_descriptor_set_layout_ = gpu_->CreateDescriptorSetLayout(
-            subpass_descriptor_set_layout_ci, name_ + "_subpass");
-
-        has_subpass_descriptor_set_ = true;
+        subpass_descriptor_set_layout_ = &(RequestDescriptorSetLayout(
+            subpass_descriptor_set_layout_ci, name_ + "_subpass"));
 
         std::vector<vk::DescriptorSetLayout> subpass_descriptor_set_layouts(
-            frame_count_, *subpass_descriptor_set_layout_);
+            frame_count_, **subpass_descriptor_set_layout_);
         vk::DescriptorSetAllocateInfo subpass_descriptor_set_allocate_info{
             nullptr, subpass_descriptor_set_layouts};
         subpass_descriptor_sets_ = gpu_->AllocateNormalDescriptorSets(
@@ -428,11 +427,12 @@ void Subpass::CreatePipelineResources(
         }
       }
 
-      descriptor_set_layout = &subpass_descriptor_set_layout_;
+      descriptor_set_layout = subpass_descriptor_set_layout_;
 
     } else if (resource_name.find("bindless") != std::string::npos) {
       if (!has_bindless_descriptor_set_) {
         // Create descriptor set layout.
+        has_bindless_descriptor_set_ = true;
         bindless_descriptor_set_index_ = set;
 
         std::vector<vk::DescriptorSetLayoutBinding> bindings{
@@ -449,13 +449,12 @@ void Subpass::CreatePipelineResources(
         vk::DescriptorSetLayoutCreateInfo bindless_descriptor_set_layout_ci{
             vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool,
             bindings, &binding_flags_ci};
-        bindless_descriptor_set_layout_ = gpu_->CreateDescriptorSetLayout(
-            bindless_descriptor_set_layout_ci, name_ + "_bindless");
+        bindless_descriptor_set_layout_ = &(RequestDescriptorSetLayout(
+            bindless_descriptor_set_layout_ci, name_ + "_bindless"));
 
         // Allocate descriptor set.
-        has_bindless_descriptor_set_ = true;
         vk::DescriptorSetAllocateInfo bindless_descriptor_set_allocate_info{
-            nullptr, *bindless_descriptor_set_layout_};
+            nullptr, **bindless_descriptor_set_layout_};
         bindless_descriptor_set_ = gpu_->AllocateBindlessDescriptorSet(
             bindless_descriptor_set_allocate_info, name_ + "_bindless");
       }
@@ -539,7 +538,7 @@ void Subpass::CreatePipelineResources(
         }
       }
 
-      descriptor_set_layout = &bindless_descriptor_set_layout_;
+      descriptor_set_layout = bindless_descriptor_set_layout_;
     } else {
       // Create descriptor set layout.
       draw_element_descriptor_set_index_ =
