@@ -25,6 +25,7 @@ struct SubpassUniform {
 
 struct DrawElementUniform {
   glm::mat4 m;
+  glm::mat4 inverse_m;
   glm::vec4 base_color_factor;
   glm::uvec4 sampler_indices;
   glm::uvec4 image_indices;
@@ -89,6 +90,7 @@ class Subpass {
   void CreateDrawElements();
 
   DrawElement CreateDrawElement(const glm::mat4& model_matrix = {},
+                                const glm::mat4& inverse_model_matrix = {},
                                 const ast::sc::Primitive& primitive = {},
                                 u32 primitive_index = -1);
 
@@ -101,8 +103,8 @@ class Subpass {
       std::vector<vk::PushConstantRange>& push_constant_ranges);
 
   void CreatePipelineResources(
-      const glm::mat4& model_matrix, const ast::sc::Primitive& primitive,
-      u32 primitive_index,
+      const glm::mat4& model_matrix, const glm::mat4& inverse_model_matrix,
+      const ast::sc::Primitive& primitive, u32 primitive_index,
       const std::unordered_map<std::string, ShaderResource>&
           name_shader_resources,
       const std::unordered_map<u32, std::vector<ShaderResource>>&
@@ -170,7 +172,8 @@ class Subpass {
   u32 bindless_descriptor_set_index_{UINT32_MAX};
   const vk::raii::DescriptorSetLayout* bindless_descriptor_set_layout_{nullptr};
   vk::raii::DescriptorSet bindless_descriptor_set_{nullptr};
-  std::vector<std::string> wanted_textures_{"base_color_texture"};
+  std::vector<std::string> wanted_textures_{"base_color_texture",
+                                            "normal_texture"};
   u32 bindless_sampler_index_{0};
   u32 bindless_image_index_{0};
 

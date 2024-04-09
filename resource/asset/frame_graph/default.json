@@ -32,7 +32,7 @@
             "depth_stencil": 2
           },
           "scenes": [
-            1
+            2
           ],
           "shaders": {
             "vertex": 0,

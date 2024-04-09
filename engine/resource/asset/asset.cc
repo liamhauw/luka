@@ -92,7 +92,7 @@ void AssetAsync::LoadFrameGraph(u32 index) {
 
 const ast::Scene& AssetAsync::GetScene(u32 index) {
   if (index >= scene_count_) {
-    THROW("Fail to get shader");
+    THROW("Fail to get scene");
   }
   return scenes_[index];
 }

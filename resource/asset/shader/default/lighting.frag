@@ -32,8 +32,8 @@ void main() {
   vec3 camera_vector = normalize(subpass_uniform.camera_position.xyz - pos);
   vec3 reflection_vector = reflect(subpass_uniform.light_position.xyz, normal);
 
-  vec3 diffuse = max(dot(normal, light_vector), 0.15) * base_color.xyz;
+  vec3 diffuse = max(dot(normal, light_vector), 0.6) * base_color.xyz;
   vec3 specular = pow(max(dot(reflection_vector, camera_vector), 0.0), 1.0) * vec3(0.01);
   
-  o_color = vec4(diffuse * base_color.xyz + specular, 1.0);
+  o_color = vec4(diffuse * base_color.xyz, 1.0);
 }

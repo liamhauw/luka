@@ -149,6 +149,7 @@ void Subpass::CreateDrawElements() {
           model_matrix *= parent_node->GetModelMarix();
           parent_node = parent_node->GetParent();
         }
+        glm::mat4 inverse_model_matrix{glm::inverse(model_matrix)};
 
         // Primitives.
         const ast::sc::Mesh* mesh{cur_node->GetMesh()};
@@ -160,8 +161,8 @@ void Subpass::CreateDrawElements() {
 
         // Draw elements.
         for (u32 i{0}; i < primitives.size(); ++i) {
-          DrawElement draw_element{
-              CreateDrawElement(model_matrix, primitives[i], i)};
+          DrawElement draw_element{CreateDrawElement(
+              model_matrix, inverse_model_matrix, primitives[i], i)};
           draw_elements_.push_back(std::move(draw_element));
         }
       }
@@ -170,6 +171,7 @@ void Subpass::CreateDrawElements() {
 }
 
 DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
+                                       const glm::mat4& inverse_model_matrix,
                                        const ast::sc::Primitive& primitive,
                                        u32 primitive_index) {
   DrawElement draw_element;
@@ -185,9 +187,10 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
                        set_shader_resources, sorted_sets, push_constant_ranges);
 
   // Create pipeline resources.
-  CreatePipelineResources(model_matrix, primitive, primitive_index,
-                          name_shader_resources, set_shader_resources,
-                          sorted_sets, push_constant_ranges, draw_element);
+  CreatePipelineResources(model_matrix, inverse_model_matrix, primitive,
+                          primitive_index, name_shader_resources,
+                          set_shader_resources, sorted_sets,
+                          push_constant_ranges, draw_element);
 
   // Pipeline.
   CreatePipeline(primitive, spirvs, name_shader_resources, draw_element);
@@ -215,16 +218,21 @@ void Subpass::ParseShaderResources(
     }
 
     bool has_position_buffer{false};
+    bool has_normal_buffer{false};
     for (const auto& vertex_buffer_attribute : primitive.vertex_attributes) {
       std::string name{vertex_buffer_attribute.first};
       if (name == "POSITION") {
         has_position_buffer = true;
+        continue;
+      } else if (name == "NORMAL") {
+        has_normal_buffer = true;
+        continue;
       }
       std::transform(name.begin(), name.end(), name.begin(), ::toupper);
       shader_processes.push_back("DHAS_" + name + "_BUFFER");
     }
-    if (!has_position_buffer) {
-      THROW("There is no position buffer.");
+    if (!has_position_buffer || !has_normal_buffer) {
+      THROW("There is no position or/and normal buffer.");
     }
   }
 
@@ -289,8 +297,8 @@ void Subpass::ParseShaderResources(
 }
 
 void Subpass::CreatePipelineResources(
-    const glm::mat4& model_matrix, const ast::sc::Primitive& primitive,
-    u32 primitive_index,
+    const glm::mat4& model_matrix, const glm::mat4& inverse_model_matrix,
+    const ast::sc::Primitive& primitive, u32 primitive_index,
     const std::unordered_map<std::string, ShaderResource>&
         name_shader_resources,
     const std::unordered_map<u32, std::vector<ShaderResource>>&
@@ -438,7 +446,7 @@ void Subpass::CreatePipelineResources(
 
         std::vector<vk::DescriptorSetLayoutBinding> bindings{
             {0, vk::DescriptorType::eSampler, 8, vk::ShaderStageFlagBits::eAll},
-            {1, vk::DescriptorType::eSampledImage, 32,
+            {1, vk::DescriptorType::eSampledImage, 64,
              vk::ShaderStageFlagBits::eAll}};
 
         std::vector<vk::DescriptorBindingFlags> binding_flags(
@@ -597,8 +605,9 @@ void Subpass::CreatePipelineResources(
           if (shader_resource.name == "DrawElementUniform") {
             for (u32 i{0}; i < frame_count_; ++i) {
               DrawElementUniform draw_element_uniform{
-                  model_matrix, primitive.material->GetBaseColorFactor(),
-                  sampler_indices, image_indices};
+                  model_matrix, inverse_model_matrix,
+                  primitive.material->GetBaseColorFactor(), sampler_indices,
+                  image_indices};
 
               vk::BufferCreateInfo uniform_buffer_ci{
                   {},

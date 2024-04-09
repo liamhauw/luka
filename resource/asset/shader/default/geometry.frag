@@ -10,43 +10,54 @@ layout(set = 1, binding = 1) uniform texture2D bindless_images[];
 
 layout(set = 2, binding = 0) uniform DrawElementUniform {
   mat4 m;
+  mat4 inverse_m;
   vec4 base_color_factor;
   uvec4 sampler_indices;
   uvec4 image_indices;
 }
 draw_element_uniform;
 
+layout(location = 1) in vec3 i_normal;
+
 #ifdef HAS_TEXCOORD_0_BUFFER
-layout(location = 1) in vec2 i_texcoord_0;
+layout(location = 2) in vec2 i_texcoord_0;
 #endif
 
-#ifdef HAS_NORMAL_BUFFER
-layout(location = 2) in vec3 i_normal;
+#ifdef HAS_TANGENT_BUFFER
+layout(location = 3) in vec3 i_tangent;
 #endif
 
 layout(location = 0) out vec4 o_base_color;
 layout(location = 1) out vec4 o_normal;
 
 void main(void) {
-  vec4 base_color = vec4(1.0, 1.0, 1.0, 1.0);
-
+  vec4 base_color = draw_element_uniform.base_color_factor;
 #ifdef HAS_BASE_COLOR_TEXTURE
-  uint index = draw_element_uniform.sampler_indices.x;
   base_color =
       texture(nonuniformEXT(sampler2D(
                   bindless_images[draw_element_uniform.image_indices.x],
-                  bindless_samplers[index])),
+                  bindless_samplers[draw_element_uniform.sampler_indices.x])),
               i_texcoord_0);
-#else
-  base_color = draw_element_uniform.base_color_factor;
+  base_color = vec4(pow(base_color.rgb, vec3(2.2)), 1.0);
 #endif
-
   o_base_color = base_color;
 
-  vec3 normal = vec3(1.0, 0.0, 0.0);
+  vec3 normal = normalize(i_normal) * 0.5 + 0.5;
+#ifdef HAS_NORMAL_TEXTURE
+#ifdef HAS_TANGENT_BUFFER
+  vec3 T = normalize(i_tangent);
+  vec3 B = normalize(cross(normal, T));
+  mat3 TNB = mat3(T, B, normal);
 
-#ifdef HAS_NORMAL_BUFFER
-  normal = normalize(i_normal) * 0.5 + 0.5;
+  normal =
+      texture(nonuniformEXT(sampler2D(
+                  bindless_images[draw_element_uniform.image_indices.y],
+                  bindless_samplers[draw_element_uniform.sampler_indices.y])),
+              i_texcoord_0)
+          .xyz;
+
+  normal = normalize(TNB * (normal * 2.0 - 1.0));
+#endif
 #endif
 
   o_normal = vec4(normal, 1.0);
