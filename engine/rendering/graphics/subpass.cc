@@ -208,7 +208,7 @@ void Subpass::ParseShaderResources(
   if (has_primitive_) {
     const std::map<std::string, ast::sc::Texture*>& textures{
         primitive.material->GetTextures()};
-    for (std::string wanted_texture : wanted_textures_) {
+    for (std::string wanted_texture : kWantedTextures) {
       auto it{textures.find(wanted_texture)};
       if (it != textures.end()) {
         std::transform(wanted_texture.begin(), wanted_texture.end(),
@@ -445,8 +445,9 @@ void Subpass::CreatePipelineResources(
         bindless_descriptor_set_index_ = set;
 
         std::vector<vk::DescriptorSetLayoutBinding> bindings{
-            {0, vk::DescriptorType::eSampler, 8, vk::ShaderStageFlagBits::eAll},
-            {1, vk::DescriptorType::eSampledImage, 64,
+            {0, vk::DescriptorType::eSampler, kBindlessSamplerMaxCount,
+             vk::ShaderStageFlagBits::eAll},
+            {1, vk::DescriptorType::eSampledImage, kBindlessImageMaxCount,
              vk::ShaderStageFlagBits::eAll}};
 
         std::vector<vk::DescriptorBindingFlags> binding_flags(
@@ -474,7 +475,7 @@ void Subpass::CreatePipelineResources(
             primitive.material->GetTextures()};
 
         u32 idx{0};
-        for (const auto& wanted_texture : wanted_textures_) {
+        for (const auto& wanted_texture : kWantedTextures) {
           auto bindless_samplers_it{
               name_shader_resources.find("bindless_samplers")};
           auto bindless_images_it{
@@ -503,6 +504,11 @@ void Subpass::CreatePipelineResources(
               sampler_infos.push_back(std::move(descriptor_sampler_info));
 
               sampler_indices[idx] = bindless_sampler_index_++;
+              if (image_indices[idx] >= kBindlessImageMaxCount) {
+                THROW(
+                    "Too much bindless samplers, please update "
+                    "kBindlessSamplerMaxCount");
+              }
 
               vk::WriteDescriptorSet write_descriptor_set{
                   *(bindless_descriptor_set_),
@@ -532,6 +538,11 @@ void Subpass::CreatePipelineResources(
               image_infos.push_back(std::move(descriptor_image_info));
 
               image_indices[idx] = bindless_image_index_++;
+              if (image_indices[idx] >= kBindlessImageMaxCount) {
+                THROW(
+                    "Too much bindless images, please update "
+                    "kBindlessImageMaxCount");
+              }
 
               vk::WriteDescriptorSet write_descriptor_set{
                   *bindless_descriptor_set_,
@@ -605,9 +616,16 @@ void Subpass::CreatePipelineResources(
           if (shader_resource.name == "DrawElementUniform") {
             for (u32 i{0}; i < frame_count_; ++i) {
               DrawElementUniform draw_element_uniform{
-                  model_matrix, inverse_model_matrix,
-                  primitive.material->GetBaseColorFactor(), sampler_indices,
-                  image_indices};
+                  model_matrix,
+                  inverse_model_matrix,
+                  primitive.material->GetBaseColorFactor(),
+                  sampler_indices,
+                  image_indices,
+                  primitive.material->GetMetallicFactor(),
+                  primitive.material->GetRoughnessFactor(),
+                  primitive.material->GetAlphaMode() ==
+                      ast::sc::AlphaMode::kMask,
+                  primitive.material->GetAlphaCutoff()};
 
               vk::BufferCreateInfo uniform_buffer_ci{
                   {},
@@ -806,7 +824,7 @@ void Subpass::CreatePipeline(
       0.0F,
       1.0F};
 
-  if (!has_primitive_) {
+  if (!has_primitive_ || primitive.material->GetDoubleSided()) {
     rasterization_state_ci.cullMode = vk::CullModeFlagBits::eNone;
   }
 
@@ -961,6 +979,7 @@ const vk::raii::ShaderModule& Subpass::RequestShaderModule(
 const vk::raii::Pipeline& Subpass::RequestPipeline(
     const vk::GraphicsPipelineCreateInfo& graphics_pipeline_ci, u64 hash_value,
     const std::string& name, i32 index) {
+  HashCombine(hash_value, *(graphics_pipeline_ci.pRasterizationState));
   auto it{pipelines_.find(hash_value)};
   if (it != pipelines_.end()) {
     return it->second;

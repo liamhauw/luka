@@ -66,7 +66,7 @@ std::vector<u32> Shader::CompileToSpirv(
   if (!shader.parse(GetDefaultResources(), 100, false, messages)) {
     info_log = std::string{shader.getInfoLog()} + "\n" +
                std::string{shader.getInfoDebugLog()};
-    THROW("{}", info_log);
+    THROW("{}\n{}", path_, info_log);
   }
 
   glslang::TProgram program;
@@ -74,7 +74,7 @@ std::vector<u32> Shader::CompileToSpirv(
   if (!program.link(messages)) {
     info_log = std::string{program.getInfoLog()} + "\n" +
                std::string{program.getInfoDebugLog()};
-    THROW("{}", info_log);
+    THROW("{}\n{}", path_, info_log);
   }
 
   glslang::TIntermediate* intermediate{program.getIntermediate(language_)};
@@ -85,7 +85,7 @@ std::vector<u32> Shader::CompileToSpirv(
 
   info_log = logger.getAllMessages();
   if (!info_log.empty()) {
-    LOGW("{}", info_log);
+    LOGW("{}\n{}", path_, info_log);
   }
 
   glslang::FinalizeProcess();

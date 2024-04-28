@@ -16,6 +16,10 @@ layout(set = 2, binding = 0) uniform DrawElementUniform {
   mat4 inverse_m;
   vec4 base_color_factor;
   uvec4 texture_indices;
+  float metallic_factor;
+  float roughness_factor;
+  bool is_mask_alpha_model;
+  float alpha_cutoff;
 }
 draw_element_uniform;
 

@@ -29,6 +29,10 @@ struct DrawElementUniform {
   glm::vec4 base_color_factor;
   glm::uvec4 sampler_indices;
   glm::uvec4 image_indices;
+  f32 metallic_factor;
+  f32 roughness_factor;
+  bool is_mask_alpha_model;
+  float alpha_cutoff;
 };
 
 struct DrawElmentVertexInfo {
@@ -172,8 +176,10 @@ class Subpass {
   u32 bindless_descriptor_set_index_{UINT32_MAX};
   const vk::raii::DescriptorSetLayout* bindless_descriptor_set_layout_{nullptr};
   vk::raii::DescriptorSet bindless_descriptor_set_{nullptr};
-  std::vector<std::string> wanted_textures_{"base_color_texture",
-                                            "normal_texture"};
+  const std::vector<std::string> kWantedTextures{
+      "base_color_texture", "metallic_roughness_texture", "normal_texture"};
+  const u32 kBindlessSamplerMaxCount{8};
+  const u32 kBindlessImageMaxCount{80};
   u32 bindless_sampler_index_{0};
   u32 bindless_image_index_{0};
 

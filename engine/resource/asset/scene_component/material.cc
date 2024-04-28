@@ -122,6 +122,24 @@ const glm::vec4& Material::GetBaseColorFactor() const {
   return base_color_factor_;
 }
 
+f32 Material::GetMetallicFactor() const { return metallic_factor_; }
+
+f32 Material::GetRoughnessFactor() const { return roughness_factor_; }
+
+f32 Material::GetScale() const { return scale_; }
+
+f32 Material::GetStrength() const { return strength_; }
+
+const glm::vec3& Material::GetEmissiveFactor() const {
+  return emissive_factor_;
+}
+
+AlphaMode Material::GetAlphaMode() const { return alpha_mode_; }
+
+f32 Material::GetAlphaCutoff() const { return alpha_cutoff_; }
+
+bool Material::GetDoubleSided() const { return double_sided_; }
+
 }  // namespace ast::sc
 
 }  // namespace luka

@@ -35,6 +35,14 @@ class Material : public Component {
 
   const std::map<std::string, Texture*>& GetTextures() const;
   const glm::vec4& GetBaseColorFactor() const;
+  f32 GetMetallicFactor() const;
+  f32 GetRoughnessFactor() const;
+  f32 GetScale() const;
+  f32 GetStrength() const;
+  const glm::vec3& GetEmissiveFactor() const;
+  AlphaMode GetAlphaMode() const;
+  f32 GetAlphaCutoff() const;
+  bool GetDoubleSided() const;
 
  private:
   std::map<std::string, Texture*> textures_;

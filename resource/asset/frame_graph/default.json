@@ -8,6 +8,10 @@
           "format": "R8B8B8A8Unorm"
         },
         {
+          "name": "metallic_roughness",
+          "format": "R8B8Unorm"
+        },
+        {
           "name": "normal",
           "format": "A2R10G10B10UnormPack32"
         },
@@ -27,12 +31,13 @@
           "attachments": {
             "colors": [
               0,
-              1
+              1,
+              2
             ],
-            "depth_stencil": 2
+            "depth_stencil": 3
           },
           "scenes": [
-            2
+            1
           ],
           "shaders": {
             "vertex": 0,
@@ -45,10 +50,11 @@
             "inputs": [
               0,
               1,
-              2
+              2,
+              3
             ],
             "colors": [
-              3
+              4
             ]
           },
           "shaders": {
