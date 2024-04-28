@@ -31,7 +31,7 @@ struct DrawElementUniform {
   glm::uvec4 image_indices;
   f32 metallic_factor;
   f32 roughness_factor;
-  bool is_mask_alpha_model;
+  u32 alpha_model;
   float alpha_cutoff;
 };
 

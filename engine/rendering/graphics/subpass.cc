@@ -167,6 +167,18 @@ void Subpass::CreateDrawElements() {
         }
       }
     }
+    std::sort(draw_elements_.begin(), draw_elements_.end(),
+              [](const DrawElement& lhs, const DrawElement& rhs) {
+                u32 left_alpha_mode{0};
+                u32 right_alpha_mode{0};
+                if (!lhs.uniforms.empty()) {
+                  left_alpha_mode = lhs.uniforms[0].alpha_model;
+                }
+                if (!rhs.uniforms.empty()) {
+                  right_alpha_mode = rhs.uniforms[0].alpha_model;
+                }
+                return left_alpha_mode < right_alpha_mode;
+              });
   }
 }
 
@@ -623,8 +635,7 @@ void Subpass::CreatePipelineResources(
                   image_indices,
                   primitive.material->GetMetallicFactor(),
                   primitive.material->GetRoughnessFactor(),
-                  primitive.material->GetAlphaMode() ==
-                      ast::sc::AlphaMode::kMask,
+                  static_cast<u32>(primitive.material->GetAlphaMode()),
                   primitive.material->GetAlphaCutoff()};
 
               vk::BufferCreateInfo uniform_buffer_ci{
