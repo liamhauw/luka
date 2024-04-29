@@ -67,44 +67,50 @@ void main() {
   vec4 pos_w = subpass_uniform.inverse_vp * clip;
   vec3 pos = pos_w.xyz / pos_w.w;
 
-  // Calculate reflectance equarion.
+  // Calculate light contribution.
   vec3 Lo = vec3(0.0);
-
   vec3 v = normalize(subpass_uniform.camera_position.xyz - pos);
   float ndotv = max(dot(n, v), 0.0);
-  vec3 F0 = vec3(0.04);
-  F0 = mix(F0, base_color, metallic);
-  {
-    // TODO: set light position and value, here attach it to camera.
-    vec3 l_pos = subpass_uniform.camera_position.xyz;
-    vec3 l_val = vec3(100.0, 100.0, 100.0);
+  vec3 F0 = mix(vec3(0.04), base_color, metallic);
 
+  // 1. Traverse punctual lights.
+  // TODO: set light position and value, here attach it to camera.
+  vec3 l_pos = subpass_uniform.camera_position.xyz;
+  vec3 l_val = vec3(100.0, 100.0, 100.0);
+  {
+    // Input light.
     vec3 l = l_pos - pos;
     float distance = length(l);
     float attenuation = 1.0 / (distance * distance);
     vec3 Li = l_val * attenuation;
 
+    // Light source related variables.
     l = normalize(l);
     vec3 h = normalize(v + l);
-
     float ndotl = max(dot(n, l), 0.0);
-    float ndoth = max(dot(n, h), 0.0);
     float vdoth = max(dot(v, h), 0.0);
+    float ndoth = max(dot(n, h), 0.0);
 
-    float D = D_GGX(ndoth, roughness);
-    float G = G_Schlick(ndotv, ndotl, roughness);
+    // Brdf.
     vec3 F = F_Schlick(vdoth, F0);
-    vec3 numerator = D * G * F;
-    float denomiator = max(4.0 * ndotl * ndotv, 0.0001);
-    vec3 f_micrifacet_specular = numerator / denomiator;
 
-    vec3 k_diffuse = vec3(1.0) - F;
-    k_diffuse *= 1.0 - metallic;
+    vec3 k_diffuse = (vec3(1.0) - F) * (1.0 - metallic);
     vec3 f_diffuse = k_diffuse * base_color / Pi;
 
-    Lo += Li * ndotl * (f_micrifacet_specular + f_diffuse);
+    vec3 k_specular = F;
+    float D = D_GGX(ndoth, roughness);
+    float G = G_Schlick(ndotv, ndotl, roughness);
+    float numerator = D * G;
+    float denomiator = max(4.0 * ndotl * ndotv, 0.0001);
+    vec3 f_specular = k_specular * numerator / denomiator;
+
+    vec3 brdf = f_diffuse + f_specular;
+
+    // Reflection equation.
+    Lo += Li * ndotl * brdf;
   }
 
+  // 2. Ambient light.
   vec3 ambient = vec3(0.03) * base_color;
 
   o_color = vec4(ambient + Lo, 1.0);

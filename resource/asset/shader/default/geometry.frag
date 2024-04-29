@@ -16,7 +16,7 @@ layout(set = 2, binding = 0) uniform DrawElementUniform {
   uvec4 image_indices;
   float metallic_factor;
   float roughness_factor;
-  bool is_mask_alpha_model;
+  int alpha_model;
   float alpha_cutoff;
 }
 draw_element_uniform;
@@ -45,7 +45,7 @@ void main(void) {
               i_texcoord_0);
   base_color = vec4(pow(base_color.rgb, vec3(2.2)), base_color.a);
 #endif
-  if (draw_element_uniform.is_mask_alpha_model &&
+  if (draw_element_uniform.alpha_model == 1 &&
       base_color.a < draw_element_uniform.alpha_cutoff) {
     discard;
   }
