@@ -65,22 +65,22 @@ void main(void) {
   o_metallic_roughness = vec2(metallic, roughness);
 
   vec3 normal = normalize(i_normal) * 0.5 + 0.5;
-// #ifdef HAS_NORMAL_TEXTURE
-// #ifdef HAS_TANGENT_BUFFER
-//   vec3 T = normalize(i_tangent);
-//   vec3 B = normalize(cross(normal, T));
-//   mat3 TNB = mat3(T, B, normal);
+#ifdef HAS_NORMAL_TEXTURE
+#ifdef HAS_TANGENT_BUFFER
+  vec3 T = normalize(i_tangent);
+  vec3 B = normalize(cross(normal, T));
+  mat3 TNB = mat3(T, B, normal);
 
-//   normal =
-//       texture(nonuniformEXT(sampler2D(
-//                   bindless_images[draw_element_uniform.image_indices.z],
-//                   bindless_samplers[draw_element_uniform.sampler_indices.z])),
-//               i_texcoord_0)
-//           .xyz;
+  normal =
+      texture(nonuniformEXT(sampler2D(
+                  bindless_images[draw_element_uniform.image_indices.z],
+                  bindless_samplers[draw_element_uniform.sampler_indices.z])),
+              i_texcoord_0)
+          .xyz;
 
-//   normal = normalize(TNB * (normal * 2.0 - 1.0));
-// #endif
-// #endif
+  normal = normalize(TNB * (normal * 2.0 - 1.0));
+#endif
+#endif
 
   o_normal = vec4(normal, 1.0);
 }

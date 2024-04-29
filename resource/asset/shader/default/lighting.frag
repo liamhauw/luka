@@ -76,13 +76,16 @@ void main() {
   // 1. Traverse punctual lights.
   // TODO: set light position and value, here attach it to camera.
   vec3 l_pos = subpass_uniform.camera_position.xyz;
-  vec3 l_val = vec3(100.0, 100.0, 100.0);
+  vec3 l_val = vec3(50.0, 50.0, 50.0);
+  float l_radius = 30.0;
   {
     // Input light.
     vec3 l = l_pos - pos;
-    float distance = length(l);
-    float attenuation = 1.0 / (distance * distance);
-    vec3 Li = l_val * attenuation;
+    float dist = length(l);
+    float falloff =
+        pow(clamp(pow(1.0 - (dist / l_radius), 4.0), 0.0, 1.0), 2.0) /
+        (dist * dist + 1.0);
+    vec3 Li = l_val * falloff;
 
     // Light source related variables.
     l = normalize(l);
@@ -100,9 +103,7 @@ void main() {
     vec3 k_specular = F;
     float D = D_GGX(ndoth, roughness);
     float G = G_Schlick(ndotv, ndotl, roughness);
-    float numerator = D * G;
-    float denomiator = max(4.0 * ndotl * ndotv, 0.0001);
-    vec3 f_specular = k_specular * numerator / denomiator;
+    vec3 f_specular = k_specular * D * G / max(4.0 * ndotl * ndotv, 0.0001);
 
     vec3 brdf = f_diffuse + f_specular;
 
