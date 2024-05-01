@@ -9,6 +9,7 @@ A rendering framework with modular components, including platform, core, resourc
 - Automating pipeline layout generation with spirv-cross
 - Improving load time with pipeline cache
 - Bindless rendering with descriptor indexing
+- Physically based shading using brdf
 
 ## Prerequisites
 - Windows/macOS
