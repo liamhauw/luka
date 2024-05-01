@@ -2,14 +2,18 @@
 A rendering framework with modular components, including platform, core, resource, function, editor, and rendering.
 
 ## Features
-- Following the RAII principle with vulkan raii.
-- Asynchronously loading asset using a task-based multi-threading library
-- Recording commands on multiple threads
-- Driving rendering with frame graph
-- Automating pipeline layout generation with spirv-cross
-- Improving load time with pipeline cache
-- Bindless rendering with descriptor indexing
-- Physically based shading using brdf
+- Rendering 
+  - Deferred shading
+  - Physically based shading
+- Graphics systems and interfaces
+  - Following the RAII principle with vulkan raii.
+  - Asynchronously loading asset using a task-based multi-threading library
+  - Recording commands on multiple threads
+  - Driving rendering with frame graph
+  - Automating pipeline layout generation with spirv-cross
+  - Improving load time with pipeline cache
+  - Bindless rendering with descriptor indexing
+  - User interface using imgui
 
 ## Prerequisites
 - Windows/macOS
