@@ -3,6 +3,17 @@
 
 #version 450
 
+struct Light {
+  vec3 direction;
+  float range;
+  vec3 color;
+  float intensity;
+  vec3 position;
+  float inner_cone_cos;
+  float outer_cone_cos;
+  int type;
+};
+
 layout(set = 0, binding = 0) uniform SubpassUniform {
   mat4 pv;
   mat4 inverse_vp;
@@ -24,6 +35,43 @@ layout(location = 0) in vec2 i_texcoord_0;
 layout(location = 0) out vec4 o_color;
 
 const float Pi = 3.14159265359;
+const int DirectionalLight = 0;
+const int PointLight = 1;
+const int SpotLight = 2;
+
+float RangeAttenuation(float range, float dist) {
+  if (range <= 0.0) {
+    return 1.0 / pow(dist, 2.0);
+  }
+  return max(min(1.0 - pow(dist / range, 4.0), 1.0), 0.0) / pow(dist, 2.0);
+}
+
+float SpotAttenuation(vec3 direction, float inner_cone_cos, float outer_cone_cos, vec3 l) {
+  float actual_cos = dot(normalize(direction), normalize(-l));
+
+  if (actual_cos > outer_cone_cos) {
+    if (actual_cos < inner_cone_cos) {
+      float angular_attenuation = (actual_cos - outer_cone_cos) / (inner_cone_cos - outer_cone_cos);
+      return angular_attenuation * angular_attenuation;
+    }
+    return 1.0;
+  }
+  return 0.0;
+}
+
+vec3 LightIntensity(Light light, vec3 point_to_light) {
+  float range_attenuation = 1.0;
+  float spot_attenuation = 1.0;
+
+  if (light.type != DirectionalLight) {
+    range_attenuation = RangeAttenuation(light.range, length(point_to_light));
+  }
+  if (light.type == SpotLight) {
+    spot_attenuation = SpotAttenuation(light.direction, light.inner_cone_cos, light.outer_cone_cos, point_to_light);
+  }
+
+  return range_attenuation * spot_attenuation * light.intensity * light.color;
+}
 
 float D_GGX(float ndoth, float roughness) {
   float ndoth2 = ndoth * ndoth;
@@ -49,6 +97,10 @@ vec3 F_Schlick(float vdoth, vec3 F0) {
 }
 
 void main() {
+  // Normal.
+  vec3 n = subpassLoad(subpass_i_normal).xyz;
+  n = normalize(2.0 * n - 1.0);
+
   // Base color.
   vec3 base_color = subpassLoad(subpass_i_base_color).xyz;
 
@@ -56,10 +108,6 @@ void main() {
   vec2 metallic_roughness = subpassLoad(subpass_i_metallic_roughness).xy;
   float metallic = metallic_roughness.x;
   float roughness = metallic_roughness.y;
-
-  // Normal.
-  vec3 n = subpassLoad(subpass_i_normal).xyz;
-  n = normalize(2.0 * n - 1.0);
 
   // Position.
   float depth = subpassLoad(subpass_i_depth).x;
@@ -69,50 +117,62 @@ void main() {
 
   // Calculate light contribution.
   vec3 Lo = vec3(0.0);
+
   vec3 v = normalize(subpass_uniform.camera_position.xyz - pos);
   float ndotv = max(dot(n, v), 0.0);
   vec3 F0 = mix(vec3(0.04), base_color, metallic);
 
-  // 1. Traverse punctual lights.
-  // TODO: set light position and value, here attach it to camera.
-  vec3 l_pos = subpass_uniform.camera_position.xyz;
-  vec3 l_val = vec3(50.0, 50.0, 50.0);
-  float l_radius = 30.0;
-  {
-    // Input light.
-    vec3 l = l_pos - pos;
-    float dist = length(l);
-    float falloff =
-        pow(clamp(pow(1.0 - (dist / l_radius), 4.0), 0.0, 1.0), 2.0) /
-        (dist * dist + 1.0);
-    vec3 Li = l_val * falloff;
+  Light lights[2];
+  lights[0].range = 10.0;
+  lights[0].color = vec3(1.0, 1.0, 1.0);
+  lights[0].intensity = 30.0;
+  lights[0].position = subpass_uniform.camera_position.xyz;
+  lights[0].type = 1;
 
-    // Light source related variables.
-    l = normalize(l);
+  lights[1].direction = vec3(1.0, -1.0, 0.0);
+  lights[1].range = 10.0;
+  lights[1].color = vec3(1.0, 1.0, 1.0);
+  lights[1].intensity = 0.5;
+  lights[1].type = 0;
+  for (int i = 0; i < 2; ++i) {
+    Light light = lights[i];
+    // Input light.
+    vec3 point_to_light;
+    if (light.type != DirectionalLight) {
+      point_to_light = light.position - pos;
+    } else {
+      point_to_light = -light.direction;
+    }
+
+    vec3 l = normalize(point_to_light);
     vec3 h = normalize(v + l);
     float ndotl = max(dot(n, l), 0.0);
     float vdoth = max(dot(v, h), 0.0);
     float ndoth = max(dot(n, h), 0.0);
 
-    // Brdf.
-    vec3 F = F_Schlick(vdoth, F0);
+    if (ndotv > 0.0 || ndotl > 0.0) {
+      // Reflection equation.
+      vec3 Li = LightIntensity(light, point_to_light);
 
-    vec3 k_diffuse = (vec3(1.0) - F) * (1.0 - metallic);
-    vec3 f_diffuse = k_diffuse * base_color / Pi;
+      vec3 F = F_Schlick(vdoth, F0);
 
-    vec3 k_specular = F;
-    float D = D_GGX(ndoth, roughness);
-    float G = G_Schlick(ndotv, ndotl, roughness);
-    vec3 f_specular = k_specular * D * G / max(4.0 * ndotl * ndotv, 0.0001);
+      vec3 k_diffuse = (vec3(1.0) - F) * (1.0 - metallic);
+      vec3 f_diffuse = k_diffuse * base_color / Pi;
 
-    vec3 brdf = f_diffuse + f_specular;
+      vec3 k_specular = F;
+      float D = D_GGX(ndoth, roughness);
+      float G = G_Schlick(ndotv, ndotl, roughness);
+      vec3 f_specular = k_specular * D * G / max(4.0 * ndotl * ndotv, 0.0001);
 
-    // Reflection equation.
-    Lo += Li * ndotl * brdf;
+      vec3 brdf = f_diffuse + f_specular;
+
+      Lo += Li * ndotl * brdf;
+    }
   }
 
-  // 2. Ambient light.
+  // Ambient light.
   vec3 ambient = vec3(0.03) * base_color;
 
-  o_color = vec4(ambient + Lo, 1.0);
+  vec3 color = Lo + ambient;
+  o_color = vec4(color, 1.0);
 }
