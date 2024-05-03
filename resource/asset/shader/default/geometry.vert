@@ -25,32 +25,34 @@ layout(set = 2, binding = 0) uniform DrawElementUniform {
 draw_element_uniform;
 
 layout(location = 0) in vec3 position;
+layout(location = 0) out vec3 o_position;
 
 layout(location = 1) in vec3 normal;
 layout(location = 1) out vec3 o_normal;
 
-#ifdef HAS_TEXCOORD_0_BUFFER
-layout(location = 2) in vec2 texcoord_0;
-layout(location = 2) out vec2 o_texcoord_0;
+#if defined(HAS_TANGENT_BUFFER)
+layout(location = 2) in vec3 tangent;
+layout(location = 2) out vec3 o_tangent;
 #endif
 
-#ifdef HAS_TANGENT_BUFFER
-layout(location = 3) in vec3 tangent;
-layout(location = 3) out vec3 o_tangent;
+#if defined(HAS_TEXCOORD_0_BUFFER)
+layout(location = 3) in vec2 texcoord_0;
+layout(location = 3) out vec2 o_texcoord_0;
 #endif
 
 void main(void) {
-  gl_Position =
-      subpass_uniform.pv * draw_element_uniform.m * vec4(position, 1.0);
+  vec4 world_position = draw_element_uniform.m * vec4(position, 1.0);
+  o_position = world_position.xyz / world_position.w;
+  gl_Position = subpass_uniform.pv * world_position;
 
   mat3 ti_m = transpose(mat3(draw_element_uniform.inverse_m));
   o_normal = ti_m * normal;
 
-#ifdef HAS_TEXCOORD_0_BUFFER
-  o_texcoord_0 = texcoord_0;
+#if defined(HAS_TANGENT_BUFFER)
+  o_tangent = ti_m * tangent;
 #endif
 
-#ifdef HAS_TANGENT_BUFFER
-  o_tangent = ti_m * tangent;
+#if defined(HAS_TEXCOORD_0_BUFFER)
+  o_texcoord_0 = texcoord_0;
 #endif
 }

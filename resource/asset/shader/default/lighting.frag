@@ -12,11 +12,11 @@ layout(set = 0, binding = 0) uniform SubpassUniform {
 subpass_uniform;
 
 layout(input_attachment_index = 0, set = 0,
-       binding = 1) uniform subpassInput subpass_i_base_color;
+       binding = 1) uniform subpassInput subpass_i_normal;
 layout(input_attachment_index = 1, set = 0,
-       binding = 2) uniform subpassInput subpass_i_metallic_roughness;
+       binding = 2) uniform subpassInput subpass_i_base_color;
 layout(input_attachment_index = 2, set = 0,
-       binding = 3) uniform subpassInput subpass_i_normal;
+       binding = 3) uniform subpassInput subpass_i_metallic_roughness;
 layout(input_attachment_index = 3, set = 0,
        binding = 4) uniform subpassInput subpass_i_depth;
 
