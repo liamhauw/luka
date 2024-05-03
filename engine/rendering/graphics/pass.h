@@ -21,8 +21,8 @@ class Pass {
  public:
   Pass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
        std::shared_ptr<Camera> camera, std::shared_ptr<FunctionUi> function_ui,
-       u32 frame_count, const SwapchainInfo& swapchain_info,
-       const std::vector<vk::Image>& swapchain_images,
+       const SwapchainInfo& swapchain_info,
+       const std::vector<vk::Image>& swapchain_images, u32 frame_count,
        const std::vector<ast::Pass>& ast_passes, u32 pass_index,
        std::vector<std::unordered_map<std::string, vk::ImageView>>&
            shared_image_views);
@@ -31,7 +31,6 @@ class Pass {
               const std::vector<vk::Image>& swapchain_images);
 
   std::vector<Subpass>& GetSubpasses();
-
   const std::string& GetName() const;
   vk::RenderPassBeginInfo GetRenderPassBeginInfo(u32 frame_index) const;
   const std::vector<Subpass>& GetSubpasses() const;
@@ -56,7 +55,6 @@ class Pass {
   u32 pass_index_;
   std::vector<std::unordered_map<std::string, vk::ImageView>>*
       shared_image_views_;
-
   const ast::Pass* ast_pass_;
   std::string name_;
   bool has_ui_;
@@ -64,7 +62,6 @@ class Pass {
   std::vector<u32> color_attachment_counts_;
   vk::raii::RenderPass render_pass_{nullptr};
 
-  // For every frame.
   std::vector<std::vector<gpu::Image>> images_;
   std::vector<std::vector<vk::raii::ImageView>> image_views_;
   std::vector<vk::raii::Framebuffer> framebuffers_;

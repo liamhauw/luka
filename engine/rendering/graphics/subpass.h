@@ -155,12 +155,13 @@ class Subpass {
   u32 subpass_index_;
   std::vector<std::unordered_map<std::string, vk::ImageView>>*
       shared_image_views_;
-
   const ast::Subpass* ast_subpass_;
   std::string name_;
   const std::vector<u32>* scenes_;
   const std::unordered_map<vk::ShaderStageFlagBits, u32>* shaders_;
   bool has_primitive_;
+  std::vector<SubpassUniform> subpass_uniforms_;
+  std::vector<gpu::Buffer> subpass_uniform_buffers_;
 
   bool need_resize_{false};
 
@@ -168,8 +169,6 @@ class Subpass {
   u32 subpass_descriptor_set_index_{UINT32_MAX};
   const vk::raii::DescriptorSetLayout* subpass_descriptor_set_layout_{nullptr};
   vk::raii::DescriptorSets subpass_descriptor_sets_{nullptr};
-  std::vector<SubpassUniform> subpass_uniforms_;
-  std::vector<gpu::Buffer> subpass_uniform_buffers_;
   bool subpass_desciptor_set_updated_{false};
 
   bool has_bindless_descriptor_set_{false};

@@ -43,6 +43,69 @@ void Graphics::Tick() {
   Render();
 }
 
+void Graphics::GetSwapchain() {
+  swapchain_info_ = &(function_ui_->GetSwapchainInfo());
+  swapchain_ = &(function_ui_->GetSwapchain());
+  swapchain_images_ = swapchain_->getImages();
+  frame_count_ = swapchain_images_.size();
+}
+
+void Graphics::CreateSyncObjects() {
+  vk::SemaphoreCreateInfo semaphore_ci;
+  vk::FenceCreateInfo fence_ci{vk::FenceCreateFlagBits::eSignaled};
+  for (u32 i{0}; i < frame_count_; ++i) {
+    image_acquired_semaphores_.push_back(
+        gpu_->CreateSemaphoreLuka(semaphore_ci, "image_acquired"));
+    render_finished_semaphores_.push_back(
+        gpu_->CreateSemaphoreLuka(semaphore_ci, "render_finished"));
+    command_finished_fences_.push_back(
+        gpu_->CreateFence(fence_ci, "command_finished"));
+  }
+}
+
+void Graphics::CreateCommandObjects() {
+  vk::CommandPoolCreateInfo command_pool_ci{
+      vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+      gpu_->GetGraphicsQueueIndex()};
+  vk::CommandBufferAllocateInfo command_buffer_ai{
+      nullptr, vk::CommandBufferLevel::ePrimary, 1};
+  for (u32 i{0}; i < frame_count_; ++i) {
+    command_pools_.push_back(
+        gpu_->CreateCommandPool(command_pool_ci, "graphics"));
+    command_buffer_ai.commandPool = *(command_pools_.back());
+    command_buffers_.push_back(
+        gpu_->AllocateCommandBuffers(command_buffer_ai, "graphics"));
+  }
+}
+
+void Graphics::CreateViewportAndScissor() {
+  u32 target_width{swapchain_info_->extent.width};
+  u32 target_height{swapchain_info_->extent.height};
+
+  viewport_ = vk::Viewport{0.0F,
+                           0.0F,
+                           static_cast<f32>(target_width),
+                           static_cast<f32>(target_height),
+                           0.0F,
+                           1.0F};
+  scissor_ =
+      vk::Rect2D{vk::Offset2D{0, 0}, vk::Extent2D{target_width, target_height}};
+}
+
+void Graphics::CreatePasses() {
+  u32 frame_graph_index{config_->GetFrameGraphIndex()};
+  const ast::FrameGraph& frame_graph{asset_->GetFrameGraph(frame_graph_index)};
+  const std::vector<ast::Pass>& ast_passes{frame_graph.GetPasses()};
+
+  shared_image_views_.resize(frame_count_);
+
+  for (u32 i{0}; i < ast_passes.size(); ++i) {
+    passes_.emplace_back(gpu_, asset_, camera_, function_ui_, *swapchain_info_,
+                         swapchain_images_, frame_count_, ast_passes, i,
+                         shared_image_views_);
+  }
+}
+
 void Graphics::Resize() {
   gpu_->WaitIdle();
   GetSwapchain();
@@ -252,70 +315,6 @@ void Graphics::DrawPasses(const vk::raii::CommandBuffer& command_buffer) {
   }
 
   command_buffer.end();
-}
-
-void Graphics::GetSwapchain() {
-  swapchain_info_ = &(function_ui_->GetSwapchainInfo());
-  swapchain_ = &(function_ui_->GetSwapchain());
-  swapchain_images_ = swapchain_->getImages();
-  frame_count_ = swapchain_images_.size();
-}
-
-void Graphics::CreateSyncObjects() {
-  vk::SemaphoreCreateInfo semaphore_ci;
-  vk::FenceCreateInfo fence_ci{vk::FenceCreateFlagBits::eSignaled};
-  for (u32 i{0}; i < frame_count_; ++i) {
-    image_acquired_semaphores_.push_back(
-        gpu_->CreateSemaphoreLuka(semaphore_ci, "image_acquired"));
-    render_finished_semaphores_.push_back(
-        gpu_->CreateSemaphoreLuka(semaphore_ci, "render_finished"));
-    command_finished_fences_.push_back(
-        gpu_->CreateFence(fence_ci, "command_finished"));
-  }
-}
-
-void Graphics::CreateCommandObjects() {
-  vk::CommandPoolCreateInfo command_pool_ci{
-      vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-      gpu_->GetGraphicsQueueIndex()};
-  vk::CommandBufferAllocateInfo command_buffer_ai{
-      nullptr, vk::CommandBufferLevel::ePrimary, 1};
-  for (u32 i{0}; i < frame_count_; ++i) {
-    command_pools_.push_back(
-        gpu_->CreateCommandPool(command_pool_ci, "graphics"));
-
-    command_buffer_ai.commandPool = *(command_pools_.back());
-    command_buffers_.push_back(
-        gpu_->AllocateCommandBuffers(command_buffer_ai, "graphics"));
-  }
-}
-
-void Graphics::CreateViewportAndScissor() {
-  u32 target_width{swapchain_info_->extent.width};
-  u32 target_height{swapchain_info_->extent.height};
-
-  viewport_ = vk::Viewport{0.0F,
-                           0.0F,
-                           static_cast<f32>(target_width),
-                           static_cast<f32>(target_height),
-                           0.0F,
-                           1.0F};
-  scissor_ =
-      vk::Rect2D{vk::Offset2D{0, 0}, vk::Extent2D{target_width, target_height}};
-}
-
-void Graphics::CreatePasses() {
-  u32 frame_graph_index{config_->GetFrameGraphIndex()};
-  const ast::FrameGraph& frame_graph{asset_->GetFrameGraph(frame_graph_index)};
-  const std::vector<ast::Pass>& ast_passes{frame_graph.GetPasses()};
-
-  shared_image_views_.resize(frame_count_);
-
-  for (u32 i{0}; i < ast_passes.size(); ++i) {
-    passes_.emplace_back(gpu_, asset_, camera_, function_ui_, frame_count_,
-                         *swapchain_info_, swapchain_images_, ast_passes, i,
-                         shared_image_views_);
-  }
 }
 
 }  // namespace luka

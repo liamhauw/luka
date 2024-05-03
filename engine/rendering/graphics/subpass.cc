@@ -40,7 +40,9 @@ Subpass::Subpass(
       name_{ast_subpass_->name},
       scenes_{&(ast_subpass_->scenes)},
       shaders_{&(ast_subpass_->shaders)},
-      has_primitive_{!scenes_->empty()} {
+      has_primitive_{!scenes_->empty()},
+      subpass_uniforms_(frame_count_),
+      subpass_uniform_buffers_(frame_count_) {
   CreateDrawElements();
 }
 
@@ -419,9 +421,8 @@ void Subpass::CreatePipelineResources(
                     nullptr,
                     buffer_infos.back()};
 
-                subpass_uniforms_.push_back(std::move(subpass_uniform));
-                subpass_uniform_buffers_.push_back(
-                    std::move(subpass_uniform_buffer));
+                subpass_uniforms_[i] = std::move(subpass_uniform);
+                subpass_uniform_buffers_[i] = std::move(subpass_uniform_buffer);
 
                 write_descriptor_sets.push_back(write_descriptor_set);
               }
