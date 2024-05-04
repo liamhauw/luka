@@ -3,16 +3,7 @@
 
 #version 450
 
-struct Light {
-  vec3 direction;
-  float range;
-  vec3 color;
-  float intensity;
-  vec3 position;
-  float inner_cone_cos;
-  float outer_cone_cos;
-  int type;
-};
+#include "common.glsl"
 
 layout(set = 0, binding = 0) uniform SubpassUniform {
   mat4 pv;
@@ -33,11 +24,6 @@ layout(input_attachment_index = 3, set = 0,
 
 layout(location = 0) in vec2 i_texcoord_0;
 layout(location = 0) out vec4 o_color;
-
-const float Pi = 3.14159265359;
-const int DirectionalLight = 0;
-const int PointLight = 1;
-const int SpotLight = 2;
 
 float RangeAttenuation(float range, float dist) {
   if (range <= 0.0) {

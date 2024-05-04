@@ -11,6 +11,8 @@
 #include <SPIRV/Logger.h>
 #include <glslang/Public/ResourceLimits.h>
 
+#include <regex>
+
 #include "core/log.h"
 #include "core/util.h"
 
@@ -25,6 +27,19 @@ Shader::Shader(const std::filesystem::path& cfg_shader_path)
     language_ = EShLangVertex;
   } else if (extension == ".frag") {
     language_ = EShLangFragment;
+  } else {
+    THROW("Unsupport shader extension");
+  }
+
+  std::regex pattern{"#include\\s*\"([^\"]+)\""};
+  std::smatch match;
+  std::filesystem::path parent_path{cfg_shader_path.parent_path()};
+  while (std::regex_search(source_text_, match, pattern)) {
+    std::string filename{match[1]};
+    std::filesystem::path path{parent_path / filename};
+    std::string text{LoadText(path)};
+    source_text_ = std::regex_replace(
+        source_text_, std::regex("#include\\s*\"" + filename + "\""), text);
   }
 }
 
