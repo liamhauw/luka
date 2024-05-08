@@ -67,9 +67,24 @@ void Subpass::Update(u32 frame_index) {
     glm::mat4 pv{projection * view};
     glm::mat4 inverse_vp{glm::inverse(pv)};
 
+    std::vector<PunctualLight> lights(2);
+    lights[0].range = 10.0;
+    lights[0].color = glm::vec3(1.0, 1.0, 1.0);
+    lights[0].intensity = 30.0;
+    lights[0].position = camera_position;
+    lights[0].type = 1;
+
+    lights[1].direction = glm::vec3(1.0, -1.0, 0.0);
+    lights[1].range = 10.0;
+    lights[1].color = glm::vec3(1.0, 1.0, 1.0);
+    lights[1].intensity = 0.5;
+    lights[1].type = 0;
+
     subpass_uniforms_[frame_index] =
-        SubpassUniform{pv, inverse_vp, glm::vec4{camera_position, 1.0F},
-                       glm::vec4{5.0, 5.0, 5.0, 1.0F}};
+        SubpassUniform{pv, inverse_vp, glm::vec4{camera_position, 1.0F}};
+    memcpy(subpass_uniforms_[frame_index].punctual_lights, lights.data(),
+                sizeof(PunctualLight) * 2);
+
     void* mapped{subpass_uniform_buffers_[frame_index].Map()};
     memcpy(mapped,
            reinterpret_cast<const void*>(&(subpass_uniforms_[frame_index])),
@@ -388,16 +403,28 @@ void Subpass::CreatePipelineResources(
         for (const auto& shader_resource : shader_resources) {
           if (shader_resource.type == ShaderResourceType::kUniformBuffer) {
             if (shader_resource.name == "SubpassUniform") {
-              const glm::mat4& view{camera_->GetViewMatrix()};
-              const glm::mat4& projection{camera_->GetProjectionMatrix()};
-              const glm::vec3& camera_position{camera_->GetPosition()};
+              // const glm::mat4& view{camera_->GetViewMatrix()};
+              // const glm::mat4& projection{camera_->GetProjectionMatrix()};
+              // const glm::vec3& camera_position{camera_->GetPosition()};
 
-              glm::mat4 pv{projection * view};
-              glm::mat4 inverse_vp{glm::inverse(pv)};
+              // glm::mat4 pv{projection * view};
+              // glm::mat4 inverse_vp{glm::inverse(pv)};
+
+              // std::vector<PunctualLight> lights(2);
+              // lights[0].range = 10.0;
+              // lights[0].color = glm::vec3(1.0, 1.0, 1.0);
+              // lights[0].intensity = 30.0;
+              // lights[0].position = camera_position;
+              // lights[0].type = 1;
+
+              // lights[1].direction = glm::vec3(1.0, -1.0, 0.0);
+              // lights[1].range = 10.0;
+              // lights[1].color = glm::vec3(1.0, 1.0, 1.0);
+              // lights[1].intensity = 0.5;
+              // lights[1].type = 0;
+
               for (u32 i{0}; i < frame_count_; ++i) {
-                SubpassUniform subpass_uniform{pv, inverse_vp,
-                                               glm::vec4{camera_position, 1.0F},
-                                               glm::vec4{5.0, 5.0, 5.0, 1.0F}};
+                SubpassUniform subpass_uniform;
 
                 vk::BufferCreateInfo uniform_buffer_ci{
                     {},

@@ -12,6 +12,7 @@
 #include "function/camera/camera.h"
 #include "function/function_input/function_input.h"
 #include "function/function_ui/function_ui.h"
+#include "function/light/light.h"
 #include "function/time/time.h"
 #include "rendering/compute/compute.h"
 #include "rendering/graphics/graphics.h"
@@ -36,6 +37,7 @@ class Engine {
   std::shared_ptr<Gpu> gpu_;
   std::shared_ptr<Asset> asset_;
   std::shared_ptr<Time> time_;
+  std::shared_ptr<Light> light_;
   std::shared_ptr<Camera> camera_;
   std::shared_ptr<FunctionInput> function_input_;
   std::shared_ptr<FunctionUi> function_ui_;

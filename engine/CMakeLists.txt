@@ -23,6 +23,8 @@ set(HEADER_FILES
   function/camera/camera.h
   function/function_input/function_input.h
   function/function_ui/function_ui.h
+  function/light/light.h
+  function/time/time.h
 
   # platform
   platform/common.h
@@ -59,7 +61,6 @@ set(HEADER_FILES
   resource/gpu/gpu.h
   resource/gpu/image.h
   resource/task_scheduler/task_scheduler.h
-  function/time/time.h
   resource/window/window.h
 
   # engine
@@ -94,13 +95,14 @@ set(SOURCE_FILES
   resource/gpu/gpu.cc
   resource/gpu/image.cc
   resource/task_scheduler/task_scheduler.cc
-  function/time/time.cc
   resource/window/window.cc
 
   # function
   function/camera/camera.cc
   function/function_input/function_input.cc
   function/function_ui/function_ui.cc
+  function/light/light.cc
+  function/time/time.cc
 
   # editor
   editor/editor_input/editor_input.cc

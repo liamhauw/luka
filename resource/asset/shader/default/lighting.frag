@@ -9,7 +9,7 @@ layout(set = 0, binding = 0) uniform SubpassUniform {
   mat4 pv;
   mat4 inverse_vp;
   vec4 camera_position;
-  vec4 light_position;
+  PunctualLight punctual_lights[MaxPunctualLightCount];
 }
 subpass_uniform;
 
@@ -45,7 +45,7 @@ float SpotAttenuation(vec3 direction, float inner_cone_cos, float outer_cone_cos
   return 0.0;
 }
 
-vec3 LightIntensity(Light light, vec3 point_to_light) {
+vec3 LightIntensity(PunctualLight light, vec3 point_to_light) {
   float range_attenuation = 1.0;
   float spot_attenuation = 1.0;
 
@@ -108,20 +108,8 @@ void main() {
   float ndotv = max(dot(n, v), 0.0);
   vec3 F0 = mix(vec3(0.04), base_color, metallic);
 
-  Light lights[2];
-  lights[0].range = 10.0;
-  lights[0].color = vec3(1.0, 1.0, 1.0);
-  lights[0].intensity = 30.0;
-  lights[0].position = subpass_uniform.camera_position.xyz;
-  lights[0].type = 1;
-
-  lights[1].direction = vec3(1.0, -1.0, 0.0);
-  lights[1].range = 10.0;
-  lights[1].color = vec3(1.0, 1.0, 1.0);
-  lights[1].intensity = 0.5;
-  lights[1].type = 0;
-  for (int i = 0; i < 2; ++i) {
-    Light light = lights[i];
+  for (int i = 0; i < PunctualLightCount; ++i) {
+    PunctualLight light = subpass_uniform.punctual_lights[i];
     // Input light.
     vec3 point_to_light;
     if (light.type != DirectionalLight) {

@@ -8,6 +8,7 @@
 // clang-format on
 
 #include "function/camera/camera.h"
+#include "function/light/light.h"
 #include "rendering/graphics/spirv.h"
 #include "resource/asset/asset.h"
 #include "resource/gpu/gpu.h"
@@ -16,11 +17,22 @@ namespace luka {
 
 namespace gs {
 
+struct PunctualLight {
+  glm::vec3 direction;
+  f32 range;
+  glm::vec3 color;
+  f32 intensity;
+  glm::vec3 position;
+  f32 inner_cone_cos;
+  f32 outer_cone_cos;
+  i32 type;
+};
+
 struct SubpassUniform {
   glm::mat4 pv;
   glm::mat4 inverse_pv;
   glm::vec4 camera_position;
-  glm::vec4 light_position;
+  PunctualLight punctual_lights[gMaxPunctualLightCount];
 };
 
 struct DrawElementUniform {

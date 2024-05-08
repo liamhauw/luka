@@ -3,11 +3,13 @@
 
 #version 450
 
+#include "common.glsl"
+
 layout(set = 0, binding = 0) uniform SubpassUniform {
   mat4 pv;
   mat4 inverse_pv;
   vec4 camera_position;
-  vec4 light_position;
+  PunctualLight punctual_lights[MaxPunctualLightCount];
 }
 subpass_uniform;
 
