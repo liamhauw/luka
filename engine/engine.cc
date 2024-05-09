@@ -21,7 +21,7 @@ Engine::Engine()
       function_ui_{std::make_shared<FunctionUi>(window_, gpu_)},
       editor_input_{
           std::make_shared<EditorInput>(config_, window_, time_, camera_)},
-      editor_ui_{std::make_shared<EditorUi>(config_, window_)},
+      editor_ui_{std::make_shared<EditorUi>(config_, window_, time_)},
       compute_{std::make_shared<Compute>()},
       graphics_{std::make_shared<Graphics>(config_, window_, gpu_, asset_,
                                            camera_, function_ui_)} {}

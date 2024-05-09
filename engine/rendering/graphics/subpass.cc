@@ -54,9 +54,13 @@ void Subpass::Resize(const std::vector<std::vector<vk::raii::ImageView>>&
     return;
   }
   attachment_image_views_ = &attachment_image_views;
+
+  punctual_lights_.clear();
+
+  subpass_desciptor_set_updated_ = false;
   bindless_sampler_index_ = 0;
   bindless_image_index_ = 0;
-  subpass_desciptor_set_updated_ = false;
+  
   CreateDrawElements();
 }
 
@@ -374,8 +378,8 @@ void Subpass::CreatePipelineResources(
   std::vector<vk::DescriptorImageInfo> sampler_infos;
   std::vector<vk::DescriptorImageInfo> image_infos;
   std::vector<vk::DescriptorBufferInfo> buffer_infos;
-  image_infos.reserve(100);
-  buffer_infos.reserve(100);
+  image_infos.reserve(50);
+  buffer_infos.reserve(50);
 
   glm::uvec4 sampler_indices{0};
   glm::uvec4 image_indices{0};

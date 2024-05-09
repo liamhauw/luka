@@ -11,6 +11,7 @@
 #include <backends/imgui_impl_vulkan.h>
 #include <imgui.h>
 
+#include "function/time/time.h"
 #include "resource/config/config.h"
 #include "resource/window/window.h"
 
@@ -18,7 +19,8 @@ namespace luka {
 
 class EditorUi {
  public:
-  EditorUi(std::shared_ptr<Config> config, std::shared_ptr<Window> window);
+  EditorUi(std::shared_ptr<Config> config, std::shared_ptr<Window> window,
+           std::shared_ptr<Time> time);
 
   void Tick();
 
@@ -27,6 +29,13 @@ class EditorUi {
 
   std::shared_ptr<Config> config_;
   std::shared_ptr<Window> window_;
+  std::shared_ptr<Time> time_;
+
+  u32 count_ = 0;
+  f64 delta_time_sum_ = 0.0;
+
+  f64 delta_time_ = 0.0;
+  u64 fps_ = 0;
 };
 
 }  // namespace luka

@@ -186,6 +186,7 @@ void FunctionUi::CreateImgui() {
   ImGuiIO& io = ImGui::GetIO();
   io.IniFilename = nullptr;
   io.ConfigFlags = ImGuiConfigFlags_NavEnableKeyboard;
+  io.FontGlobalScale = 1.3;
 
   ImGui_ImplGlfw_InitForVulkan(window_->GetGlfwWindow(), true);
 
