@@ -1,17 +1,18 @@
 # luka
-A rendering framework with modular components, including platform, core, resource, function, editor, and rendering.
+A rendering framework with modular components including platform, core, resource, function, editor, and rendering.
 
 ## Features
 - Rendering 
-  - Deferred shading
-  - Physically based shading
+  - Support for glTF scenes
+  - Configurability of multiple types of punctual lights
+  - User-defined shaders
+  - Driving rendering with frame graph
 - Graphics systems and interfaces
   - Following the RAII principle with vulkan raii.
   - Asynchronously loading asset using a task-based multi-threading library
   - Recording commands on multiple threads
-  - Driving rendering with frame graph
   - Automating pipeline layout generation with spirv-cross
-  - Improving load time with pipeline cache
+  - Improving load time with spirv cache and pipeline cache
   - Bindless rendering with descriptor indexing
   - User interface using imgui
 
