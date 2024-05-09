@@ -40,7 +40,7 @@ Subpass::Subpass(
       name_{ast_subpass_->name},
       scenes_{&(ast_subpass_->scenes)},
       shaders_{&(ast_subpass_->shaders)},
-      has_primitive_{!scenes_->empty()},
+      has_scene_{!scenes_->empty()},
       subpass_uniforms_(frame_count_),
       subpass_uniform_buffers_(frame_count_) {
   CreateDrawElements();
@@ -135,7 +135,7 @@ u32 Subpass::GetDrawElementDescriptorSetIndex() const {
 void Subpass::CreateDrawElements() {
   draw_elements_.clear();
 
-  if (!has_primitive_) {
+  if (!has_scene_) {
     draw_elements_.push_back(CreateDrawElement());
   } else {
     for (u32 scene_index : *scenes_) {
@@ -204,7 +204,7 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
                                        const ast::sc::Primitive& primitive,
                                        u32 primitive_index) {
   DrawElement draw_element;
-  draw_element.has_primitive = has_primitive_;
+  draw_element.has_primitive = has_scene_;
 
   // Parse shader resources.
   std::vector<const SPIRV*> spirvs;
@@ -234,7 +234,7 @@ void Subpass::ParseShaderResources(
     std::vector<u32>& sorted_sets,
     std::vector<vk::PushConstantRange>& push_constant_ranges) {
   std::vector<std::string> shader_processes;
-  if (has_primitive_) {
+  if (has_scene_) {
     const std::map<std::string, ast::sc::Texture*>& textures{
         primitive.material->GetTextures()};
     for (std::string wanted_texture : kWantedTextures) {
@@ -510,7 +510,7 @@ void Subpass::CreatePipelineResources(
       }
 
       // Update descriptor set.
-      if (has_primitive_) {
+      if (has_scene_) {
         const std::map<std::string, ast::sc::Texture*>& textures{
             primitive.material->GetTextures()};
 
@@ -782,7 +782,7 @@ void Subpass::CreatePipeline(
       vertex_input_binding_descriptions;
   std::vector<vk::VertexInputAttributeDescription>
       vertex_input_attribute_descriptions;
-  if (has_primitive_) {
+  if (has_scene_) {
     std::map<u32, const ast::sc::VertexAttribute*> vertex_location_attributes;
     for (const auto& vertex_buffer_attribute : primitive.vertex_attributes) {
       std::string name{vertex_buffer_attribute.first};
@@ -863,7 +863,7 @@ void Subpass::CreatePipeline(
       0.0F,
       1.0F};
 
-  if (!has_primitive_ || primitive.material->GetDoubleSided()) {
+  if (!has_scene_ || primitive.material->GetDoubleSided()) {
     rasterization_state_ci.cullMode = vk::CullModeFlagBits::eNone;
   }
 

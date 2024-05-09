@@ -9,9 +9,10 @@ struct PunctualLight {
   int type;
 };
 
-const int MaxPunctualLightCount = 8;
-const int PunctualLightCount = 2;
 const float Pi = 3.14159265359;
+const int MaxPunctualLightCount = 8;
 const int DirectionalLight = 0;
 const int PointLight = 1;
 const int SpotLight = 2;
+
+const int PunctualLightCount = 2;

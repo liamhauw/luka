@@ -8,7 +8,6 @@
 // clang-format on
 
 #include "function/camera/camera.h"
-#include "function/light/light.h"
 #include "rendering/graphics/spirv.h"
 #include "resource/asset/asset.h"
 #include "resource/gpu/gpu.h"
@@ -32,7 +31,7 @@ struct SubpassUniform {
   glm::mat4 pv;
   glm::mat4 inverse_pv;
   glm::vec4 camera_position;
-  PunctualLight punctual_lights[gMaxPunctualLightCount];
+  PunctualLight punctual_lights[8];
 };
 
 struct DrawElementUniform {
@@ -171,7 +170,7 @@ class Subpass {
   std::string name_;
   const std::vector<u32>* scenes_;
   const std::unordered_map<vk::ShaderStageFlagBits, u32>* shaders_;
-  bool has_primitive_;
+  bool has_scene_;
   std::vector<SubpassUniform> subpass_uniforms_;
   std::vector<gpu::Buffer> subpass_uniform_buffers_;
 

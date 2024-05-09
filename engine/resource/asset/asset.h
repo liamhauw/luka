@@ -10,6 +10,7 @@
 #include <TaskScheduler.h>
 
 #include "resource/asset/frame_graph.h"
+#include "resource/asset/light.h"
 #include "resource/asset/scene.h"
 #include "resource/asset/shader.h"
 #include "resource/config/config.h"
@@ -30,11 +31,13 @@ class AssetAsync {
   u32 GetAssetCount() const;
 
   const ast::Scene& GetScene(u32 index);
+  const ast::Light& GetLight(u32 index);
   const ast::Shader& GetShader(u32 index);
   const ast::FrameGraph& GetFrameGraph(u32 index);
 
  private:
   void LoadScene(u32 index, u32 thread_num);
+  void LoadLight(u32 index);
   void LoadShader(u32 index);
   void LoadFrameGraph(u32 index);
 
@@ -43,15 +46,18 @@ class AssetAsync {
   u32 thread_count_;
 
   const std::vector<std::filesystem::path>* cfg_scene_paths_;
+  const std::vector<std::filesystem::path>* cfg_light_paths_;
   const std::vector<std::filesystem::path>* cfg_shader_paths_;
   const std::vector<std::filesystem::path>* cfg_frame_graph_paths_;
 
   u32 scene_count_;
+  u32 light_count_;
   u32 shader_count_;
   u32 frame_graph_count_;
   u32 asset_count_;
 
   std::vector<ast::Scene> scenes_;
+  std::vector<ast::Light> lights_;
   std::vector<ast::Shader> shaders_;
   std::vector<ast::FrameGraph> frame_graphs_;
 
@@ -81,6 +87,7 @@ class Asset {
   void Tick();
 
   const ast::Scene& GetScene(u32 index);
+  const ast::Light& GetLight(u32 index);
   const ast::Shader& GetShader(u32 index);
   const ast::FrameGraph& GetFrameGraph(u32 index);
 

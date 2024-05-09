@@ -17,13 +17,17 @@ AssetAsync::AssetAsync(std::shared_ptr<Config> config, std::shared_ptr<Gpu> gpu,
       gpu_{gpu},
       thread_count_{thread_count},
       cfg_scene_paths_{&(config_->GetScenePaths())},
+      cfg_light_paths_{&(config_->GetLightPaths())},
       cfg_shader_paths_{&(config_->GetShaderPaths())},
       cfg_frame_graph_paths_{&(config_->GetFrameGraphPaths())},
       scene_count_{static_cast<u32>(cfg_scene_paths_->size())},
+      light_count_{static_cast<u32>(cfg_light_paths_->size())},
       shader_count_{static_cast<u32>(cfg_shader_paths_->size())},
       frame_graph_count_{static_cast<u32>(cfg_frame_graph_paths_->size())},
-      asset_count_{scene_count_ + shader_count_ + frame_graph_count_},
+      asset_count_{scene_count_ + light_count_ + shader_count_ +
+                   frame_graph_count_},
       scenes_(scene_count_),
+      lights_(light_count_),
       shaders_(shader_count_),
       frame_graphs_(frame_graph_count_),
       staging_buffers_(thread_count_) {
@@ -46,18 +50,35 @@ AssetAsync::AssetAsync(std::shared_ptr<Config> config, std::shared_ptr<Gpu> gpu,
 }
 
 void AssetAsync::Load(enki::TaskSetPartition range, u32 thread_num) {
+  u32 scene_lower_bound{0};
+  u32 scene_upper_bound{scene_lower_bound + scene_count_};
+
+  u32 light_lower_bound{scene_upper_bound};
+  u32 light_upper_bound{light_lower_bound + light_count_};
+
+  u32 shader_lower_bound{light_upper_bound};
+  u32 shader_upper_bound{shader_lower_bound + shader_count_};
+
+  u32 frame_graph_lower_bound{shader_upper_bound};
+  u32 frame_graph_upper_bound{frame_graph_lower_bound + frame_graph_count_};
+
   for (auto i{range.start}; i < range.end; ++i) {
-    if (i < scene_count_) {
-      LoadScene(i, thread_num);
-      LOGI("Load scene {} in range {} thread {}", i, i, thread_num);
-    } else if (i < scene_count_ + shader_count_) {
-      u32 index{i - scene_count_};
-      LoadShader(index);
+    if (i < scene_upper_bound) {
+      u32 index{i - scene_lower_bound};
+      LOGI("Load scene {} in range {} thread {}", index, i, thread_num);
+      LoadScene(index, thread_num);
+    } else if (i < light_upper_bound) {
+      u32 index{i - light_lower_bound};
+      LOGI("Load light {} in range {} thread {}", index, i, thread_num);
+      LoadLight(index);
+    } else if (i < shader_upper_bound) {
+      u32 index{i - shader_lower_bound};
       LOGI("Load shader {} in range {} thread {}", index, i, thread_num);
-    } else {
-      u32 index{i - scene_count_ - shader_count_};
-      LoadFrameGraph(index);
+      LoadShader(index);
+    } else if (i < frame_graph_upper_bound) {
+      u32 index{i - frame_graph_lower_bound};
       LOGI("Load frame graph {} in range {} thread {}", index, i, thread_num);
+      LoadFrameGraph(index);
     }
   }
 }
@@ -81,6 +102,10 @@ void AssetAsync::LoadScene(u32 index, u32 thread_num) {
                                         staging_buffers_[thread_num]});
 }
 
+void AssetAsync::LoadLight(u32 index) {
+  lights_[index] = std::move(ast::Light{(*cfg_light_paths_)[index]});
+}
+
 void AssetAsync::LoadShader(u32 index) {
   shaders_[index] = std::move(ast::Shader{(*cfg_shader_paths_)[index]});
 }
@@ -95,6 +120,13 @@ const ast::Scene& AssetAsync::GetScene(u32 index) {
     THROW("Fail to get scene");
   }
   return scenes_[index];
+}
+
+const ast::Light& AssetAsync::GetLight(u32 index) {
+  if (index >= light_count_) {
+    THROW("Fail to get scene");
+  }
+  return lights_[index];
 }
 
 const ast::Shader& AssetAsync::GetShader(u32 index) {
@@ -137,6 +169,11 @@ void Asset::Tick() {}
 const ast::Scene& Asset::GetScene(u32 index) {
   WaitAssetAsyncLoad();
   return asset_async_.GetScene(index);
+}
+
+const ast::Light& Asset::GetLight(u32 index) {
+  WaitAssetAsyncLoad();
+  return asset_async_.GetLight(index);
 }
 
 const ast::Shader& Asset::GetShader(u32 index) {

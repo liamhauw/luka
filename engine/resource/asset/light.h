@@ -7,8 +7,11 @@
 #include "platform/pch.h"
 // clang-format on
 
+#include "core/json.h"
+
 namespace luka {
 
+namespace ast {
 constexpr u32 gMaxPunctualLightCount = 8;
 
 enum class PunctualLightType { kDirectional, kPoint, kSpot };
@@ -17,9 +20,11 @@ class Light {
  public:
   Light() = default;
 
-  void Tick();
+  Light(const std::filesystem::path& light_path);
 
  private:
+  json json_;
 };
+}  // namespace ast
 
 }  // namespace luka

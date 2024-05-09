@@ -20,6 +20,7 @@ class Config {
   void Tick();
 
   const std::vector<std::filesystem::path>& GetScenePaths() const;
+  const std::vector<std::filesystem::path>& GetLightPaths() const;
   const std::vector<std::filesystem::path>& GetShaderPaths() const;
   const std::vector<std::filesystem::path>& GetFrameGraphPaths() const;
   u32 GetFrameGraphIndex() const;
@@ -32,11 +33,13 @@ class Config {
   std::filesystem::path config_path_{resource_path_ / "config" / "config.json"};
   std::filesystem::path asset_path_{resource_path_ / "asset"};
   std::filesystem::path scene_path_{asset_path_ / "scene"};
+  std::filesystem::path light_path_{asset_path_ / "light"};
   std::filesystem::path shader_path_{asset_path_ / "shader"};
   std::filesystem::path frame_graph_path_{asset_path_ / "frame_graph"};
 
   json config_json_;
   std::vector<std::filesystem::path> scene_paths_;
+  std::vector<std::filesystem::path> light_paths_;
   std::vector<std::filesystem::path> shader_paths_;
   std::vector<std::filesystem::path> frame_graph_paths_;
   u32 frame_graph_index_{0};

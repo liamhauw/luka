@@ -23,7 +23,6 @@ set(HEADER_FILES
   function/camera/camera.h
   function/function_input/function_input.h
   function/function_ui/function_ui.h
-  function/light/light.h
   function/time/time.h
 
   # platform
@@ -53,6 +52,7 @@ set(HEADER_FILES
   resource/asset/scene_component/texture.h
   resource/asset/asset.h
   resource/asset/frame_graph.h
+  resource/asset/light.h
   resource/asset/scene.h
   resource/asset/shader.h
   resource/config/config.h
@@ -88,6 +88,7 @@ set(SOURCE_FILES
   resource/asset/scene_component/texture.cc
   resource/asset/asset.cc
   resource/asset/frame_graph.cc
+  resource/asset/light.cc
   resource/asset/scene.cc
   resource/asset/shader.cc
   resource/config/config.cc
@@ -101,7 +102,6 @@ set(SOURCE_FILES
   function/camera/camera.cc
   function/function_input/function_input.cc
   function/function_ui/function_ui.cc
-  function/light/light.cc
   function/time/time.cc
 
   # editor

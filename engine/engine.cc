@@ -16,7 +16,6 @@ Engine::Engine()
       gpu_{std::make_shared<Gpu>(window_)},
       asset_{std::make_shared<Asset>(config_, task_scheduler_, gpu_)},
       time_{std::make_shared<Time>()},
-      light_{std::make_shared<Light>()},
       camera_{std::make_shared<Camera>(window_)},
       function_input_{std::make_shared<FunctionInput>(config_, window_)},
       function_ui_{std::make_shared<FunctionUi>(window_, gpu_)},
@@ -35,7 +34,6 @@ void Engine::Run() {
     gpu_->Tick();
     asset_->Tick();
     time_->Tick();
-    light_->Tick();
     camera_->Tick();
     function_input_->Tick();
     function_ui_->Tick();

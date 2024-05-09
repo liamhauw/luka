@@ -26,6 +26,14 @@ Config::Config() {
     }
   }
 
+  if (config_json_.contains("lights")) {
+    const json& lights_json{config_json_["lights"]};
+    for (const json& light_json : lights_json) {
+      std::string uri{light_json.template get<std::string>()};
+      light_paths_.emplace_back(light_path_ / GetPath(uri));
+    }
+  }
+
   if (config_json_.contains("shaders")) {
     const json& shaders_json{config_json_["shaders"]};
     for (const json& shader_json : shaders_json) {
@@ -51,6 +59,10 @@ void Config::Tick() {}
 
 const std::vector<std::filesystem::path>& Config::GetScenePaths() const {
   return scene_paths_;
+}
+
+const std::vector<std::filesystem::path>& Config::GetLightPaths() const {
+  return light_paths_;
 }
 
 const std::vector<std::filesystem::path>& Config::GetShaderPaths() const {

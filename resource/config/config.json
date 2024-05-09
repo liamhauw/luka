@@ -4,6 +4,9 @@
     "sponza/Sponza.gltf",
     "damaged/DamagedHelmet.gltf"
   ],
+  "lights": [
+    "default/punctual_light.json"
+  ],
   "shaders": [
     "default/geometry.vert",
     "default/geometry.frag",
@@ -13,7 +16,7 @@
     "default/ui.frag"
   ],
   "frame_graphs": [
-    "default.json"
+    "default/deferred_rendering.json"
   ],
   "frame_graph": 0
 }
