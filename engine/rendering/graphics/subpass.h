@@ -16,22 +16,11 @@ namespace luka {
 
 namespace gs {
 
-struct PunctualLight {
-  glm::vec3 direction;
-  f32 range;
-  glm::vec3 color;
-  f32 intensity;
-  glm::vec3 position;
-  f32 inner_cone_cos;
-  f32 outer_cone_cos;
-  i32 type;
-};
-
 struct SubpassUniform {
   glm::mat4 pv;
   glm::mat4 inverse_pv;
   glm::vec4 camera_position;
-  PunctualLight punctual_lights[8];
+  ast::PunctualLight punctual_lights[ast::gMaxPunctualLightCount];
 };
 
 struct DrawElementUniform {
@@ -53,7 +42,7 @@ struct DrawElmentVertexInfo {
 };
 
 struct DrawElement {
-  bool has_primitive{false};
+  bool has_scene{false};
   bool has_descriptor_set{false};
   const vk::raii::PipelineLayout* pipeline_layout{nullptr};
   std::vector<vk::raii::DescriptorSets> descriptor_sets;
@@ -169,12 +158,16 @@ class Subpass {
   const ast::Subpass* ast_subpass_;
   std::string name_;
   const std::vector<u32>* scenes_;
+  const std::vector<u32>* lights_;
   const std::unordered_map<vk::ShaderStageFlagBits, u32>* shaders_;
   bool has_scene_;
+  bool has_light_;
   std::vector<SubpassUniform> subpass_uniforms_;
   std::vector<gpu::Buffer> subpass_uniform_buffers_;
 
   bool need_resize_{false};
+
+  std::vector<ast::PunctualLight> punctual_lights_;
 
   bool has_subpass_descriptor_set_{false};
   u32 subpass_descriptor_set_index_{UINT32_MAX};

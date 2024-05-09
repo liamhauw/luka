@@ -25,6 +25,7 @@ struct Subpass {
   std::string name;
   std::unordered_map<AttachmentType, std::vector<u32>> attachments;
   std::vector<u32> scenes;
+  std::vector<u32> lights;
   std::unordered_map<vk::ShaderStageFlagBits, u32> shaders;
   std::vector<std::string> inputs;
 };

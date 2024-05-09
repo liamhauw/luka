@@ -1,18 +1,14 @@
 struct PunctualLight {
-  vec3 direction;
-  float range;
-  vec3 color;
-  float intensity;
   vec3 position;
+  uint type;
+
+  vec3 direction;
+  float intensity;
+
+  vec3 color;
+  float range;
+
   float inner_cone_cos;
   float outer_cone_cos;
-  int type;
+  vec2 padding;
 };
-
-const float Pi = 3.14159265359;
-const int MaxPunctualLightCount = 8;
-const int DirectionalLight = 0;
-const int PointLight = 1;
-const int SpotLight = 2;
-
-const int PunctualLightCount = 2;

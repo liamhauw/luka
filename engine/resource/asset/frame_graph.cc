@@ -112,6 +112,14 @@ FrameGraph::FrameGraph(const std::filesystem::path& frame_graph_path) {
             }
           }
 
+          if (subpass_json.contains("lights")) {
+            const json& lights_json{subpass_json["lights"]};
+            for (const auto& light_json : lights_json) {
+              u32 index{light_json.template get<u32>()};
+              subpass.lights.push_back(index);
+            }
+          }
+
           if (subpass_json.contains("shaders")) {
             const json& shaders_json{subpass_json["shaders"]};
             if (shaders_json.contains("vertex")) {

@@ -271,7 +271,7 @@ void Graphics::DrawPasses(const vk::raii::CommandBuffer& command_buffer) {
         }
 
         // Draw.
-        if (draw_element.has_primitive) {
+        if (draw_element.has_scene) {
           const std::vector<gs::DrawElmentVertexInfo> vertex_infos{
               draw_element.vertex_infos};
 

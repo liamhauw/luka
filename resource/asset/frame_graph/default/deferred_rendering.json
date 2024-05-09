@@ -57,6 +57,9 @@
               4
             ]
           },
+          "lights": [
+            0
+          ],
           "shaders": {
             "vertex": 2,
             "fragment": 3

@@ -32,12 +32,14 @@ float RangeAttenuation(float range, float dist) {
   return max(min(1.0 - pow(dist / range, 4.0), 1.0), 0.0) / pow(dist, 2.0);
 }
 
-float SpotAttenuation(vec3 direction, float inner_cone_cos, float outer_cone_cos, vec3 l) {
+float SpotAttenuation(vec3 direction, float inner_cone_cos,
+                      float outer_cone_cos, vec3 l) {
   float actual_cos = dot(normalize(direction), normalize(-l));
 
   if (actual_cos > outer_cone_cos) {
     if (actual_cos < inner_cone_cos) {
-      float angular_attenuation = (actual_cos - outer_cone_cos) / (inner_cone_cos - outer_cone_cos);
+      float angular_attenuation =
+          (actual_cos - outer_cone_cos) / (inner_cone_cos - outer_cone_cos);
       return angular_attenuation * angular_attenuation;
     }
     return 1.0;
@@ -53,7 +55,8 @@ vec3 LightIntensity(PunctualLight light, vec3 point_to_light) {
     range_attenuation = RangeAttenuation(light.range, length(point_to_light));
   }
   if (light.type == SpotLight) {
-    spot_attenuation = SpotAttenuation(light.direction, light.inner_cone_cos, light.outer_cone_cos, point_to_light);
+    spot_attenuation = SpotAttenuation(light.direction, light.inner_cone_cos,
+                                       light.outer_cone_cos, point_to_light);
   }
 
   return range_attenuation * spot_attenuation * light.intensity * light.color;

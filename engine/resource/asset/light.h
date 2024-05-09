@@ -8,13 +8,30 @@
 // clang-format on
 
 #include "core/json.h"
+#include "core/math.h"
 
 namespace luka {
 
 namespace ast {
+
 constexpr u32 gMaxPunctualLightCount = 8;
 
-enum class PunctualLightType { kDirectional, kPoint, kSpot };
+enum class PunctualLightType : u32 { kDirectional = 0, kPoint, kSpot };
+
+struct PunctualLight {
+  glm::vec3 position;
+  u32 type;
+
+  glm::vec3 direction;
+  f32 intensity;
+
+  glm::vec3 color;
+  f32 range;
+
+  f32 inner_cone_cos;
+  f32 outer_cone_cos;
+  glm::vec2 padding;
+};
 
 class Light {
  public:
@@ -22,8 +39,12 @@ class Light {
 
   Light(const std::filesystem::path& light_path);
 
+  const std::vector<PunctualLight>& GetPunctualLights() const;
+
  private:
   json json_;
+
+  std::vector<PunctualLight> puntual_lights_;
 };
 }  // namespace ast
 

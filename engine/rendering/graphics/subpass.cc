@@ -39,8 +39,10 @@ Subpass::Subpass(
       ast_subpass_{&(*ast_subpasses_)[subpass_index_]},
       name_{ast_subpass_->name},
       scenes_{&(ast_subpass_->scenes)},
+      lights_{&(ast_subpass_->lights)},
       shaders_{&(ast_subpass_->shaders)},
       has_scene_{!scenes_->empty()},
+      has_light_{!lights_->empty()},
       subpass_uniforms_(frame_count_),
       subpass_uniform_buffers_(frame_count_) {
   CreateDrawElements();
@@ -67,23 +69,14 @@ void Subpass::Update(u32 frame_index) {
     glm::mat4 pv{projection * view};
     glm::mat4 inverse_vp{glm::inverse(pv)};
 
-    std::vector<PunctualLight> lights(2);
-    lights[0].range = 10.0;
-    lights[0].color = glm::vec3(1.0, 1.0, 1.0);
-    lights[0].intensity = 30.0;
-    lights[0].position = camera_position;
-    lights[0].type = 1;
-
-    lights[1].direction = glm::vec3(1.0, -1.0, 0.0);
-    lights[1].range = 10.0;
-    lights[1].color = glm::vec3(1.0, 1.0, 1.0);
-    lights[1].intensity = 0.5;
-    lights[1].type = 0;
-
     subpass_uniforms_[frame_index] =
         SubpassUniform{pv, inverse_vp, glm::vec4{camera_position, 1.0F}};
-    memcpy(subpass_uniforms_[frame_index].punctual_lights, lights.data(),
-                sizeof(PunctualLight) * 2);
+
+    if (has_light_) {
+      memcpy(subpass_uniforms_[frame_index].punctual_lights,
+             punctual_lights_.data(),
+             sizeof(ast::PunctualLight) * punctual_lights_.size());
+    }
 
     void* mapped{subpass_uniform_buffers_[frame_index].Map()};
     memcpy(mapped,
@@ -204,7 +197,7 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
                                        const ast::sc::Primitive& primitive,
                                        u32 primitive_index) {
   DrawElement draw_element;
-  draw_element.has_primitive = has_scene_;
+  draw_element.has_scene = has_scene_;
 
   // Parse shader resources.
   std::vector<const SPIRV*> spirvs;
@@ -234,6 +227,17 @@ void Subpass::ParseShaderResources(
     std::vector<u32>& sorted_sets,
     std::vector<vk::PushConstantRange>& push_constant_ranges) {
   std::vector<std::string> shader_processes;
+
+  // Common.
+  shader_processes.push_back("DPi 3.14159265359");
+
+  std::string max_punctual_light_count{
+      std::to_string(ast::gMaxPunctualLightCount)};
+  max_punctual_light_count =
+      "DMaxPunctualLightCount " + max_punctual_light_count;
+  shader_processes.push_back(max_punctual_light_count);
+
+  // Scene.
   if (has_scene_) {
     const std::map<std::string, ast::sc::Texture*>& textures{
         primitive.material->GetTextures()};
@@ -263,6 +267,37 @@ void Subpass::ParseShaderResources(
     if (!has_position_buffer || !has_normal_buffer) {
       THROW("There is no position or/and normal buffer.");
     }
+  }
+
+  // Light.
+  if (has_light_) {
+    std::string directional_light{
+        std::to_string(static_cast<u32>(ast::PunctualLightType::kDirectional))};
+    directional_light = "DDirectionalLight " + directional_light;
+    shader_processes.push_back(directional_light);
+
+    std::string point_light{
+        std::to_string(static_cast<u32>(ast::PunctualLightType::kPoint))};
+    point_light = "DPointLight " + point_light;
+    shader_processes.push_back(point_light);
+
+    std::string spot_light{
+        std::to_string(static_cast<u32>(ast::PunctualLightType::kSpot))};
+    spot_light = "DSpotLight " + spot_light;
+    shader_processes.push_back(spot_light);
+
+    for (const auto& light : *lights_) {
+      const auto& pls{asset_->GetLight(light).GetPunctualLights()};
+      for (const auto& pl : pls) {
+        punctual_lights_.push_back(pl);
+      }
+      if (punctual_lights_.size() == ast::gMaxPunctualLightCount) {
+        break;
+      }
+    }
+    std::string punctual_light_count{std::to_string(punctual_lights_.size())};
+    punctual_light_count = "DPunctualLightCount " + punctual_light_count;
+    shader_processes.push_back(punctual_light_count);
   }
 
   auto vi{shaders_->find(vk::ShaderStageFlagBits::eVertex)};
@@ -403,26 +438,6 @@ void Subpass::CreatePipelineResources(
         for (const auto& shader_resource : shader_resources) {
           if (shader_resource.type == ShaderResourceType::kUniformBuffer) {
             if (shader_resource.name == "SubpassUniform") {
-              // const glm::mat4& view{camera_->GetViewMatrix()};
-              // const glm::mat4& projection{camera_->GetProjectionMatrix()};
-              // const glm::vec3& camera_position{camera_->GetPosition()};
-
-              // glm::mat4 pv{projection * view};
-              // glm::mat4 inverse_vp{glm::inverse(pv)};
-
-              // std::vector<PunctualLight> lights(2);
-              // lights[0].range = 10.0;
-              // lights[0].color = glm::vec3(1.0, 1.0, 1.0);
-              // lights[0].intensity = 30.0;
-              // lights[0].position = camera_position;
-              // lights[0].type = 1;
-
-              // lights[1].direction = glm::vec3(1.0, -1.0, 0.0);
-              // lights[1].range = 10.0;
-              // lights[1].color = glm::vec3(1.0, 1.0, 1.0);
-              // lights[1].intensity = 0.5;
-              // lights[1].type = 0;
-
               for (u32 i{0}; i < frame_count_; ++i) {
                 SubpassUniform subpass_uniform;
 

@@ -10,8 +10,7 @@ layout(set = 0, binding = 0) uniform SubpassUniform {
   mat4 inverse_pv;
   vec4 camera_position;
   PunctualLight punctual_lights[MaxPunctualLightCount];
-}
-subpass_uniform;
+} subpass_uniform;
 
 layout(set = 2, binding = 0) uniform DrawElementUniform {
   mat4 m;
@@ -23,8 +22,7 @@ layout(set = 2, binding = 0) uniform DrawElementUniform {
   float roughness_factor;
   int alpha_model;
   float alpha_cutoff;
-}
-draw_element_uniform;
+} draw_element_uniform;
 
 layout(location = 0) in vec3 position;
 layout(location = 0) out vec3 o_position;
