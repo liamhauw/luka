@@ -37,8 +37,8 @@ class Material : public Component {
   const glm::vec4& GetBaseColorFactor() const;
   f32 GetMetallicFactor() const;
   f32 GetRoughnessFactor() const;
-  f32 GetScale() const;
-  f32 GetStrength() const;
+  f32 GetNormalScale() const;
+  f32 GetOcclusionStrength() const;
   const glm::vec3& GetEmissiveFactor() const;
   AlphaMode GetAlphaMode() const;
   f32 GetAlphaCutoff() const;
@@ -50,8 +50,8 @@ class Material : public Component {
   glm::vec4 base_color_factor_;
   f32 metallic_factor_;
   f32 roughness_factor_;
-  f32 scale_;
-  f32 strength_;
+  f32 normal_scale_;
+  f32 occlusion_strength_;
   glm::vec3 emissive_factor_;
   AlphaMode alpha_mode_;
   f32 alpha_cutoff_;

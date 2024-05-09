@@ -14,13 +14,15 @@ layout(set = 0, binding = 0) uniform SubpassUniform {
 subpass_uniform;
 
 layout(input_attachment_index = 0, set = 0,
-       binding = 1) uniform subpassInput subpass_i_normal;
+       binding = 1) uniform subpassInput subpass_i_base_color;
 layout(input_attachment_index = 1, set = 0,
-       binding = 2) uniform subpassInput subpass_i_base_color;
+       binding = 2) uniform subpassInput subpass_i_metallic_roughness;
 layout(input_attachment_index = 2, set = 0,
-       binding = 3) uniform subpassInput subpass_i_metallic_roughness;
+       binding = 3) uniform subpassInput subpass_i_normal;
 layout(input_attachment_index = 3, set = 0,
-       binding = 4) uniform subpassInput subpass_i_depth;
+       binding = 4) uniform subpassInput subpass_i_emissive;
+layout(input_attachment_index = 4, set = 0,
+       binding = 5) uniform subpassInput subpass_i_depth;
 
 layout(location = 0) in vec2 i_texcoord_0;
 layout(location = 0) out vec4 o_color;
@@ -86,10 +88,6 @@ vec3 F_Schlick(float vdoth, vec3 F0) {
 }
 
 void main() {
-  // Normal.
-  vec3 n = subpassLoad(subpass_i_normal).xyz;
-  n = normalize(2.0 * n - 1.0);
-
   // Base color.
   vec3 base_color = subpassLoad(subpass_i_base_color).xyz;
 
@@ -97,6 +95,13 @@ void main() {
   vec2 metallic_roughness = subpassLoad(subpass_i_metallic_roughness).xy;
   float metallic = metallic_roughness.x;
   float roughness = metallic_roughness.y;
+
+  // Emissive.
+  vec3 emissive = subpassLoad(subpass_i_emissive).xyz;
+
+  // Normal.
+  vec3 n = subpassLoad(subpass_i_normal).xyz;
+  n = normalize(2.0 * n - 1.0);
 
   // Position.
   float depth = subpassLoad(subpass_i_depth).x;
@@ -111,6 +116,7 @@ void main() {
   float ndotv = max(dot(n, v), 0.0);
   vec3 F0 = mix(vec3(0.04), base_color, metallic);
 
+  // Punctual light.
   for (int i = 0; i < PunctualLightCount; ++i) {
     PunctualLight light = subpass_uniform.punctual_lights[i];
     // Input light.
@@ -149,7 +155,8 @@ void main() {
 
   // Ambient light.
   vec3 ambient = vec3(0.03) * base_color;
+  Lo += ambient;
 
-  vec3 color = Lo + ambient;
+  vec3 color = emissive + Lo;
   o_color = vec4(color, 1.0);
 }

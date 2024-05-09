@@ -24,8 +24,8 @@ Material::Material(std::map<std::string, Texture*>&& textures,
       base_color_factor_{std::move(base_color_factor)},
       metallic_factor_{metallic_factor},
       roughness_factor_{roughness_factor},
-      scale_{scale},
-      strength_{strength},
+      normal_scale_{scale},
+      occlusion_strength_{strength},
       emissive_factor_{std::move(emissive_factor)},
       alpha_mode_{alpha_mode},
       alpha_cutoff_{alpha_cutoff},
@@ -69,7 +69,7 @@ Material::Material(const std::vector<Texture*> texture_components,
     normal_texture = texture_components[normal.index];
     textures_.insert(std::make_pair("normal_texture", normal_texture));
   }
-  scale_ = static_cast<f32>(normal.scale);
+  normal_scale_ = static_cast<f32>(normal.scale);
 
   // Occlusion.
   const tinygltf::OcclusionTextureInfo& occlusion{
@@ -81,7 +81,7 @@ Material::Material(const std::vector<Texture*> texture_components,
     textures_.insert(std::make_pair("occlusion_texture", occlusion_texture));
   }
 
-  strength_ = static_cast<f32>(occlusion.strength);
+  occlusion_strength_ = static_cast<f32>(occlusion.strength);
 
   // Emissive.
   std::vector<f32> emissive_factor_fv{
@@ -126,9 +126,9 @@ f32 Material::GetMetallicFactor() const { return metallic_factor_; }
 
 f32 Material::GetRoughnessFactor() const { return roughness_factor_; }
 
-f32 Material::GetScale() const { return scale_; }
+f32 Material::GetNormalScale() const { return normal_scale_; }
 
-f32 Material::GetStrength() const { return strength_; }
+f32 Material::GetOcclusionStrength() const { return occlusion_strength_; }
 
 const glm::vec3& Material::GetEmissiveFactor() const {
   return emissive_factor_;

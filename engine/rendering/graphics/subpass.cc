@@ -673,11 +673,14 @@ void Subpass::CreatePipelineResources(
               DrawElementUniform draw_element_uniform{
                   model_matrix,
                   inverse_model_matrix,
-                  primitive.material->GetBaseColorFactor(),
                   sampler_indices,
                   image_indices,
+                  primitive.material->GetBaseColorFactor(),
                   primitive.material->GetMetallicFactor(),
                   primitive.material->GetRoughnessFactor(),
+                  primitive.material->GetNormalScale(),
+                  primitive.material->GetOcclusionStrength(),
+                  glm::vec4{primitive.material->GetEmissiveFactor(), 1.0F},
                   static_cast<u32>(primitive.material->GetAlphaMode()),
                   primitive.material->GetAlphaCutoff()};
 

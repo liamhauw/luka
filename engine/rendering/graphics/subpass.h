@@ -26,11 +26,14 @@ struct SubpassUniform {
 struct DrawElementUniform {
   glm::mat4 m;
   glm::mat4 inverse_m;
-  glm::vec4 base_color_factor;
   glm::uvec4 sampler_indices;
   glm::uvec4 image_indices;
+  glm::vec4 base_color_factor;
   f32 metallic_factor;
   f32 roughness_factor;
+  float normal_scale;
+  float occlusion_strength;
+  glm::vec4 emissiveFactor;
   u32 alpha_model;
   float alpha_cutoff;
 };
@@ -180,7 +183,8 @@ class Subpass {
   const vk::raii::DescriptorSetLayout* bindless_descriptor_set_layout_{nullptr};
   vk::raii::DescriptorSet bindless_descriptor_set_{nullptr};
   const std::vector<std::string> kWantedTextures{
-      "base_color_texture", "metallic_roughness_texture", "normal_texture"};
+      "base_color_texture", "metallic_roughness_texture", "normal_texture",
+      "emissive_texture"};
   const u32 kBindlessSamplerMaxCount{8};
   const u32 kBindlessImageMaxCount{80};
   u32 bindless_sampler_index_{0};
