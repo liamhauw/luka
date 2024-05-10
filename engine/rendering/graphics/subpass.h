@@ -16,26 +16,31 @@ namespace luka {
 
 namespace gs {
 
+constexpr u32 gPunctualLightMaxCount = 8;
+
 struct SubpassUniform {
   glm::mat4 pv;
   glm::mat4 inverse_pv;
   glm::vec4 camera_position;
-  ast::PunctualLight punctual_lights[ast::gPunctualLightMaxCount];
+  ast::PunctualLight punctual_lights[gPunctualLightMaxCount];
 };
 
 struct DrawElementUniform {
   glm::mat4 m;
   glm::mat4 inverse_m;
-  glm::uvec4 sampler_indices;
-  glm::uvec4 image_indices;
+  glm::uvec4 sampler_indices_0;
+  glm::uvec4 sampler_indices_1;
+  glm::uvec4 image_indices_0;
+  glm::uvec4 image_indices_1;
   glm::vec4 base_color_factor;
   f32 metallic_factor;
   f32 roughness_factor;
-  float normal_scale;
-  float occlusion_strength;
+  f32 normal_scale;
+  f32 occlusion_strength;
   glm::vec4 emissiveFactor;
   u32 alpha_model;
-  float alpha_cutoff;
+  f32 alpha_cutoff;
+  glm::vec2 padding;
 };
 
 struct DrawElmentVertexInfo {
@@ -188,7 +193,7 @@ class Subpass {
   vk::raii::DescriptorSet bindless_descriptor_set_{nullptr};
   const std::vector<std::string> kWantedTextures{
       "base_color_texture", "metallic_roughness_texture", "normal_texture",
-      "emissive_texture"};
+      "occlusion_texture", "emissive_texture"};
   const u32 kBindlessSamplerMaxCount{8};
   const u32 kBindlessImageMaxCount{80};
   u32 bindless_sampler_index_{0};

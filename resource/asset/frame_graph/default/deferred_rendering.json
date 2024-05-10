@@ -16,6 +16,10 @@
           "format": "R8G8Unorm"
         },
         {
+          "name": "occlusion",
+          "format": "R8Unorm"
+        },
+        {
           "name": "emissive",
           "format": "R8G8B8A8Unorm"
         },
@@ -37,12 +41,13 @@
               0,
               1,
               2,
-              3
+              3,
+              4
             ],
-            "depth_stencil": 4
+            "depth_stencil": 5
           },
           "scenes": [
-            0
+            2
           ],
           "shaders": {
             "vertex": 0,
@@ -57,10 +62,11 @@
               1,
               2,
               3,
-              4
+              4,
+              5
             ],
             "colors": [
-              5
+              6
             ]
           },
           "lights": [

@@ -42,7 +42,10 @@ FrameGraph::FrameGraph(const std::filesystem::path& frame_graph_path) {
           if (attachment_json.contains("format")) {
             std::string fmt{
                 attachment_json["format"].template get<std::string>()};
-            if (fmt == "R8G8Unorm") {
+
+            if (fmt == "R8Unorm") {
+              format = vk::Format::eR8Unorm;
+            } else if (fmt == "R8G8Unorm") {
               format = vk::Format::eR8G8Unorm;
             } else if (fmt == "R8G8B8Unorm") {
               format = vk::Format::eR8G8B8Unorm;

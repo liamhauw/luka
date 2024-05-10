@@ -14,8 +14,6 @@ namespace luka {
 
 namespace ast {
 
-constexpr u32 gPunctualLightMaxCount = 8;
-
 enum class PunctualLightType : u32 { kDirectional = 0, kPoint, kSpot };
 
 struct PunctualLight {

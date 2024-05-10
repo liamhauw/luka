@@ -29,7 +29,8 @@ layout(location = 3) in vec2 i_texcoord_0;
 layout(location = 0) out vec4 o_base_color;
 layout(location = 1) out vec2 o_metallic_roughness;
 layout(location = 2) out vec4 o_normal;
-layout(location = 3) out vec4 o_emissive;
+layout(location = 3) out float o_occlusion;
+layout(location = 4) out vec4 o_emissive;
 
 void main(void) {
   // Base color.
@@ -37,8 +38,8 @@ void main(void) {
 #if defined(HAS_BASE_COLOR_TEXTURE)
   vec4 base_color_texel =
       texture(nonuniformEXT(sampler2D(
-                  bindless_images[draw_element_uniform.image_indices.x],
-                  bindless_samplers[draw_element_uniform.sampler_indices.x])),
+                  bindless_images[draw_element_uniform.image_indices_0.x],
+                  bindless_samplers[draw_element_uniform.sampler_indices_0.x])),
               i_texcoord_0);
   base_color = vec4(pow(base_color_texel.rgb, vec3(2.2)), base_color_texel.a);
 #endif
@@ -54,8 +55,8 @@ void main(void) {
 #if defined(HAS_METALLIC_ROUGHNESS_TEXTURE)
   vec4 metallic_roughness_texel =
       texture(nonuniformEXT(sampler2D(
-                  bindless_images[draw_element_uniform.image_indices.y],
-                  bindless_samplers[draw_element_uniform.sampler_indices.y])),
+                  bindless_images[draw_element_uniform.image_indices_0.y],
+                  bindless_samplers[draw_element_uniform.sampler_indices_0.y])),
               i_texcoord_0);
   metallic = metallic_roughness_texel.b;
   roughness = metallic_roughness_texel.g;
@@ -68,8 +69,8 @@ void main(void) {
 #if defined(HAS_NORMAL_TEXTURE)
   vec3 normal_texel =
       texture(nonuniformEXT(sampler2D(
-                  bindless_images[draw_element_uniform.image_indices.z],
-                  bindless_samplers[draw_element_uniform.sampler_indices.z])),
+                  bindless_images[draw_element_uniform.image_indices_0.z],
+                  bindless_samplers[draw_element_uniform.sampler_indices_0.z])),
               i_texcoord_0)
           .xyz;
 
@@ -102,13 +103,26 @@ void main(void) {
   }
   o_normal = vec4(normal, 1.0);
 
+  // Occlusion
+  float occlusion = draw_element_uniform.occlusion_strength;
+#if defined(HAS_OCCLUSION_TEXTURE)
+  float occlusion_texel =
+      texture(nonuniformEXT(sampler2D(
+                  bindless_images[draw_element_uniform.image_indices_0.w],
+                  bindless_samplers[draw_element_uniform.sampler_indices_0.w])),
+              i_texcoord_0)
+          .x;
+  occlusion = 1.0 + occlusion * (occlusion_texel - 1.0);
+#endif
+  o_occlusion = occlusion;
+
   // Emissive
-  vec4 emissive = draw_element_uniform.emissiveFactor;
+  vec4 emissive = draw_element_uniform.emissive_factor;
 #if defined(HAS_EMISSIVE_TEXTURE)
   vec4 emissive_texel =
       texture(nonuniformEXT(sampler2D(
-                  bindless_images[draw_element_uniform.image_indices.w],
-                  bindless_samplers[draw_element_uniform.sampler_indices.w])),
+                  bindless_images[draw_element_uniform.image_indices_1.x],
+                  bindless_samplers[draw_element_uniform.sampler_indices_1.x])),
               i_texcoord_0);
   emissive_texel = vec4(pow(emissive_texel.rgb, vec3(2.2)), emissive_texel.a);
   emissive *= emissive_texel;

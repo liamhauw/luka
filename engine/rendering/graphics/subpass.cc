@@ -233,24 +233,26 @@ void Subpass::ParseShaderResources(
   std::vector<std::string> shader_processes;
 
   // Common.
-  shader_processes.push_back("DPi 3.14159265359");
+  shader_processes.push_back("DPI 3.14159265359");
 
-  std::string max_punctual_light_count{
-      std::to_string(ast::gPunctualLightMaxCount)};
-  max_punctual_light_count =
-      "DPunctualLightMaxCount " + max_punctual_light_count;
-  shader_processes.push_back(max_punctual_light_count);
+  std::string punctual_light_max_count{std::to_string(gPunctualLightMaxCount)};
+  punctual_light_max_count =
+      "DPUNCTUAL_LIGHT_MAX_COUNT " + punctual_light_max_count;
+  shader_processes.push_back(punctual_light_max_count);
 
   // Scene.
   if (has_scene_) {
     const std::map<std::string, ast::sc::Texture*>& textures{
         primitive.material->GetTextures()};
-    for (std::string wanted_texture : kWantedTextures) {
+    for (u32 i{0}; i < kWantedTextures.size(); ++i) {
+      std::string wanted_texture{kWantedTextures[i]};
       auto it{textures.find(wanted_texture)};
       if (it != textures.end()) {
         std::transform(wanted_texture.begin(), wanted_texture.end(),
                        wanted_texture.begin(), ::toupper);
         shader_processes.push_back("DHAS_" + wanted_texture);
+        shader_processes.push_back("D" + wanted_texture + "_INDEX " +
+                                   std::to_string(i));
       }
     }
 
@@ -277,17 +279,17 @@ void Subpass::ParseShaderResources(
   if (has_light_) {
     std::string directional_light{
         std::to_string(static_cast<u32>(ast::PunctualLightType::kDirectional))};
-    directional_light = "DDirectionalLight " + directional_light;
+    directional_light = "DDIRECTIONAL_LIGHT " + directional_light;
     shader_processes.push_back(directional_light);
 
     std::string point_light{
         std::to_string(static_cast<u32>(ast::PunctualLightType::kPoint))};
-    point_light = "DPointLight " + point_light;
+    point_light = "DPOINT_LIGHT " + point_light;
     shader_processes.push_back(point_light);
 
     std::string spot_light{
         std::to_string(static_cast<u32>(ast::PunctualLightType::kSpot))};
-    spot_light = "DSpotLight " + spot_light;
+    spot_light = "DSPOT_LIGHT " + spot_light;
     shader_processes.push_back(spot_light);
 
     for (const auto& light : *lights_) {
@@ -295,12 +297,12 @@ void Subpass::ParseShaderResources(
       for (const auto& pl : pls) {
         punctual_lights_.push_back(pl);
       }
-      if (punctual_lights_.size() == ast::gPunctualLightMaxCount) {
+      if (punctual_lights_.size() == gPunctualLightMaxCount) {
         break;
       }
     }
     std::string punctual_light_count{std::to_string(punctual_lights_.size())};
-    punctual_light_count = "DPunctualLightCount " + punctual_light_count;
+    punctual_light_count = "DPUNCTUAL_LIGHT_COUNT " + punctual_light_count;
     shader_processes.push_back(punctual_light_count);
   }
 
@@ -392,8 +394,10 @@ void Subpass::CreatePipelineResources(
   image_infos.reserve(kImageInfoMaxCount);
   buffer_infos.reserve(kBufferInfoMaxCount);
 
-  glm::uvec4 sampler_indices{0};
-  glm::uvec4 image_indices{0};
+  glm::uvec4 sampler_indices_0{0};
+  glm::uvec4 sampler_indices_1{0};
+  glm::uvec4 image_indices_0{0};
+  glm::uvec4 image_indices_1{0};
 
   std::vector<vk::DescriptorSetLayout> set_layouts;
 
@@ -565,32 +569,33 @@ void Subpass::CreatePipelineResources(
             u64 sampler_hash_value{0};
             HashCombine(sampler_hash_value, ast_sampler);
             auto it2{sampler_indices_.find(sampler_hash_value)};
+
+            u32 cur_sampler_index;
             if (it2 != sampler_indices_.end()) {
-              sampler_indices_[idx] = it2->second;
+              cur_sampler_index = it2->second;
             } else {
               const vk::raii::Sampler& sampler{ast_sampler->GetSampler()};
 
               vk::DescriptorImageInfo descriptor_sampler_info{*sampler};
               sampler_infos.push_back(std::move(descriptor_sampler_info));
 
-              sampler_indices[idx] = bindless_sampler_index_++;
-              if (image_indices[idx] >= kBindlessImageMaxCount) {
+              cur_sampler_index = bindless_sampler_index_++;
+
+              if (cur_sampler_index >= kBindlessImageMaxCount) {
                 THROW(
-                    "The size of sampler_indices[idx] ({}) exceeds "
-                    "kBindlessImageMaxCount ({})",
-                    sampler_indices[idx], kBindlessImageMaxCount);
+                    "cur_sampler_index ({}) exceeds kBindlessImageMaxCount "
+                    "({})",
+                    cur_sampler_index, kBindlessImageMaxCount);
               }
 
               vk::WriteDescriptorSet write_descriptor_set{
                   *(bindless_descriptor_set_),
-                  bindless_samplers_shader_resource.binding,
-                  sampler_indices[idx], vk::DescriptorType::eSampler,
-                  sampler_infos.back()};
+                  bindless_samplers_shader_resource.binding, cur_sampler_index,
+                  vk::DescriptorType::eSampler, sampler_infos.back()};
 
               write_descriptor_sets.push_back(write_descriptor_set);
 
-              sampler_indices_.emplace(sampler_hash_value,
-                                       sampler_indices[idx]);
+              sampler_indices_.emplace(sampler_hash_value, cur_sampler_index);
             }
 
             const ast::sc::Image* ast_image{tex->GetImage()};
@@ -598,8 +603,10 @@ void Subpass::CreatePipelineResources(
             u64 image_hash_value{0};
             HashCombine(image_hash_value, ast_image);
             auto it3{image_indices_.find(image_hash_value)};
+
+            u32 cur_image_index;
             if (it3 != image_indices_.end()) {
-              image_indices[idx] = it3->second;
+              cur_image_index = it3->second;
             } else {
               const vk::raii::ImageView& image_view{ast_image->GetImageView()};
 
@@ -608,22 +615,30 @@ void Subpass::CreatePipelineResources(
                   vk::ImageLayout::eShaderReadOnlyOptimal};
               image_infos.push_back(std::move(descriptor_image_info));
 
-              image_indices[idx] = bindless_image_index_++;
-              if (image_indices[idx] >= kBindlessImageMaxCount) {
+              cur_image_index = bindless_image_index_++;
+
+              if (cur_image_index >= kBindlessImageMaxCount) {
                 THROW(
-                    "The size of image_indices[idx] ({}) exceeds "
-                    "kBindlessImageMaxCount ({})",
-                    image_indices[idx], kBindlessImageMaxCount);
+                    "cur_image_index ({}) exceeds kBindlessImageMaxCount ({})",
+                    cur_image_index, kBindlessImageMaxCount);
               }
 
               vk::WriteDescriptorSet write_descriptor_set{
                   *bindless_descriptor_set_,
-                  bindless_images_shader_resource.binding, image_indices[idx],
+                  bindless_images_shader_resource.binding, cur_image_index,
                   vk::DescriptorType::eSampledImage, image_infos.back()};
 
               write_descriptor_sets.push_back(write_descriptor_set);
 
-              image_indices_.emplace(image_hash_value, image_indices[idx]);
+              image_indices_.emplace(image_hash_value, cur_image_index);
+            }
+
+            if (idx < 4) {
+              sampler_indices_0[idx] = cur_sampler_index;
+              image_indices_0[idx] = cur_image_index;
+            } else {
+              sampler_indices_1[idx - 4] = cur_sampler_index;
+              image_indices_1[idx - 4] = cur_image_index;
             }
           }
           ++idx;
@@ -690,8 +705,10 @@ void Subpass::CreatePipelineResources(
               DrawElementUniform draw_element_uniform{
                   model_matrix,
                   inverse_model_matrix,
-                  sampler_indices,
-                  image_indices,
+                  sampler_indices_0,
+                  sampler_indices_1,
+                  image_indices_0,
+                  image_indices_1,
                   primitive.material->GetBaseColorFactor(),
                   primitive.material->GetMetallicFactor(),
                   primitive.material->GetRoughnessFactor(),

@@ -16,9 +16,11 @@ layout(input_attachment_index = 1, set = 0,
 layout(input_attachment_index = 2, set = 0,
        binding = 3) uniform subpassInput subpass_i_normal;
 layout(input_attachment_index = 3, set = 0,
-       binding = 4) uniform subpassInput subpass_i_emissive;
+       binding = 4) uniform subpassInput subpass_i_occlusion;
 layout(input_attachment_index = 4, set = 0,
-       binding = 5) uniform subpassInput subpass_i_depth;
+       binding = 5) uniform subpassInput subpass_i_emissive;
+layout(input_attachment_index = 5, set = 0,
+       binding = 6) uniform subpassInput subpass_i_depth;
 
 layout(location = 0) in vec2 i_texcoord_0;
 layout(location = 0) out vec4 o_color;
@@ -49,10 +51,10 @@ vec3 LightIntensity(PunctualLight light, vec3 point_to_light) {
   float range_attenuation = 1.0;
   float spot_attenuation = 1.0;
 
-  if (light.type != DirectionalLight) {
+  if (light.type != DIRECTIONAL_LIGHT) {
     range_attenuation = RangeAttenuation(light.range, length(point_to_light));
   }
-  if (light.type == SpotLight) {
+  if (light.type == SPOT_LIGHT) {
     spot_attenuation = SpotAttenuation(light.direction, light.inner_cone_cos,
                                        light.outer_cone_cos, point_to_light);
   }
@@ -65,7 +67,7 @@ float D_GGX(float ndoth, float roughness) {
   float a = roughness * roughness;
   float a2 = a * a;
   float x = ndoth2 * (a2 - 1.0) + 1.0;
-  return a2 / (Pi * x * x);
+  return a2 / (PI * x * x);
 }
 
 float G_Schlick_1(float ndotx, float k) {
@@ -92,12 +94,15 @@ void main() {
   float metallic = metallic_roughness.x;
   float roughness = metallic_roughness.y;
 
-  // Emissive.
-  vec3 emissive = subpassLoad(subpass_i_emissive).xyz;
-
   // Normal.
   vec3 n = subpassLoad(subpass_i_normal).xyz;
   n = normalize(2.0 * n - 1.0);
+
+  // Occlusion.
+  float occlusion = subpassLoad(subpass_i_occlusion).x;
+
+  // Emissive.
+  vec3 emissive = subpassLoad(subpass_i_emissive).xyz;
 
   // Position.
   float depth = subpassLoad(subpass_i_depth).x;
@@ -113,11 +118,11 @@ void main() {
   vec3 F0 = mix(vec3(0.04), base_color, metallic);
 
   // Punctual light.
-  for (int i = 0; i < PunctualLightCount; ++i) {
+  for (int i = 0; i < PUNCTUAL_LIGHT_COUNT; ++i) {
     PunctualLight light = subpass_uniform.punctual_lights[i];
     // Input light.
     vec3 point_to_light;
-    if (light.type != DirectionalLight) {
+    if (light.type != DIRECTIONAL_LIGHT) {
       point_to_light = light.position - pos;
     } else {
       point_to_light = -light.direction;
@@ -136,7 +141,7 @@ void main() {
       vec3 F = F_Schlick(vdoth, F0);
 
       vec3 k_diffuse = (vec3(1.0) - F) * (1.0 - metallic);
-      vec3 f_diffuse = k_diffuse * base_color / Pi;
+      vec3 f_diffuse = k_diffuse * base_color / PI;
 
       vec3 k_specular = F;
       float D = D_GGX(ndoth, roughness);
@@ -150,9 +155,11 @@ void main() {
   }
 
   // Ambient light.
-  vec3 ambient = vec3(0.03) * base_color;
+  vec3 ambient = vec3(0.03) * base_color * occlusion;
+  
   Lo += ambient;
 
   vec3 color = emissive + Lo;
+
   o_color = vec4(color, 1.0);
 }
