@@ -5,13 +5,9 @@
 
 #include "common.glsl"
 
-layout(set = 0, binding = 0) uniform SubpassUniform {
-  mat4 pv;
-  mat4 inverse_vp;
-  vec4 camera_position;
-  PunctualLight punctual_lights[MaxPunctualLightCount];
-}
-subpass_uniform;
+layout(set = 0, binding = 0) uniform Subpass {
+  SubpassUniform subpass_uniform;
+};
 
 layout(input_attachment_index = 0, set = 0,
        binding = 1) uniform subpassInput subpass_i_base_color;
@@ -106,7 +102,7 @@ void main() {
   // Position.
   float depth = subpassLoad(subpass_i_depth).x;
   vec4 clip = vec4(i_texcoord_0 * 2.0 - 1.0, depth, 1.0);
-  vec4 pos_w = subpass_uniform.inverse_vp * clip;
+  vec4 pos_w = subpass_uniform.inverse_pv * clip;
   vec3 pos = pos_w.xyz / pos_w.w;
 
   // Calculate light contribution.

@@ -60,7 +60,7 @@ void Subpass::Resize(const std::vector<std::vector<vk::raii::ImageView>>&
   subpass_desciptor_set_updated_ = false;
   bindless_sampler_index_ = 0;
   bindless_image_index_ = 0;
-  
+
   CreateDrawElements();
 }
 
@@ -236,9 +236,9 @@ void Subpass::ParseShaderResources(
   shader_processes.push_back("DPi 3.14159265359");
 
   std::string max_punctual_light_count{
-      std::to_string(ast::gMaxPunctualLightCount)};
+      std::to_string(ast::gPunctualLightMaxCount)};
   max_punctual_light_count =
-      "DMaxPunctualLightCount " + max_punctual_light_count;
+      "DPunctualLightMaxCount " + max_punctual_light_count;
   shader_processes.push_back(max_punctual_light_count);
 
   // Scene.
@@ -295,7 +295,7 @@ void Subpass::ParseShaderResources(
       for (const auto& pl : pls) {
         punctual_lights_.push_back(pl);
       }
-      if (punctual_lights_.size() == ast::gMaxPunctualLightCount) {
+      if (punctual_lights_.size() == ast::gPunctualLightMaxCount) {
         break;
       }
     }
@@ -378,8 +378,19 @@ void Subpass::CreatePipelineResources(
   std::vector<vk::DescriptorImageInfo> sampler_infos;
   std::vector<vk::DescriptorImageInfo> image_infos;
   std::vector<vk::DescriptorBufferInfo> buffer_infos;
-  image_infos.reserve(50);
-  buffer_infos.reserve(50);
+
+  /**
+   * Why we reserve these vectors:
+   *
+   * When we add an element to std::vector, if it exceeds the size of the
+   * current container, std::vector will automatically perform a memory
+   * reallocation, copying the element from the old location to the new one, but
+   * the pointer stored in write_descriptor_sets will not change, causing an
+   * error in the update to descriptors.
+   */
+  sampler_infos.reserve(kSamplerInfoMaxCount);
+  image_infos.reserve(kImageInfoMaxCount);
+  buffer_infos.reserve(kBufferInfoMaxCount);
 
   glm::uvec4 sampler_indices{0};
   glm::uvec4 image_indices{0};
@@ -441,7 +452,7 @@ void Subpass::CreatePipelineResources(
         subpass_desciptor_set_updated_ = true;
         for (const auto& shader_resource : shader_resources) {
           if (shader_resource.type == ShaderResourceType::kUniformBuffer) {
-            if (shader_resource.name == "SubpassUniform") {
+            if (shader_resource.name == "Subpass") {
               for (u32 i{0}; i < frame_count_; ++i) {
                 SubpassUniform subpass_uniform;
 
@@ -565,8 +576,9 @@ void Subpass::CreatePipelineResources(
               sampler_indices[idx] = bindless_sampler_index_++;
               if (image_indices[idx] >= kBindlessImageMaxCount) {
                 THROW(
-                    "Too much bindless samplers, please update "
-                    "kBindlessSamplerMaxCount");
+                    "The size of sampler_indices[idx] ({}) exceeds "
+                    "kBindlessImageMaxCount ({})",
+                    sampler_indices[idx], kBindlessImageMaxCount);
               }
 
               vk::WriteDescriptorSet write_descriptor_set{
@@ -599,8 +611,9 @@ void Subpass::CreatePipelineResources(
               image_indices[idx] = bindless_image_index_++;
               if (image_indices[idx] >= kBindlessImageMaxCount) {
                 THROW(
-                    "Too much bindless images, please update "
-                    "kBindlessImageMaxCount");
+                    "The size of image_indices[idx] ({}) exceeds "
+                    "kBindlessImageMaxCount ({})",
+                    image_indices[idx], kBindlessImageMaxCount);
               }
 
               vk::WriteDescriptorSet write_descriptor_set{
@@ -612,8 +625,8 @@ void Subpass::CreatePipelineResources(
 
               image_indices_.emplace(image_hash_value, image_indices[idx]);
             }
-            ++idx;
           }
+          ++idx;
         }
       }
 
@@ -672,7 +685,7 @@ void Subpass::CreatePipelineResources(
       // Update descriptor sets.
       for (const auto& shader_resource : shader_resources) {
         if (shader_resource.type == ShaderResourceType::kUniformBuffer) {
-          if (shader_resource.name == "DrawElementUniform") {
+          if (shader_resource.name == "DrawElement") {
             for (u32 i{0}; i < frame_count_; ++i) {
               DrawElementUniform draw_element_uniform{
                   model_matrix,
@@ -752,6 +765,19 @@ void Subpass::CreatePipelineResources(
     }
 
     set_layouts.push_back(**descriptor_set_layout);
+  }
+
+  if (sampler_infos.size() >= kSamplerInfoMaxCount) {
+    THROW("The size of sampler_infos ({}) exceeds kSamplerInfoMaxCount ({})",
+          sampler_infos.size(), kSamplerInfoMaxCount);
+  }
+  if (image_infos.size() >= kImageInfoMaxCount) {
+    THROW("The size of sampler_infos ({}) exceeds kSamplerInfoMaxCount ({})",
+          image_infos.size(), kImageInfoMaxCount);
+  }
+  if (buffer_infos.size() >= kBufferInfoMaxCount) {
+    THROW("The size of sampler_infos ({}) exceeds kSamplerInfoMaxCount ({})",
+          buffer_infos.size(), kBufferInfoMaxCount);
   }
 
   gpu_->UpdateDescriptorSets(write_descriptor_sets);

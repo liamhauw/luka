@@ -3,26 +3,16 @@
 
 #version 450
 
+#include "common.glsl"
+
 #extension GL_EXT_nonuniform_qualifier : enable
 
 layout(set = 1, binding = 0) uniform sampler bindless_samplers[];
 layout(set = 1, binding = 1) uniform texture2D bindless_images[];
 
-layout(set = 2, binding = 0) uniform DrawElementUniform {
-  mat4 m;
-  mat4 inverse_m;
-  uvec4 sampler_indices;
-  uvec4 image_indices;
-  vec4 base_color_factor;
-  float metallic_factor;
-  float roughness_factor;
-  float normal_scale;
-  float occlusion_strength;
-  vec4 emissiveFactor;
-  uint alpha_model;
-  float alpha_cutoff;
-}
-draw_element_uniform;
+layout(set = 2, binding = 0) uniform DrawElement {
+  DrawElementUniform draw_element_uniform;
+};
 
 layout(location = 0) in vec3 i_position;
 

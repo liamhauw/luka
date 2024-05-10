@@ -20,7 +20,7 @@ struct SubpassUniform {
   glm::mat4 pv;
   glm::mat4 inverse_pv;
   glm::vec4 camera_position;
-  ast::PunctualLight punctual_lights[ast::gMaxPunctualLightCount];
+  ast::PunctualLight punctual_lights[ast::gPunctualLightMaxCount];
 };
 
 struct DrawElementUniform {
@@ -171,6 +171,10 @@ class Subpass {
   bool need_resize_{false};
 
   std::vector<ast::PunctualLight> punctual_lights_;
+
+  const u32 kSamplerInfoMaxCount{10};
+  const u32 kImageInfoMaxCount{20};
+  const u32 kBufferInfoMaxCount{10};
 
   bool has_subpass_descriptor_set_{false};
   u32 subpass_descriptor_set_index_{UINT32_MAX};
