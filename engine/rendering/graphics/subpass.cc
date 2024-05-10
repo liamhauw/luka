@@ -71,10 +71,10 @@ void Subpass::Update(u32 frame_index) {
     const glm::vec3& camera_position{camera_->GetPosition()};
 
     glm::mat4 pv{projection * view};
-    glm::mat4 inverse_vp{glm::inverse(pv)};
+    glm::mat4 inverse_pv{glm::inverse(pv)};
 
     subpass_uniforms_[frame_index] =
-        SubpassUniform{pv, inverse_vp, glm::vec4{camera_position, 1.0F}};
+        SubpassUniform{pv, inverse_pv, glm::vec4{camera_position, 1.0F}};
 
     if (has_light_) {
       memcpy(subpass_uniforms_[frame_index].punctual_lights,
@@ -251,8 +251,6 @@ void Subpass::ParseShaderResources(
         std::transform(wanted_texture.begin(), wanted_texture.end(),
                        wanted_texture.begin(), ::toupper);
         shader_processes.push_back("DHAS_" + wanted_texture);
-        shader_processes.push_back("D" + wanted_texture + "_INDEX " +
-                                   std::to_string(i));
       }
     }
 
