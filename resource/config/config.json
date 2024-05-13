@@ -1,7 +1,7 @@
 {
   "scenes": [
     "box/Box.gltf",
-    "sponza/Sponza.gltf",
+    "scifihelmet/SciFiHelmet.gltf",
     "damaged/DamagedHelmet.gltf"
   ],
   "lights": [
