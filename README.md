@@ -17,7 +17,7 @@ A rendering framework with modular components including platform, core, resource
   - User interface using imgui
 
 ## Prerequisites
-### Common for
+
 - Windows / macOS
 - VSCode with CMake Language Support, C/C++ and clangd extension
 - Git
@@ -25,6 +25,18 @@ A rendering framework with modular components including platform, core, resource
 - Ninja
 - Clang with (MSVC on Windows / Xcode on macOS)
 - Vulkan SDK
+
+On Windows if you have [Scoop](https://scoop.sh/) installed, you can easily install some prerequisites using the following command:
+```shell
+scoop install vscode git cmake ninja llvm vulkan
+```
+Then you only need to install VSCode extensions and MSVC.
+
+On macOS if you have [Homebrew](https://brew.sh/) installed, you can easily install some prerequisites using the following command:
+```shell
+brew install vscode git cmake ninja llvm
+```
+Then you only need to install Vulkan SDK, VSCode extensions and Xcode.
 
 ## Use
 
