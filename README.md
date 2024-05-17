@@ -19,7 +19,7 @@ A rendering framework with modular components including platform, core, resource
 ## Prerequisites
 ### Common for
 - Windows / macOS
-- VSCode with clangd extension
+- VSCode with CMake Language Support, C/C++ and clangd extension
 - Git
 - CMake
 - Ninja
