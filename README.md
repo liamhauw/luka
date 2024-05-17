@@ -17,13 +17,14 @@ A rendering framework with modular components including platform, core, resource
   - User interface using imgui
 
 ## Prerequisites
-- Windows/macOS
+### Common for
+- Windows / macOS
+- VSCode with clangd extension
 - Git
 - CMake
 - Ninja
-- MSVC/Clang/GCC
+- Clang with (MSVC on Windows / Xcode on macOS)
 - Vulkan SDK
-- VSCode (optional)
 
 ## Use
 

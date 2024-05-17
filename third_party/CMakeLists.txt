@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.24)
 project(luka_third_party)
 
 set(CMAKE_WARN_DEPRECATED OFF CACHE BOOL "" FORCE)
+add_compile_options(-Wno-deprecated-declarations)
 
 # Vulkan SDK
 find_package(Vulkan REQUIRED GLOBAL)
@@ -22,14 +23,12 @@ set(GLM_DISABLE_AUTO_DETECTION ON CACHE INTERNAL "" FORCE)
 add_subdirectory(glm)
 
 # glslang
-# add_compile_options(-Wno-deprecated-declarations)
 set(BUILD_EXTERNAL OFF CACHE INTERNAL "" FORCE)
 set(ENABLE_SPVREMAPPER OFF CACHE INTERNAL "" FORCE)
 set(ENABLE_GLSLANG_BINARIES OFF CACHE INTERNAL "" FORCE)
 set(ENABLE_GLSLANG_JS OFF CACHE INTERNAL "" FORCE)
 set(ENABLE_OPT OFF CACHE INTERNAL "" FORCE)
 add_subdirectory(glslang)
-# add_compile_options(-Wdeprecated-declarations)
 
 # imgui
 add_library(imgui)

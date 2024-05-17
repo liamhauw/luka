@@ -11,7 +11,12 @@
       "description": "Base configuration inherited by all presets.",
       "hidden": false,
       "generator": "Ninja Multi-Config",
-      "binaryDir": "${sourceDir}/build"
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "1"
+      }
     }
   ],
   "buildPresets": [
