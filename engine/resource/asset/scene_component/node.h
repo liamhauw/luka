@@ -15,9 +15,7 @@
 #include "resource/asset/scene_component/light.h"
 #include "resource/asset/scene_component/mesh.h"
 
-namespace luka {
-
-namespace ast::sc {
+namespace luka::ast::sc {
 
 class Node : public Component {
  public:
@@ -30,7 +28,10 @@ class Node : public Component {
        const std::vector<Mesh*>& mesh_components,
        const tinygltf::Node& tinygltf_node);
 
-  virtual ~Node() = default;
+  ~Node() override = default;
+
+  DELETE_SPECIAL_MEMBER_FUNCTIONS(Node)
+
   std::type_index GetType() override;
 
   void SetChildren(std::vector<Node*>&& children);
@@ -45,7 +46,7 @@ class Node : public Component {
   const Mesh* GetMesh() const;
 
  private:
-  glm::mat4 model_matrix_;
+  glm::mat4 model_matrix_{};
   const Mesh* mesh_;
   const Light* light_;
   const Camera* camera_;
@@ -55,6 +56,4 @@ class Node : public Component {
   const Node* parent_{nullptr};
 };
 
-}  // namespace ast::sc
-
-}  // namespace luka
+}  // namespace luka::ast::sc

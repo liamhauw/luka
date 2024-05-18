@@ -9,21 +9,23 @@
 
 #include <tiny_gltf.h>
 
+#include "core/util.h"
 #include "resource/asset/scene_component/component.h"
 #include "resource/asset/scene_component/node.h"
 
-namespace luka {
-
-namespace ast::sc {
+namespace luka::ast::sc {
 
 class Scene : public Component {
  public:
-  Scene(std::vector<Node*>&& nodes, const std::string& name = {});
+  explicit Scene(std::vector<Node*>&& nodes, const std::string& name = {});
 
-  Scene(const std::vector<Node*> node_components,
+  Scene(const std::vector<Node*>& node_components,
         const tinygltf::Scene& tinygltf_scene);
 
-  virtual ~Scene() = default;
+  ~Scene() override = default;
+
+  DELETE_SPECIAL_MEMBER_FUNCTIONS(Scene)
+
   std::type_index GetType() override;
 
   const std::vector<Node*>& GetNodes() const;
@@ -32,6 +34,4 @@ class Scene : public Component {
   std::vector<Node*> nodes_;
 };
 
-}  // namespace ast::sc
-
-}  // namespace luka
+}  // namespace luka::ast::sc

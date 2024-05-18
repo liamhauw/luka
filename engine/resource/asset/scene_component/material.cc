@@ -10,9 +10,7 @@
 #include "core/log.h"
 #include "core/util.h"
 
-namespace luka {
-
-namespace ast::sc {
+namespace luka::ast::sc {
 
 Material::Material(std::map<std::string, Texture*>&& textures,
                    glm::vec4&& base_color_factor, f32 metallic_factor,
@@ -21,17 +19,17 @@ Material::Material(std::map<std::string, Texture*>&& textures,
                    f32 alpha_cutoff, bool double_sided, const std::string& name)
     : Component{name},
       textures_{std::move(textures)},
-      base_color_factor_{std::move(base_color_factor)},
+      base_color_factor_{base_color_factor},
       metallic_factor_{metallic_factor},
       roughness_factor_{roughness_factor},
       normal_scale_{scale},
       occlusion_strength_{strength},
-      emissive_factor_{std::move(emissive_factor)},
+      emissive_factor_{emissive_factor},
       alpha_mode_{alpha_mode},
       alpha_cutoff_{alpha_cutoff},
       double_sided_{double_sided} {}
 
-Material::Material(const std::vector<Texture*> texture_components,
+Material::Material(const std::vector<Texture*>& texture_components,
                    const tinygltf::Material& tinygltf_material)
     : Component{tinygltf_material.name} {
   // Pbr.
@@ -42,7 +40,7 @@ Material::Material(const std::vector<Texture*> texture_components,
       D2FVector(metallic_roughness.baseColorFactor)};
   base_color_factor_ = glm::make_vec4(base_color_factor_fv.data());
 
-  ast::sc::Texture* base_color_texture;
+  ast::sc::Texture* base_color_texture{};
   if (metallic_roughness.baseColorTexture.index != -1) {
     base_color_texture =
         texture_components[metallic_roughness.baseColorTexture.index];
@@ -53,7 +51,7 @@ Material::Material(const std::vector<Texture*> texture_components,
 
   roughness_factor_ = static_cast<f32>(metallic_roughness.roughnessFactor);
 
-  ast::sc::Texture* metallic_roughness_texture;
+  ast::sc::Texture* metallic_roughness_texture{};
   if (metallic_roughness.metallicRoughnessTexture.index != -1) {
     metallic_roughness_texture =
         texture_components[metallic_roughness.metallicRoughnessTexture.index];
@@ -64,7 +62,7 @@ Material::Material(const std::vector<Texture*> texture_components,
   // Normal.
   const tinygltf::NormalTextureInfo& normal{tinygltf_material.normalTexture};
 
-  ast::sc::Texture* normal_texture;
+  ast::sc::Texture* normal_texture{};
   if (normal.index != -1) {
     normal_texture = texture_components[normal.index];
     textures_.insert(std::make_pair("normal_texture", normal_texture));
@@ -75,7 +73,7 @@ Material::Material(const std::vector<Texture*> texture_components,
   const tinygltf::OcclusionTextureInfo& occlusion{
       tinygltf_material.occlusionTexture};
 
-  ast::sc::Texture* occlusion_texture;
+  ast::sc::Texture* occlusion_texture{};
   if (occlusion.index != -1) {
     occlusion_texture = texture_components[occlusion.index];
     textures_.insert(std::make_pair("occlusion_texture", occlusion_texture));
@@ -88,7 +86,7 @@ Material::Material(const std::vector<Texture*> texture_components,
       D2FVector(tinygltf_material.emissiveFactor)};
   emissive_factor_ = glm::make_vec3(emissive_factor_fv.data());
 
-  ast::sc::Texture* emissive_texture;
+  ast::sc::Texture* emissive_texture{};
   if (tinygltf_material.emissiveTexture.index != -1) {
     emissive_texture =
         texture_components[tinygltf_material.emissiveTexture.index];
@@ -140,6 +138,4 @@ f32 Material::GetAlphaCutoff() const { return alpha_cutoff_; }
 
 bool Material::GetDoubleSided() const { return double_sided_; }
 
-}  // namespace ast::sc
-
-}  // namespace luka
+}  // namespace luka::ast::sc

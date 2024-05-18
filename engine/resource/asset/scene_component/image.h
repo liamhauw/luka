@@ -13,20 +13,21 @@
 #include "base/gpu/image.h"
 #include "resource/asset/scene_component/component.h"
 
-namespace luka {
-
-namespace ast::sc {
+namespace luka::ast::sc {
 
 class Image : public Component {
  public:
   Image(gpu::Image&& image, vk::raii::ImageView&& image_view,
         const std::string& name = {});
 
-  Image(std::shared_ptr<Gpu> gpu, const tinygltf::Image& tinygltf_image,
+  Image(const std::shared_ptr<Gpu>&, const tinygltf::Image& tinygltf_image,
         const vk::raii::CommandBuffer& command_buffer,
         std::vector<gpu::Buffer>& staging_buffers);
 
-  virtual ~Image() = default;
+  ~Image() override = default;
+
+  DELETE_SPECIAL_MEMBER_FUNCTIONS(Image)
+
   std::type_index GetType() override;
 
   const gpu::Image& GetImage() const;
@@ -37,6 +38,4 @@ class Image : public Component {
   vk::raii::ImageView image_view_{nullptr};
 };
 
-}  // namespace ast::sc
-
-}  // namespace luka
+}  // namespace luka::ast::sc

@@ -10,9 +10,7 @@
 #include "core/log.h"
 #include "resource/asset/scene_component/buffer_view.h"
 
-namespace luka {
-
-namespace ast::sc {
+namespace luka::ast::sc {
 
 Accessor::Accessor(const BufferView* buffer_view, u64 byte_offset,
                    bool normalized, u32 component_type, u64 count, u32 type,
@@ -60,7 +58,7 @@ void Accessor::CalculateBufferData() {
   format_ = ParseFormat();
 }
 
-u32 Accessor::GetByteStride(u32 buffer_view_byte_stride) {
+u32 Accessor::GetByteStride(u32 buffer_view_byte_stride) const {
   if (buffer_view_byte_stride == 0) {
     i32 component_size_in_byte{
         tinygltf::GetComponentSizeInBytes(component_type_)};
@@ -74,23 +72,22 @@ u32 Accessor::GetByteStride(u32 buffer_view_byte_stride) {
     }
 
     return static_cast<u32>(component_size_in_byte * component_count);
-  } else {
-    i32 component_size_in_byte{
-        tinygltf::GetComponentSizeInBytes(component_type_)};
-    if (component_size_in_byte <= 0) {
-      THROW("Unsupport component type");
-    }
-
-    if (buffer_view_byte_stride % static_cast<u32>(component_size_in_byte) !=
-        0) {
-      THROW("Unsupport component type");
-    }
-    return static_cast<u32>(buffer_view_byte_stride);
   }
+
+  i32 component_size_in_byte{
+      tinygltf::GetComponentSizeInBytes(component_type_)};
+  if (component_size_in_byte <= 0) {
+    THROW("Unsupport component type");
+  }
+
+  if (buffer_view_byte_stride % static_cast<u32>(component_size_in_byte) != 0) {
+    THROW("Unsupport component type");
+  }
+  return static_cast<u32>(buffer_view_byte_stride);
 }
 
-vk::Format Accessor::ParseFormat() {
-  vk::Format format;
+vk::Format Accessor::ParseFormat() const {
+  vk::Format format{};
 
   switch (component_type_) {
     case TINYGLTF_COMPONENT_TYPE_BYTE:
@@ -314,6 +311,4 @@ vk::Format Accessor::ParseFormat() {
   return format;
 }
 
-}  // namespace ast::sc
-
-}  // namespace luka
+}  // namespace luka::ast::sc

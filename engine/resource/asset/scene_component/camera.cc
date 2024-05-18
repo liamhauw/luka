@@ -9,9 +9,7 @@
 
 #include "core/log.h"
 
-namespace luka {
-
-namespace ast::sc {
+namespace luka::ast::sc {
 
 Camera::Camera(CameraType type, f32 aspect_ratio, f32 yfov, f32 znear, f32 zfar,
                const std::string& name)
@@ -39,6 +37,4 @@ Camera::Camera(const tinygltf::Camera& tinygltf_camera)
 
 std::type_index Camera::GetType() { return typeid(Camera); }
 
-}  // namespace ast::sc
-
-}  // namespace luka
+}  // namespace luka::ast::sc

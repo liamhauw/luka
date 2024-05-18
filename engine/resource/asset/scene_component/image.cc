@@ -9,9 +9,7 @@
 
 #include "core/log.h"
 
-namespace luka {
-
-namespace ast::sc {
+namespace luka::ast::sc {
 
 Image::Image(gpu::Image&& image, vk::raii::ImageView&& image_view,
              const std::string& name)
@@ -19,7 +17,8 @@ Image::Image(gpu::Image&& image, vk::raii::ImageView&& image_view,
       image_{std::move(image)},
       image_view_{std::move(image_view)} {}
 
-Image::Image(std::shared_ptr<Gpu> gpu, const tinygltf::Image& tinygltf_image,
+Image::Image(const std::shared_ptr<Gpu>& gpu,
+             const tinygltf::Image& tinygltf_image,
              const vk::raii::CommandBuffer& command_buffer,
              std::vector<gpu::Buffer>& staging_buffers)
     : Component{tinygltf_image.uri} {
@@ -38,7 +37,7 @@ Image::Image(std::shared_ptr<Gpu> gpu, const tinygltf::Image& tinygltf_image,
   vk::Extent3D extent{static_cast<u32>(tinygltf_image.width),
                       static_cast<u32>(tinygltf_image.height), 1};
   u32 dim_count{0};
-  vk::ImageType image_type;
+  vk::ImageType image_type{};
   if (extent.width >= 1) {
     ++dim_count;
   }
@@ -63,7 +62,7 @@ Image::Image(std::shared_ptr<Gpu> gpu, const tinygltf::Image& tinygltf_image,
       break;
   }
 
-  vk::Format format;
+  vk::Format format{};
   if (tinygltf_image.component == 4 && tinygltf_image.bits == 8) {
     format = vk::Format::eR8G8B8A8Unorm;
   } else {
@@ -88,7 +87,7 @@ Image::Image(std::shared_ptr<Gpu> gpu, const tinygltf::Image& tinygltf_image,
                             tinygltf_image, GetName());
 
   // Image view.
-  vk::ImageViewType image_view_type;
+  vk::ImageViewType image_view_type{};
   switch (image_type) {
     case vk::ImageType::e1D:
       image_view_type = vk::ImageViewType::e1D;
@@ -122,6 +121,4 @@ const gpu::Image& Image::GetImage() const { return image_; }
 
 const vk::raii::ImageView& Image::GetImageView() const { return image_view_; }
 
-}  // namespace ast::sc
-
-}  // namespace luka
+}  // namespace luka::ast::sc

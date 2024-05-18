@@ -9,15 +9,13 @@
 
 #include "core/util.h"
 
-namespace luka {
-
-namespace ast::sc {
+namespace luka::ast::sc {
 
 Node::Node(glm::mat4&& tinygltf_matrix, const Mesh* mesh, const Light* light,
            const Camera* camera, const std::vector<i32>& child_indices,
            const std::string& name)
     : Component{name},
-      model_matrix_{std::move(tinygltf_matrix)},
+      model_matrix_{tinygltf_matrix},
       mesh_{mesh},
       light_{light},
       camera_{camera},
@@ -103,6 +101,4 @@ const glm::mat4& Node::GetModelMarix() const { return model_matrix_; }
 
 const Mesh* Node::GetMesh() const { return mesh_; }
 
-}  // namespace ast::sc
-
-}  // namespace luka
+}  // namespace luka::ast::sc

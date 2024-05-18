@@ -7,9 +7,7 @@
 
 #include "resource/asset/scene_component/texture.h"
 
-namespace luka {
-
-namespace ast::sc {
+namespace luka::ast::sc {
 
 Texture::Texture(const Image* image, const Sampler* sampler,
                  const std::string& name)
@@ -38,6 +36,4 @@ const Image* Texture::GetImage() const { return image_; }
 
 const Sampler* Texture::GetSampler() const { return sampler_; }
 
-}  // namespace ast::sc
-
-}  // namespace luka
+}  // namespace luka::ast::sc

@@ -9,12 +9,11 @@
 
 #include <tiny_gltf.h>
 
+#include "core/util.h"
 #include "resource/asset/scene_component/buffer.h"
 #include "resource/asset/scene_component/component.h"
 
-namespace luka {
-
-namespace ast::sc {
+namespace luka::ast::sc {
 
 class BufferView : public Component {
  public:
@@ -24,7 +23,10 @@ class BufferView : public Component {
   BufferView(const std::vector<ast::sc::Buffer*>& buffer_components,
              const tinygltf::BufferView& tinygltf_buffer_view);
 
-  virtual ~BufferView() = default;
+  ~BufferView() override = default;
+
+  DELETE_SPECIAL_MEMBER_FUNCTIONS(BufferView)
+
   std::type_index GetType() override;
 
   const Buffer* GetBuffer() const;
@@ -39,6 +41,4 @@ class BufferView : public Component {
   u64 byte_stride_;
 };
 
-}  // namespace ast::sc
-
-}  // namespace luka
+}  // namespace luka::ast::sc

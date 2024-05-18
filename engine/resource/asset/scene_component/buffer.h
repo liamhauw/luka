@@ -9,19 +9,21 @@
 
 #include <tiny_gltf.h>
 
+#include "core/util.h"
 #include "resource/asset/scene_component/component.h"
 
-namespace luka {
-
-namespace ast::sc {
+namespace luka::ast::sc {
 
 class Buffer : public Component {
  public:
-  Buffer(const std::vector<u8>* data, const std::string& name = {});
+  explicit Buffer(const std::vector<u8>* data, const std::string& name = {});
 
-  Buffer(const tinygltf::Buffer& tinygltf_buffer);
+  explicit Buffer(const tinygltf::Buffer& tinygltf_buffer);
 
-  virtual ~Buffer() = default;
+  ~Buffer() override = default;
+
+  DELETE_SPECIAL_MEMBER_FUNCTIONS(Buffer)
+
   std::type_index GetType() override;
 
   const std::vector<u8>* GetData() const;
@@ -30,6 +32,4 @@ class Buffer : public Component {
   const std::vector<u8>* data_;
 };
 
-}  // namespace ast::sc
-
-}  // namespace luka
+}  // namespace luka::ast::sc

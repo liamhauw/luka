@@ -10,12 +10,11 @@
 #include <tiny_gltf.h>
 
 #include "base/gpu/buffer.h"
+#include "core/util.h"
 #include "resource/asset/scene_component/buffer_view.h"
 #include "resource/asset/scene_component/component.h"
 
-namespace luka {
-
-namespace ast::sc {
+namespace luka::ast::sc {
 
 class Accessor : public Component {
  public:
@@ -26,7 +25,10 @@ class Accessor : public Component {
   Accessor(const std::vector<BufferView*>& buffer_view_components,
            const tinygltf::Accessor& tinygltf_accessor);
 
-  virtual ~Accessor() = default;
+  ~Accessor() override = default;
+
+  DELETE_SPECIAL_MEMBER_FUNCTIONS(Accessor)
+
   std::type_index GetType() override;
 
   u64 GetCount() const;
@@ -36,8 +38,8 @@ class Accessor : public Component {
 
  private:
   void CalculateBufferData();
-  u32 GetByteStride(u32 buffer_view_byte_stride);
-  vk::Format ParseFormat();
+  u32 GetByteStride(u32 buffer_view_byte_stride) const;
+  vk::Format ParseFormat() const;
 
   const BufferView* buffer_view_;
   u64 byte_offset_;
@@ -46,12 +48,10 @@ class Accessor : public Component {
   u64 count_;
   u32 type_;
 
-  u32 buffer_stride_;
-  const u8* buffer_data_;
-  u64 buffer_size_;
-  vk::Format format_;
+  u32 buffer_stride_{};
+  const u8* buffer_data_{};
+  u64 buffer_size_{};
+  vk::Format format_{};
 };
 
-}  // namespace ast::sc
-
-}  // namespace luka
+}  // namespace luka::ast::sc

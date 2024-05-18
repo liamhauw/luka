@@ -9,8 +9,7 @@
 
 #include "core/log.h"
 
-namespace luka {
-namespace ast::sc {
+namespace luka::ast::sc {
 
 Light::Light(LightType type, glm::vec3 direction, glm::vec3 color,
              f32 intensity, f32 range, f32 inner_cone_angle,
@@ -75,6 +74,4 @@ Light::Light(const tinygltf::Value& tinygltf_light)
 
 std::type_index Light::GetType() { return typeid(Light); }
 
-}  // namespace ast::sc
-
-}  // namespace luka
+}  // namespace luka::ast::sc

@@ -10,21 +10,23 @@
 #include <tiny_gltf.h>
 
 #include "core/math.h"
+#include "core/util.h"
 #include "resource/asset/scene_component/component.h"
 
-namespace luka {
-
-namespace ast::sc {
+namespace luka::ast::sc {
 
 enum class CameraType { kNone = -1, kPerspective, kCount };
 
 class Camera : public Component {
  public:
-  Camera(CameraType type, f32 aspect_ratioF, f32 yfov, f32 znear, f32 zfar,
+  Camera(CameraType type, f32 aspect_ratio, f32 yfov, f32 znear, f32 zfar,
          const std::string& name = {});
-  Camera(const tinygltf::Camera& tinygltf_camera);
+  explicit Camera(const tinygltf::Camera& tinygltf_camera);
 
-  virtual ~Camera() = default;
+  ~Camera() override = default;
+
+  DELETE_SPECIAL_MEMBER_FUNCTIONS(Camera)
+
   std::type_index GetType() override;
 
  private:
@@ -35,6 +37,4 @@ class Camera : public Component {
   f32 zfar_;
 };
 
-}  // namespace ast::sc
-
-}  // namespace luka
+}  // namespace luka::ast::sc

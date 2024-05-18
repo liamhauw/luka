@@ -7,14 +7,12 @@
 
 #include "resource/asset/scene_component/scene.h"
 
-namespace luka {
-
-namespace ast::sc {
+namespace luka::ast::sc {
 
 Scene::Scene(std::vector<Node*>&& nodes, const std::string& name)
     : Component{name}, nodes_{std::move(nodes)} {}
 
-Scene::Scene(const std::vector<Node*> node_components,
+Scene::Scene(const std::vector<Node*>& node_components,
              const tinygltf::Scene& tinygltf_scene)
     : Component{tinygltf_scene.name} {
   const std::vector<i32>& tinygltf_nodes{tinygltf_scene.nodes};
@@ -28,6 +26,4 @@ std::type_index Scene::GetType() { return typeid(Scene); }
 
 const std::vector<Node*>& Scene::GetNodes() const { return nodes_; }
 
-}  // namespace ast::sc
-
-}  // namespace luka
+}  // namespace luka::ast::sc

@@ -7,14 +7,10 @@
 
 #include "resource/asset/scene_component/component.h"
 
-namespace luka {
+namespace luka::ast::sc {
 
-namespace ast::sc {
-
-Component::Component(const std::string& name) : name_{name} {}
+Component::Component(std::string name) : name_{std::move(name)} {}
 
 const std::string& Component::GetName() const { return name_; }
 
-}  // namespace ast::sc
-
-}  // namespace luka
+}  // namespace luka::ast::sc

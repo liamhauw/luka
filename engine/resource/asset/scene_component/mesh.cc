@@ -10,21 +10,19 @@
 #include "core/log.h"
 #include "core/util.h"
 
-namespace luka {
-
-namespace ast::sc {
+namespace luka::ast::sc {
 
 Mesh::Mesh(std::vector<Primitive>&& primitives, const std::string& name)
     : Component{name}, primitives_{std::move(primitives)} {}
 
-Mesh::Mesh(std::shared_ptr<Gpu> gpu,
-           const std::vector<Material*> material_components,
-           const std::vector<Accessor*> accessor_components,
+Mesh::Mesh(const std::shared_ptr<Gpu>& gpu,
+           const std::vector<Material*>& material_components,
+           const std::vector<Accessor*>& accessor_components,
            const tinygltf::Mesh& tinygltf_mesh,
            const vk::raii::CommandBuffer& command_buffer,
            std::vector<gpu::Buffer>& staging_buffers)
     : Component{tinygltf_mesh.name} {
-  const std::vector<tinygltf::Primitive> tinygltf_primitives{
+  const std::vector<tinygltf::Primitive>& tinygltf_primitives{
       tinygltf_mesh.primitives};
   for (u32 i{0}; i < tinygltf_primitives.size(); ++i) {
     const auto& tinygltf_primitive{tinygltf_primitives[i]};
@@ -61,7 +59,8 @@ Mesh::Mesh(std::shared_ptr<Gpu> gpu,
       buffer_name += ToLower(attribute_name);
 
       gpu::Buffer buffer{gpu->CreateBuffer(buffer_ci, staging_buffers.back(),
-                                           command_buffer, buffer_name, i)};
+                                           command_buffer, buffer_name,
+                                           static_cast<i32>(i))};
 
       vk::Format format{accessor->GetFormat()};
       u32 stride{accessor->GetStride()};
@@ -86,7 +85,7 @@ Mesh::Mesh(std::shared_ptr<Gpu> gpu,
 
       vk::Format format{accessor->GetFormat()};
 
-      vk::IndexType index_type;
+      vk::IndexType index_type{};
       switch (format) {
         case vk::Format::eR8Uint:
           index_type = vk::IndexType::eUint8EXT;
@@ -122,7 +121,8 @@ Mesh::Mesh(std::shared_ptr<Gpu> gpu,
       buffer_name += "index";
 
       gpu::Buffer buffer{gpu->CreateBuffer(buffer_ci, staging_buffers.back(),
-                                           command_buffer, buffer_name, i)};
+                                           command_buffer, buffer_name,
+                                           static_cast<i32>(i))};
 
       u64 index_count{accessor->GetCount()};
 
@@ -147,6 +147,4 @@ const std::vector<Primitive>& Mesh::GetPrimitives() const {
   return primitives_;
 }
 
-}  // namespace ast::sc
-
-}  // namespace luka
+}  // namespace luka::ast::sc

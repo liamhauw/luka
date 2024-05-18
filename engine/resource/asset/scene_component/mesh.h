@@ -11,13 +11,12 @@
 
 #include "base/gpu/buffer.h"
 #include "base/gpu/gpu.h"
+#include "core/util.h"
 #include "resource/asset/scene_component/accessor.h"
 #include "resource/asset/scene_component/component.h"
 #include "resource/asset/scene_component/material.h"
 
-namespace luka {
-
-namespace ast::sc {
+namespace luka::ast::sc {
 
 struct VertexAttribute {
   gpu::Buffer buffer;
@@ -40,28 +39,31 @@ struct Primitive {
   Primitive() = default;
   ~Primitive() = default;
   Primitive(const Primitive&) = delete;
-  Primitive(Primitive&& rhs) = default;
+  Primitive(Primitive&& rhs) noexcept = default;
   Primitive& operator=(const Primitive&) = delete;
   Primitive& operator=(Primitive&& rhs) = default;
 
   std::map<std::string, VertexAttribute> vertex_attributes;
   IndexAttribute index_attribute;
   bool has_index{false};
-  const Material* material;
+  const Material* material{};
 };
 
 class Mesh : public Component {
  public:
-  Mesh(std::vector<Primitive>&& primitives, const std::string& name = {});
+  explicit Mesh(std::vector<Primitive>&& primitives,
+                const std::string& name = {});
 
-  Mesh(std::shared_ptr<Gpu> gpu,
-       const std::vector<Material*> material_components,
-       const std::vector<Accessor*> accessor_components,
+  Mesh(const std::shared_ptr<Gpu>& gpu,
+       const std::vector<Material*>& material_components,
+       const std::vector<Accessor*>& accessor_components,
        const tinygltf::Mesh& tinygltf_mesh,
        const vk::raii::CommandBuffer& command_buffer,
        std::vector<gpu::Buffer>& staging_buffers);
 
-  virtual ~Mesh() = default;
+  ~Mesh() override = default;
+
+  DELETE_SPECIAL_MEMBER_FUNCTIONS(Mesh)
   std::type_index GetType() override;
 
   const std::vector<Primitive>& GetPrimitives() const;
@@ -70,6 +72,4 @@ class Mesh : public Component {
   std::vector<Primitive> primitives_;
 };
 
-}  // namespace ast::sc
-
-}  // namespace luka
+}  // namespace luka::ast::sc

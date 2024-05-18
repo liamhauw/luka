@@ -7,9 +7,7 @@
 
 #include "resource/asset/scene_component/buffer_view.h"
 
-namespace luka {
-
-namespace ast::sc {
+namespace luka::ast::sc {
 
 BufferView::BufferView(const Buffer* buffer, u64 byte_offset, u64 byte_length,
                        u64 byte_stride, const std::string& name)
@@ -37,6 +35,4 @@ u64 BufferView::GetByteLength() const { return byte_length_; }
 
 u64 BufferView::GetByteStride() const { return byte_stride_; }
 
-}  // namespace ast::sc
-
-}  // namespace luka
+}  // namespace luka::ast::sc

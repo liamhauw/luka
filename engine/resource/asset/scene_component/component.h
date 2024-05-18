@@ -7,14 +7,16 @@
 #include "platform/pch.h"
 // clang-format on
 
-namespace luka {
+#include "core/util.h"
 
-namespace ast::sc {
+namespace luka::ast::sc {
 
 class Component {
  public:
-  Component(const std::string& name = {});
+  explicit Component(std::string name = {});
   virtual ~Component() = default;
+  DELETE_SPECIAL_MEMBER_FUNCTIONS(Component);
+
   virtual std::type_index GetType() = 0;
   const std::string& GetName() const;
 
@@ -22,6 +24,4 @@ class Component {
   std::string name_;
 };
 
-}  // namespace ast::sc
-
-}  // namespace luka
+}  // namespace luka::ast::sc

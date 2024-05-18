@@ -7,13 +7,12 @@
 #include "platform/pch.h"
 // clang-format on
 
+#include "core/util.h"
 #include "resource/asset/scene_component/component.h"
 #include "resource/asset/scene_component/image.h"
 #include "resource/asset/scene_component/sampler.h"
 
-namespace luka {
-
-namespace ast::sc {
+namespace luka::ast::sc {
 
 class Texture : public Component {
  public:
@@ -24,7 +23,10 @@ class Texture : public Component {
           const std::vector<Sampler*>& sampler_components,
           const tinygltf::Texture& tinygltf_texture);
 
-  virtual ~Texture() = default;
+  ~Texture() override = default;
+
+  DELETE_SPECIAL_MEMBER_FUNCTIONS(Texture)
+
   std::type_index GetType() override;
 
   const Image* GetImage() const;
@@ -35,6 +37,4 @@ class Texture : public Component {
   const Sampler* sampler_;
 };
 
-}  // namespace ast::sc
-
-}  // namespace luka
+}  // namespace luka::ast::sc

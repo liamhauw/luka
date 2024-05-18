@@ -7,17 +7,15 @@
 
 #include "resource/asset/scene_component/sampler.h"
 
-namespace luka {
-
-namespace ast::sc {
+namespace luka::ast::sc {
 
 Sampler::Sampler(vk::raii::Sampler&& sampler, const std::string& name)
     : Component{name}, sampler_{std::move(sampler)} {}
 
-Sampler::Sampler(std::shared_ptr<Gpu> gpu,
+Sampler::Sampler(const std::shared_ptr<Gpu>& gpu,
                  const tinygltf::Sampler& tinygltf_sampler)
     : Component{tinygltf_sampler.name} {
-  vk::Filter mag_filter;
+  vk::Filter mag_filter{};
   switch (tinygltf_sampler.minFilter) {
     case TINYGLTF_TEXTURE_FILTER_NEAREST:
       mag_filter = vk::Filter::eNearest;
@@ -29,7 +27,7 @@ Sampler::Sampler(std::shared_ptr<Gpu> gpu,
       mag_filter = vk::Filter::eNearest;
   }
 
-  vk::Filter min_filter;
+  vk::Filter min_filter{};
   switch (tinygltf_sampler.minFilter) {
     case TINYGLTF_TEXTURE_FILTER_NEAREST:
     case TINYGLTF_TEXTURE_FILTER_NEAREST_MIPMAP_NEAREST:
@@ -45,7 +43,7 @@ Sampler::Sampler(std::shared_ptr<Gpu> gpu,
       min_filter = vk::Filter::eNearest;
   }
 
-  vk::SamplerMipmapMode mipmap_mode;
+  vk::SamplerMipmapMode mipmap_mode{};
   switch (tinygltf_sampler.minFilter) {
     case TINYGLTF_TEXTURE_FILTER_NEAREST_MIPMAP_NEAREST:
     case TINYGLTF_TEXTURE_FILTER_LINEAR_MIPMAP_NEAREST:
@@ -59,7 +57,7 @@ Sampler::Sampler(std::shared_ptr<Gpu> gpu,
       mipmap_mode = vk::SamplerMipmapMode::eNearest;
   }
 
-  vk::SamplerAddressMode address_mode_u;
+  vk::SamplerAddressMode address_mode_u{};
   switch (tinygltf_sampler.wrapS) {
     case TINYGLTF_TEXTURE_WRAP_REPEAT:
       address_mode_u = vk::SamplerAddressMode::eRepeat;
@@ -74,7 +72,7 @@ Sampler::Sampler(std::shared_ptr<Gpu> gpu,
       address_mode_u = vk::SamplerAddressMode::eRepeat;
   }
 
-  vk::SamplerAddressMode address_mode_v;
+  vk::SamplerAddressMode address_mode_v{};
   switch (tinygltf_sampler.wrapT) {
     case TINYGLTF_TEXTURE_WRAP_REPEAT:
       address_mode_v = vk::SamplerAddressMode::eRepeat;
@@ -99,6 +97,4 @@ std::type_index Sampler::GetType() { return typeid(Sampler); }
 
 const vk::raii::Sampler& Sampler::GetSampler() const { return sampler_; }
 
-}  // namespace ast::sc
-
-}  // namespace luka
+}  // namespace luka::ast::sc
