@@ -234,7 +234,7 @@ void Subpass::ParseShaderResources(
   // Common.
   shader_processes.emplace_back("DPI 3.14159265359");
 
-  std::string punctual_light_max_count{std::to_string(gPunctualLightMaxCount)};
+  std::string punctual_light_max_count{std::to_string(kPunctualLightMaxCount)};
   punctual_light_max_count =
       "DPUNCTUAL_LIGHT_MAX_COUNT " + punctual_light_max_count;
   shader_processes.push_back(punctual_light_max_count);
@@ -243,8 +243,8 @@ void Subpass::ParseShaderResources(
   if (has_scene_) {
     const std::map<std::string, ast::sc::Texture*>& textures{
         primitive.material->GetTextures()};
-    for (u32 i{0}; i < kWantedTextures.size(); ++i) {
-      std::string wanted_texture{kWantedTextures[i]};
+    for (u32 i{0}; i < wanted_textures_.size(); ++i) {
+      std::string wanted_texture{wanted_textures_[i]};
       auto it{textures.find(wanted_texture)};
       if (it != textures.end()) {
         std::transform(wanted_texture.begin(), wanted_texture.end(),
@@ -295,7 +295,7 @@ void Subpass::ParseShaderResources(
       for (const auto& pl : pls) {
         punctual_lights_.push_back(pl);
       }
-      if (punctual_lights_.size() == gPunctualLightMaxCount) {
+      if (punctual_lights_.size() == kPunctualLightMaxCount) {
         break;
       }
     }
@@ -547,7 +547,7 @@ void Subpass::CreatePipelineResources(
             primitive.material->GetTextures()};
 
         i32 idx{0};
-        for (const auto& wanted_texture : kWantedTextures) {
+        for (const auto& wanted_texture : wanted_textures_) {
           auto bindless_samplers_it{
               name_shader_resources.find("bindless_samplers")};
           auto bindless_images_it{

@@ -13,7 +13,7 @@ namespace luka {
 
 FunctionInput::FunctionInput(std::shared_ptr<Config> config,
                              std::shared_ptr<Window> window)
-    : config_{config}, window_{window} {
+    : config_{std::move(config)}, window_{std::move(window)} {
   window_->RegisterOnKeyFunc([this](auto&& ph1, auto&& ph2, auto&& ph3,
                                     auto&& ph4) {
     OnKey(std::forward<decltype(ph1)>(ph1), std::forward<decltype(ph2)>(ph2),
@@ -101,7 +101,7 @@ void FunctionInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mods*/) {
   }
 }
 
-void FunctionInput::OnCursorPos(f64 xpos, f64 ypos) {
+void FunctionInput::OnCursorPos(f64 /*xpos*/, f64 /*ypos*/) {
   if (config_->GetEditorMode()) {
     return;
   }

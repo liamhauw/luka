@@ -14,7 +14,7 @@ namespace luka {
 
 class Camera {
  public:
-  Camera(std::shared_ptr<Window> window);
+  explicit Camera(std::shared_ptr<Window> window);
 
   void Tick();
 

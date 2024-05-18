@@ -9,6 +9,7 @@
 
 #include "base/gpu/gpu.h"
 #include "base/window/window.h"
+#include "core/util.h"
 #include "function/camera/camera.h"
 #include "function/function_ui/function_ui.h"
 #include "rendering/graphics/pass.h"
@@ -25,6 +26,8 @@ class Graphics {
            std::shared_ptr<FunctionUi> function_ui);
 
   ~Graphics();
+
+  DELETE_SPECIAL_MEMBER_FUNCTIONS(Graphics)
 
   void Tick();
 
@@ -50,7 +53,7 @@ class Graphics {
   std::shared_ptr<Camera> camera_;
   std::shared_ptr<FunctionUi> function_ui_;
 
-  const SwapchainInfo* swapchain_info_;
+  const SwapchainInfo* swapchain_info_{};
   const vk::raii::SwapchainKHR* swapchain_{nullptr};
   std::vector<vk::Image> swapchain_images_;
   u32 frame_count_{0};

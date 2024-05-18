@@ -2,6 +2,8 @@
 // Copyright (C) 2023-present Liam Hauw.
 
 // clang-format off
+#include <utility>
+
 #include "platform/pch.h"
 // clang-format on
 
@@ -10,7 +12,7 @@
 namespace luka {
 
 Camera::Camera(std::shared_ptr<Window> window)
-    : window_{window},
+    : window_{std::move(window)},
       view_matirx_{glm::mat4(glm::lookAt(position_, position_ + look_,
                                          glm::cross(right_, look_)))},
       projection_matirx_{glm::perspective(

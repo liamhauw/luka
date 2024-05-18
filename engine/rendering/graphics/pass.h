@@ -13,9 +13,7 @@
 #include "rendering/graphics/subpass.h"
 #include "resource/asset/asset.h"
 
-namespace luka {
-
-namespace gs {
+namespace luka::gs {
 
 class Pass {
  public:
@@ -73,6 +71,4 @@ class Pass {
   std::vector<Subpass> subpasses_;
 };
 
-}  // namespace gs
-
-}  // namespace luka
+}  // namespace luka::gs

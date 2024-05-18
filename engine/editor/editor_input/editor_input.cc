@@ -15,7 +15,10 @@ EditorInput::EditorInput(std::shared_ptr<Config> config,
                          std::shared_ptr<Window> window,
                          std::shared_ptr<Time> time,
                          std::shared_ptr<Camera> camera)
-    : config_{config}, window_{window}, time_{time}, camera_{camera} {
+    : config_{std::move(config)},
+      window_{std::move(window)},
+      time_{std::move(time)},
+      camera_{std::move(camera)} {
   window_->RegisterOnKeyFunc([this](auto&& ph1, auto&& ph2, auto&& ph3,
                                     auto&& ph4) {
     OnKey(std::forward<decltype(ph1)>(ph1), std::forward<decltype(ph2)>(ph2),
@@ -147,7 +150,8 @@ void EditorInput::OnCursorPos(f64 xpos, f64 ypos) {
     i32 window_height{0};
     window_->GetWindowSize(&window_width, &window_height);
 
-    f32 angular_velocity{180.0F / std::max(window_width, window_height)};
+    f32 angular_velocity{
+        180.0F / static_cast<f32>(std::max(window_width, window_height))};
     f32 yaw{
         glm::radians(static_cast<f32>(prev_xpos_ - xpos) * angular_velocity)};
     f32 pitch{
@@ -156,8 +160,8 @@ void EditorInput::OnCursorPos(f64 xpos, f64 ypos) {
     camera_->Rotate(yaw, pitch);
   }
 
-  prev_xpos_ = xpos;
-  prev_ypos_ = ypos;
+  prev_xpos_ = static_cast<f32>(xpos);
+  prev_ypos_ = static_cast<f32>(ypos);
 }
 
 }  // namespace luka

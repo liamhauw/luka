@@ -7,10 +7,12 @@
 
 #include "function/function_ui/function_ui.h"
 
+#include <vector>
+
 namespace luka {
 
 FunctionUi::FunctionUi(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu)
-    : window_{window}, gpu_{gpu} {
+    : window_{std::move(window)}, gpu_{std::move(gpu)} {
   CreateSwapchain();
   CreateImgui();
 }
@@ -138,10 +140,11 @@ void FunctionUi::CreateSwapchain() {
   u32 present_queue_index{gpu_->GetPresentQueueIndex()};
 
   if (graphics_queue_index != present_queue_index) {
-    u32 queue_family_indices[2]{graphics_queue_index, present_queue_index};
+    std::vector<u32> queue_family_indices{graphics_queue_index,
+                                          present_queue_index};
     swapchain_ci.imageSharingMode = vk::SharingMode::eConcurrent;
     swapchain_ci.queueFamilyIndexCount = 2;
-    swapchain_ci.pQueueFamilyIndices = queue_family_indices;
+    swapchain_ci.pQueueFamilyIndices = queue_family_indices.data();
   }
 
   swapchain_ = gpu_->CreateSwapchain(swapchain_ci);

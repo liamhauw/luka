@@ -13,6 +13,7 @@
 
 #include "base/gpu/gpu.h"
 #include "base/window/window.h"
+#include "core/util.h"
 
 namespace luka {
 
@@ -29,9 +30,11 @@ class FunctionUi {
   FunctionUi(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu);
   ~FunctionUi();
 
+  DELETE_SPECIAL_MEMBER_FUNCTIONS(FunctionUi)
+
   void Tick();
 
-  void Render(const vk::raii::CommandBuffer& command_buffer);
+  static void Render(const vk::raii::CommandBuffer& command_buffer);
 
   const SwapchainInfo& GetSwapchainInfo() const;
   const vk::raii::SwapchainKHR& GetSwapchain() const;
@@ -42,10 +45,10 @@ class FunctionUi {
   void CreateSwapchain();
   void CreateImgui();
 
-  void DestroyImgui();
+  static void DestroyImgui();
 
   void Resize();
-  void UpdateImgui();
+  static void UpdateImgui();
   void CreateUi();
 
   std::shared_ptr<Window> window_;

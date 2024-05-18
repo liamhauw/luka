@@ -7,9 +7,7 @@
 
 #include "rendering/graphics/spirv.h"
 
-namespace luka {
-
-namespace gs {
+namespace luka::gs {
 
 SPIRV::SPIRV(const ast::Shader& shader,
              const std::vector<std::string>& processes,
@@ -206,6 +204,4 @@ u32 SPIRV::ParseLocation(const spirv_cross::CompilerGLSL& compiler,
   return compiler.get_decoration(resource.id, spv::DecorationLocation);
 }
 
-}  // namespace gs
-
-}  // namespace luka
+}  // namespace luka::gs

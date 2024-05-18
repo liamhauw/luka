@@ -15,12 +15,12 @@ Graphics::Graphics(std::shared_ptr<Config> config,
                    std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu,
                    std::shared_ptr<Asset> asset, std::shared_ptr<Camera> camera,
                    std::shared_ptr<FunctionUi> function_ui)
-    : config_{config},
-      window_{window},
-      gpu_{gpu},
-      asset_{asset},
-      camera_{camera},
-      function_ui_{function_ui} {
+    : config_{std::move(config)},
+      window_{std::move(window)},
+      gpu_{std::move(gpu)},
+      asset_{std::move(asset)},
+      camera_{std::move(camera)},
+      function_ui_{std::move(function_ui)} {
   GetSwapchain();
   CreateSyncObjects();
   CreateCommandObjects();
@@ -123,7 +123,7 @@ void Graphics::Render() {
 }
 
 const vk::raii::CommandBuffer& Graphics::Begin() {
-  vk::Result result;
+  vk::Result result{};
   std::tie(result, frame_index_) = swapchain_->acquireNextImage(
       UINT64_MAX,
       *(image_acquired_semaphores_[image_acquired_semaphore_index_]), nullptr);
@@ -272,7 +272,7 @@ void Graphics::DrawPasses(const vk::raii::CommandBuffer& command_buffer) {
 
         // Draw.
         if (draw_element.has_scene) {
-          const std::vector<gs::DrawElmentVertexInfo> vertex_infos{
+          const std::vector<gs::DrawElmentVertexInfo>& vertex_infos{
               draw_element.vertex_infos};
 
           for (const auto& vertex_info : vertex_infos) {

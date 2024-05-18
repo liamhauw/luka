@@ -9,9 +9,7 @@
 
 #include "core/log.h"
 
-namespace luka {
-
-namespace gs {
+namespace luka::gs {
 
 Pass::Pass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
            std::shared_ptr<Camera> camera,
@@ -21,10 +19,10 @@ Pass::Pass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
            const std::vector<ast::Pass>& ast_passes, u32 pass_index,
            std::vector<std::unordered_map<std::string, vk::ImageView>>&
                shared_image_views)
-    : gpu_{gpu},
-      asset_{asset},
-      camera_{camera},
-      function_ui_{function_ui},
+    : gpu_{std::move(gpu)},
+      asset_{std::move(asset)},
+      camera_{std::move(camera)},
+      function_ui_{std::move(function_ui)},
       frame_count_{frame_count},
       swapchain_info_{swapchain_info},
       swapchain_images_{swapchain_images},
@@ -92,7 +90,7 @@ void Pass::CreateRenderPass() {
         vk::ImageLayout::eShaderReadOnlyOptimal);
   }
 
-  const std::vector<ast::Subpass> ast_subpasses{ast_pass_->subpasses};
+  const std::vector<ast::Subpass>& ast_subpasses{ast_pass_->subpasses};
   u32 subpass_count{static_cast<u32>(ast_subpasses.size())};
 
   color_attachment_counts_.resize(subpass_count);
@@ -116,7 +114,7 @@ void Pass::CreateRenderPass() {
     // Input attachments
     auto input_it{subpass_attachments.find(ast::AttachmentType::kInput)};
     if (input_it != subpass_attachments.end()) {
-      const std::vector<u32> input_attachments{input_it->second};
+      const std::vector<u32>& input_attachments{input_it->second};
       input_references[i].resize(input_attachments.size());
 
       for (u32 j{0}; j < input_attachments.size(); ++j) {
@@ -130,7 +128,7 @@ void Pass::CreateRenderPass() {
     // Color attachments.
     auto color_it{subpass_attachments.find(ast::AttachmentType::kColor)};
     if (color_it != subpass_attachments.end()) {
-      const std::vector<u32> color_attachments{color_it->second};
+      const std::vector<u32>& color_attachments{color_it->second};
       color_references[i].resize(color_attachments.size());
 
       for (u32 j{0}; j < color_attachments.size(); ++j) {
@@ -145,7 +143,7 @@ void Pass::CreateRenderPass() {
     auto depth_stencil_it{
         subpass_attachments.find(ast::AttachmentType::kDepthStencil)};
     if (depth_stencil_it != subpass_attachments.end()) {
-      const std::vector<u32> depth_stencil_attachments{
+      const std::vector<u32>& depth_stencil_attachments{
           depth_stencil_it->second};
 
       if (depth_stencil_attachments.size() != 1) {
@@ -160,7 +158,7 @@ void Pass::CreateRenderPass() {
           &depth_stencil_references[i]);
     }
 
-    subpass_descriptions[i] = std::move(subpass_description);
+    subpass_descriptions[i] = subpass_description;
 
     // Subpass dependencies.
     if (i >= 1) {
@@ -290,6 +288,4 @@ void Pass::CreateSubpasses() {
   }
 }
 
-}  // namespace gs
-
-}  // namespace luka
+}  // namespace luka::gs

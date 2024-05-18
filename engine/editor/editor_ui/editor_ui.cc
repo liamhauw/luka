@@ -2,6 +2,10 @@
 // Copyright (C) 2023-present Liam Hauw.
 
 // clang-format off
+#include <utility>
+
+#include <utility>
+
 #include "platform/pch.h"
 // clang-format on
 
@@ -11,7 +15,9 @@ namespace luka {
 
 EditorUi::EditorUi(std::shared_ptr<Config> config,
                    std::shared_ptr<Window> window, std::shared_ptr<Time> time)
-    : config_{config}, window_{window}, time_{time} {}
+    : config_{std::move(config)},
+      window_{std::move(window)},
+      time_{std::move(time)} {}
 
 void EditorUi::Tick() {
   if (window_->GetIconified()) {

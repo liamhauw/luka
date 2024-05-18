@@ -11,9 +11,7 @@
 
 #include "resource/asset/asset.h"
 
-namespace luka {
-
-namespace gs {
+namespace luka::gs {
 
 enum class ShaderResourceType {
   kNone,
@@ -65,31 +63,30 @@ class SPIRV {
   void ParseShaderResource(const spirv_cross::CompilerGLSL& compiler);
   void ParseSpecialization(const spirv_cross::CompilerGLSL& compiler);
 
-  u32 ParseInputAttachmentIndex(const spirv_cross::CompilerGLSL& compiler,
-                                const spirv_cross::Resource& resource);
-  u32 ParseSet(const spirv_cross::CompilerGLSL& compiler,
-               const spirv_cross::Resource& resource);
-  u32 ParseBinding(const spirv_cross::CompilerGLSL& compiler,
-                   const spirv_cross::Resource& resource);
-  u32 ParseArraySize(const spirv_cross::CompilerGLSL& compiler,
-                     const spirv_cross::Resource& resource);
-  u32 ParseSize(const spirv_cross::CompilerGLSL& compiler,
-                const spirv_cross::Resource& resource);
-  u32 ParseOffset(const spirv_cross::CompilerGLSL& compiler,
-                  const spirv_cross::Resource& resource);
-  u32 ParseLocation(const spirv_cross::CompilerGLSL& compiler,
-                    const spirv_cross::Resource& resource);
+  static u32 ParseInputAttachmentIndex(
+      const spirv_cross::CompilerGLSL& compiler,
+      const spirv_cross::Resource& resource);
+  static u32 ParseSet(const spirv_cross::CompilerGLSL& compiler,
+                      const spirv_cross::Resource& resource);
+  static u32 ParseBinding(const spirv_cross::CompilerGLSL& compiler,
+                          const spirv_cross::Resource& resource);
+  static u32 ParseArraySize(const spirv_cross::CompilerGLSL& compiler,
+                            const spirv_cross::Resource& resource);
+  static u32 ParseSize(const spirv_cross::CompilerGLSL& compiler,
+                       const spirv_cross::Resource& resource);
+  static u32 ParseOffset(const spirv_cross::CompilerGLSL& compiler,
+                         const spirv_cross::Resource& resource);
+  static u32 ParseLocation(const spirv_cross::CompilerGLSL& compiler,
+                           const spirv_cross::Resource& resource);
 
   ast::Shader shader_;
   std::vector<std::string> processes_;
   std::vector<u32> spirv_;
-  vk::ShaderStageFlagBits stage_;
-  u64 hash_value_;
+  vk::ShaderStageFlagBits stage_{};
+  u64 hash_value_{};
 
   std::vector<ShaderResource> shader_resources_;
   std::vector<SpecializationConstant> specialization_constants_;
 };
 
-}  // namespace gs
-
-}  // namespace luka
+}  // namespace luka::gs
