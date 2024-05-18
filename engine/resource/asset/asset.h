@@ -14,8 +14,8 @@
 #include "resource/asset/scene.h"
 #include "resource/asset/shader.h"
 #include "resource/config/config.h"
-#include "resource/gpu/gpu.h"
-#include "resource/task_scheduler/task_scheduler.h"
+#include "base/gpu/gpu.h"
+#include "base/task_scheduler/task_scheduler.h"
 
 namespace luka {
 

@@ -12,16 +12,19 @@
 #include <backends/imgui_impl_vulkan.h>
 #include <tiny_gltf.h>
 
-#include "resource/gpu/buffer.h"
-#include "resource/gpu/image.h"
-#include "resource/window/window.h"
+#include "base/gpu/buffer.h"
+#include "base/gpu/image.h"
+#include "base/window/window.h"
+#include "core/util.h"
 
 namespace luka {
 
 class Gpu {
  public:
-  Gpu(std::shared_ptr<Window> window);
+  explicit Gpu(std::shared_ptr<Window> window);
   ~Gpu();
+
+  DELETE_SPECIAL_MEMBER_FUNCTIONS(Gpu)
 
   void Tick();
 
@@ -57,7 +60,7 @@ class Gpu {
                          const std::string& name = {}, i32 index = -1);
 
   gpu::Image CreateImage(const vk::ImageCreateInfo& image_ci,
-                         const vk::ImageLayout new_layout,
+                         const vk::ImageLayout& new_layout,
                          const gpu::Buffer& staging_buffer,
                          const vk::raii::CommandBuffer& command_buffer,
                          const tinygltf::Image& tinygltf_image,
@@ -67,7 +70,7 @@ class Gpu {
       const vk::ImageViewCreateInfo& image_view_ci,
       const std::string& name = {}, i32 index = -1);
 
-  vk::raii::Sampler CreateSampler(const vk::SamplerCreateInfo sampler_ci,
+  vk::raii::Sampler CreateSampler(const vk::SamplerCreateInfo& sampler_ci,
                                   const std::string& name = {}, i32 index = -1);
 
   vk::raii::SwapchainKHR CreateSwapchain(
@@ -140,10 +143,10 @@ class Gpu {
 
   void WaitIdle();
 
-  void BeginLabel(const vk::raii::CommandBuffer& command_buffer,
+  static void BeginLabel(const vk::raii::CommandBuffer& command_buffer,
                   const std::string& label,
                   const std::array<f32, 4>& color = {1.0F, 1.0F, 1.0F, 1.0F});
-  void EndLabel(const vk::raii::CommandBuffer& command_buffer);
+  static void EndLabel(const vk::raii::CommandBuffer& command_buffer);
 
  private:
   void CreateInstance();
@@ -190,7 +193,7 @@ class Gpu {
   vk::raii::Queue transfer_queue_{nullptr};
   vk::raii::Queue present_queue_{nullptr};
 
-  VmaAllocator allocator_;
+  VmaAllocator allocator_{};
 
   vk::raii::DescriptorPool bindless_descriptor_pool_{nullptr};
   vk::raii::DescriptorPool normal_descriptor_pool_{nullptr};

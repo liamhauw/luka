@@ -11,7 +11,7 @@
 
 #include "resource/asset/scene_component/buffer_view.h"
 #include "resource/asset/scene_component/component.h"
-#include "resource/gpu/buffer.h"
+#include "base/gpu/buffer.h"
 
 namespace luka {
 

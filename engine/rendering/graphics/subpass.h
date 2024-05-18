@@ -10,7 +10,7 @@
 #include "function/camera/camera.h"
 #include "rendering/graphics/spirv.h"
 #include "resource/asset/asset.h"
-#include "resource/gpu/gpu.h"
+#include "base/gpu/gpu.h"
 
 namespace luka {
 

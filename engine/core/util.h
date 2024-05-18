@@ -7,9 +7,15 @@
 #include "platform/pch.h"
 // clang-format on
 
+#define DELETE_SPECIAL_MEMBER_FUNCTIONS(class_name)  \
+  class_name(const class_name&) = delete;            \
+  class_name(class_name&&) = delete;                 \
+  class_name& operator=(const class_name&) = delete; \
+  class_name& operator=(class_name&&) = delete;
+
 namespace luka {
 
-template <class T, class Y>
+template <typename T, typename Y>
 struct TypeCast {
   Y operator()(T value) const noexcept { return static_cast<Y>(value); }
 };
@@ -17,10 +23,10 @@ struct TypeCast {
 template <typename T>
 void HashCombine(u64& seed, const T& value) {
   std::hash<T> hasher;
-  seed ^= hasher(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+  seed ^= hasher(value) + 0x9e3779b9 + (seed << 6U) + (seed >> 2U);
 }
 
-std::filesystem::path GetPath(const std::string& str);
+std::filesystem::path GetPath(const std::string& path);
 
 std::vector<u8> LoadBinaryU8(const std::filesystem::path& binary_path);
 std::vector<u32> LoadBinaryU32(const std::filesystem::path& binary_path);

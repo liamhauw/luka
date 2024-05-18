@@ -9,6 +9,13 @@ configure_file(
 
 set(HEADER_FILES
 
+  # base
+  base/gpu/buffer.h
+  base/gpu/gpu.h
+  base/gpu/image.h
+  base/task_scheduler/task_scheduler.h
+  base/window/window.h
+
   # core
   core/json.h
   core/log.h
@@ -29,7 +36,6 @@ set(HEADER_FILES
   platform/common.h
 
   # rendering
-  rendering/compute/compute.h
   rendering/graphics/graphics.h
   rendering/graphics/pass.h
   rendering/graphics/spirv.h
@@ -57,17 +63,19 @@ set(HEADER_FILES
   resource/asset/shader.h
   resource/config/config.h
   resource/config/generated/source_path.h
-  resource/gpu/buffer.h
-  resource/gpu/gpu.h
-  resource/gpu/image.h
-  resource/task_scheduler/task_scheduler.h
-  resource/window/window.h
 
   # engine
   engine.h
 )
 
 set(SOURCE_FILES
+
+  # base
+  base/gpu/buffer.cc
+  base/gpu/gpu.cc
+  base/gpu/image.cc
+  base/task_scheduler/task_scheduler.cc
+  base/window/window.cc
 
   # core
   core/util.cc
@@ -92,11 +100,6 @@ set(SOURCE_FILES
   resource/asset/scene.cc
   resource/asset/shader.cc
   resource/config/config.cc
-  resource/gpu/buffer.cc
-  resource/gpu/gpu.cc
-  resource/gpu/image.cc
-  resource/task_scheduler/task_scheduler.cc
-  resource/window/window.cc
 
   # function
   function/camera/camera.cc
@@ -109,7 +112,6 @@ set(SOURCE_FILES
   editor/editor_ui/editor_ui.cc
 
   # rendering
-  rendering/compute/compute.cc
   rendering/graphics/graphics.cc
   rendering/graphics/pass.cc
   rendering/graphics/spirv.cc

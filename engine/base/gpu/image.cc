@@ -5,7 +5,7 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "resource/gpu/image.h"
+#include "base/gpu/image.h"
 
 #include "core/log.h"
 

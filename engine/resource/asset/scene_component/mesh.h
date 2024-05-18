@@ -12,8 +12,8 @@
 #include "resource/asset/scene_component/accessor.h"
 #include "resource/asset/scene_component/component.h"
 #include "resource/asset/scene_component/material.h"
-#include "resource/gpu/buffer.h"
-#include "resource/gpu/gpu.h"
+#include "base/gpu/buffer.h"
+#include "base/gpu/gpu.h"
 
 namespace luka {
 

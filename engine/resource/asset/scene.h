@@ -22,7 +22,7 @@
 #include "resource/asset/scene_component/sampler.h"
 #include "resource/asset/scene_component/scene.h"
 #include "resource/asset/scene_component/texture.h"
-#include "resource/gpu/gpu.h"
+#include "base/gpu/gpu.h"
 
 namespace luka {
 

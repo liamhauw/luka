@@ -2,17 +2,19 @@
 // Copyright (C) 2023-present Liam Hauw.
 
 // clang-format off
+#include <utility>
+
 #include "platform/pch.h"
 // clang-format on
 
-#include "resource/gpu/gpu.h"
+#include "base/gpu/gpu.h"
 
 #include "core/log.h"
 #include "core/util.h"
 
 namespace luka {
 
-Gpu::Gpu(std::shared_ptr<Window> window) : window_{window} {
+Gpu::Gpu(std::shared_ptr<Window> window) : window_{std::move(window)} {
   CreateInstance();
   CreateSurface();
   CreatePhysicalDevice();
@@ -141,7 +143,7 @@ gpu::Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
 }
 
 gpu::Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
-                            const vk::ImageLayout new_layout,
+                            const vk::ImageLayout& new_layout,
                             const gpu::Buffer& staging_buffer,
                             const vk::raii::CommandBuffer& command_buffer,
                             const tinygltf::Image& tinygltf_image,
@@ -162,7 +164,7 @@ gpu::Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
                 reinterpret_cast<u64>(static_cast<VkImage>(*image)), name,
                 prefix, index == -1 ? "" : std::to_string(index));
 #endif
-  vk::ImageAspectFlagBits flag_bits;
+  vk::ImageAspectFlagBits flag_bits{};
   if (image_ci.usage & vk::ImageUsageFlagBits::eDepthStencilAttachment) {
     flag_bits = vk::ImageAspectFlagBits::eDepth;
   } else {
@@ -249,7 +251,7 @@ vk::raii::ImageView Gpu::CreateImageView(
   return image_view;
 }
 
-vk::raii::Sampler Gpu::CreateSampler(const vk::SamplerCreateInfo sampler_ci,
+vk::raii::Sampler Gpu::CreateSampler(const vk::SamplerCreateInfo& sampler_ci,
                                      const std::string& name, i32 index) {
   vk::raii::Sampler sampler{device_, sampler_ci};
 
@@ -650,7 +652,7 @@ void Gpu::CreateInstance() {
 }
 
 void Gpu::CreateSurface() {
-  VkSurfaceKHR surface;
+  VkSurfaceKHR surface{};
   window_->CreateWindowSurface(instance_, &surface);
   surface_ = vk::raii::SurfaceKHR{instance_, surface};
 }
@@ -694,7 +696,7 @@ void Gpu::CreatePhysicalDevice() {
 
 void Gpu::CreateDevice() {
   // Properties.
-  vk::PhysicalDeviceProperties physical_device_properties_{
+  vk::PhysicalDeviceProperties physical_device_properties{
       physical_device_.getProperties()};
 
   // Queue famliy properties.
@@ -762,11 +764,11 @@ void Gpu::CreateDevice() {
   std::vector<vk::ExtensionProperties> extension_properties{
       physical_device_.enumerateDeviceExtensionProperties()};
 
-  std::vector<const char*> required_device_extensions_{
+  std::vector<const char*> required_device_extensions{
       VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
   std::vector<const char*> enabled_device_extensions;
-  for (auto& extension : required_device_extensions_) {
+  for (auto& extension : required_device_extensions) {
     if (std::find_if(extension_properties.begin(), extension_properties.end(),
                      [extension](const vk::ExtensionProperties& ep) {
                        return (strcmp(extension, ep.extensionName) == 0);
@@ -896,13 +898,13 @@ void Gpu::CreateDefaultResource() {
                                    vk::SamplerAddressMode::eRepeat,
                                    vk::SamplerAddressMode::eRepeat,
                                    vk::SamplerAddressMode::eRepeat,
-                                   0.0f,
+                                   0.0F,
                                    VK_FALSE,
-                                   1.0f,
+                                   1.0F,
                                    VK_FALSE,
                                    vk::CompareOp::eAlways,
-                                   0.0f,
-                                   0.0f,
+                                   0.0F,
+                                   0.0F,
                                    vk::BorderColor::eFloatTransparentBlack,
                                    VK_FALSE};
 

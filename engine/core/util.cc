@@ -10,7 +10,7 @@
 #include "core/log.h"
 
 namespace luka {
-
+  
 std::filesystem::path GetPath(const std::string& path) {
   std::string res{path};
   if (PATH_SEPARATOR == '/') {
@@ -73,7 +73,7 @@ void SaveBinaryU8(const std::vector<u8>& binary_data,
   }
 
   binary_file.write(reinterpret_cast<const char*>(binary_data.data()),
-                    binary_data.size());
+                    static_cast<i64>(binary_data.size()));
   binary_file.close();
 }
 
@@ -85,7 +85,7 @@ void SaveBinaryU32(const std::vector<u32>& binary_data,
   }
 
   binary_file.write(reinterpret_cast<const char*>(binary_data.data()),
-                    binary_data.size() * 4);
+                    static_cast<i64>(binary_data.size()) * 4);
   binary_file.close();
 }
 

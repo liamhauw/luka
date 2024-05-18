@@ -11,7 +11,7 @@
 #include "function/function_ui/function_ui.h"
 #include "rendering/graphics/subpass.h"
 #include "resource/asset/asset.h"
-#include "resource/gpu/gpu.h"
+#include "base/gpu/gpu.h"
 
 namespace luka {
 

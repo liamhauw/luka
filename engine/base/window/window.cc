@@ -5,7 +5,7 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "resource/window/window.h"
+#include "base/window/window.h"
 
 #include "core/log.h"
 

@@ -11,8 +11,8 @@
 #include <backends/imgui_impl_vulkan.h>
 #include <imgui.h>
 
-#include "resource/gpu/gpu.h"
-#include "resource/window/window.h"
+#include "base/gpu/gpu.h"
+#include "base/window/window.h"
 
 namespace luka {
 

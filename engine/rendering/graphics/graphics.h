@@ -12,8 +12,8 @@
 #include "rendering/graphics/pass.h"
 #include "resource/asset/asset.h"
 #include "resource/config/config.h"
-#include "resource/gpu/gpu.h"
-#include "resource/window/window.h"
+#include "base/gpu/gpu.h"
+#include "base/window/window.h"
 
 namespace luka {
 
