@@ -12,22 +12,22 @@
 #include "core/util.h"
 #include "function/camera/camera.h"
 #include "function/function_ui/function_ui.h"
-#include "rendering/graphics/pass.h"
+#include "rendering/framework/pass.h"
 #include "resource/asset/asset.h"
 #include "resource/config/config.h"
 
 namespace luka {
 
-class Graphics {
+class Framework {
  public:
-  Graphics(std::shared_ptr<Config> config, std::shared_ptr<Window> window,
-           std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
-           std::shared_ptr<Camera> camera,
-           std::shared_ptr<FunctionUi> function_ui);
+  Framework(std::shared_ptr<Config> config, std::shared_ptr<Window> window,
+            std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
+            std::shared_ptr<Camera> camera,
+            std::shared_ptr<FunctionUi> function_ui);
 
-  ~Graphics();
+  ~Framework();
 
-  DELETE_SPECIAL_MEMBER_FUNCTIONS(Graphics)
+  DELETE_SPECIAL_MEMBER_FUNCTIONS(Framework)
 
   void Tick();
 
@@ -70,7 +70,7 @@ class Graphics {
 
   std::vector<std::unordered_map<std::string, vk::ImageView>>
       shared_image_views_;
-  std::vector<gs::Pass> passes_;
+  std::vector<fw::Pass> passes_;
 
   u32 image_acquired_semaphore_index_{0};
   u32 frame_index_{0};

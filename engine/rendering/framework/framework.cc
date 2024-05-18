@@ -5,16 +5,17 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "rendering/graphics/graphics.h"
+#include "rendering/framework/framework.h"
 
 #include "core/log.h"
 
 namespace luka {
 
-Graphics::Graphics(std::shared_ptr<Config> config,
-                   std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu,
-                   std::shared_ptr<Asset> asset, std::shared_ptr<Camera> camera,
-                   std::shared_ptr<FunctionUi> function_ui)
+Framework::Framework(std::shared_ptr<Config> config,
+                     std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu,
+                     std::shared_ptr<Asset> asset,
+                     std::shared_ptr<Camera> camera,
+                     std::shared_ptr<FunctionUi> function_ui)
     : config_{std::move(config)},
       window_{std::move(window)},
       gpu_{std::move(gpu)},
@@ -28,9 +29,9 @@ Graphics::Graphics(std::shared_ptr<Config> config,
   CreatePasses();
 }
 
-Graphics::~Graphics() { gpu_->WaitIdle(); }
+Framework::~Framework() { gpu_->WaitIdle(); }
 
-void Graphics::Tick() {
+void Framework::Tick() {
   if (window_->GetIconified()) {
     return;
   }
@@ -43,14 +44,14 @@ void Graphics::Tick() {
   Render();
 }
 
-void Graphics::GetSwapchain() {
+void Framework::GetSwapchain() {
   swapchain_info_ = &(function_ui_->GetSwapchainInfo());
   swapchain_ = &(function_ui_->GetSwapchain());
   swapchain_images_ = swapchain_->getImages();
   frame_count_ = swapchain_images_.size();
 }
 
-void Graphics::CreateSyncObjects() {
+void Framework::CreateSyncObjects() {
   vk::SemaphoreCreateInfo semaphore_ci;
   vk::FenceCreateInfo fence_ci{vk::FenceCreateFlagBits::eSignaled};
   for (u32 i{0}; i < frame_count_; ++i) {
@@ -63,7 +64,7 @@ void Graphics::CreateSyncObjects() {
   }
 }
 
-void Graphics::CreateCommandObjects() {
+void Framework::CreateCommandObjects() {
   vk::CommandPoolCreateInfo command_pool_ci{
       vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
       gpu_->GetGraphicsQueueIndex()};
@@ -78,7 +79,7 @@ void Graphics::CreateCommandObjects() {
   }
 }
 
-void Graphics::CreateViewportAndScissor() {
+void Framework::CreateViewportAndScissor() {
   u32 target_width{swapchain_info_->extent.width};
   u32 target_height{swapchain_info_->extent.height};
 
@@ -92,7 +93,7 @@ void Graphics::CreateViewportAndScissor() {
       vk::Rect2D{vk::Offset2D{0, 0}, vk::Extent2D{target_width, target_height}};
 }
 
-void Graphics::CreatePasses() {
+void Framework::CreatePasses() {
   u32 frame_graph_index{config_->GetFrameGraphIndex()};
   const ast::FrameGraph& frame_graph{asset_->GetFrameGraph(frame_graph_index)};
   const std::vector<ast::Pass>& ast_passes{frame_graph.GetPasses()};
@@ -106,7 +107,7 @@ void Graphics::CreatePasses() {
   }
 }
 
-void Graphics::Resize() {
+void Framework::Resize() {
   gpu_->WaitIdle();
   GetSwapchain();
   CreateViewportAndScissor();
@@ -115,14 +116,14 @@ void Graphics::Resize() {
   }
 }
 
-void Graphics::Render() {
+void Framework::Render() {
   const vk::raii::CommandBuffer& command_buffer{Begin()};
   UpdatePasses();
   DrawPasses(command_buffer);
   End(command_buffer);
 }
 
-const vk::raii::CommandBuffer& Graphics::Begin() {
+const vk::raii::CommandBuffer& Framework::Begin() {
   vk::Result result{};
   std::tie(result, frame_index_) = swapchain_->acquireNextImage(
       UINT64_MAX,
@@ -141,7 +142,7 @@ const vk::raii::CommandBuffer& Graphics::Begin() {
   return command_buffer;
 }
 
-void Graphics::End(const vk::raii::CommandBuffer& command_buffer) {
+void Framework::End(const vk::raii::CommandBuffer& command_buffer) {
   vk::PipelineStageFlags wait_pipeline_stage{
       vk::PipelineStageFlagBits::eColorAttachmentOutput};
   vk::SubmitInfo submit_info{
@@ -166,16 +167,16 @@ void Graphics::End(const vk::raii::CommandBuffer& command_buffer) {
       (image_acquired_semaphore_index_ + 1) % frame_count_;
 }
 
-void Graphics::UpdatePasses() {
+void Framework::UpdatePasses() {
   for (auto& pass : passes_) {
-    std::vector<gs::Subpass>& subpasses{pass.GetSubpasses()};
+    std::vector<fw::Subpass>& subpasses{pass.GetSubpasses()};
     for (auto& subpass : subpasses) {
       subpass.Update(frame_index_);
     }
   }
 }
 
-void Graphics::DrawPasses(const vk::raii::CommandBuffer& command_buffer) {
+void Framework::DrawPasses(const vk::raii::CommandBuffer& command_buffer) {
   command_buffer.begin({});
 
   // Set viewport and scissor.
@@ -193,9 +194,9 @@ void Graphics::DrawPasses(const vk::raii::CommandBuffer& command_buffer) {
                                    vk::SubpassContents::eInline);
 
     // Tarverse subpasses.
-    const std::vector<gs::Subpass>& subpasses{pass.GetSubpasses()};
+    const std::vector<fw::Subpass>& subpasses{pass.GetSubpasses()};
     for (u32 i{0}; i < subpasses.size(); ++i) {
-      const gs::Subpass& subpass{subpasses[i]};
+      const fw::Subpass& subpass{subpasses[i]};
 #ifndef NDEBUG
       gpu_->BeginLabel(command_buffer, "Subpass " + subpass.GetName(),
                        {0.443F, 0.573F, 0.745F, 1.0F});
@@ -207,12 +208,12 @@ void Graphics::DrawPasses(const vk::raii::CommandBuffer& command_buffer) {
       }
 
       // Traverse draw elements.
-      const std::vector<gs::DrawElement>& draw_elements{
+      const std::vector<fw::DrawElement>& draw_elements{
           subpass.GetDrawElements()};
 
       const vk::raii::Pipeline* prev_pipeline{nullptr};
       const vk::raii::PipelineLayout* prev_pipeline_layout{nullptr};
-      for (const gs::DrawElement& draw_element : draw_elements) {
+      for (const fw::DrawElement& draw_element : draw_elements) {
         // Bind pipeline.
         const vk::raii::Pipeline* pipeline{draw_element.pipeline};
         if (prev_pipeline != pipeline) {
@@ -272,7 +273,7 @@ void Graphics::DrawPasses(const vk::raii::CommandBuffer& command_buffer) {
 
         // Draw.
         if (draw_element.has_scene) {
-          const std::vector<gs::DrawElmentVertexInfo>& vertex_infos{
+          const std::vector<fw::DrawElmentVertexInfo>& vertex_infos{
               draw_element.vertex_infos};
 
           for (const auto& vertex_info : vertex_infos) {

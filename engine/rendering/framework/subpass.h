@@ -9,10 +9,10 @@
 
 #include "base/gpu/gpu.h"
 #include "function/camera/camera.h"
-#include "rendering/graphics/spirv.h"
+#include "rendering/framework/spirv.h"
 #include "resource/asset/asset.h"
 
-namespace luka::gs {
+namespace luka::fw {
 
 constexpr u32 kPunctualLightMaxCount{8};
 constexpr u32 kSamplerInfoMaxCount{10};
@@ -212,4 +212,4 @@ class Subpass {
   std::vector<DrawElement> draw_elements_;
 };
 
-}  // namespace luka::gs
+}  // namespace luka::fw

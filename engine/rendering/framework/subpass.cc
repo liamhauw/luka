@@ -5,7 +5,7 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "rendering/graphics/subpass.h"
+#include "rendering/framework/subpass.h"
 
 #undef MemoryBarrier
 #include <utility>
@@ -15,7 +15,7 @@
 #include "core/util.h"
 #include "resource/config/generated/root_path.h"
 
-namespace luka::gs {
+namespace luka::fw {
 
 Subpass::Subpass(
     std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
@@ -1137,4 +1137,4 @@ const vk::raii::Pipeline& Subpass::RequestPipeline(
   return it1.first->second;
 }
 
-}  // namespace luka::gs
+}  // namespace luka::fw

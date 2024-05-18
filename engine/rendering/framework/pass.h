@@ -10,10 +10,10 @@
 #include "base/gpu/gpu.h"
 #include "function/camera/camera.h"
 #include "function/function_ui/function_ui.h"
-#include "rendering/graphics/subpass.h"
+#include "rendering/framework/subpass.h"
 #include "resource/asset/asset.h"
 
-namespace luka::gs {
+namespace luka::fw {
 
 class Pass {
  public:
@@ -71,4 +71,4 @@ class Pass {
   std::vector<Subpass> subpasses_;
 };
 
-}  // namespace luka::gs
+}  // namespace luka::fw

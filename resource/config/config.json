@@ -2,7 +2,8 @@
   "scenes": [
     "box/Box.gltf",
     "scifihelmet/SciFiHelmet.gltf",
-    "damaged/DamagedHelmet.gltf"
+    "damaged/DamagedHelmet.gltf",
+    "sponza/Sponza.gltf"
   ],
   "lights": [
     "default/punctual_light.json"

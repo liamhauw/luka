@@ -5,11 +5,11 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "rendering/graphics/pass.h"
+#include "rendering/framework/pass.h"
 
 #include "core/log.h"
 
-namespace luka::gs {
+namespace luka::fw {
 
 Pass::Pass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
            std::shared_ptr<Camera> camera,
@@ -288,4 +288,4 @@ void Pass::CreateSubpasses() {
   }
 }
 
-}  // namespace luka::gs
+}  // namespace luka::fw

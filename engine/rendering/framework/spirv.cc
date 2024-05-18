@@ -5,9 +5,9 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "rendering/graphics/spirv.h"
+#include "rendering/framework/spirv.h"
 
-namespace luka::gs {
+namespace luka::fw {
 
 SPIRV::SPIRV(const ast::Shader& shader,
              const std::vector<std::string>& processes,
@@ -204,4 +204,4 @@ u32 SPIRV::ParseLocation(const spirv_cross::CompilerGLSL& compiler,
   return compiler.get_decoration(resource.id, spv::DecorationLocation);
 }
 
-}  // namespace luka::gs
+}  // namespace luka::fw

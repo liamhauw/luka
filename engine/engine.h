@@ -16,7 +16,7 @@
 #include "function/function_input/function_input.h"
 #include "function/function_ui/function_ui.h"
 #include "function/time/time.h"
-#include "rendering/graphics/graphics.h"
+#include "rendering/framework/framework.h"
 #include "resource/asset/asset.h"
 #include "resource/config/config.h"
 
@@ -40,7 +40,7 @@ class Engine {
   std::shared_ptr<FunctionUi> function_ui_;
   std::shared_ptr<EditorInput> editor_input_;
   std::shared_ptr<EditorUi> editor_ui_;
-  std::shared_ptr<Graphics> graphics_;
+  std::shared_ptr<Framework> framework_;
 };
 
 }  // namespace luka

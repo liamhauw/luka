@@ -22,8 +22,8 @@ Engine::Engine()
       editor_input_{
           std::make_shared<EditorInput>(config_, window_, time_, camera_)},
       editor_ui_{std::make_shared<EditorUi>(config_, window_, time_)},
-      graphics_{std::make_shared<Graphics>(config_, window_, gpu_, asset_,
-                                           camera_, function_ui_)} {}
+      framework_{std::make_shared<Framework>(config_, window_, gpu_, asset_,
+                                             camera_, function_ui_)} {}
 
 void Engine::Run() {
   while (!window_->WindowShouldClose()) {
@@ -38,7 +38,7 @@ void Engine::Run() {
     function_ui_->Tick();
     editor_input_->Tick();
     editor_ui_->Tick();
-    graphics_->Tick();
+    framework_->Tick();
   }
 }
 

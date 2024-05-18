@@ -11,7 +11,7 @@
 
 #include "resource/asset/asset.h"
 
-namespace luka::gs {
+namespace luka::fw {
 
 enum class ShaderResourceType {
   kNone,
@@ -89,4 +89,4 @@ class SPIRV {
   std::vector<SpecializationConstant> specialization_constants_;
 };
 
-}  // namespace luka::gs
+}  // namespace luka::fw
