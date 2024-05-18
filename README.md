@@ -1,5 +1,5 @@
 # luka
-A rendering framework with modular components including platform, core, resource, function, editor, and rendering.
+A rendering engine with modular components including platform, core, base, resource, function, editor, and rendering.
 
 ## Features
 - Rendering 
