@@ -9,6 +9,7 @@
 
 #include <tiny_gltf.h>
 
+#include "base/gpu/gpu.h"
 #include "resource/asset/scene_component/accessor.h"
 #include "resource/asset/scene_component/buffer.h"
 #include "resource/asset/scene_component/buffer_view.h"
@@ -22,23 +23,23 @@
 #include "resource/asset/scene_component/sampler.h"
 #include "resource/asset/scene_component/scene.h"
 #include "resource/asset/scene_component/texture.h"
-#include "base/gpu/gpu.h"
 
-namespace luka {
-
-namespace ast {
+namespace luka::ast {
 
 class Scene {
  public:
   Scene() = default;
+  ~Scene() = default;
 
   Scene(std::shared_ptr<Gpu> gpu, const std::filesystem::path& cfg_scene_path,
         const vk::raii::CommandBuffer& command_buffer,
         std::vector<gpu::Buffer>& staging_buffers);
 
-  Scene(Scene&& rhs);
+  Scene(Scene&& rhs) noexcept;
+  Scene& operator=(Scene&& rhs) noexcept;
 
-  Scene& operator=(Scene&& rhs);
+  Scene(const Scene&) = delete;
+  Scene& operator=(const Scene&) = delete;
 
   template <typename T>
   void AddComponent(std::unique_ptr<T>&& component) {
@@ -50,7 +51,7 @@ class Scene {
   std::vector<T*> GetComponents() const {
     std::vector<T*> result;
     if (HasComponent(typeid(T))) {
-      auto& scene_components{GetComponents(typeid(T))};
+      const auto& scene_components{GetComponents(typeid(T))};
 
       result.resize(scene_components.size());
       std::transform(scene_components.begin(), scene_components.end(),
@@ -116,7 +117,7 @@ class Scene {
                            std::vector<gpu::Buffer>& staging_buffers);
 
   void ParseNodeComponents(const std::vector<tinygltf::Node>& tinygltf_nodes);
-  void InitNodeChildren();
+  void InitNodeChildren() const;
 
   void ParseSceneComponents(
       const std::vector<tinygltf::Scene>& tinygltf_scenes);
@@ -130,9 +131,7 @@ class Scene {
                      std::vector<std::unique_ptr<sc::Component>>>
       components_;
   std::unordered_map<std::string, bool> supported_extensions_;
-  i32 scene_;
+  i32 scene_{};
 };
 
-}  // namespace ast
-
-}  // namespace luka
+}  // namespace luka::ast

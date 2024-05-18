@@ -74,7 +74,7 @@ f32 Window::GetWindowRatio() const {
   i32 width{0};
   i32 height{0};
   glfwGetWindowSize(glfw_window_, &width, &height);
-  return static_cast<f32>(width) / height;
+  return static_cast<f32>(width) / static_cast<f32>(height);
 }
 
 bool Window::WindowShouldClose() const {

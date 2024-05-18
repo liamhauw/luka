@@ -144,8 +144,9 @@ class Gpu {
   void WaitIdle();
 
   static void BeginLabel(const vk::raii::CommandBuffer& command_buffer,
-                  const std::string& label,
-                  const std::array<f32, 4>& color = {1.0F, 1.0F, 1.0F, 1.0F});
+                         const std::string& label,
+                         const std::array<f32, 4>& color = {1.0F, 1.0F, 1.0F,
+                                                            1.0F});
   static void EndLabel(const vk::raii::CommandBuffer& command_buffer);
 
  private:

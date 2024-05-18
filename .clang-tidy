@@ -1,6 +1,7 @@
 Checks: >
   *,
   -abseil-string-find-str-contains,
+  -altera-struct-pack-align,
   -altera-unroll-loops,
   -cppcoreguidelines-avoid-magic-numbers,
   -cppcoreguidelines-macro-usage,
@@ -9,11 +10,13 @@ Checks: >
   -cppcoreguidelines-pro-type-reinterpret-cast,
   -fuchsia-default-arguments-calls,
   -fuchsia-default-arguments-declarations,
+  -fuchsia-overloaded-operator,
   -hicpp-no-array-decay,
   -llvmlibc-callee-namespace,
   -llvmlibc-implementation-in-namespace,
   -llvmlibc-restrict-system-libc-headers,
   -modernize-use-trailing-return-type,
+  -modernize-use-nodiscard,
   -readability-function-cognitive-complexity,
   -readability-identifier-length,
   -readability-implicit-bool-conversion,
@@ -81,7 +84,7 @@ CheckOptions:
   - { key: readability-identifier-naming.TemplateTemplateParameterCase,   value: CamelCase             }
   - { key: readability-identifier-naming.TypeAliasCase,                   value: CamelCase             }
   - { key: readability-identifier-naming.TypedefCase,                     value: CamelCase             }
-  - { key: readability-identifier-naming.TypeTemplateParameterCase,       value: lower_case            }
+  - { key: readability-identifier-naming.TypeTemplateParameterCase,       value: CamelCase             }
   - { key: readability-identifier-naming.UnionCase,                       value: CamelCase             }
   - { key: readability-identifier-naming.ValueTemplateParameterCase,      value: lower_case            }
   - { key: readability-identifier-naming.VariableCase,                    value: lower_case            }

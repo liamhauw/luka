@@ -9,9 +9,7 @@
 
 #include "core/log.h"
 
-namespace luka {
-
-namespace ast {
+namespace luka::ast {
 
 Light::Light(const std::filesystem::path& light_path) {
   std::ifstream light_file{light_path.string()};
@@ -23,7 +21,7 @@ Light::Light(const std::filesystem::path& light_path) {
   if (json_.contains("punctual_lights")) {
     const json& punctual_lights_json{json_["punctual_lights"]};
     for (const auto& punctual_light_json : punctual_lights_json) {
-      PunctualLight punctual_light;
+      PunctualLight punctual_light{};
 
       if (punctual_light_json.contains("type")) {
         std::string type{
@@ -70,7 +68,7 @@ Light::Light(const std::filesystem::path& light_path) {
         punctual_light.range = punctual_light_json["range"].template get<f32>();
       }
 
-      puntual_lights_.push_back(std::move(punctual_light));
+      puntual_lights_.push_back(punctual_light);
     }
   }
 }
@@ -79,6 +77,4 @@ const std::vector<PunctualLight>& Light::GetPunctualLights() const {
   return puntual_lights_;
 }
 
-}  // namespace ast
-
-}  // namespace luka
+}  // namespace luka::ast

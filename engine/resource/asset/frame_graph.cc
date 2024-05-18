@@ -9,9 +9,7 @@
 
 #include "core/log.h"
 
-namespace luka {
-
-namespace ast {
+namespace luka::ast {
 
 FrameGraph::FrameGraph(const std::filesystem::path& frame_graph_path) {
   std::ifstream frame_graph_file{frame_graph_path.string()};
@@ -154,6 +152,4 @@ FrameGraph::FrameGraph(const std::filesystem::path& frame_graph_path) {
   }
 }
 
-}  // namespace ast
-
-}  // namespace luka
+}  // namespace luka::ast

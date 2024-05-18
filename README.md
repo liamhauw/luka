@@ -19,7 +19,7 @@ A rendering framework with modular components including platform, core, resource
 ## Prerequisites
 
 - Windows / macOS
-- VSCode with CMake Language Support, C/C++ and clangd extension
+- VSCode with CMake Language Support, C/C++ and clangd extensions
 - Git
 - CMake
 - Ninja
@@ -36,7 +36,7 @@ On macOS if you have [Homebrew](https://brew.sh/) installed, you can easily inst
 ```shell
 brew install vscode git cmake ninja llvm
 ```
-Then you only need to install Vulkan SDK, VSCode extensions and Xcode.
+Then you only need to install VSCode extensions, Xcode and Vulkan SDK.
 
 ## Use
 

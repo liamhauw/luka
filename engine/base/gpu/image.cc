@@ -9,14 +9,12 @@
 
 #include "core/log.h"
 
-namespace luka {
-
-namespace gpu {
+namespace luka::gpu {
 Image::Image(const VmaAllocator& allocator, const vk::ImageCreateInfo& image_ci)
     : allocator_{allocator} {
   VkImageCreateInfo vk_image_ci{static_cast<VkImageCreateInfo>(image_ci)};
   VmaAllocationCreateInfo allocation_ci{.usage = VMA_MEMORY_USAGE_AUTO};
-  VkImage image;
+  VkImage image{};
   vmaCreateImage(allocator_, &vk_image_ci, &allocation_ci, &image, &allocation_,
                  nullptr);
   image_ = image;
@@ -50,6 +48,4 @@ void Image::Clear() noexcept {
   image_ = nullptr;
   allocation_ = nullptr;
 }
-}  // namespace gpu
-
-}  // namespace luka
+}  // namespace luka::gpu

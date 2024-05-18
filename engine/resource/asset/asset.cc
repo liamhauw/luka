@@ -13,8 +13,8 @@ namespace luka {
 
 AssetAsync::AssetAsync(std::shared_ptr<Config> config, std::shared_ptr<Gpu> gpu,
                        u32 thread_count)
-    : config_{config},
-      gpu_{gpu},
+    : config_{std::move(config)},
+      gpu_{std::move(gpu)},
       thread_count_{thread_count},
       cfg_scene_paths_{&(config_->GetScenePaths())},
       cfg_light_paths_{&(config_->GetLightPaths())},
@@ -156,9 +156,9 @@ void AssetAsyncLoadTaskSet::ExecuteRange(enki::TaskSetPartition range,
 Asset::Asset(std::shared_ptr<Config> config,
              std::shared_ptr<TaskScheduler> task_scheduler,
              std::shared_ptr<Gpu> gpu)
-    : config_{config},
-      task_scheduler_{task_scheduler},
-      gpu_{gpu},
+    : config_{std::move(config)},
+      task_scheduler_{std::move(task_scheduler)},
+      gpu_{std::move(gpu)},
       asset_async_{config_, gpu_, task_scheduler_->GetThreadCount()},
       asset_async_load_task_set_{&asset_async_} {
   task_scheduler_->AddTaskSetToPipe(&asset_async_load_task_set_);

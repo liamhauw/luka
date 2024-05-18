@@ -9,9 +9,7 @@
 
 #include "core/json.h"
 
-namespace luka {
-
-namespace ast {
+namespace luka::ast {
 
 enum class AttachmentType { kInput, kColor, kResolve, kDepthStencil };
 
@@ -40,7 +38,7 @@ class FrameGraph {
  public:
   FrameGraph() = default;
 
-  FrameGraph(const std::filesystem::path& frame_graph_path);
+  explicit FrameGraph(const std::filesystem::path& frame_graph_path);
 
   const std::vector<ast::Pass>& GetPasses() const { return passes_; }
 
@@ -49,6 +47,4 @@ class FrameGraph {
   std::vector<Pass> passes_;
 };
 
-}  // namespace ast
-
-}  // namespace luka
+}  // namespace luka::ast

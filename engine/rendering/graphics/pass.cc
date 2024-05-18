@@ -197,9 +197,9 @@ void Pass::CreateFramebuffers() {
       bool is_swapchain{ast_attachment.name == "swapchain"};
       gpu::Image image;
       vk::ImageAspectFlags aspect;
-      vk::Format format;
+      vk::Format format{};
       if (is_swapchain) {
-        image = swapchain_images_[i];
+        image = gpu::Image{swapchain_images_[i]};
         aspect = vk::ImageAspectFlagBits::eColor;
         format = swapchain_info_.color_format;
       } else {

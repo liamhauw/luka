@@ -9,9 +9,7 @@
 
 #include "core/log.h"
 
-namespace luka {
-
-namespace gpu {
+namespace luka::gpu {
 
 Buffer::Buffer(const VmaAllocator& allocator,
                const vk::BufferCreateInfo& buffer_ci, bool staging)
@@ -22,7 +20,7 @@ Buffer::Buffer(const VmaAllocator& allocator,
     allocation_ci.flags =
         VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
   }
-  VkBuffer buffer;
+  VkBuffer buffer{};
   vmaCreateBuffer(allocator_, &vk_buffer_ci, &allocation_ci, &buffer,
                   &allocation_, nullptr);
   buffer_ = buffer;
@@ -76,6 +74,4 @@ void Buffer::Unmap() {
   }
 }
 
-}  // namespace gpu
-
-}  // namespace luka
+}  // namespace luka::gpu

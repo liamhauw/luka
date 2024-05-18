@@ -73,9 +73,7 @@ const std::vector<std::filesystem::path>& Config::GetFrameGraphPaths() const {
   return frame_graph_paths_;
 }
 
-u32 Config::GetFrameGraphIndex() const {
-  return frame_graph_index_;
-}
+u32 Config::GetFrameGraphIndex() const { return frame_graph_index_; }
 
 bool Config::GetEditorMode() const { return editor_mode_; }
 

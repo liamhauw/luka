@@ -7,8 +7,8 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include "core/math.h"
 #include "base/window/window.h"
+#include "core/math.h"
 
 namespace luka {
 

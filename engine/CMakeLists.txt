@@ -7,120 +7,8 @@ configure_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/resource/config/generated/root_path.h"
 )
 
-set(HEADER_FILES
-
-  # base
-  base/gpu/buffer.h
-  base/gpu/gpu.h
-  base/gpu/image.h
-  base/task_scheduler/task_scheduler.h
-  base/window/window.h
-
-  # core
-  core/json.h
-  core/log.h
-  core/math.h
-  core/util.h
-
-  # editor
-  editor/editor_input/editor_input.h
-  editor/editor_ui/editor_ui.h
-
-  # function
-  function/camera/camera.h
-  function/function_input/function_input.h
-  function/function_ui/function_ui.h
-  function/time/time.h
-
-  # platform
-  platform/common.h
-
-  # rendering
-  rendering/graphics/graphics.h
-  rendering/graphics/pass.h
-  rendering/graphics/spirv.h
-  rendering/graphics/subpass.h
-
-  # resource
-  resource/asset/scene_component/accessor.h
-  resource/asset/scene_component/buffer_view.h
-  resource/asset/scene_component/buffer.h
-  resource/asset/scene_component/camera.h
-  resource/asset/scene_component/component.h
-  resource/asset/scene_component/image.h
-  resource/asset/scene_component/light.h
-  resource/asset/scene_component/material.h
-  resource/asset/scene_component/mesh.h
-  resource/asset/scene_component/node.h
-  resource/asset/scene_component/sampler.h
-  resource/asset/scene_component/scene.h
-  resource/asset/scene_component/script.
-  resource/asset/scene_component/texture.h
-  resource/asset/asset.h
-  resource/asset/frame_graph.h
-  resource/asset/light.h
-  resource/asset/scene.h
-  resource/asset/shader.h
-  resource/config/config.h
-  resource/config/generated/source_path.h
-
-  # engine
-  engine.h
-)
-
-set(SOURCE_FILES
-
-  # base
-  base/gpu/buffer.cc
-  base/gpu/gpu.cc
-  base/gpu/image.cc
-  base/task_scheduler/task_scheduler.cc
-  base/window/window.cc
-
-  # core
-  core/util.cc
-
-  # resource
-  resource/asset/scene_component/accessor.cc
-  resource/asset/scene_component/buffer_view.cc
-  resource/asset/scene_component/buffer.cc
-  resource/asset/scene_component/camera.cc
-  resource/asset/scene_component/component.cc
-  resource/asset/scene_component/image.cc
-  resource/asset/scene_component/light.cc
-  resource/asset/scene_component/material.cc
-  resource/asset/scene_component/mesh.cc
-  resource/asset/scene_component/node.cc
-  resource/asset/scene_component/sampler.cc
-  resource/asset/scene_component/scene.cc
-  resource/asset/scene_component/texture.cc
-  resource/asset/asset.cc
-  resource/asset/frame_graph.cc
-  resource/asset/light.cc
-  resource/asset/scene.cc
-  resource/asset/shader.cc
-  resource/config/config.cc
-
-  # function
-  function/camera/camera.cc
-  function/function_input/function_input.cc
-  function/function_ui/function_ui.cc
-  function/time/time.cc
-
-  # editor
-  editor/editor_input/editor_input.cc
-  editor/editor_ui/editor_ui.cc
-
-  # rendering
-  rendering/graphics/graphics.cc
-  rendering/graphics/pass.cc
-  rendering/graphics/spirv.cc
-  rendering/graphics/subpass.cc
-
-  # engine
-  engine.cc
-  main.cc
-)
+file(GLOB_RECURSE HEADER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
+file(GLOB_RECURSE SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.cc")
 
 add_executable(${PROJECT_NAME})
 target_sources(${PROJECT_NAME} PRIVATE ${SOURCE_FILES})
@@ -134,4 +22,13 @@ if(APPLE)
     TARGET ${PROJECT_NAME}
     PROPERTY INSTALL_RPATH
     "/usr/local/lib")
+endif()
+
+find_program(CLANG_FORMAT clang-format)
+
+if(CLANG_FORMAT)
+  add_custom_target(
+    clang_format
+    COMMAND ${CLANG_FORMAT} -i ${HEADER_FILES} ${SOURCE_FILES})
+  add_dependencies(${PROJECT_NAME} clang_format)
 endif()

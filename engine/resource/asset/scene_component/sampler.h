@@ -9,8 +9,8 @@
 
 #include <tiny_gltf.h>
 
-#include "resource/asset/scene_component/component.h"
 #include "base/gpu/gpu.h"
+#include "resource/asset/scene_component/component.h"
 
 namespace luka {
 

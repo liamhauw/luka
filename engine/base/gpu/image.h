@@ -9,14 +9,12 @@
 #include "vk_mem_alloc.h"
 // clang-format on
 
-namespace luka {
-
-namespace gpu {
+namespace luka::gpu {
 class Image {
  public:
   Image() = default;
   Image(const VmaAllocator& allocator, const vk::ImageCreateInfo& image_ci);
-  Image(vk::Image image);
+  explicit Image(vk::Image image);
   Image(const Image&) = delete;
   Image(Image&& rhs) noexcept;
 
@@ -33,6 +31,6 @@ class Image {
   vk::Image image_{nullptr};
   VmaAllocation allocation_{nullptr};
 };
-}  // namespace gpu
+}  // namespace luka::gpu
 
-}  // namespace  luka
+// namespace  luka

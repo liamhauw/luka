@@ -2,6 +2,8 @@
 // Copyright (C) 2023-present Liam Hauw.
 
 // clang-format off
+#include <utility>
+
 #include "platform/pch.h"
 // clang-format on
 
@@ -9,15 +11,13 @@
 
 #include "core/log.h"
 
-namespace luka {
-
-namespace ast {
+namespace luka::ast {
 
 Scene::Scene(std::shared_ptr<Gpu> gpu,
              const std::filesystem::path& cfg_scene_path,
              const vk::raii::CommandBuffer& command_buffer,
              std::vector<gpu::Buffer>& staging_buffers)
-    : gpu_{gpu} {
+    : gpu_{std::move(gpu)} {
   tinygltf::Model tinygltf;
   std::string extension{cfg_scene_path.extension().string()};
   if (extension != ".gltf") {
@@ -54,14 +54,14 @@ Scene::Scene(std::shared_ptr<Gpu> gpu,
   ParseDefaultScene(tinygltf.defaultScene);
 }
 
-Scene::Scene(Scene&& rhs)
-    : gpu_{rhs.gpu_},
+Scene::Scene(Scene&& rhs) noexcept
+    : gpu_{std::move(rhs.gpu_)},
       name_{std::exchange(rhs.name_, {})},
       components_{std::exchange(rhs.components_, {})},
       supported_extensions_{std::exchange(rhs.supported_extensions_, {})},
       scene_{rhs.scene_} {}
 
-Scene& Scene::operator=(Scene&& rhs) {
+Scene& Scene::operator=(Scene&& rhs) noexcept {
   if (this != &rhs) {
     gpu_ = rhs.gpu_;
     std::swap(name_, rhs.name_);
@@ -115,7 +115,7 @@ void Scene::LoadScene(i32 scene) {
   sc::Node* root_node{nullptr};
   std::queue<std::pair<sc::Node*, sc::Node*>> traverse_nodes;
   for (sc::Node* node : nodes) {
-    traverse_nodes.push(std::make_pair(root_node, node));
+    traverse_nodes.emplace(root_node, node);
   }
 
   while (!traverse_nodes.empty()) {
@@ -127,9 +127,9 @@ void Scene::LoadScene(i32 scene) {
 
     child->SetParent(parent);
 
-    const std::vector<sc::Node*> child_children{child->GetChildren()};
+    const std::vector<sc::Node*>& child_children{child->GetChildren()};
     for (sc::Node* child_child : child_children) {
-      traverse_nodes.push(std::make_pair(child, child_child));
+      traverse_nodes.emplace(child, child_child);
     }
   }
 }
@@ -334,12 +334,13 @@ void Scene::ParseNodeComponents(
   InitNodeChildren();
 }
 
-void Scene::InitNodeChildren() {
+void Scene::InitNodeChildren() const {
   auto node_components{GetComponents<sc::Node>()};
 
   for (sc::Node* node : node_components) {
     const std::vector<i32>& child_indices{node->GetChildIndices()};
     std::vector<sc::Node*> children_node;
+    children_node.reserve(child_indices.size());
     for (i32 child_index : child_indices) {
       children_node.push_back(node_components[child_index]);
     }
@@ -369,6 +370,4 @@ void Scene::ParseDefaultScene(i32 tinygltf_default_scene) {
   }
 }
 
-}  // namespace ast
-
-}  // namespace luka
+}  // namespace luka::ast

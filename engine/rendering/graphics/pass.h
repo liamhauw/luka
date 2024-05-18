@@ -7,11 +7,11 @@
 #include "platform/pch.h"
 // clang-format on
 
+#include "base/gpu/gpu.h"
 #include "function/camera/camera.h"
 #include "function/function_ui/function_ui.h"
 #include "rendering/graphics/subpass.h"
 #include "resource/asset/asset.h"
-#include "base/gpu/gpu.h"
 
 namespace luka {
 

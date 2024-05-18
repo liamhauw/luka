@@ -10,7 +10,7 @@
 #include "core/log.h"
 
 namespace luka {
-  
+
 std::filesystem::path GetPath(const std::string& path) {
   std::string res{path};
   if (PATH_SEPARATOR == '/') {

@@ -9,15 +9,13 @@
 
 #include <glslang/Public/ShaderLang.h>
 
-namespace luka {
-
-namespace ast {
+namespace luka::ast {
 
 class Shader {
  public:
   Shader() = default;
 
-  Shader(const std::filesystem::path& cfg_shader_path);
+  explicit Shader(const std::filesystem::path& cfg_shader_path);
 
   u64 GetHashValue(const std::vector<std::string>& processes) const;
 
@@ -27,9 +25,7 @@ class Shader {
  private:
   std::string path_;
   std::string source_text_;
-  EShLanguage language_;
+  EShLanguage language_{};
 };
 
-}  // namespace ast
-
-}  // namespace luka
+}  // namespace luka::ast

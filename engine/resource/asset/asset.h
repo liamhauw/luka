@@ -9,13 +9,13 @@
 
 #include <TaskScheduler.h>
 
+#include "base/gpu/gpu.h"
+#include "base/task_scheduler/task_scheduler.h"
 #include "resource/asset/frame_graph.h"
 #include "resource/asset/light.h"
 #include "resource/asset/scene.h"
 #include "resource/asset/shader.h"
 #include "resource/config/config.h"
-#include "base/gpu/gpu.h"
-#include "base/task_scheduler/task_scheduler.h"
 
 namespace luka {
 
@@ -70,9 +70,9 @@ class AssetAsyncLoadTaskSet : public enki::ITaskSet {
  public:
   AssetAsyncLoadTaskSet() = default;
 
-  AssetAsyncLoadTaskSet(AssetAsync* asset_async);
+  explicit AssetAsyncLoadTaskSet(AssetAsync* asset_async);
 
-  void ExecuteRange(enki::TaskSetPartition range, uint32_t threadnum) override;
+  void ExecuteRange(enki::TaskSetPartition range, uint32_t thread_num) override;
 
  private:
   AssetAsync* asset_async_{nullptr};

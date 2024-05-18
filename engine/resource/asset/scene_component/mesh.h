@@ -9,11 +9,11 @@
 
 #include <tiny_gltf.h>
 
+#include "base/gpu/buffer.h"
+#include "base/gpu/gpu.h"
 #include "resource/asset/scene_component/accessor.h"
 #include "resource/asset/scene_component/component.h"
 #include "resource/asset/scene_component/material.h"
-#include "base/gpu/buffer.h"
-#include "base/gpu/gpu.h"
 
 namespace luka {
 

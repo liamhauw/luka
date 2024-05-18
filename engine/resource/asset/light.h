@@ -10,9 +10,7 @@
 #include "core/json.h"
 #include "core/math.h"
 
-namespace luka {
-
-namespace ast {
+namespace luka::ast {
 
 enum class PunctualLightType : u32 { kDirectional = 0, kPoint, kSpot };
 
@@ -35,7 +33,7 @@ class Light {
  public:
   Light() = default;
 
-  Light(const std::filesystem::path& light_path);
+  explicit Light(const std::filesystem::path& light_path);
 
   const std::vector<PunctualLight>& GetPunctualLights() const;
 
@@ -44,6 +42,4 @@ class Light {
 
   std::vector<PunctualLight> puntual_lights_;
 };
-}  // namespace ast
-
-}  // namespace luka
+}  // namespace luka::ast

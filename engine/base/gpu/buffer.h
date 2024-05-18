@@ -9,9 +9,7 @@
 #include "vk_mem_alloc.h"
 // clang-format on
 
-namespace luka {
-
-namespace gpu {
+namespace luka::gpu {
 
 class Buffer {
  public:
@@ -26,7 +24,7 @@ class Buffer {
   Buffer& operator=(const Buffer&) = delete;
   Buffer& operator=(Buffer&& rhs) noexcept;
   const vk::Buffer& operator*() const noexcept;
-  
+
   void Clear() noexcept;
 
   void* Map();
@@ -39,6 +37,4 @@ class Buffer {
   void* mapped_data_{nullptr};
 };
 
-}  // namespace gpu
-
-}  // namespace luka
+}  // namespace luka::gpu

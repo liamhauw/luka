@@ -16,9 +16,7 @@
 #include "core/log.h"
 #include "core/util.h"
 
-namespace luka {
-
-namespace ast {
+namespace luka::ast {
 
 Shader::Shader(const std::filesystem::path& cfg_shader_path)
     : path_{cfg_shader_path.string()}, source_text_{LoadText(path_)} {
@@ -108,6 +106,4 @@ std::vector<u32> Shader::CompileToSpirv(
   return spirv;
 }
 
-}  // namespace ast
-
-}  // namespace luka
+}  // namespace luka::ast

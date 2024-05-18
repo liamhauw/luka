@@ -9,6 +9,7 @@
 #include <GLFW/glfw3.h>
 // clang-format on
 
+#include "core/util.h"
 #include "function/time/time.h"
 
 namespace luka {
@@ -37,27 +38,30 @@ class Window {
   using OnScrollFunc = std::function<void(f64, f64)>;
   using OnDropFunc = std::function<void(i32, const char**)>;
 
-  Window(const WindowInfo& window_info = {});
+  explicit Window(const WindowInfo& window_info = {});
   ~Window();
 
-  void Tick();
+  DELETE_SPECIAL_MEMBER_FUNCTIONS(Window);
+
+  static void Tick();
 
   GLFWwindow* GetGlfwWindow() const;
   bool GetWindowResized() const;
-  void SetWindowResized(bool resized);
-  void GetWindowSize(i32* width, i32* height) const;
   f32 GetWindowRatio() const;
   bool WindowShouldClose() const;
-  void SetWindowShouldClose();
   bool GetIconified() const;
-  void SetIconified(bool iconified);
   bool GetFramebufferResized() const;
-  void SetFramebufferResized(bool resized);
-  void GetFramebufferSize(i32* width, i32* height) const;
   bool GetFocusMode() const;
-  void SetFocusMode(bool mode);
   bool IsMouseButtonDown(int button) const;
   bool IsMouseButtonRelease(int button) const;
+
+  void SetWindowResized(bool resized);
+  void GetWindowSize(i32* width, i32* height) const;
+  void SetWindowShouldClose();
+  void SetIconified(bool iconified);
+  void SetFramebufferResized(bool resized);
+  void GetFramebufferSize(i32* width, i32* height) const;
+  void SetFocusMode(bool mode);
   void SetCursorPos(f64 xpos, f64 ypos);
 
   static std::vector<const char*> GetRequiredInstanceExtensions();

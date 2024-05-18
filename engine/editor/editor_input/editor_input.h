@@ -7,10 +7,10 @@
 #include "platform/pch.h"
 // clang-format on
 
+#include "base/window/window.h"
 #include "function/camera/camera.h"
 #include "function/time/time.h"
 #include "resource/config/config.h"
-#include "base/window/window.h"
 
 namespace luka {
 
