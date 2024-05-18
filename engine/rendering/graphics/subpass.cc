@@ -8,15 +8,14 @@
 #include "rendering/graphics/subpass.h"
 
 #undef MemoryBarrier
+#include <utility>
 #include <vulkan/vulkan_hash.hpp>
 
 #include "core/log.h"
 #include "core/util.h"
 #include "resource/config/generated/root_path.h"
 
-namespace luka {
-
-namespace gs {
+namespace luka::gs {
 
 Subpass::Subpass(
     std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
@@ -26,9 +25,9 @@ Subpass::Subpass(
     u32 subpass_index,
     std::vector<std::unordered_map<std::string, vk::ImageView>>&
         shared_image_views)
-    : gpu_{gpu},
-      asset_{asset},
-      camera_{camera},
+    : gpu_{std::move(gpu)},
+      asset_{std::move(asset)},
+      camera_{std::move(camera)},
       frame_count_{frame_count},
       render_pass_{render_pass},
       attachment_image_views_{&attachment_image_views},
@@ -233,7 +232,7 @@ void Subpass::ParseShaderResources(
   std::vector<std::string> shader_processes;
 
   // Common.
-  shader_processes.push_back("DPI 3.14159265359");
+  shader_processes.emplace_back("DPI 3.14159265359");
 
   std::string punctual_light_max_count{std::to_string(gPunctualLightMaxCount)};
   punctual_light_max_count =
@@ -261,7 +260,8 @@ void Subpass::ParseShaderResources(
       if (name == "POSITION") {
         has_position_buffer = true;
         continue;
-      } else if (name == "NORMAL") {
+      }
+      if (name == "NORMAL") {
         has_normal_buffer = true;
         continue;
       }
@@ -413,7 +413,7 @@ void Subpass::CreatePipelineResources(
 
         std::vector<vk::DescriptorSetLayoutBinding> bindings;
         for (const auto& shader_resource : shader_resources) {
-          vk::DescriptorType descriptor_type;
+          vk::DescriptorType descriptor_type{};
 
           if (shader_resource.type == ShaderResourceType::kUniformBuffer) {
             descriptor_type = vk::DescriptorType::eUniformBuffer;
@@ -456,7 +456,7 @@ void Subpass::CreatePipelineResources(
           if (shader_resource.type == ShaderResourceType::kUniformBuffer) {
             if (shader_resource.name == "Subpass") {
               for (u32 i{0}; i < frame_count_; ++i) {
-                SubpassUniform subpass_uniform;
+                SubpassUniform subpass_uniform{};
 
                 vk::BufferCreateInfo uniform_buffer_ci{
                     {},
@@ -471,7 +471,7 @@ void Subpass::CreatePipelineResources(
                 vk::DescriptorBufferInfo descriptor_buffer_info{
                     *subpass_uniform_buffer, 0, sizeof(SubpassUniform)};
 
-                buffer_infos.push_back(std::move(descriptor_buffer_info));
+                buffer_infos.push_back(descriptor_buffer_info);
                 vk::WriteDescriptorSet write_descriptor_set{
                     *subpass_descriptor_sets_[i],
                     shader_resource.binding,
@@ -480,7 +480,7 @@ void Subpass::CreatePipelineResources(
                     nullptr,
                     buffer_infos.back()};
 
-                subpass_uniforms_[i] = std::move(subpass_uniform);
+                subpass_uniforms_[i] = subpass_uniform;
                 subpass_uniform_buffers_[i] = std::move(subpass_uniform_buffer);
 
                 write_descriptor_sets.push_back(write_descriptor_set);
@@ -496,7 +496,7 @@ void Subpass::CreatePipelineResources(
                                                      .input_attachment_index]};
               vk::DescriptorImageInfo descriptor_image_info{
                   nullptr, image_view, vk::ImageLayout::eShaderReadOnlyOptimal};
-              image_infos.push_back(std::move(descriptor_image_info));
+              image_infos.push_back(descriptor_image_info);
 
               vk::WriteDescriptorSet write_descriptor_set{
                   *subpass_descriptor_sets_[i], shader_resource.binding, 0,
@@ -546,7 +546,7 @@ void Subpass::CreatePipelineResources(
         const std::map<std::string, ast::sc::Texture*>& textures{
             primitive.material->GetTextures()};
 
-        u32 idx{0};
+        i32 idx{0};
         for (const auto& wanted_texture : kWantedTextures) {
           auto bindless_samplers_it{
               name_shader_resources.find("bindless_samplers")};
@@ -568,14 +568,14 @@ void Subpass::CreatePipelineResources(
             HashCombine(sampler_hash_value, ast_sampler);
             auto it2{sampler_indices_.find(sampler_hash_value)};
 
-            u32 cur_sampler_index;
+            u32 cur_sampler_index{};
             if (it2 != sampler_indices_.end()) {
               cur_sampler_index = it2->second;
             } else {
               const vk::raii::Sampler& sampler{ast_sampler->GetSampler()};
 
               vk::DescriptorImageInfo descriptor_sampler_info{*sampler};
-              sampler_infos.push_back(std::move(descriptor_sampler_info));
+              sampler_infos.push_back(descriptor_sampler_info);
 
               cur_sampler_index = bindless_sampler_index_++;
 
@@ -602,7 +602,7 @@ void Subpass::CreatePipelineResources(
             HashCombine(image_hash_value, ast_image);
             auto it3{image_indices_.find(image_hash_value)};
 
-            u32 cur_image_index;
+            u32 cur_image_index{};
             if (it3 != image_indices_.end()) {
               cur_image_index = it3->second;
             } else {
@@ -611,7 +611,7 @@ void Subpass::CreatePipelineResources(
               vk::DescriptorImageInfo descriptor_image_info{
                   nullptr, *image_view,
                   vk::ImageLayout::eShaderReadOnlyOptimal};
-              image_infos.push_back(std::move(descriptor_image_info));
+              image_infos.push_back(descriptor_image_info);
 
               cur_image_index = bindless_image_index_++;
 
@@ -650,7 +650,7 @@ void Subpass::CreatePipelineResources(
           std::min(draw_element_descriptor_set_index_, set);
       std::vector<vk::DescriptorSetLayoutBinding> bindings;
       for (const auto& shader_resource : shader_resources) {
-        vk::DescriptorType descriptor_type;
+        vk::DescriptorType descriptor_type{};
 
         if (shader_resource.type == ShaderResourceType::kUniformBuffer) {
           descriptor_type = vk::DescriptorType::eUniformBuffer;
@@ -689,7 +689,7 @@ void Subpass::CreatePipelineResources(
         vk::raii::DescriptorSets draw_element_descriptor_sets{
             gpu_->AllocateNormalDescriptorSets(
                 draw_element_descriptor_set_allocate_info,
-                name_ + "_draw_element", primitive_index)};
+                name_ + "_draw_element", static_cast<i32>(primitive_index))};
 
         draw_element.descriptor_sets.push_back(
             std::move(draw_element_descriptor_sets));
@@ -724,11 +724,11 @@ void Subpass::CreatePipelineResources(
 
               gpu::Buffer draw_element_uniform_buffer{gpu_->CreateBuffer(
                   uniform_buffer_ci, &draw_element_uniform, false,
-                  "draw_element_uniform", primitive_index)};
+                  "draw_element_uniform", static_cast<i32>(primitive_index))};
 
               vk::DescriptorBufferInfo descriptor_buffer_info{
                   *draw_element_uniform_buffer, 0, sizeof(DrawElementUniform)};
-              buffer_infos.push_back(std::move(descriptor_buffer_info));
+              buffer_infos.push_back(descriptor_buffer_info);
 
               vk::WriteDescriptorSet write_descriptor_set{
                   *(draw_element
@@ -741,7 +741,7 @@ void Subpass::CreatePipelineResources(
                   nullptr,
                   buffer_infos.back()};
 
-              draw_element.uniforms.push_back(std::move(draw_element_uniform));
+              draw_element.uniforms.push_back(draw_element_uniform);
               draw_element.uniform_buffers.push_back(
                   std::move(draw_element_uniform_buffer));
 
@@ -764,7 +764,7 @@ void Subpass::CreatePipelineResources(
             vk::DescriptorImageInfo descriptor_image_info{
                 *(gpu_->GetSampler()), image_view,
                 vk::ImageLayout::eShaderReadOnlyOptimal};
-            image_infos.push_back(std::move(descriptor_image_info));
+            image_infos.push_back(descriptor_image_info);
 
             vk::WriteDescriptorSet write_descriptor_set{
                 *(draw_element
@@ -837,7 +837,7 @@ void Subpass::CreatePipeline(
     vk::PipelineShaderStageCreateInfo shader_stage_ci{
         {}, spirv_shader->GetStage(), *shader_module, "main", nullptr};
 
-    shader_stage_cis.push_back(std::move(shader_stage_ci));
+    shader_stage_cis.push_back(shader_stage_ci);
   }
 
   vk::PipelineVertexInputStateCreateInfo vertex_input_state_ci;
@@ -864,13 +864,13 @@ void Subpass::CreatePipeline(
       vk::VertexInputBindingDescription vertex_input_binding_description{
           shader_resource.location, vertex_attribute.stride};
       vertex_input_binding_descriptions.push_back(
-          std::move(vertex_input_binding_description));
+          vertex_input_binding_description);
 
       vk::VertexInputAttributeDescription vertex_input_attribute_description{
           shader_resource.location, shader_resource.location,
           vertex_attribute.format, vertex_attribute.offset};
       vertex_input_attribute_descriptions.push_back(
-          std::move(vertex_input_attribute_description));
+          vertex_input_attribute_description);
 
       vertex_location_attributes.emplace(shader_resource.location,
                                          &vertex_attribute);
@@ -880,6 +880,7 @@ void Subpass::CreatePipeline(
     }
 
     std::vector<u32> locations;
+    locations.reserve(vertex_location_attributes.size());
     for (const auto& vertex_location_attribute : vertex_location_attributes) {
       locations.push_back(vertex_location_attribute.first);
     }
@@ -992,7 +993,7 @@ const SPIRV& Subpass::RequestSpirv(const ast::Shader& shader,
   }
 
   std::filesystem::path root_path{GetPath(LUKA_ROOT_PATH)};
-  std::filesystem::path cache_path{root_path / "cache"};
+  std::filesystem::path cache_path{root_path / ".cache" / "engine"};
   std::filesystem::path spirv_cache_file{
       cache_path / ("spirv_" + std::to_string(hash_value) + ".cache")};
 
@@ -1090,7 +1091,7 @@ const vk::raii::Pipeline& Subpass::RequestPipeline(
   vk::PipelineCacheCreateInfo pipeline_cache_ci;
 
   std::filesystem::path root_path{GetPath(LUKA_ROOT_PATH)};
-  std::filesystem::path cache_path{root_path / "cache"};
+  std::filesystem::path cache_path{root_path / ".cache" / "engine"};
   std::filesystem::path pipeline_cache_file{
       cache_path / ("pipeline_" + std::to_string(hash_value) + ".cache")};
   std::vector<u8> pipeline_cache_data;
@@ -1136,6 +1137,4 @@ const vk::raii::Pipeline& Subpass::RequestPipeline(
   return it1.first->second;
 }
 
-}  // namespace gs
-
-}  // namespace luka
+}  // namespace luka::gs
