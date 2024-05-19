@@ -158,47 +158,48 @@ class Subpass {
   std::shared_ptr<Asset> asset_;
   std::shared_ptr<Camera> camera_;
 
-  u32 frame_count_;
+  u32 frame_count_{};
   vk::RenderPass render_pass_;
-  const std::vector<std::vector<vk::raii::ImageView>>* attachment_image_views_;
-  u32 color_attachment_count_;
-  const std::vector<ast::Subpass>* ast_subpasses_;
-  u32 subpass_index_;
+  const std::vector<std::vector<vk::raii::ImageView>>*
+      attachment_image_views_{};
+  u32 color_attachment_count_{};
+  const std::vector<ast::Subpass>* ast_subpasses_{};
+  u32 subpass_index_{};
   std::vector<std::unordered_map<std::string, vk::ImageView>>*
       shared_image_views_;
-  const ast::Subpass* ast_subpass_;
+  const ast::Subpass* ast_subpass_{};
   std::string name_;
-  const std::vector<u32>* scenes_;
-  const std::vector<u32>* lights_;
-  const std::unordered_map<vk::ShaderStageFlagBits, u32>* shaders_;
-  bool has_scene_;
-  bool has_light_;
+  const std::vector<u32>* scenes_{};
+  const std::vector<u32>* lights_{};
+  const std::unordered_map<vk::ShaderStageFlagBits, u32>* shaders_{};
+  bool has_scene_{};
+  bool has_light_{};
   std::vector<SubpassUniform> subpass_uniforms_;
   std::vector<gpu::Buffer> subpass_uniform_buffers_;
 
-  bool need_resize_{false};
+  bool need_resize_{};
 
   std::vector<ast::PunctualLight> punctual_lights_;
 
-  bool has_subpass_descriptor_set_{false};
+  bool has_subpass_descriptor_set_{};
   u32 subpass_descriptor_set_index_{UINT32_MAX};
-  const vk::raii::DescriptorSetLayout* subpass_descriptor_set_layout_{nullptr};
+  const vk::raii::DescriptorSetLayout* subpass_descriptor_set_layout_{};
   vk::raii::DescriptorSets subpass_descriptor_sets_{nullptr};
-  bool subpass_desciptor_set_updated_{false};
+  bool subpass_desciptor_set_updated_{};
 
-  bool has_bindless_descriptor_set_{false};
+  bool has_bindless_descriptor_set_{};
   u32 bindless_descriptor_set_index_{UINT32_MAX};
-  const vk::raii::DescriptorSetLayout* bindless_descriptor_set_layout_{nullptr};
+  const vk::raii::DescriptorSetLayout* bindless_descriptor_set_layout_{};
   vk::raii::DescriptorSet bindless_descriptor_set_{nullptr};
   std::vector<std::string> wanted_textures_{
       "base_color_texture", "metallic_roughness_texture", "normal_texture",
       "occlusion_texture", "emissive_texture"};
-  u32 bindless_sampler_index_{0};
-  u32 bindless_image_index_{0};
+  u32 bindless_sampler_index_{};
+  u32 bindless_image_index_{};
 
   u32 draw_element_descriptor_set_index_{UINT32_MAX};
 
-  bool has_push_constant_{false};
+  bool has_push_constant_{};
 
   std::unordered_map<u64, SPIRV> spirv_shaders_;
   std::unordered_map<u64, vk::raii::DescriptorSetLayout>

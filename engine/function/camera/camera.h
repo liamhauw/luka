@@ -33,9 +33,9 @@ class Camera {
   glm::vec3 look_{0.0F, 0.0F, -1.0F};
   glm::vec3 right_{1.0F, 0.0F, 0.0F};
 
-  bool view_matrix_dirty_{false};
-  glm::mat4 view_matirx_;
-  glm::mat4 projection_matirx_;
+  bool view_matrix_dirty_{};
+  glm::mat4 view_matirx_{};
+  glm::mat4 projection_matirx_{};
 
   glm::quat rotation_{glm::identity<glm::quat>()};
 };

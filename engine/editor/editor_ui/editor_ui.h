@@ -31,11 +31,11 @@ class EditorUi {
   std::shared_ptr<Window> window_;
   std::shared_ptr<Time> time_;
 
-  u32 count_ = 0;
-  f64 delta_time_sum_ = 0.0;
+  u32 count_{};
+  f64 delta_time_sum_{};
 
-  f64 delta_time_ = 0.0;
-  u64 fps_ = 0;
+  f64 delta_time_{};
+  u64 fps_{};
 };
 
 }  // namespace luka

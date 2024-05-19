@@ -46,16 +46,16 @@ class Pass {
   std::shared_ptr<Camera> camera_;
   std::shared_ptr<FunctionUi> function_ui_;
 
-  u32 frame_count_;
-  SwapchainInfo swapchain_info_;
+  u32 frame_count_{};
+  SwapchainInfo swapchain_info_{};
   std::vector<vk::Image> swapchain_images_;
-  const std::vector<ast::Pass>* ast_passes_;
-  u32 pass_index_;
+  const std::vector<ast::Pass>* ast_passes_{};
+  u32 pass_index_{};
   std::vector<std::unordered_map<std::string, vk::ImageView>>*
       shared_image_views_;
-  const ast::Pass* ast_pass_;
+  const ast::Pass* ast_pass_{};
   std::string name_;
-  bool has_ui_;
+  bool has_ui_{};
 
   std::vector<u32> color_attachment_counts_;
   vk::raii::RenderPass render_pass_{nullptr};

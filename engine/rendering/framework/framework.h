@@ -54,9 +54,9 @@ class Framework {
   std::shared_ptr<FunctionUi> function_ui_;
 
   const SwapchainInfo* swapchain_info_{};
-  const vk::raii::SwapchainKHR* swapchain_{nullptr};
+  const vk::raii::SwapchainKHR* swapchain_{};
   std::vector<vk::Image> swapchain_images_;
-  u32 frame_count_{0};
+  u32 frame_count_{};
 
   std::vector<vk::raii::Semaphore> image_acquired_semaphores_;
   std::vector<vk::raii::Semaphore> render_finished_semaphores_;
@@ -72,8 +72,8 @@ class Framework {
       shared_image_views_;
   std::vector<fw::Pass> passes_;
 
-  u32 image_acquired_semaphore_index_{0};
-  u32 frame_index_{0};
+  u32 image_acquired_semaphore_index_{};
+  u32 frame_index_{};
 };
 
 }  // namespace luka

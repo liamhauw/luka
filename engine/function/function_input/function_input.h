@@ -37,7 +37,7 @@ class FunctionInput {
   std::shared_ptr<Window> window_;
 
   u32 control_command_{0xFFFFFFFF};
-  u32 function_command_{0};
+  u32 function_command_{};
 };
 
 }  // namespace luka

@@ -40,10 +40,10 @@ class EditorInput {
   std::shared_ptr<Time> time_;
   std::shared_ptr<Camera> camera_;
 
-  f32 prev_xpos_{0};
-  f32 prev_ypos_{0};
+  f32 prev_xpos_{};
+  f32 prev_ypos_{};
 
-  u32 editor_command_{0};
+  u32 editor_command_{};
 };
 
 }  // namespace luka

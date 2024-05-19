@@ -55,7 +55,7 @@ class FunctionUi {
   std::shared_ptr<Window> window_;
   std::shared_ptr<Gpu> gpu_;
 
-  SwapchainInfo swapchain_info_;
+  SwapchainInfo swapchain_info_{};
   vk::raii::SwapchainKHR swapchain_{nullptr};
 
   vk::raii::RenderPass ui_render_pass_{nullptr};
