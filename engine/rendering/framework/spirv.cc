@@ -50,7 +50,7 @@ void SPIRV::ParseShaderResource(const spirv_cross::CompilerGLSL& compiler) {
   // Samplers.
   const auto& samplers{resources.separate_samplers};
   for (const auto& sampler : samplers) {
-    ShaderResource shader_resource;
+    ShaderResource shader_resource{};
     shader_resource.name = sampler.name;
     shader_resource.type = ShaderResourceType::kSampler;
     shader_resource.stage = stage_;
@@ -64,7 +64,7 @@ void SPIRV::ParseShaderResource(const spirv_cross::CompilerGLSL& compiler) {
   // Combined image samplers.
   const auto& combined_image_samplers{resources.sampled_images};
   for (const auto& combined_image_sampler : combined_image_samplers) {
-    ShaderResource shader_resource;
+    ShaderResource shader_resource{};
     shader_resource.name = combined_image_sampler.name;
     shader_resource.type = ShaderResourceType::kCombinedImageSampler;
     shader_resource.stage = stage_;
@@ -79,7 +79,7 @@ void SPIRV::ParseShaderResource(const spirv_cross::CompilerGLSL& compiler) {
   // Sampled images.
   const auto& sampled_images{resources.separate_images};
   for (const auto& sampled_image : sampled_images) {
-    ShaderResource shader_resource;
+    ShaderResource shader_resource{};
     shader_resource.name = sampled_image.name;
     shader_resource.type = ShaderResourceType::kSampledImage;
     shader_resource.stage = stage_;
@@ -93,7 +93,7 @@ void SPIRV::ParseShaderResource(const spirv_cross::CompilerGLSL& compiler) {
   // Uniform buffers.
   const auto& uniform_buffers{resources.uniform_buffers};
   for (const auto& uniform_buffer : uniform_buffers) {
-    ShaderResource shader_resource;
+    ShaderResource shader_resource{};
     shader_resource.name = uniform_buffer.name;
     shader_resource.type = ShaderResourceType::kUniformBuffer;
     shader_resource.stage = stage_;
@@ -108,7 +108,7 @@ void SPIRV::ParseShaderResource(const spirv_cross::CompilerGLSL& compiler) {
   // Input attachments.
   const auto& input_attachments{resources.subpass_inputs};
   for (const auto& input_attachment : input_attachments) {
-    ShaderResource shader_resource;
+    ShaderResource shader_resource{};
     shader_resource.name = input_attachment.name;
     shader_resource.type = ShaderResourceType::kInputAttachment;
     shader_resource.stage = stage_;
@@ -123,7 +123,7 @@ void SPIRV::ParseShaderResource(const spirv_cross::CompilerGLSL& compiler) {
   // Push constant buffers.
   const auto& push_constant_buffers{resources.push_constant_buffers};
   for (const auto& push_constant_buffer : push_constant_buffers) {
-    ShaderResource shader_resource;
+    ShaderResource shader_resource{};
     shader_resource.name = push_constant_buffer.name;
     shader_resource.type = ShaderResourceType::kPushConstantBuffer;
     shader_resource.stage = stage_;
@@ -137,7 +137,7 @@ void SPIRV::ParseShaderResource(const spirv_cross::CompilerGLSL& compiler) {
   // Stage inputs.
   const auto& stage_inputs{resources.stage_inputs};
   for (const auto& stage_input : stage_inputs) {
-    ShaderResource shader_resource;
+    ShaderResource shader_resource{};
     shader_resource.name = stage_input.name;
     shader_resource.type = ShaderResourceType::kStageInput;
     shader_resource.stage = stage_;
@@ -150,7 +150,7 @@ void SPIRV::ParseShaderResource(const spirv_cross::CompilerGLSL& compiler) {
 void SPIRV::ParseSpecialization(const spirv_cross::CompilerGLSL& compiler) {
   const auto& specialization_constants{compiler.get_specialization_constants()};
   for (const auto& specialization_constant : specialization_constants) {
-    SpecializationConstant sc;
+    SpecializationConstant sc{};
     sc.name = compiler.get_name(specialization_constant.id);
     sc.constant_id = specialization_constant.constant_id;
 

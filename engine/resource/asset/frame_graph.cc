@@ -21,7 +21,7 @@ FrameGraph::FrameGraph(const std::filesystem::path& frame_graph_path) {
   if (json_.contains("passes")) {
     const json& passes_json{json_["passes"]};
     for (const auto& pass_json : passes_json) {
-      ast::Pass pass;
+      ast::Pass pass{};
       // Pass name.
       if (pass_json.contains("name")) {
         pass.name = pass_json["name"].template get<std::string>();
@@ -62,7 +62,7 @@ FrameGraph::FrameGraph(const std::filesystem::path& frame_graph_path) {
           if (attachment_json.contains("output")) {
             output = attachment_json["output"].template get<bool>();
           }
-          pass.attachments.push_back(ast::Attachment{name, format, output});
+          pass.attachments.emplace_back(name, format, output);
         }
       }
 
@@ -70,7 +70,7 @@ FrameGraph::FrameGraph(const std::filesystem::path& frame_graph_path) {
       if (pass_json.contains("subpasses")) {
         const json& subpasses_json{pass_json["subpasses"]};
         for (const json& subpass_json : subpasses_json) {
-          ast::Subpass subpass;
+          ast::Subpass subpass{};
 
           if (subpass_json.contains("name")) {
             subpass.name = subpass_json["name"].template get<std::string>();
