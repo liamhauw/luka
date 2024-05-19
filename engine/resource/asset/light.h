@@ -32,7 +32,6 @@ struct PunctualLight {
 class Light {
  public:
   Light() = default;
-
   explicit Light(const std::filesystem::path& light_path);
 
   const std::vector<PunctualLight>& GetPunctualLights() const;

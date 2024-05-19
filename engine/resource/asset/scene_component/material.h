@@ -19,18 +19,17 @@ enum class AlphaMode { kOpaque, kMask, kBlend };
 
 class Material : public Component {
  public:
+  DELETE_SPECIAL_MEMBER_FUNCTIONS(Material)
+
   Material(std::map<std::string, Texture*>&& textures,
            glm::vec4&& base_color_factor, f32 metallic_factor,
            f32 roughness_factor, f32 scale, f32 strength,
            glm::vec3&& emissive_factor, AlphaMode alpha_mode, f32 alpha_cutoff,
            bool double_sided, const std::string& name = {});
-
   Material(const std::vector<Texture*>& texture_components,
            const tinygltf::Material& tinygltf_material);
 
   ~Material() override = default;
-
-  DELETE_SPECIAL_MEMBER_FUNCTIONS(Material)
 
   std::type_index GetType() override;
 

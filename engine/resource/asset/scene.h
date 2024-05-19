@@ -29,17 +29,16 @@ namespace luka::ast {
 class Scene {
  public:
   Scene() = default;
-  ~Scene() = default;
-
+  Scene(const Scene&) = delete;
+  Scene(Scene&& rhs) noexcept;
   Scene(std::shared_ptr<Gpu> gpu, const std::filesystem::path& cfg_scene_path,
         const vk::raii::CommandBuffer& command_buffer,
         std::vector<gpu::Buffer>& staging_buffers);
 
-  Scene(Scene&& rhs) noexcept;
-  Scene& operator=(Scene&& rhs) noexcept;
+  ~Scene() = default;
 
-  Scene(const Scene&) = delete;
   Scene& operator=(const Scene&) = delete;
+  Scene& operator=(Scene&& rhs) noexcept;
 
   template <typename T>
   void AddComponent(std::unique_ptr<T>&& component) {

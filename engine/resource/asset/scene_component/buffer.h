@@ -16,13 +16,12 @@ namespace luka::ast::sc {
 
 class Buffer : public Component {
  public:
-  explicit Buffer(const std::vector<u8>* data, const std::string& name = {});
+  DELETE_SPECIAL_MEMBER_FUNCTIONS(Buffer)
 
+  explicit Buffer(const std::vector<u8>* data, const std::string& name = {});
   explicit Buffer(const tinygltf::Buffer& tinygltf_buffer);
 
   ~Buffer() override = default;
-
-  DELETE_SPECIAL_MEMBER_FUNCTIONS(Buffer)
 
   std::type_index GetType() override;
 

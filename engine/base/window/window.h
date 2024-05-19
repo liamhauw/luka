@@ -38,10 +38,11 @@ class Window {
   using OnScrollFunc = std::function<void(f64, f64)>;
   using OnDropFunc = std::function<void(i32, const char**)>;
 
-  explicit Window(const WindowInfo& window_info = {});
-  ~Window();
-
   DELETE_SPECIAL_MEMBER_FUNCTIONS(Window);
+
+  explicit Window(const WindowInfo& window_info = {});
+
+  ~Window();
 
   static void Tick();
 

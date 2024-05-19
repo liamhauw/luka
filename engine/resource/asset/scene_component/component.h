@@ -13,9 +13,11 @@ namespace luka::ast::sc {
 
 class Component {
  public:
-  explicit Component(std::string name = {});
-  virtual ~Component() = default;
   DELETE_SPECIAL_MEMBER_FUNCTIONS(Component);
+
+  explicit Component(std::string name = {});
+
+  virtual ~Component() = default;
 
   virtual std::type_index GetType() = 0;
   const std::string& GetName() const;

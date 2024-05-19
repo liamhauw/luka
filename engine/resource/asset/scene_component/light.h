@@ -20,15 +20,14 @@ enum class LightType { kNone = -1, kDirectional, kPoint, kSpot, kCount };
 
 class Light : public Component {
  public:
+  DELETE_SPECIAL_MEMBER_FUNCTIONS(Light)
+
   Light(LightType type, glm::vec3 direction, glm::vec3 color, f32 intensity,
         f32 range, f32 inner_cone_angle, f32 outer_cone_angle,
         const std::string& name = {});
-
   explicit Light(const tinygltf::Value& tinygltf_light);
 
   ~Light() override = default;
-
-  DELETE_SPECIAL_MEMBER_FUNCTIONS(Light)
 
   std::type_index GetType() override;
 

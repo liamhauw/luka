@@ -45,10 +45,8 @@ struct SpecializationConstant {
 class SPIRV {
  public:
   SPIRV() = default;
-
   SPIRV(const ast::Shader& shader, const std::vector<std::string>& processes,
         vk::ShaderStageFlagBits stage, u64 hash_value);
-
   SPIRV(const std::vector<u32>& spirv, vk::ShaderStageFlagBits stage,
         u64 hash_value);
 

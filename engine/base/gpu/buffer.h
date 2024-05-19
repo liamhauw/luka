@@ -14,10 +14,10 @@ namespace luka::gpu {
 class Buffer {
  public:
   Buffer() = default;
-  Buffer(const VmaAllocator& allocator, const vk::BufferCreateInfo& buffer_ci,
-         bool staging = false);
   Buffer(const Buffer&) = delete;
   Buffer(Buffer&& rhs) noexcept;
+  Buffer(const VmaAllocator& allocator, const vk::BufferCreateInfo& buffer_ci,
+         bool staging = false);
 
   ~Buffer();
 

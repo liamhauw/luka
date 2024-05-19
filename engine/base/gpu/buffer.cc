@@ -11,6 +11,12 @@
 
 namespace luka::gpu {
 
+Buffer::Buffer(Buffer&& rhs) noexcept
+    : allocator_{std::exchange(rhs.allocator_, {})},
+      buffer_{std::exchange(rhs.buffer_, {})},
+      allocation_{std::exchange(rhs.allocation_, {})},
+      mapped_data_{std::exchange(rhs.mapped_data_, nullptr)} {}
+
 Buffer::Buffer(const VmaAllocator& allocator,
                const vk::BufferCreateInfo& buffer_ci, bool staging)
     : allocator_{allocator} {
@@ -25,12 +31,6 @@ Buffer::Buffer(const VmaAllocator& allocator,
                   &allocation_, nullptr);
   buffer_ = buffer;
 }
-
-Buffer::Buffer(Buffer&& rhs) noexcept
-    : allocator_{std::exchange(rhs.allocator_, {})},
-      buffer_{std::exchange(rhs.buffer_, {})},
-      allocation_{std::exchange(rhs.allocation_, {})},
-      mapped_data_{std::exchange(rhs.mapped_data_, nullptr)} {}
 
 Buffer::~Buffer() {
   Unmap();

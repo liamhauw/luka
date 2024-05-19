@@ -17,14 +17,13 @@ namespace luka::ast::sc {
 
 class Scene : public Component {
  public:
-  explicit Scene(std::vector<Node*>&& nodes, const std::string& name = {});
+  DELETE_SPECIAL_MEMBER_FUNCTIONS(Scene)
 
+  explicit Scene(std::vector<Node*>&& nodes, const std::string& name = {});
   Scene(const std::vector<Node*>& node_components,
         const tinygltf::Scene& tinygltf_scene);
 
   ~Scene() override = default;
-
-  DELETE_SPECIAL_MEMBER_FUNCTIONS(Scene)
 
   std::type_index GetType() override;
 

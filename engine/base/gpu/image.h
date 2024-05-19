@@ -13,10 +13,10 @@ namespace luka::gpu {
 class Image {
  public:
   Image() = default;
-  Image(const VmaAllocator& allocator, const vk::ImageCreateInfo& image_ci);
-  explicit Image(vk::Image image);
   Image(const Image&) = delete;
   Image(Image&& rhs) noexcept;
+  Image(const VmaAllocator& allocator, const vk::ImageCreateInfo& image_ci);
+  explicit Image(vk::Image image);
 
   ~Image();
 

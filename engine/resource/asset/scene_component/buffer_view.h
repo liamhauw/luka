@@ -17,15 +17,14 @@ namespace luka::ast::sc {
 
 class BufferView : public Component {
  public:
+  DELETE_SPECIAL_MEMBER_FUNCTIONS(BufferView)
+
   BufferView(const Buffer* buffer, u64 byte_offset, u64 byte_length,
              u64 byte_stride, const std::string& name = {});
-
   BufferView(const std::vector<ast::sc::Buffer*>& buffer_components,
              const tinygltf::BufferView& tinygltf_buffer_view);
 
   ~BufferView() override = default;
-
-  DELETE_SPECIAL_MEMBER_FUNCTIONS(BufferView)
 
   std::type_index GetType() override;
 

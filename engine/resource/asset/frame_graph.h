@@ -37,7 +37,6 @@ struct Pass {
 class FrameGraph {
  public:
   FrameGraph() = default;
-
   explicit FrameGraph(const std::filesystem::path& frame_graph_path);
 
   const std::vector<ast::Pass>& GetPasses() const { return passes_; }

@@ -11,6 +11,13 @@
 
 namespace luka::ast {
 
+Scene::Scene(Scene&& rhs) noexcept
+    : gpu_{std::move(rhs.gpu_)},
+      name_{std::exchange(rhs.name_, {})},
+      components_{std::exchange(rhs.components_, {})},
+      supported_extensions_{std::exchange(rhs.supported_extensions_, {})},
+      scene_{rhs.scene_} {}
+
 Scene::Scene(std::shared_ptr<Gpu> gpu,
              const std::filesystem::path& cfg_scene_path,
              const vk::raii::CommandBuffer& command_buffer,
@@ -51,13 +58,6 @@ Scene::Scene(std::shared_ptr<Gpu> gpu,
   ParseSceneComponents(tinygltf.scenes);
   ParseDefaultScene(tinygltf.defaultScene);
 }
-
-Scene::Scene(Scene&& rhs) noexcept
-    : gpu_{std::move(rhs.gpu_)},
-      name_{std::exchange(rhs.name_, {})},
-      components_{std::exchange(rhs.components_, {})},
-      supported_extensions_{std::exchange(rhs.supported_extensions_, {})},
-      scene_{rhs.scene_} {}
 
 Scene& Scene::operator=(Scene&& rhs) noexcept {
   if (this != &rhs) {

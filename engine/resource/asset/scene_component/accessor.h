@@ -18,16 +18,15 @@ namespace luka::ast::sc {
 
 class Accessor : public Component {
  public:
+  DELETE_SPECIAL_MEMBER_FUNCTIONS(Accessor)
+
   Accessor(const BufferView* buffer_view, u64 byte_offset, bool normalized,
            u32 component_type, u64 count, u32 type,
            const std::string& name = {});
-
   Accessor(const std::vector<BufferView*>& buffer_view_components,
            const tinygltf::Accessor& tinygltf_accessor);
 
   ~Accessor() override = default;
-
-  DELETE_SPECIAL_MEMBER_FUNCTIONS(Accessor)
 
   std::type_index GetType() override;
 

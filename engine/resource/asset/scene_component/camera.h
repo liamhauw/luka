@@ -19,13 +19,13 @@ enum class CameraType { kNone = -1, kPerspective, kCount };
 
 class Camera : public Component {
  public:
+  DELETE_SPECIAL_MEMBER_FUNCTIONS(Camera)
+
   Camera(CameraType type, f32 aspect_ratio, f32 yfov, f32 znear, f32 zfar,
          const std::string& name = {});
   explicit Camera(const tinygltf::Camera& tinygltf_camera);
 
   ~Camera() override = default;
-
-  DELETE_SPECIAL_MEMBER_FUNCTIONS(Camera)
 
   std::type_index GetType() override;
 

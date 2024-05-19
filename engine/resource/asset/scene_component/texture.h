@@ -16,16 +16,15 @@ namespace luka::ast::sc {
 
 class Texture : public Component {
  public:
+  DELETE_SPECIAL_MEMBER_FUNCTIONS(Texture)
+
   Texture(const Image* image, const Sampler* sampler,
           const std::string& name = {});
-
   Texture(const std::vector<Image*>& image_components,
           const std::vector<Sampler*>& sampler_components,
           const tinygltf::Texture& tinygltf_texture);
 
   ~Texture() override = default;
-
-  DELETE_SPECIAL_MEMBER_FUNCTIONS(Texture)
 
   std::type_index GetType() override;
 

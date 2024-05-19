@@ -14,7 +14,6 @@ namespace luka::ast {
 class Shader {
  public:
   Shader() = default;
-
   explicit Shader(const std::filesystem::path& cfg_shader_path);
 
   u64 GetHashValue(const std::vector<std::string>& processes) const;

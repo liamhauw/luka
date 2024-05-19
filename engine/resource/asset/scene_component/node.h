@@ -19,18 +19,17 @@ namespace luka::ast::sc {
 
 class Node : public Component {
  public:
+  DELETE_SPECIAL_MEMBER_FUNCTIONS(Node)
+
   Node(glm::mat4&& tinygltf_matrix, const Mesh* mesh, const Light* light,
        const Camera* camera, const std::vector<i32>& child_indices,
        const std::string& name = {});
-
   Node(const std::vector<Light*>& light_components,
        const std::vector<Camera*>& camera_components,
        const std::vector<Mesh*>& mesh_components,
        const tinygltf::Node& tinygltf_node);
 
   ~Node() override = default;
-
-  DELETE_SPECIAL_MEMBER_FUNCTIONS(Node)
 
   std::type_index GetType() override;
 

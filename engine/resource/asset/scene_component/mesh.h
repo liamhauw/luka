@@ -37,9 +37,11 @@ struct IndexAttribute {
 struct Primitive {
  public:
   Primitive() = default;
-  ~Primitive() = default;
   Primitive(const Primitive&) = delete;
   Primitive(Primitive&& rhs) noexcept = default;
+
+  ~Primitive() = default;
+
   Primitive& operator=(const Primitive&) = delete;
   Primitive& operator=(Primitive&& rhs) = default;
 
@@ -51,9 +53,10 @@ struct Primitive {
 
 class Mesh : public Component {
  public:
+  DELETE_SPECIAL_MEMBER_FUNCTIONS(Mesh)
+
   explicit Mesh(std::vector<Primitive>&& primitives,
                 const std::string& name = {});
-
   Mesh(const std::shared_ptr<Gpu>& gpu,
        const std::vector<Material*>& material_components,
        const std::vector<Accessor*>& accessor_components,
@@ -63,7 +66,6 @@ class Mesh : public Component {
 
   ~Mesh() override = default;
 
-  DELETE_SPECIAL_MEMBER_FUNCTIONS(Mesh)
   std::type_index GetType() override;
 
   const std::vector<Primitive>& GetPrimitives() const;

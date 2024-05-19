@@ -17,14 +17,13 @@ namespace luka::ast::sc {
 
 class Sampler : public Component {
  public:
-  explicit Sampler(vk::raii::Sampler&& sampler, const std::string& name = {});
+  DELETE_SPECIAL_MEMBER_FUNCTIONS(Sampler)
 
+  explicit Sampler(vk::raii::Sampler&& sampler, const std::string& name = {});
   Sampler(const std::shared_ptr<Gpu>& gpu,
           const tinygltf::Sampler& tinygltf_sampler);
 
   ~Sampler() override = default;
-
-  DELETE_SPECIAL_MEMBER_FUNCTIONS(Sampler)
 
   std::type_index GetType() override;
 

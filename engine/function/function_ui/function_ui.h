@@ -27,10 +27,11 @@ struct SwapchainInfo {
 
 class FunctionUi {
  public:
-  FunctionUi(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu);
-  ~FunctionUi();
-
   DELETE_SPECIAL_MEMBER_FUNCTIONS(FunctionUi)
+
+  FunctionUi(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu);
+
+  ~FunctionUi();
 
   void Tick();
 

@@ -10,6 +10,12 @@
 #include "core/log.h"
 
 namespace luka::gpu {
+
+Image::Image(Image&& rhs) noexcept
+    : allocator_{std::exchange(rhs.allocator_, {})},
+      image_{std::exchange(rhs.image_, {})},
+      allocation_{std::exchange(rhs.allocation_, {})} {}
+
 Image::Image(const VmaAllocator& allocator, const vk::ImageCreateInfo& image_ci)
     : allocator_{allocator} {
   VkImageCreateInfo vk_image_ci{static_cast<VkImageCreateInfo>(image_ci)};
@@ -21,11 +27,6 @@ Image::Image(const VmaAllocator& allocator, const vk::ImageCreateInfo& image_ci)
 }
 
 Image::Image(vk::Image image) : image_{image} {}
-
-Image::Image(Image&& rhs) noexcept
-    : allocator_{std::exchange(rhs.allocator_, {})},
-      image_{std::exchange(rhs.image_, {})},
-      allocation_{std::exchange(rhs.allocation_, {})} {}
 
 Image::~Image() { Clear(); }
 

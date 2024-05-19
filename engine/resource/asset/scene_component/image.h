@@ -17,16 +17,15 @@ namespace luka::ast::sc {
 
 class Image : public Component {
  public:
+  DELETE_SPECIAL_MEMBER_FUNCTIONS(Image)
+
   Image(gpu::Image&& image, vk::raii::ImageView&& image_view,
         const std::string& name = {});
-
   Image(const std::shared_ptr<Gpu>&, const tinygltf::Image& tinygltf_image,
         const vk::raii::CommandBuffer& command_buffer,
         std::vector<gpu::Buffer>& staging_buffers);
 
   ~Image() override = default;
-
-  DELETE_SPECIAL_MEMBER_FUNCTIONS(Image)
 
   std::type_index GetType() override;
 

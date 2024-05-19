@@ -20,14 +20,14 @@ namespace luka {
 
 class Framework {
  public:
+  DELETE_SPECIAL_MEMBER_FUNCTIONS(Framework)
+
   Framework(std::shared_ptr<Config> config, std::shared_ptr<Window> window,
             std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
             std::shared_ptr<Camera> camera,
             std::shared_ptr<FunctionUi> function_ui);
 
   ~Framework();
-
-  DELETE_SPECIAL_MEMBER_FUNCTIONS(Framework)
 
   void Tick();
 
