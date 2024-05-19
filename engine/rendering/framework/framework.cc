@@ -108,7 +108,6 @@ void Framework::CreatePasses() {
 }
 
 void Framework::Resize() {
-  gpu_->WaitIdle();
   GetSwapchain();
   CreateViewportAndScissor();
   for (auto& pass : passes_) {

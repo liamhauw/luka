@@ -17,10 +17,7 @@ FunctionUi::FunctionUi(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu)
   CreateImgui();
 }
 
-FunctionUi::~FunctionUi() {
-  gpu_->WaitIdle();
-  DestroyImgui();
-}
+FunctionUi::~FunctionUi() { DestroyImgui(); }
 
 void FunctionUi::Tick() {
   if (window_->GetIconified()) {
