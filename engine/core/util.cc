@@ -22,7 +22,7 @@ std::filesystem::path GetPath(const std::string& path) {
 }
 
 std::vector<u8> LoadBinaryU8(const std::filesystem::path& binary_path) {
-  std::ifstream binary_file(binary_path.string(), std::ios::binary);
+  std::ifstream binary_file{binary_path.string(), std::ios::binary};
   if (!binary_file) {
     THROW("Fail to open {}", binary_path.string());
   }
@@ -44,7 +44,7 @@ std::vector<u8> LoadBinaryU8(const std::filesystem::path& binary_path) {
 }
 
 std::vector<u32> LoadBinaryU32(const std::filesystem::path& binary_path) {
-  std::ifstream binary_file(binary_path.string(), std::ios::binary);
+  std::ifstream binary_file{binary_path.string(), std::ios::binary};
   if (!binary_file) {
     THROW("Fail to open {}", binary_path.string());
   }
@@ -67,7 +67,7 @@ std::vector<u32> LoadBinaryU32(const std::filesystem::path& binary_path) {
 
 void SaveBinaryU8(const std::vector<u8>& binary_data,
                   const std::filesystem::path& binary_path) {
-  std::ofstream binary_file(binary_path.string(), std::ios::binary);
+  std::ofstream binary_file{binary_path.string(), std::ios::binary};
   if (!binary_file) {
     THROW("Fail to open {}", binary_path.string());
   }
@@ -79,7 +79,7 @@ void SaveBinaryU8(const std::vector<u8>& binary_data,
 
 void SaveBinaryU32(const std::vector<u32>& binary_data,
                    const std::filesystem::path& binary_path) {
-  std::ofstream binary_file(binary_path.string(), std::ios::binary);
+  std::ofstream binary_file{binary_path.string(), std::ios::binary};
   if (!binary_file) {
     THROW("Fail to open {}", binary_path.string());
   }
@@ -92,7 +92,7 @@ void SaveBinaryU32(const std::vector<u32>& binary_data,
 std::string LoadText(const std::filesystem::path& text_path) {
   std::string text_data;
 
-  std::ifstream text_file(text_path.string(), std::ios::in);
+  std::ifstream text_file{text_path.string(), std::ios::in};
 
   if (!text_file) {
     THROW("Fail to open {}", text_path.string());
@@ -105,7 +105,7 @@ std::string LoadText(const std::filesystem::path& text_path) {
 }
 
 std::vector<f32> D2FVector(const std::vector<f64>& dvector) {
-  std::vector<f32> fvector(dvector.begin(), dvector.end());
+  std::vector<f32> fvector{dvector.begin(), dvector.end()};
   return fvector;
 }
 
