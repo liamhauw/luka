@@ -16,7 +16,7 @@
 
 namespace luka::ast::sc {
 
-enum class LightType { kNone = -1, kDirectional, kPoint, kSpot, kCount };
+enum class LightType { kNone, kDirectional, kPoint, kSpot, kCount };
 
 class Light : public Component {
  public:
@@ -32,7 +32,7 @@ class Light : public Component {
   std::type_index GetType() override;
 
  private:
-  LightType type_{};
+  LightType type_{LightType::kNone};
   glm::vec3 direction_{};
   glm::vec3 color_{};
   f32 intensity_{};

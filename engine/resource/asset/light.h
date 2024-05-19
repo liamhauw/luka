@@ -12,7 +12,7 @@
 
 namespace luka::ast {
 
-enum class PunctualLightType : u32 { kDirectional = 0, kPoint, kSpot };
+enum class PunctualLightType { kNone, kDirectional, kPoint, kSpot };
 
 struct PunctualLight {
   glm::vec3 position;

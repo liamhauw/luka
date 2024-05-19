@@ -31,10 +31,10 @@ class Buffer {
   void Unmap();
 
  private:
-  VmaAllocator allocator_{nullptr};
+  VmaAllocator allocator_{};
   vk::Buffer buffer_{nullptr};
-  VmaAllocation allocation_{nullptr};
-  void* mapped_data_{nullptr};
+  VmaAllocation allocation_{};
+  void* mapped_data_{};
 };
 
 }  // namespace luka::gpu

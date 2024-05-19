@@ -33,7 +33,7 @@ class Image : public Component {
   const vk::raii::ImageView& GetImageView() const;
 
  private:
-  gpu::Image image_;
+  gpu::Image image_{nullptr};
   vk::raii::ImageView image_view_{nullptr};
 };
 

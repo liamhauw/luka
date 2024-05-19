@@ -199,7 +199,7 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
                                        const glm::mat4& inverse_model_matrix,
                                        const ast::sc::Primitive& primitive,
                                        u32 primitive_index) {
-  DrawElement draw_element;
+  DrawElement draw_element{};
   draw_element.has_scene = has_scene_;
 
   // Parse shader resources.

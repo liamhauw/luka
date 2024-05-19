@@ -161,7 +161,7 @@ class Gpu {
   vk::raii::PhysicalDevice physical_device_{nullptr};
 
   vk::SampleCountFlagBits sample_count_{vk::SampleCountFlagBits::e1};
-  f32 max_anisotropy_{0.0F};
+  f32 max_anisotropy_{};
   std::optional<u32> graphics_queue_index_;
   std::optional<u32> compute_queue_index_;
   std::optional<u32> transfer_queue_index_;

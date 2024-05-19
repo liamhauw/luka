@@ -34,10 +34,10 @@ class BufferView : public Component {
   u64 GetByteStride() const;
 
  private:
-  const Buffer* buffer_;
-  u64 byte_offset_;
-  u64 byte_length_;
-  u64 byte_stride_;
+  const Buffer* buffer_{};
+  u64 byte_offset_{};
+  u64 byte_length_{};
+  u64 byte_stride_{};
 };
 
 }  // namespace luka::ast::sc

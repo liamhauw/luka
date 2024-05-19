@@ -32,8 +32,8 @@ class Texture : public Component {
   const Sampler* GetSampler() const;
 
  private:
-  const Image* image_;
-  const Sampler* sampler_;
+  const Image* image_{};
+  const Sampler* sampler_{};
 };
 
 }  // namespace luka::ast::sc

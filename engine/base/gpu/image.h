@@ -27,9 +27,9 @@ class Image {
   void Clear() noexcept;
 
  private:
-  VmaAllocator allocator_{nullptr};
+  VmaAllocator allocator_{};
   vk::Image image_{nullptr};
-  VmaAllocation allocation_{nullptr};
+  VmaAllocation allocation_{};
 };
 }  // namespace luka::gpu
 

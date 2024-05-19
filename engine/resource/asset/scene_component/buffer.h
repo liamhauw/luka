@@ -28,7 +28,7 @@ class Buffer : public Component {
   const std::vector<u8>* GetData() const;
 
  private:
-  const std::vector<u8>* data_;
+  const std::vector<u8>* data_{};
 };
 
 }  // namespace luka::ast::sc

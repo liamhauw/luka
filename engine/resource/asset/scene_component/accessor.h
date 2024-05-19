@@ -40,12 +40,12 @@ class Accessor : public Component {
   u32 GetByteStride(u32 buffer_view_byte_stride) const;
   vk::Format ParseFormat() const;
 
-  const BufferView* buffer_view_;
-  u64 byte_offset_;
-  bool normalized_;
-  u32 component_type_;
-  u64 count_;
-  u32 type_;
+  const BufferView* buffer_view_{};
+  u64 byte_offset_{};
+  bool normalized_{};
+  u32 component_type_{};
+  u64 count_{};
+  u32 type_{};
 
   u32 buffer_stride_{};
   const u8* buffer_data_{};

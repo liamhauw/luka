@@ -20,21 +20,21 @@ namespace luka::ast::sc {
 
 struct VertexAttribute {
   gpu::Buffer buffer;
-  vk::Format format{vk::Format::eUndefined};
-  u32 stride{0};
-  u32 offset{0};
-  u64 count{0};
-  u32 location{0};
+  vk::Format format;
+  u32 stride;
+  u32 offset;
+  u64 count;
+  u32 location;
 };
 
 struct IndexAttribute {
   gpu::Buffer buffer;
-  vk::IndexType index_type{vk::IndexType::eUint16};
-  u64 offset{0};
-  u64 count{0};
+  vk::IndexType index_type;
+  u64 offset;
+  u64 count;
 };
 
-struct Primitive {
+class Primitive {
  public:
   Primitive() = default;
   Primitive(const Primitive&) = delete;
@@ -47,7 +47,7 @@ struct Primitive {
 
   std::map<std::string, VertexAttribute> vertex_attributes;
   IndexAttribute index_attribute;
-  bool has_index{false};
+  bool has_index{};
   const Material* material{};
 };
 

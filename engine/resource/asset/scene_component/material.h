@@ -15,7 +15,7 @@
 
 namespace luka::ast::sc {
 
-enum class AlphaMode { kOpaque, kMask, kBlend };
+enum class AlphaMode { kNone, kOpaque, kMask, kBlend };
 
 class Material : public Component {
  public:
@@ -48,14 +48,14 @@ class Material : public Component {
   std::map<std::string, Texture*> textures_;
 
   glm::vec4 base_color_factor_{};
-  f32 metallic_factor_;
-  f32 roughness_factor_;
-  f32 normal_scale_;
-  f32 occlusion_strength_;
+  f32 metallic_factor_{};
+  f32 roughness_factor_{};
+  f32 normal_scale_{};
+  f32 occlusion_strength_{};
   glm::vec3 emissive_factor_{};
-  AlphaMode alpha_mode_;
-  f32 alpha_cutoff_;
-  bool double_sided_;
+  AlphaMode alpha_mode_{AlphaMode::kNone};
+  f32 alpha_cutoff_{};
+  bool double_sided_{};
 };
 
 }  // namespace luka::ast::sc

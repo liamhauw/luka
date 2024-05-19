@@ -46,9 +46,9 @@ class Node : public Component {
 
  private:
   glm::mat4 model_matrix_{};
-  const Mesh* mesh_;
-  const Light* light_;
-  const Camera* camera_;
+  const Mesh* mesh_{};
+  const Light* light_{};
+  const Camera* camera_{};
   std::vector<i32> child_indices_;
   std::vector<Node*> children_;
 

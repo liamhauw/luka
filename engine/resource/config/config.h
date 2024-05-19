@@ -42,7 +42,7 @@ class Config {
   std::vector<std::filesystem::path> light_paths_;
   std::vector<std::filesystem::path> shader_paths_;
   std::vector<std::filesystem::path> frame_graph_paths_;
-  u32 frame_graph_index_{0};
+  u32 frame_graph_index_{};
 
   bool editor_mode_{true};
 };

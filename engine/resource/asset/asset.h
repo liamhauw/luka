@@ -45,16 +45,16 @@ class AssetAsync {
   std::shared_ptr<Gpu> gpu_;
   u32 thread_count_;
 
-  const std::vector<std::filesystem::path>* cfg_scene_paths_;
-  const std::vector<std::filesystem::path>* cfg_light_paths_;
-  const std::vector<std::filesystem::path>* cfg_shader_paths_;
-  const std::vector<std::filesystem::path>* cfg_frame_graph_paths_;
+  const std::vector<std::filesystem::path>* cfg_scene_paths_{};
+  const std::vector<std::filesystem::path>* cfg_light_paths_{};
+  const std::vector<std::filesystem::path>* cfg_shader_paths_{};
+  const std::vector<std::filesystem::path>* cfg_frame_graph_paths_{};
 
-  u32 scene_count_;
-  u32 light_count_;
-  u32 shader_count_;
-  u32 frame_graph_count_;
-  u32 asset_count_;
+  u32 scene_count_{};
+  u32 light_count_{};
+  u32 shader_count_{};
+  u32 frame_graph_count_{};
+  u32 asset_count_{};
 
   std::vector<ast::Scene> scenes_;
   std::vector<ast::Light> lights_;
@@ -75,7 +75,7 @@ class AssetAsyncLoadTaskSet : public enki::ITaskSet {
   void ExecuteRange(enki::TaskSetPartition range, uint32_t thread_num) override;
 
  private:
-  AssetAsync* asset_async_{nullptr};
+  AssetAsync* asset_async_{};
 };
 
 class Asset {
@@ -100,7 +100,7 @@ class Asset {
 
   AssetAsync asset_async_;
   AssetAsyncLoadTaskSet asset_async_load_task_set_;
-  bool loaded_{false};
+  bool loaded_{};
 };
 
 }  // namespace luka

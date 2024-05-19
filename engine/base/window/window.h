@@ -15,9 +15,9 @@
 namespace luka {
 
 struct WindowInfo {
-  i32 width{800};
-  i32 height{600};
-  std::string title{"luka"};
+  i32 width;
+  i32 height;
+  std::string title;
 };
 
 class Window {
@@ -40,7 +40,7 @@ class Window {
 
   DELETE_SPECIAL_MEMBER_FUNCTIONS(Window);
 
-  explicit Window(const WindowInfo& window_info = {});
+  explicit Window(const WindowInfo& window_info = {800, 600, "luka"});
 
   ~Window();
 
@@ -132,11 +132,11 @@ class Window {
   void WindowIconify(i32 iconified);
   void FramebufferSize(i32 width, i32 height);
 
-  GLFWwindow* glfw_window_{nullptr};
-  bool window_resized_{false};
-  bool window_iconified_{false};
-  bool framebuffer_resized_{false};
-  bool focus_mode_{false};
+  GLFWwindow* glfw_window_{};
+  bool window_resized_{};
+  bool window_iconified_{};
+  bool framebuffer_resized_{};
+  bool focus_mode_{};
 };
 
 }  // namespace luka

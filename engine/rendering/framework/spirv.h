@@ -26,20 +26,20 @@ enum class ShaderResourceType {
 
 struct ShaderResource {
   std::string name;
-  ShaderResourceType type{ShaderResourceType::kNone};
-  vk::ShaderStageFlags stage{vk::ShaderStageFlagBits::eAll};
-  u32 input_attachment_index{UINT32_MAX};
-  u32 set{UINT32_MAX};
-  u32 binding{UINT32_MAX};
-  u32 array_size{UINT32_MAX};
-  u64 size{UINT64_MAX};
-  u32 offset{UINT32_MAX};
-  u32 location{UINT32_MAX};
+  ShaderResourceType type;
+  vk::ShaderStageFlags stage;
+  u32 input_attachment_index;
+  u32 set;
+  u32 binding;
+  u32 array_size;
+  u64 size;
+  u32 offset;
+  u32 location;
 };
 
 struct SpecializationConstant {
   std::string name;
-  u32 constant_id{UINT32_MAX};
+  u32 constant_id;
 };
 
 class SPIRV {

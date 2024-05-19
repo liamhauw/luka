@@ -15,7 +15,7 @@
 
 namespace luka::ast::sc {
 
-enum class CameraType { kNone = -1, kPerspective, kCount };
+enum class CameraType { kNone, kPerspective, kCount };
 
 class Camera : public Component {
  public:
@@ -30,11 +30,11 @@ class Camera : public Component {
   std::type_index GetType() override;
 
  private:
-  CameraType type_;
-  f32 aspect_ratio_;
-  f32 yfov_;
-  f32 znear_;
-  f32 zfar_;
+  CameraType type_{CameraType::kNone};
+  f32 aspect_ratio_{};
+  f32 yfov_{};
+  f32 znear_{};
+  f32 zfar_{};
 };
 
 }  // namespace luka::ast::sc

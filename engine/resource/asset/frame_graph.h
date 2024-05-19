@@ -11,7 +11,7 @@
 
 namespace luka::ast {
 
-enum class AttachmentType { kInput, kColor, kResolve, kDepthStencil };
+enum class AttachmentType { kNone, kInput, kColor, kResolve, kDepthStencil };
 
 struct Attachment {
   std::string name;

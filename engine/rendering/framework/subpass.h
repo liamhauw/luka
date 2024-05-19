@@ -47,23 +47,23 @@ struct DrawElementUniform {
 };
 
 struct DrawElmentVertexInfo {
-  u32 location{UINT32_MAX};
+  u32 location;
   std::vector<vk::Buffer> buffers;
   std::vector<u64> offsets;
 };
 
 struct DrawElement {
-  bool has_scene{false};
-  bool has_descriptor_set{false};
-  const vk::raii::PipelineLayout* pipeline_layout{nullptr};
+  bool has_scene;
+  bool has_descriptor_set;
+  const vk::raii::PipelineLayout* pipeline_layout;
   std::vector<vk::raii::DescriptorSets> descriptor_sets;
   std::vector<DrawElementUniform> uniforms;
   std::vector<gpu::Buffer> uniform_buffers;
-  u64 vertex_count{UINT64_MAX};
+  u64 vertex_count;
   std::vector<DrawElmentVertexInfo> vertex_infos;
-  bool has_index{false};
-  const ast::sc::IndexAttribute* index_attribute{nullptr};
-  const vk::raii::Pipeline* pipeline{nullptr};
+  bool has_index;
+  const ast::sc::IndexAttribute* index_attribute;
+  const vk::raii::Pipeline* pipeline;
 };
 
 class Subpass {
