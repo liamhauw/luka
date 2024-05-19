@@ -22,7 +22,7 @@ Config::Config() {
     const json& scenes_json{config_json_["scenes"]};
     for (const json& scene_json : scenes_json) {
       std::string uri{scene_json.template get<std::string>()};
-      scene_paths_.emplace_back(scene_path_ / GetPath(uri));
+      scene_paths_.push_back(scene_path_ / GetPath(uri));
     }
   }
 
@@ -30,7 +30,7 @@ Config::Config() {
     const json& lights_json{config_json_["lights"]};
     for (const json& light_json : lights_json) {
       std::string uri{light_json.template get<std::string>()};
-      light_paths_.emplace_back(light_path_ / GetPath(uri));
+      light_paths_.push_back(light_path_ / GetPath(uri));
     }
   }
 
@@ -38,7 +38,7 @@ Config::Config() {
     const json& shaders_json{config_json_["shaders"]};
     for (const json& shader_json : shaders_json) {
       std::string uri{shader_json.template get<std::string>()};
-      shader_paths_.emplace_back(shader_path_ / GetPath(uri));
+      shader_paths_.push_back(shader_path_ / GetPath(uri));
     }
   }
 
@@ -46,7 +46,7 @@ Config::Config() {
     const json& frame_graphs_json{config_json_["frame_graphs"]};
     for (const json& frame_graph_json : frame_graphs_json) {
       std::string uri{frame_graph_json.template get<std::string>()};
-      frame_graph_paths_.emplace_back(frame_graph_path_ / GetPath(uri));
+      frame_graph_paths_.push_back(frame_graph_path_ / GetPath(uri));
     }
   }
 
