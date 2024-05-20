@@ -43,7 +43,7 @@ void main(void) {
               i_texcoord_0);
   base_color = vec4(pow(base_color_texel.rgb, vec3(2.2)), base_color_texel.a);
 #endif
-  if (draw_element_uniform.alpha_model == 1 &&
+  if (draw_element_uniform.alpha_model == MASK_ALPHA &&
       base_color.a < draw_element_uniform.alpha_cutoff) {
     discard;
   }

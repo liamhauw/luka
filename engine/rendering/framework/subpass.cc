@@ -234,7 +234,23 @@ void Subpass::ParseShaderResources(
   // Common.
   shader_processes.emplace_back("DPI 3.14159265359");
 
-  std::string punctual_light_max_count{std::to_string(kPunctualLightMaxCount)};
+  std::string opaque_alpha{
+      std::to_string(static_cast<u32>(ast::sc::AlphaMode::kOpaque))};
+  opaque_alpha = "DOPAQUE_ALPHA " + opaque_alpha;
+  shader_processes.push_back(opaque_alpha);
+
+  std::string mask_alpha{
+      std::to_string(static_cast<u32>(ast::sc::AlphaMode::kMask))};
+  mask_alpha = "DMASK_ALPHA " + mask_alpha;
+  shader_processes.push_back(mask_alpha);
+
+  std::string blend_alpha{
+      std::to_string(static_cast<u32>(ast::sc::AlphaMode::kBlend))};
+  blend_alpha = "DBLEND_ALPHA " + blend_alpha;
+  shader_processes.push_back(blend_alpha);
+
+  std::string punctual_light_max_count{
+      std::to_string(ast::kPunctualLightMaxCount)};
   punctual_light_max_count =
       "DPUNCTUAL_LIGHT_MAX_COUNT " + punctual_light_max_count;
   shader_processes.push_back(punctual_light_max_count);
@@ -295,7 +311,7 @@ void Subpass::ParseShaderResources(
       for (const auto& pl : pls) {
         punctual_lights_.push_back(pl);
       }
-      if (punctual_lights_.size() == kPunctualLightMaxCount) {
+      if (punctual_lights_.size() == ast::kPunctualLightMaxCount) {
         break;
       }
     }

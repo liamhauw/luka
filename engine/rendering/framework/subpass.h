@@ -14,7 +14,6 @@
 
 namespace luka::fw {
 
-constexpr u32 kPunctualLightMaxCount{8};
 constexpr u32 kSamplerInfoMaxCount{10};
 constexpr u32 kImageInfoMaxCount{20};
 constexpr u32 kBufferInfoMaxCount{10};
@@ -25,7 +24,7 @@ struct SubpassUniform {
   glm::mat4 pv;
   glm::mat4 inverse_pv;
   glm::vec4 camera_position;
-  ast::PunctualLight punctual_lights[kPunctualLightMaxCount];
+  ast::PunctualLight punctual_lights[ast::kPunctualLightMaxCount];
 };
 
 struct DrawElementUniform {

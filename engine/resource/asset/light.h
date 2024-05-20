@@ -14,6 +14,8 @@ namespace luka::ast {
 
 enum class PunctualLightType { kNone, kDirectional, kPoint, kSpot };
 
+constexpr u32 kPunctualLightMaxCount{8};
+
 struct PunctualLight {
   glm::vec3 position;
   u32 type;
