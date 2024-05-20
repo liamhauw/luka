@@ -22,14 +22,14 @@ A graphics engine with modular components including platform, core, base, resour
 - Git
 - CMake
 - Ninja
-- LLVM (with MSVC on Windows / Xcode on macOS)
+- LLVM (with Visual Studio on Windows / Xcode on macOS)
 - Vulkan SDK
 
 On Windows if you have [Scoop](https://scoop.sh/) installed, you can easily install some prerequisites using the following command:
 ```shell
 scoop install vscode git cmake ninja llvm vulkan
 ```
-Then you only need to install VSCode extensions and MSVC.
+Then you only need to install VSCode extensions and Visual Studio.
 
 On macOS if you have [Homebrew](https://brew.sh/) installed, you can easily install some prerequisites using the following command:
 ```shell
