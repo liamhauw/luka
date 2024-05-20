@@ -253,8 +253,8 @@ void Subpass::ParseShaderResources(
       }
     }
 
-    bool has_position_buffer{false};
-    bool has_normal_buffer{false};
+    bool has_position_buffer{};
+    bool has_normal_buffer{};
     for (const auto& vertex_buffer_attribute : primitive.vertex_attributes) {
       std::string name{vertex_buffer_attribute.first};
       if (name == "POSITION") {
@@ -1096,7 +1096,7 @@ const vk::raii::Pipeline& Subpass::RequestPipeline(
       cache_path / ("pipeline_" + std::to_string(hash_value) + ".cache")};
   std::vector<u8> pipeline_cache_data;
 
-  bool has_cache{false};
+  bool has_cache{};
   if (std::filesystem::exists(pipeline_cache_file)) {
     pipeline_cache_data = LoadBinaryU8(pipeline_cache_file);
 

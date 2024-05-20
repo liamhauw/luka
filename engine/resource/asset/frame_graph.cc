@@ -58,7 +58,7 @@ FrameGraph::FrameGraph(const std::filesystem::path& frame_graph_path) {
             }
           }
 
-          bool output{false};
+          bool output{};
           if (attachment_json.contains("output")) {
             output = attachment_json["output"].template get<bool>();
           }

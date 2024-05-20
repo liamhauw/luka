@@ -42,7 +42,7 @@ void EditorInput::Tick() {
   f32 move_distance{static_cast<f32>(delta_time * velocity)};
 
   glm::vec3 camera_relative_pos{};
-  bool has_move{false};
+  bool has_move{};
   if (editor_command_ & static_cast<u32>(EditorCommand::kFoward)) {
     camera_relative_pos += glm::vec3{0.0F, 0.0F, -move_distance};
     has_move = true;
