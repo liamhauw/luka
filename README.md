@@ -17,7 +17,6 @@ A graphics engine with modular components including platform, core, base, resour
   - User interface using imgui
 
 ## Prerequisites
-
 - Windows / macOS
 - VSCode (with CMake Language Support, C/C++ and clangd extensions)
 - Git
@@ -39,7 +38,6 @@ brew install vscode git cmake ninja llvm
 Then you only need to install VSCode extensions, Xcode and Vulkan SDK.
 
 ## Use
-
 ```shell
 # Prepare source code
 git clone --recurse-submodules https://github.com/liamhauw/luka.git
@@ -56,7 +54,6 @@ cd bin
 ```
 
 ## Development
-
 ### Debug
 Click Run and Debug in the sidebar, and select Windows/macOS Debug/RelWithDebInfo. Click Start Debugging or press F5.
 
