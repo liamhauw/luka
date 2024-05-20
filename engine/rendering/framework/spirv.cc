@@ -190,7 +190,7 @@ u32 SPIRV::ParseOffset(const spirv_cross::CompilerGLSL& compiler,
                        const spirv_cross::Resource& resource) {
   const auto& spirv_type{compiler.get_type_from_variable(resource.id)};
   u32 offset{std::numeric_limits<std::uint32_t>::max()};
-  for (u32 i{0}; i < spirv_type.member_types.size(); ++i) {
+  for (u32 i{}; i < spirv_type.member_types.size(); ++i) {
     u32 mem_offset{compiler.get_member_decoration(spirv_type.self, i,
                                                   spv::DecorationOffset)};
     offset = std::min(offset, mem_offset);

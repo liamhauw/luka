@@ -36,7 +36,7 @@ Image::Image(const std::shared_ptr<Gpu>& gpu,
   // Image.
   vk::Extent3D extent{static_cast<u32>(tinygltf_image.width),
                       static_cast<u32>(tinygltf_image.height), 1};
-  u32 dim_count{0};
+  u32 dim_count{};
   vk::ImageType image_type{};
   if (extent.width >= 1) {
     ++dim_count;

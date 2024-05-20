@@ -15,7 +15,7 @@ class Time {
   f64 GetDeltaTime() const;
 
  private:
-  f64 delta_time_{0.0};
+  f64 delta_time_{};
   std::chrono::high_resolution_clock::time_point last_{
       std::chrono::high_resolution_clock::now()};
 };

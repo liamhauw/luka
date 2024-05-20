@@ -54,7 +54,7 @@ void Framework::GetSwapchain() {
 void Framework::CreateSyncObjects() {
   vk::SemaphoreCreateInfo semaphore_ci;
   vk::FenceCreateInfo fence_ci{vk::FenceCreateFlagBits::eSignaled};
-  for (u32 i{0}; i < frame_count_; ++i) {
+  for (u32 i{}; i < frame_count_; ++i) {
     image_acquired_semaphores_.push_back(
         gpu_->CreateSemaphoreLuka(semaphore_ci, "image_acquired"));
     render_finished_semaphores_.push_back(
@@ -70,7 +70,7 @@ void Framework::CreateCommandObjects() {
       gpu_->GetGraphicsQueueIndex()};
   vk::CommandBufferAllocateInfo command_buffer_ai{
       nullptr, vk::CommandBufferLevel::ePrimary, 1};
-  for (u32 i{0}; i < frame_count_; ++i) {
+  for (u32 i{}; i < frame_count_; ++i) {
     command_pools_.push_back(
         gpu_->CreateCommandPool(command_pool_ci, "graphics"));
     command_buffer_ai.commandPool = *(command_pools_.back());
@@ -100,7 +100,7 @@ void Framework::CreatePasses() {
 
   shared_image_views_.resize(frame_count_);
 
-  for (u32 i{0}; i < ast_passes.size(); ++i) {
+  for (u32 i{}; i < ast_passes.size(); ++i) {
     passes_.emplace_back(gpu_, asset_, camera_, function_ui_, *swapchain_info_,
                          swapchain_images_, frame_count_, ast_passes, i,
                          shared_image_views_);
@@ -194,7 +194,7 @@ void Framework::DrawPasses(const vk::raii::CommandBuffer& command_buffer) {
 
     // Tarverse subpasses.
     const std::vector<fw::Subpass>& subpasses{pass.GetSubpasses()};
-    for (u32 i{0}; i < subpasses.size(); ++i) {
+    for (u32 i{}; i < subpasses.size(); ++i) {
       const fw::Subpass& subpass{subpasses[i]};
 #ifndef NDEBUG
       gpu_->BeginLabel(command_buffer, "Subpass " + subpass.GetName(),
@@ -210,8 +210,8 @@ void Framework::DrawPasses(const vk::raii::CommandBuffer& command_buffer) {
       const std::vector<fw::DrawElement>& draw_elements{
           subpass.GetDrawElements()};
 
-      const vk::raii::Pipeline* prev_pipeline{nullptr};
-      const vk::raii::PipelineLayout* prev_pipeline_layout{nullptr};
+      const vk::raii::Pipeline* prev_pipeline{};
+      const vk::raii::PipelineLayout* prev_pipeline_layout{};
       for (const fw::DrawElement& draw_element : draw_elements) {
         // Bind pipeline.
         const vk::raii::Pipeline* pipeline{draw_element.pipeline};

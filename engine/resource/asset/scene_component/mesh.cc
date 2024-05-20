@@ -24,7 +24,7 @@ Mesh::Mesh(const std::shared_ptr<Gpu>& gpu,
     : Component{tinygltf_mesh.name} {
   const std::vector<tinygltf::Primitive>& tinygltf_primitives{
       tinygltf_mesh.primitives};
-  for (u32 i{0}; i < tinygltf_primitives.size(); ++i) {
+  for (u32 i{}; i < tinygltf_primitives.size(); ++i) {
     const auto& tinygltf_primitive{tinygltf_primitives[i]};
 
     Primitive primitive;

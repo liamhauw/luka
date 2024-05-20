@@ -45,7 +45,7 @@ void Pass::Resize(const SwapchainInfo& swapchain_info,
   swapchain_images_ = swapchain_images;
   CreateFramebuffers();
   CreateRenderArea();
-  for (u32 i{0}; i < subpasses_.size(); ++i) {
+  for (u32 i{}; i < subpasses_.size(); ++i) {
     subpasses_[i].Resize(image_views_);
   }
 }
@@ -104,7 +104,7 @@ void Pass::CreateRenderPass() {
 
   std::vector<vk::SubpassDependency> subpass_dependencies(subpass_count - 1);
 
-  for (u32 i{0}; i < subpass_count; ++i) {
+  for (u32 i{}; i < subpass_count; ++i) {
     vk::SubpassDescription subpass_description{
         {}, vk::PipelineBindPoint::eGraphics};
 
@@ -117,7 +117,7 @@ void Pass::CreateRenderPass() {
       const std::vector<u32>& input_attachments{input_it->second};
       input_references[i].resize(input_attachments.size());
 
-      for (u32 j{0}; j < input_attachments.size(); ++j) {
+      for (u32 j{}; j < input_attachments.size(); ++j) {
         u32 at{input_attachments[j]};
         input_references[i][j] = {at, vk::ImageLayout::eShaderReadOnlyOptimal};
       }
@@ -131,7 +131,7 @@ void Pass::CreateRenderPass() {
       const std::vector<u32>& color_attachments{color_it->second};
       color_references[i].resize(color_attachments.size());
 
-      for (u32 j{0}; j < color_attachments.size(); ++j) {
+      for (u32 j{}; j < color_attachments.size(); ++j) {
         u32 at{color_attachments[j]};
         color_references[i][j] = {at, vk::ImageLayout::eColorAttachmentOptimal};
       }
@@ -187,7 +187,7 @@ void Pass::CreateFramebuffers() {
   images_.resize(frame_count_);
   image_views_.resize(frame_count_);
 
-  for (u32 i{0}; i < frame_count_; ++i) {
+  for (u32 i{}; i < frame_count_; ++i) {
     std::vector<vk::ImageView> framebuffer_image_views;
 
     const std::vector<ast::Attachment>& ast_attachments{ast_pass_->attachments};
@@ -281,7 +281,7 @@ void Pass::CreateClearValues() {
 
 void Pass::CreateSubpasses() {
   const std::vector<ast::Subpass>& ast_subpasses{ast_pass_->subpasses};
-  for (u32 i{0}; i < ast_subpasses.size(); ++i) {
+  for (u32 i{}; i < ast_subpasses.size(); ++i) {
     subpasses_.emplace_back(gpu_, asset_, camera_, frame_count_, *render_pass_,
                             image_views_, color_attachment_counts_[i],
                             ast_subpasses, i, *shared_image_views_);

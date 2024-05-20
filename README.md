@@ -1,5 +1,5 @@
 # luka
-A rendering engine with modular components including platform, core, base, resource, function, editor, and rendering.
+A graphics engine with modular components including platform, core, base, resource, function, editor, and rendering.
 
 ## Features
 - Rendering 
@@ -19,11 +19,11 @@ A rendering engine with modular components including platform, core, base, resou
 ## Prerequisites
 
 - Windows / macOS
-- VSCode with CMake Language Support, C/C++ and clangd extensions
+- VSCode (with CMake Language Support, C/C++ and clangd extensions)
 - Git
 - CMake
 - Ninja
-- Clang with (MSVC on Windows / Xcode on macOS)
+- LLVM (with MSVC on Windows / Xcode on macOS)
 - Vulkan SDK
 
 On Windows if you have [Scoop](https://scoop.sh/) installed, you can easily install some prerequisites using the following command:

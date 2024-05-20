@@ -46,7 +46,7 @@ u64 Shader::GetHashValue(const std::vector<std::string>& processes) const {
   svec.push_back(path_);
   svec.push_back(source_text_);
 
-  u64 hash_value{0};
+  u64 hash_value{};
   for (const std::string& str : svec) {
     HashCombine(hash_value, str);
   }

@@ -71,8 +71,8 @@ void Window::GetWindowSize(i32* width, i32* height) const {
 }
 
 f32 Window::GetWindowRatio() const {
-  i32 width{0};
-  i32 height{0};
+  i32 width{};
+  i32 height{};
   glfwGetWindowSize(glfw_window_, &width, &height);
   return static_cast<f32>(width) / static_cast<f32>(height);
 }
@@ -126,7 +126,7 @@ void Window::SetCursorPos(f64 xpos, f64 ypos) {
 }
 
 std::vector<const char*> Window::GetRequiredInstanceExtensions() {
-  u32 glfw_extension_count{0};
+  u32 glfw_extension_count{};
   const char** glfw_extensions{
       glfwGetRequiredInstanceExtensions(&glfw_extension_count)};
   std::vector<const char*> extension{glfw_extensions,

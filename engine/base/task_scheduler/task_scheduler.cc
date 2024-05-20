@@ -10,7 +10,7 @@
 namespace luka {
 
 TaskScheduler::TaskScheduler() {
-  enki::TaskSchedulerConfig task_scheduler_config;
+  enki::TaskSchedulerConfig task_scheduler_config{};
   task_scheduler_config.numTaskThreadsToCreate = kThreadCount - 1;
   task_scheduler_.Initialize(task_scheduler_config);
 }

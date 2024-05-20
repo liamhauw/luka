@@ -39,7 +39,7 @@ AssetAsync::AssetAsync(std::shared_ptr<Config> config, std::shared_ptr<Gpu> gpu,
   vk::CommandBufferBeginInfo command_buffer_begin_info{
       vk::CommandBufferUsageFlagBits::eOneTimeSubmit};
 
-  for (u32 i{0}; i < thread_count_; ++i) {
+  for (u32 i{}; i < thread_count_; ++i) {
     transfer_command_pools_.push_back(
         std::move(gpu_->CreateCommandPool(command_pool_ci)));
     command_buffer_allocate_info.commandPool = *(transfer_command_pools_[i]);
@@ -50,7 +50,7 @@ AssetAsync::AssetAsync(std::shared_ptr<Config> config, std::shared_ptr<Gpu> gpu,
 }
 
 void AssetAsync::Load(enki::TaskSetPartition range, u32 thread_num) {
-  u32 scene_lower_bound{0};
+  u32 scene_lower_bound{};
   u32 scene_upper_bound{scene_lower_bound + scene_count_};
 
   u32 light_lower_bound{scene_upper_bound};
@@ -86,7 +86,7 @@ void AssetAsync::Load(enki::TaskSetPartition range, u32 thread_num) {
 void AssetAsync::Submit() {
   std::vector<vk::CommandBuffer> command_buffers;
 
-  for (u32 i{0}; i < thread_count_; ++i) {
+  for (u32 i{}; i < thread_count_; ++i) {
     transfer_command_buffers_[i].end();
     command_buffers.push_back(*transfer_command_buffers_[i]);
   }

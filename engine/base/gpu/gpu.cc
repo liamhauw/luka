@@ -192,7 +192,7 @@ gpu::Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
       u32 layer_count{1};
 
       std::vector<vk::BufferImageCopy> buffer_image_copys;
-      for (u32 i{0}; i < layer_count; ++i) {
+      for (u32 i{}; i < layer_count; ++i) {
         vk::BufferImageCopy buffer_image_copy{
             0, {}, {}, {flag_bits, i, 0, layer_count}, {}, mipmap_extents[i]};
         buffer_image_copys.push_back(buffer_image_copy);
@@ -446,7 +446,7 @@ vk::raii::CommandBuffers Gpu::AllocateCommandBuffers(
   vk::raii::CommandBuffers command_buffers{device_, command_buffer_ai};
 
 #ifndef NDEBUG
-  for (u32 i{0}; i < command_buffers.size(); ++i) {
+  for (u32 i{}; i < command_buffers.size(); ++i) {
     SetObjectName(vk::ObjectType::eCommandBuffer,
                   reinterpret_cast<uint64_t>(
                       static_cast<VkCommandBuffer>(*command_buffers[i])),
@@ -466,7 +466,7 @@ vk::raii::DescriptorSets Gpu::AllocateNormalDescriptorSets(
                                            descriptor_set_allocate_info};
 
 #ifndef NDEBUG
-  for (u32 i{0}; i < descriptor_sets.size(); ++i) {
+  for (u32 i{}; i < descriptor_sets.size(); ++i) {
     SetObjectName(vk::ObjectType::eDescriptorSet,
                   reinterpret_cast<uint64_t>(
                       static_cast<VkDescriptorSet>(*(descriptor_sets[i]))),
@@ -658,7 +658,7 @@ void Gpu::CreateSurface() {
 void Gpu::CreatePhysicalDevice() {
   vk::raii::PhysicalDevices physical_devices{instance_};
 
-  u32 max_score{0};
+  u32 max_score{};
   for (auto& physical_device : physical_devices) {
     u32 cur_score{1};
 
@@ -700,7 +700,7 @@ void Gpu::CreateDevice() {
   // Queue famliy properties.
   std::vector<vk::QueueFamilyProperties> queue_family_properties{
       physical_device_.getQueueFamilyProperties()};
-  u32 i{0};
+  u32 i{};
   for (const auto& queue_famliy_propertie : queue_family_properties) {
     if ((queue_famliy_propertie.queueFlags & vk::QueueFlagBits::eGraphics) &&
         (queue_famliy_propertie.queueFlags & vk::QueueFlagBits::eCompute) &&
@@ -751,7 +751,7 @@ void Gpu::CreateDevice() {
       graphics_queue_index_.value(), compute_queue_index_.value(),
       transfer_queue_index_.value(), present_queue_index_.value()};
 
-  f32 queue_priority{0.0F};
+  f32 queue_priority{};
   for (u32 queue_family_index : queue_family_indexes) {
     vk::DeviceQueueCreateInfo device_queue_ci{
         {}, queue_family_index, 1, &queue_priority};
@@ -948,21 +948,21 @@ VKAPI_ATTR VkBool32 VKAPI_CALL Gpu::DebugUtilsMessengerCallback(
   LOGI("\tMessage           = [{}]", p_callback_data->pMessage);
   if (p_callback_data->queueLabelCount > 0) {
     LOGI("\tQueue lables:");
-    for (u32 i{0}; i < p_callback_data->queueLabelCount; i++) {
+    for (u32 i{}; i < p_callback_data->queueLabelCount; i++) {
       LOGI("\t\tLabel name = [{}]",
            p_callback_data->pQueueLabels[i].pLabelName);
     }
   }
   if (p_callback_data->cmdBufLabelCount > 0) {
     LOGI("\tCommand buffer labels:");
-    for (u32 i{0}; i < p_callback_data->cmdBufLabelCount; i++) {
+    for (u32 i{}; i < p_callback_data->cmdBufLabelCount; i++) {
       LOGI("\t\tLabel name = [{}]",
            p_callback_data->pCmdBufLabels[i].pLabelName);
     }
   }
   if (p_callback_data->objectCount > 0) {
     LOGI("\tObjects:");
-    for (u32 i{0}; i < p_callback_data->objectCount; i++) {
+    for (u32 i{}; i < p_callback_data->objectCount; i++) {
       LOGI("\t\tObject {}", i);
       LOGI("\t\t\tObject type   = {}",
            vk::to_string(static_cast<vk::ObjectType>(

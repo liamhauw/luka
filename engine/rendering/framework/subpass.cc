@@ -173,7 +173,7 @@ void Subpass::CreateDrawElements() {
             mesh->GetPrimitives()};
 
         // Draw elements.
-        for (u32 i{0}; i < primitives.size(); ++i) {
+        for (u32 i{}; i < primitives.size(); ++i) {
           DrawElement draw_element{CreateDrawElement(
               model_matrix, inverse_model_matrix, primitives[i], i)};
           draw_elements_.push_back(std::move(draw_element));
@@ -182,8 +182,8 @@ void Subpass::CreateDrawElements() {
     }
     std::sort(draw_elements_.begin(), draw_elements_.end(),
               [](const DrawElement& lhs, const DrawElement& rhs) {
-                u32 left_alpha_mode{0};
-                u32 right_alpha_mode{0};
+                u32 left_alpha_mode{};
+                u32 right_alpha_mode{};
                 if (!lhs.uniforms.empty()) {
                   left_alpha_mode = lhs.uniforms[0].alpha_model;
                 }
@@ -243,7 +243,7 @@ void Subpass::ParseShaderResources(
   if (has_scene_) {
     const std::map<std::string, ast::sc::Texture*>& textures{
         primitive.material->GetTextures()};
-    for (u32 i{0}; i < wanted_textures_.size(); ++i) {
+    for (u32 i{}; i < wanted_textures_.size(); ++i) {
       std::string wanted_texture{wanted_textures_[i]};
       auto it{textures.find(wanted_texture)};
       if (it != textures.end()) {
@@ -392,15 +392,15 @@ void Subpass::CreatePipelineResources(
   image_infos.reserve(kImageInfoMaxCount);
   buffer_infos.reserve(kBufferInfoMaxCount);
 
-  glm::uvec4 sampler_indices_0{0};
-  glm::uvec4 sampler_indices_1{0};
-  glm::uvec4 image_indices_0{0};
-  glm::uvec4 image_indices_1{0};
+  glm::uvec4 sampler_indices_0{};
+  glm::uvec4 sampler_indices_1{};
+  glm::uvec4 image_indices_0{};
+  glm::uvec4 image_indices_1{};
 
   std::vector<vk::DescriptorSetLayout> set_layouts;
 
   for (u32 set : sorted_sets) {
-    const vk::raii::DescriptorSetLayout* descriptor_set_layout{nullptr};
+    const vk::raii::DescriptorSetLayout* descriptor_set_layout{};
 
     const auto& shader_resources{set_shader_resources.at(set)};
     std::string resource_name{ToLower(shader_resources[0].name)};
@@ -455,7 +455,7 @@ void Subpass::CreatePipelineResources(
         for (const auto& shader_resource : shader_resources) {
           if (shader_resource.type == ShaderResourceType::kUniformBuffer) {
             if (shader_resource.name == "Subpass") {
-              for (u32 i{0}; i < frame_count_; ++i) {
+              for (u32 i{}; i < frame_count_; ++i) {
                 SubpassUniform subpass_uniform{};
 
                 vk::BufferCreateInfo uniform_buffer_ci{
@@ -490,7 +490,7 @@ void Subpass::CreatePipelineResources(
           } else if (shader_resource.type ==
                      ShaderResourceType::kInputAttachment) {
             need_resize_ = true;
-            for (u32 i{0}; i < frame_count_; ++i) {
+            for (u32 i{}; i < frame_count_; ++i) {
               vk::ImageView image_view{
                   *(*attachment_image_views_)[i][shader_resource
                                                      .input_attachment_index]};
@@ -546,7 +546,7 @@ void Subpass::CreatePipelineResources(
         const std::map<std::string, ast::sc::Texture*>& textures{
             primitive.material->GetTextures()};
 
-        i32 idx{0};
+        i32 idx{};
         for (const auto& wanted_texture : wanted_textures_) {
           auto bindless_samplers_it{
               name_shader_resources.find("bindless_samplers")};
@@ -564,7 +564,7 @@ void Subpass::CreatePipelineResources(
             ast::sc::Texture* tex{wanted_texture_it->second};
 
             const ast::sc::Sampler* ast_sampler{tex->GetSampler()};
-            u64 sampler_hash_value{0};
+            u64 sampler_hash_value{};
             HashCombine(sampler_hash_value, ast_sampler);
             auto it2{sampler_indices_.find(sampler_hash_value)};
 
@@ -598,7 +598,7 @@ void Subpass::CreatePipelineResources(
 
             const ast::sc::Image* ast_image{tex->GetImage()};
 
-            u64 image_hash_value{0};
+            u64 image_hash_value{};
             HashCombine(image_hash_value, ast_image);
             auto it3{image_indices_.find(image_hash_value)};
 
@@ -682,7 +682,7 @@ void Subpass::CreatePipelineResources(
 
       // Allocate descriptor sets.
       draw_element.has_descriptor_set = true;
-      for (u32 i{0}; i < frame_count_; ++i) {
+      for (u32 i{}; i < frame_count_; ++i) {
         vk::DescriptorSetAllocateInfo draw_element_descriptor_set_allocate_info{
             nullptr, **draw_element_descriptor_set_layout};
 
@@ -699,7 +699,7 @@ void Subpass::CreatePipelineResources(
       for (const auto& shader_resource : shader_resources) {
         if (shader_resource.type == ShaderResourceType::kUniformBuffer) {
           if (shader_resource.name == "DrawElement") {
-            for (u32 i{0}; i < frame_count_; ++i) {
+            for (u32 i{}; i < frame_count_; ++i) {
               DrawElementUniform draw_element_uniform{
                   model_matrix,
                   inverse_model_matrix,
@@ -751,7 +751,7 @@ void Subpass::CreatePipelineResources(
         } else if (shader_resource.type ==
                    ShaderResourceType::kCombinedImageSampler) {
           need_resize_ = true;
-          for (u32 i{0}; i < frame_count_; ++i) {
+          for (u32 i{}; i < frame_count_; ++i) {
             vk::ImageView image_view{nullptr};
 
             auto it{(*shared_image_views_)[i].find(shader_resource.name)};
@@ -822,7 +822,7 @@ void Subpass::CreatePipeline(
         name_shader_resources,
     DrawElement& draw_element) {
   std::vector<vk::PipelineShaderStageCreateInfo> shader_stage_cis;
-  u64 pipeline_hash_value{0};
+  u64 pipeline_hash_value{};
   for (const auto* spirv_shader : spirvs) {
     u64 shader_module_hash_value{spirv_shader->GetHashValue()};
     HashCombine(pipeline_hash_value, shader_module_hash_value);
@@ -1018,9 +1018,9 @@ const SPIRV& Subpass::RequestSpirv(const ast::Shader& shader,
 const vk::raii::DescriptorSetLayout& Subpass::RequestDescriptorSetLayout(
     const vk::DescriptorSetLayoutCreateInfo& descriptor_set_layout_ci,
     const std::string& name, i32 index) {
-  u64 hash_value{0};
+  u64 hash_value{};
   HashCombine(hash_value, descriptor_set_layout_ci.flags);
-  for (u32 i{0}; i < descriptor_set_layout_ci.bindingCount; ++i) {
+  for (u32 i{}; i < descriptor_set_layout_ci.bindingCount; ++i) {
     HashCombine(hash_value, descriptor_set_layout_ci.pBindings[i]);
   }
 
@@ -1041,12 +1041,12 @@ const vk::raii::DescriptorSetLayout& Subpass::RequestDescriptorSetLayout(
 const vk::raii::PipelineLayout& Subpass::RequestPipelineLayout(
     const vk::PipelineLayoutCreateInfo& pipeline_layout_ci,
     const std::string& name, i32 index) {
-  u64 hash_value{0};
+  u64 hash_value{};
   HashCombine(hash_value, pipeline_layout_ci.flags);
-  for (u32 i{0}; i < pipeline_layout_ci.setLayoutCount; ++i) {
+  for (u32 i{}; i < pipeline_layout_ci.setLayoutCount; ++i) {
     HashCombine(hash_value, pipeline_layout_ci.pSetLayouts[i]);
   }
-  for (u32 i{0}; i < pipeline_layout_ci.pushConstantRangeCount; ++i) {
+  for (u32 i{}; i < pipeline_layout_ci.pushConstantRangeCount; ++i) {
     HashCombine(hash_value, pipeline_layout_ci.pPushConstantRanges[i]);
   }
 

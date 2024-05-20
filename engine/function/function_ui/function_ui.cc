@@ -80,8 +80,8 @@ void FunctionUi::CreateSwapchain() {
   // Extent.
   if (surface_capabilities.currentExtent.width ==
       std::numeric_limits<u32>::max()) {
-    i32 width{0};
-    i32 height{0};
+    i32 width{};
+    i32 height{};
     window_->GetFramebufferSize(&width, &height);
 
     swapchain_info_.extent.width = std::clamp(

@@ -41,7 +41,7 @@ void EditorInput::Tick() {
 
   f32 move_distance{static_cast<f32>(delta_time * velocity)};
 
-  glm::vec3 camera_relative_pos{0.0F};
+  glm::vec3 camera_relative_pos{};
   bool has_move{false};
   if (editor_command_ & static_cast<u32>(EditorCommand::kFoward)) {
     camera_relative_pos += glm::vec3{0.0F, 0.0F, -move_distance};
@@ -146,8 +146,8 @@ void EditorInput::OnCursorPos(f64 xpos, f64 ypos) {
   }
 
   if (window_->IsMouseButtonDown(GLFW_MOUSE_BUTTON_RIGHT)) {
-    i32 window_width{0};
-    i32 window_height{0};
+    i32 window_width{};
+    i32 window_height{};
     window_->GetWindowSize(&window_width, &window_height);
 
     f32 angular_velocity{

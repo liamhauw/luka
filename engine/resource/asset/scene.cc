@@ -110,7 +110,7 @@ void Scene::LoadScene(i32 scene) {
   sc::Scene* cur_scene{scene_components[scene_]};
   const std::vector<sc::Node*>& nodes{cur_scene->GetNodes()};
 
-  sc::Node* root_node{nullptr};
+  sc::Node* root_node{};
   std::queue<std::pair<sc::Node*, sc::Node*>> traverse_nodes;
   for (sc::Node* node : nodes) {
     traverse_nodes.emplace(root_node, node);
@@ -171,7 +171,7 @@ void Scene::ParseLightComponents(
           tinygltf_extension_map.at(KHR_LIGHTS_PUNCTUAL_EXTENSION)
               .Get("lights")};
 
-      for (u64 i{0}; i < tinygltf_lights.ArrayLen(); ++i) {
+      for (u64 i{}; i < tinygltf_lights.ArrayLen(); ++i) {
         auto light_component{std::make_unique<sc::Light>(
             tinygltf_lights.Get(static_cast<i32>(i)))};
         AddComponent(std::move(light_component));
@@ -194,7 +194,7 @@ void Scene::ParseImageComponents(
     std::vector<gpu::Buffer>& staging_buffers) {
   u64 tinygltf_image_count{tinygltf_images.size()};
 
-  for (u64 i{0}; i < tinygltf_image_count; ++i) {
+  for (u64 i{}; i < tinygltf_image_count; ++i) {
     const tinygltf::Image& tinygltf_image{tinygltf_images[i]};
 
     auto image_component{std::make_unique<sc::Image>(

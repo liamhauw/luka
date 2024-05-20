@@ -1,3 +1,103 @@
 Diagnostics:
+  ClangTidy:
+    Add: '*'
+    Remove: [
+      abseil-string-find-str-contains, 
+      abseil-string-find-str-contains,
+      altera-struct-pack-align,
+      altera-unroll-loops,
+      bugprone-easily-swappable-parameters,
+      cppcoreguidelines-avoid-c-arrays,
+      cppcoreguidelines-avoid-magic-numbers,
+      cppcoreguidelines-macro-usage,
+      cppcoreguidelines-non-private-member-variables-in-classes,
+      cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+      cppcoreguidelines-pro-bounds-pointer-arithmetic,
+      cppcoreguidelines-pro-type-reinterpret-cast,
+      fuchsia-default-arguments-calls,
+      fuchsia-default-arguments-declarations,
+      fuchsia-overloaded-operator,
+      hicpp-avoid-c-arrays,
+      hicpp-no-array-decay,
+      llvmlibc-callee-namespace,
+      llvmlibc-implementation-in-namespace,
+      llvmlibc-restrict-system-libc-headers,
+      misc-non-private-member-variables-in-classes,
+      modernize-avoid-c-arrays,
+      modernize-use-trailing-return-type,
+      modernize-use-nodiscard,
+      readability-function-cognitive-complexity,
+      readability-identifier-length,
+      readability-implicit-bool-conversion,
+      readability-magic-numbers
+    ]
+    CheckOptions:
+      readability-identifier-naming.AbstractClassCase: CamelCase            
+      readability-identifier-naming.ClassCase: CamelCase            
+      readability-identifier-naming.ClassConstantCase: CamelCase            
+      readability-identifier-naming.ClassConstantPrefix: k                    
+      readability-identifier-naming.ClassMemberCase: lower_case           
+      readability-identifier-naming.ClassMemberSuffix: _                    
+      readability-identifier-naming.ClassMethodCase: CamelCase            
+      readability-identifier-naming.ConstantCase: CamelCase            
+      readability-identifier-naming.ConstantPrefix: k                    
+      readability-identifier-naming.ConstantMemberCase: CamelCase            
+      readability-identifier-naming.ConstantMemberPrefix: k                    
+      readability-identifier-naming.ConstantParameterCase: lower_case           
+      readability-identifier-naming.ConstantPointerParameterCase: lower_case           
+      readability-identifier-naming.ConstexprFunctionCase: CamelCase            
+      readability-identifier-naming.ConstexprMethodCase: CamelCase            
+      readability-identifier-naming.ConstexprVariableCase: CamelCase            
+      readability-identifier-naming.ConstexprVariablePrefix: k                    
+      readability-identifier-naming.EnumCase: CamelCase            
+      readability-identifier-naming.EnumConstantCase: CamelCase            
+      readability-identifier-naming.EnumConstantPrefix: k                    
+      readability-identifier-naming.FunctionCase: CamelCase            
+      readability-identifier-naming.GlobalConstantCase: CamelCase            
+      readability-identifier-naming.GlobalConstantPrefix: k                    
+      readability-identifier-naming.GlobalConstantPointerCase: CamelCase            
+      readability-identifier-naming.GlobalConstantPointerPrefix: k                    
+      readability-identifier-naming.GlobalFunctionCase: CamelCase            
+      readability-identifier-naming.GlobalPointerCase: CamelCase            
+      readability-identifier-naming.GlobalPointerPrefix: g                    
+      readability-identifier-naming.GlobalVariableCase: CamelCase            
+      readability-identifier-naming.GlobalVariablePrefix: g                    
+      readability-identifier-naming.LocalConstantCase: CamelCase            
+      readability-identifier-naming.LocalConstantPrefix: k                    
+      readability-identifier-naming.LocalConstantPointerCase: CamelCase            
+      readability-identifier-naming.LocalConstantPointerPrefix: k                    
+      readability-identifier-naming.LocalPointerCase: lower_case           
+      readability-identifier-naming.LocalVariableCase: lower_case           
+      readability-identifier-naming.MacroDefinitionCase: UPPER_CASE           
+      readability-identifier-naming.MacroDefinitionIgnoredRegexp: '^[A-Z]+(_[A-Z]+)*_$'
+      readability-identifier-naming.MemberCase: lower_case           
+      readability-identifier-naming.MethodCase: CamelCase            
+      readability-identifier-naming.NamespaceCase: lower_case           
+      readability-identifier-naming.ParameterCase: lower_case           
+      readability-identifier-naming.PointerParameterCase: lower_case           
+      readability-identifier-naming.PrivateMemberCase: lower_case           
+      readability-identifier-naming.PrivateMemberSuffix: _                    
+      readability-identifier-naming.PrivateMethodCase: CamelCase            
+      readability-identifier-naming.ProtectedMemberCase: lower_case           
+      readability-identifier-naming.ProtectedMemberSuffix: _                    
+      readability-identifier-naming.ProtectedMethodCase: CamelCase            
+      readability-identifier-naming.PublicMemberCase: lower_case           
+      readability-identifier-naming.PublicMethodCase: CamelCase            
+      readability-identifier-naming.ScopedEnumConstantCase: CamelCase            
+      readability-identifier-naming.ScopedEnumConstantPrefix: k                    
+      readability-identifier-naming.StaticConstantCase: CamelCase            
+      readability-identifier-naming.StaticConstantPrefix: k                    
+      readability-identifier-naming.StaticVariableCase: lower_case           
+      readability-identifier-naming.StructCase: CamelCase            
+      readability-identifier-naming.TemplateParameterCase: CamelCase            
+      readability-identifier-naming.TemplateTemplateParameterCase: CamelCase            
+      readability-identifier-naming.TypeAliasCase: CamelCase            
+      readability-identifier-naming.TypedefCase: CamelCase            
+      readability-identifier-naming.TypeTemplateParameterCase: CamelCase            
+      readability-identifier-naming.UnionCase: CamelCase            
+      readability-identifier-naming.ValueTemplateParameterCase: lower_case           
+      readability-identifier-naming.VariableCase: lower_case           
+      readability-identifier-naming.VirtualMethodCase: CamelCase            
+  
   UnusedIncludes: None
   MissingIncludes: None
