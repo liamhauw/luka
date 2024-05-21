@@ -4,9 +4,11 @@ A graphics engine with modular components including platform, core, base, resour
 ## Features
 - Rendering 
   - Support for glTF scenes
+    - TODO Blend alpha mode
   - Configurability of multiple types of punctual lights
   - User-defined shaders
   - Driving rendering with frame graph
+  - TODO Culling algorithms
 - Graphics systems and interfaces
   - Following the RAII principle with vulkan raii.
   - Asynchronously loading asset using a task-based multi-threading library
@@ -17,13 +19,15 @@ A graphics engine with modular components including platform, core, base, resour
   - User interface using imgui
 
 ## Prerequisites
-- Windows / macOS
+Engine supports for Windows and macOS and requires the following dependencies to be installed:
 - VSCode (with CMake Language Support, C/C++ and clangd extensions)
 - Git
 - CMake
 - Ninja
 - LLVM (with Visual Studio on Windows / Xcode on macOS)
 - Vulkan SDK
+
+These dependencies can be installed manually or through package managers.
 
 On Windows if you have [Scoop](https://scoop.sh/) installed, you can easily install some prerequisites using the following command:
 ```shell
