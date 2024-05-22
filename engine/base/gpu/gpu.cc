@@ -763,7 +763,7 @@ void Gpu::CreateDevice() {
       physical_device_.enumerateDeviceExtensionProperties()};
 
   std::vector<const char*> required_device_extensions{
-      VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+      VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME};
 
   std::vector<const char*> enabled_device_extensions;
   for (auto& extension : required_device_extensions) {
@@ -781,6 +781,21 @@ void Gpu::CreateDevice() {
 #endif
 
   // Features.
+  // vk::PhysicalDeviceDescriptorIndexingFeatures indexing_features;
+  // indexing_features.descriptorBindingPartiallyBound = VK_TRUE;
+  // indexing_features.runtimeDescriptorArray = VK_TRUE;
+  // indexing_features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+
+  // vk::PhysicalDeviceIndexTypeUint8FeaturesEXT index_type_uint8_features;
+  // index_type_uint8_features.indexTypeUint8 = VK_TRUE;
+  // index_type_uint8_features.pNext = &indexing_features;
+
+  // vk::PhysicalDeviceFeatures physical_device_features;
+
+  // vk::PhysicalDeviceFeatures2 physical_device_features2;
+  // physical_device_features2.features = physical_device_features;
+  // physical_device_features2.pNext = &index_type_uint8_features;
+
   vk::PhysicalDeviceFeatures physical_device_features;
 
   vk::PhysicalDeviceDescriptorIndexingFeatures indexing_features;
@@ -788,9 +803,14 @@ void Gpu::CreateDevice() {
   indexing_features.runtimeDescriptorArray = VK_TRUE;
   indexing_features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
 
+  vk::PhysicalDeviceIndexTypeUint8FeaturesEXT index_type_uint8_features;
+  index_type_uint8_features.indexTypeUint8 = VK_TRUE;
+
   vk::StructureChain<vk::PhysicalDeviceFeatures2,
-                     vk::PhysicalDeviceDescriptorIndexingFeatures>
-      physical_device_features2{physical_device_features, indexing_features};
+                     vk::PhysicalDeviceDescriptorIndexingFeatures,
+                     vk::PhysicalDeviceIndexTypeUint8FeaturesEXT>
+      physical_device_features2{physical_device_features, indexing_features,
+                                index_type_uint8_features};
 
   // Create device.
   vk::DeviceCreateInfo device_ci{{},      device_queue_cis,
