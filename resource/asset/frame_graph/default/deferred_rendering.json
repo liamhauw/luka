@@ -35,7 +35,7 @@
       ],
       "subpasses": [
         {
-          "name": "geometry",
+          "name": "opaque_geometry",
           "attachments": {
             "colors": [
               0,
@@ -46,16 +46,16 @@
             ],
             "depth_stencil": 5
           },
-          "scenes": [
-            1
-          ],
           "shaders": {
             "vertex": 0,
             "fragment": 1
-          }
+          },
+          "scenes": [
+            3
+          ]
         },
         {
-          "name": "lighting",
+          "name": "opaque_lighting",
           "attachments": {
             "inputs": [
               0,
@@ -69,13 +69,29 @@
               6
             ]
           },
-          "lights": [
-            0
-          ],
           "shaders": {
             "vertex": 2,
             "fragment": 3
-          }
+          },
+          "lights": [
+            0
+          ]
+        },
+        {
+          "name": "transparency",
+          "attachments": {
+            "colors": [
+              6
+            ],
+            "depth_stencil": 5
+          },
+          "shaders": {
+            "vertex": 4,
+            "fragment": 5
+          },
+          "scenes": [
+            0
+          ]
         }
       ]
     },
@@ -95,12 +111,9 @@
             ]
           },
           "shaders": {
-            "vertex": 4,
-            "fragment": 5
-          },
-          "inputs": [
-            "color"
-          ]
+            "vertex": 6,
+            "fragment": 7
+          }
         }
       ]
     }

@@ -62,6 +62,10 @@ void Framework::CreateSyncObjects() {
     command_finished_fences_.push_back(
         gpu_->CreateFence(fence_ci, "command_finished"));
   }
+
+  // https://github.com/ocornut/imgui/issues/7236
+  image_acquired_semaphores_.push_back(
+      gpu_->CreateSemaphoreLuka(semaphore_ci, "image_acquired"));
 }
 
 void Framework::CreateCommandObjects() {
@@ -163,7 +167,7 @@ void Framework::End(const vk::raii::CommandBuffer& command_buffer) {
   }
 
   image_acquired_semaphore_index_ =
-      (image_acquired_semaphore_index_ + 1) % frame_count_;
+      (image_acquired_semaphore_index_ + 1) % (frame_count_ + 1);
 }
 
 void Framework::UpdatePasses() {

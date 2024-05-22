@@ -13,6 +13,8 @@
     "default/geometry.frag",
     "default/lighting.vert",
     "default/lighting.frag",
+    "default/transparency.vert",
+    "default/transparency.frag",
     "default/ui.vert",
     "default/ui.frag"
   ],

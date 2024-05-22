@@ -4,11 +4,9 @@ A graphics engine with modular components including platform, core, base, resour
 ## Features
 - Rendering 
   - Support for glTF scenes
-    - TODO Blend alpha mode
   - Configurability of multiple types of punctual lights
   - User-defined shaders
   - Driving rendering with frame graph
-  - TODO Culling algorithms
 - Graphics systems and interfaces
   - Following the RAII principle with vulkan raii.
   - Asynchronously loading asset using a task-based multi-threading library
