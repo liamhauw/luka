@@ -781,23 +781,6 @@ void Gpu::CreateDevice() {
 #endif
 
   // Features.
-  // vk::PhysicalDeviceDescriptorIndexingFeatures indexing_features;
-  // indexing_features.descriptorBindingPartiallyBound = VK_TRUE;
-  // indexing_features.runtimeDescriptorArray = VK_TRUE;
-  // indexing_features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
-
-  // vk::PhysicalDeviceIndexTypeUint8FeaturesEXT index_type_uint8_features;
-  // index_type_uint8_features.indexTypeUint8 = VK_TRUE;
-  // index_type_uint8_features.pNext = &indexing_features;
-
-  // vk::PhysicalDeviceFeatures physical_device_features;
-
-  // vk::PhysicalDeviceFeatures2 physical_device_features2;
-  // physical_device_features2.features = physical_device_features;
-  // physical_device_features2.pNext = &index_type_uint8_features;
-
-  vk::PhysicalDeviceFeatures physical_device_features;
-
   vk::PhysicalDeviceDescriptorIndexingFeatures indexing_features;
   indexing_features.descriptorBindingPartiallyBound = VK_TRUE;
   indexing_features.runtimeDescriptorArray = VK_TRUE;
@@ -805,12 +788,29 @@ void Gpu::CreateDevice() {
 
   vk::PhysicalDeviceIndexTypeUint8FeaturesEXT index_type_uint8_features;
   index_type_uint8_features.indexTypeUint8 = VK_TRUE;
+  index_type_uint8_features.pNext = &indexing_features;
 
-  vk::StructureChain<vk::PhysicalDeviceFeatures2,
-                     vk::PhysicalDeviceDescriptorIndexingFeatures,
-                     vk::PhysicalDeviceIndexTypeUint8FeaturesEXT>
-      physical_device_features2{physical_device_features, indexing_features,
-                                index_type_uint8_features};
+  vk::PhysicalDeviceFeatures physical_device_features;
+
+  vk::PhysicalDeviceFeatures2 physical_device_features2;
+  physical_device_features2.features = physical_device_features;
+  physical_device_features2.pNext = &index_type_uint8_features;
+
+  // vk::PhysicalDeviceFeatures physical_device_features;
+
+  // vk::PhysicalDeviceDescriptorIndexingFeatures indexing_features;
+  // indexing_features.descriptorBindingPartiallyBound = VK_TRUE;
+  // indexing_features.runtimeDescriptorArray = VK_TRUE;
+  // indexing_features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+
+  // vk::PhysicalDeviceIndexTypeUint8FeaturesEXT index_type_uint8_features;
+  // index_type_uint8_features.indexTypeUint8 = VK_TRUE;
+
+  // vk::StructureChain<vk::PhysicalDeviceFeatures2,
+  //                    vk::PhysicalDeviceDescriptorIndexingFeatures,
+  //                    vk::PhysicalDeviceIndexTypeUint8FeaturesEXT>
+  //     physical_device_features2{physical_device_features, indexing_features,
+  //                               index_type_uint8_features};
 
   // Create device.
   vk::DeviceCreateInfo device_ci{{},      device_queue_cis,

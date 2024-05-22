@@ -42,7 +42,7 @@
 			"label": "CMake Debug",
 			"dependsOrder": "sequence",
 			"dependsOn": [
-				"Config",
+				//"Config",
 				"Build Debug"
 			]
 		},

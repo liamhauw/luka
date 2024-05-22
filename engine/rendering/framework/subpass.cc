@@ -961,9 +961,10 @@ void Subpass::CreatePipeline(
       color_blend_attachment_states(
           color_attachment_count_,
           vk::PipelineColorBlendAttachmentState{
-              VK_FALSE, vk::BlendFactor::eZero, vk::BlendFactor::eZero,
-              vk::BlendOp::eAdd, vk::BlendFactor::eZero, vk::BlendFactor::eZero,
-              vk::BlendOp::eAdd, color_component_flags});
+              VK_TRUE, vk::BlendFactor::eSrcAlpha,
+              vk::BlendFactor::eOneMinusSrcAlpha, vk::BlendOp::eAdd,
+              vk::BlendFactor::eOne, vk::BlendFactor::eZero, vk::BlendOp::eAdd,
+              color_component_flags});
 
   vk::PipelineColorBlendStateCreateInfo color_blend_state_ci{
       {},
