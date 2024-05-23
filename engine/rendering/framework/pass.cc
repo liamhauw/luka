@@ -168,9 +168,11 @@ void Pass::CreateRenderPass() {
           i - 1,
           i,
           vk::PipelineStageFlagBits::eColorAttachmentOutput,
-          vk::PipelineStageFlagBits::eFragmentShader,
+          vk::PipelineStageFlagBits::eFragmentShader |
+              vk::PipelineStageFlagBits::eColorAttachmentOutput,
           vk::AccessFlagBits::eColorAttachmentWrite,
-          vk::AccessFlagBits::eInputAttachmentRead,
+          vk::AccessFlagBits::eInputAttachmentRead |
+              vk::AccessFlagBits::eColorAttachmentWrite,
           vk::DependencyFlagBits::eByRegion};
     }
   }

@@ -693,7 +693,6 @@ void Subpass::CreatePipelineResources(
                   primitive.material->GetNormalScale(),
                   primitive.material->GetOcclusionStrength(),
                   glm::vec4{primitive.material->GetEmissiveFactor(), 1.0F},
-                  static_cast<u32>(primitive.material->GetAlphaMode()),
                   primitive.material->GetAlphaCutoff()};
 
               vk::BufferCreateInfo uniform_buffer_ci{

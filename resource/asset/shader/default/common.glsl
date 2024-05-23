@@ -31,7 +31,5 @@ struct DrawElementUniform {
   float normal_scale;
   float occlusion_strength;
   vec4 emissive_factor;
-  uint alpha_model;
   float alpha_cutoff;
-  vec2 padding;
 };

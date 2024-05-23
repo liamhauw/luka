@@ -45,8 +45,7 @@ void main(void) {
 #endif
 
 #if defined(HAS_MASK_ALPHA) 
-  if (draw_element_uniform.alpha_model == MASK_ALPHA &&
-      base_color.a < draw_element_uniform.alpha_cutoff) {
+  if (base_color.a < draw_element_uniform.alpha_cutoff) {
     discard;
   }
 #endif

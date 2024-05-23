@@ -40,9 +40,7 @@ struct DrawElementUniform {
   f32 normal_scale;
   f32 occlusion_strength;
   glm::vec4 emissive_factor;
-  u32 alpha_model;
   f32 alpha_cutoff;
-  glm::vec2 padding;
 };
 
 struct DrawElmentVertexInfo {
