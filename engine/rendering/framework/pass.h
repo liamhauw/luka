@@ -19,11 +19,12 @@ class Pass {
  public:
   Pass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
        std::shared_ptr<Camera> camera, std::shared_ptr<FunctionUi> function_ui,
-       const SwapchainInfo& swapchain_info,
-       const std::vector<vk::Image>& swapchain_images, u32 frame_count,
+       u32 frame_count, const SwapchainInfo& swapchain_info,
+       const std::vector<vk::Image>& swapchain_images,
        const std::vector<ast::Pass>& ast_passes, u32 pass_index,
        std::vector<std::unordered_map<std::string, vk::ImageView>>&
-           shared_image_views);
+           shared_image_views,
+       const std::vector<ScenePrimitive>& scene_primitives);
 
   void Resize(const SwapchainInfo& swapchain_info,
               const std::vector<vk::Image>& swapchain_images);
@@ -53,6 +54,8 @@ class Pass {
   u32 pass_index_{};
   std::vector<std::unordered_map<std::string, vk::ImageView>>*
       shared_image_views_;
+  const std::vector<ScenePrimitive>* scene_primitives_;
+
   const ast::Pass* ast_pass_{};
   std::string name_;
   bool has_ui_{};

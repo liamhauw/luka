@@ -65,6 +65,12 @@ struct DrawElement {
   const vk::raii::Pipeline* pipeline;
 };
 
+struct ScenePrimitive {
+  glm::mat4 model;
+  glm::mat4 inverse_model;
+  const ast::sc::Primitive* primitive;
+};
+
 class Subpass {
  public:
   Subpass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
@@ -75,7 +81,8 @@ class Subpass {
           u32 color_attachment_count,
           const std::vector<ast::Subpass>& ast_subpasses, u32 subpass_index,
           std::vector<std::unordered_map<std::string, vk::ImageView>>&
-              shared_image_views);
+              shared_image_views,
+          const std::vector<ScenePrimitive>& scene_primitives);
 
   void Resize(const std::vector<std::vector<vk::raii::ImageView>>&
                   attachment_image_views);
@@ -103,10 +110,7 @@ class Subpass {
  protected:
   void CreateDrawElements();
 
-  DrawElement CreateDrawElement(const glm::mat4& model_matrix = {},
-                                const glm::mat4& inverse_model_matrix = {},
-                                const ast::sc::Primitive& primitive = {},
-                                u32 primitive_index = -1);
+  DrawElement CreateDrawElement(const ScenePrimitive& scene_primitivce = {});
 
   void ParseShaderResources(
       const ast::sc::Primitive& primitive, std::vector<const SPIRV*>& spirvs,
@@ -118,7 +122,7 @@ class Subpass {
 
   void CreatePipelineResources(
       const glm::mat4& model_matrix, const glm::mat4& inverse_model_matrix,
-      const ast::sc::Primitive& primitive, u32 primitive_index,
+      const ast::sc::Primitive& primitive,
       const std::unordered_map<std::string, ShaderResource>&
           name_shader_resources,
       const std::unordered_map<u32, std::vector<ShaderResource>>&
@@ -166,9 +170,11 @@ class Subpass {
   u32 subpass_index_{};
   std::vector<std::unordered_map<std::string, vk::ImageView>>*
       shared_image_views_;
+  const std::vector<ScenePrimitive>* scene_primitives_;
+
   const ast::Subpass* ast_subpass_{};
   std::string name_;
-  const std::vector<u32>* scenes_{};
+  std::string scene_;
   const std::vector<u32>* lights_{};
   const std::unordered_map<vk::ShaderStageFlagBits, u32>* shaders_{};
   bool has_scene_{};

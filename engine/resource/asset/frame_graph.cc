@@ -18,6 +18,14 @@ FrameGraph::FrameGraph(const std::filesystem::path& frame_graph_path) {
   }
   json_ = json::parse(frame_graph_file);
 
+  if (json_.contains("scenes")) {
+    const json& scenes_json{json_["scenes"]};
+    for (const auto& scene_json : scenes_json) {
+      u32 scene_index{scene_json.template get<u32>()};
+      scenes_.push_back(scene_index);
+    }
+  }
+
   if (json_.contains("passes")) {
     const json& passes_json{json_["passes"]};
     for (const auto& pass_json : passes_json) {
@@ -107,12 +115,8 @@ FrameGraph::FrameGraph(const std::filesystem::path& frame_graph_path) {
             }
           }
 
-          if (subpass_json.contains("scenes")) {
-            const json& scenes_json{subpass_json["scenes"]};
-            for (const auto& scene_json : scenes_json) {
-              u32 index{scene_json.template get<u32>()};
-              subpass.scenes.push_back(index);
-            }
+          if (subpass_json.contains("scene")) {
+            subpass.scene = subpass_json["scene"].template get<std::string>();
           }
 
           if (subpass_json.contains("lights")) {
@@ -151,5 +155,9 @@ FrameGraph::FrameGraph(const std::filesystem::path& frame_graph_path) {
     }
   }
 }
+
+const std::vector<u32>& FrameGraph::GetScenes() const { return scenes_; }
+
+const std::vector<ast::Pass>& FrameGraph::GetPasses() const { return passes_; }
 
 }  // namespace luka::ast

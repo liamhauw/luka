@@ -100,14 +100,70 @@ void Framework::CreateViewportAndScissor() {
 void Framework::CreatePasses() {
   u32 frame_graph_index{config_->GetFrameGraphIndex()};
   const ast::FrameGraph& frame_graph{asset_->GetFrameGraph(frame_graph_index)};
+
+  const std::vector<u32>& scenes{frame_graph.GetScenes()};
+
+  std::vector<fw::ScenePrimitive> scene_primitives;
+
+  for (u32 scene_index : scenes) {
+    const ast::sc::Scene* scene{asset_->GetScene(scene_index).GetScene()};
+    const std::vector<ast::sc::Node*>& nodes{scene->GetNodes()};
+
+    std::queue<const ast::sc::Node*> all_nodes;
+    std::unordered_map<const ast::sc::Node*, glm::mat4> node_model_matrix;
+
+    for (const ast::sc::Node* node : nodes) {
+      all_nodes.push(node);
+    }
+
+    while (!all_nodes.empty()) {
+      const ast::sc::Node* cur_node{all_nodes.front()};
+      all_nodes.pop();
+
+      const std::vector<ast::sc::Node*>& cur_node_children{
+          cur_node->GetChildren()};
+      for (const ast::sc::Node* cur_node_child : cur_node_children) {
+        all_nodes.push(cur_node_child);
+      }
+
+      // Model matrix.
+      glm::mat4 model_matrix{cur_node->GetModelMarix()};
+      const ast::sc::Node* parent_node{cur_node->GetParent()};
+      while (parent_node) {
+        model_matrix *= parent_node->GetModelMarix();
+        parent_node = parent_node->GetParent();
+      }
+      glm::mat4 inverse_model_matrix{glm::inverse(model_matrix)};
+
+      // Primitives.
+      const ast::sc::Mesh* mesh{cur_node->GetMesh()};
+      if (!mesh) {
+        continue;
+      }
+      const std::vector<ast::sc::Primitive>& primitives{mesh->GetPrimitives()};
+
+      for (const auto& primitive : primitives) {
+        scene_primitives.emplace_back(model_matrix, inverse_model_matrix,
+                                      &primitive);
+      }
+    }
+  }
+
+  std::sort(scene_primitives.begin(), scene_primitives.end(),
+            [](const fw::ScenePrimitive& lhs, const fw::ScenePrimitive& rhs) {
+              u32 left_alpha_mode{
+                  static_cast<u32>(lhs.primitive->material->GetAlphaMode())};
+              u32 right_alpha_mode{
+                  static_cast<u32>(rhs.primitive->material->GetAlphaMode())};
+              return left_alpha_mode < right_alpha_mode;
+            });
+
   const std::vector<ast::Pass>& ast_passes{frame_graph.GetPasses()};
-
   shared_image_views_.resize(frame_count_);
-
   for (u32 i{}; i < ast_passes.size(); ++i) {
-    passes_.emplace_back(gpu_, asset_, camera_, function_ui_, *swapchain_info_,
-                         swapchain_images_, frame_count_, ast_passes, i,
-                         shared_image_views_);
+    passes_.emplace_back(gpu_, asset_, camera_, function_ui_, frame_count_,
+                         *swapchain_info_, swapchain_images_, ast_passes, i,
+                         shared_image_views_, scene_primitives);
   }
 }
 

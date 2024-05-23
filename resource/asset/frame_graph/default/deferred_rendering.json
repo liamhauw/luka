@@ -1,4 +1,8 @@
 {
+  "scenes": [
+    1,
+    4
+  ],
   "passes": [
     {
       "name": "deferred",
@@ -50,9 +54,7 @@
             "vertex": 0,
             "fragment": 1
           },
-          "scenes": [
-            4
-          ]
+          "scene": "opaque"
         },
         {
           "name": "opaque_lighting",
@@ -89,9 +91,7 @@
             "vertex": 4,
             "fragment": 5
           },
-          "scenes": [
-            1
-          ]
+          "scene": "transparency"
         }
       ]
     },

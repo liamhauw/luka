@@ -13,12 +13,13 @@ namespace luka::fw {
 
 Pass::Pass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
            std::shared_ptr<Camera> camera,
-           std::shared_ptr<FunctionUi> function_ui,
+           std::shared_ptr<FunctionUi> function_ui, u32 frame_count,
            const SwapchainInfo& swapchain_info,
-           const std::vector<vk::Image>& swapchain_images, u32 frame_count,
+           const std::vector<vk::Image>& swapchain_images,
            const std::vector<ast::Pass>& ast_passes, u32 pass_index,
            std::vector<std::unordered_map<std::string, vk::ImageView>>&
-               shared_image_views)
+               shared_image_views,
+           const std::vector<ScenePrimitive>& scene_primitives)
     : gpu_{std::move(gpu)},
       asset_{std::move(asset)},
       camera_{std::move(camera)},
@@ -29,6 +30,7 @@ Pass::Pass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
       ast_passes_{&ast_passes},
       pass_index_{pass_index},
       shared_image_views_{&shared_image_views},
+      scene_primitives_{&scene_primitives},
       ast_pass_{&(*ast_passes_)[pass_index_]},
       name_{ast_pass_->name},
       has_ui_{name_ == "ui"} {
@@ -285,7 +287,8 @@ void Pass::CreateSubpasses() {
   for (u32 i{}; i < ast_subpasses.size(); ++i) {
     subpasses_.emplace_back(gpu_, asset_, camera_, frame_count_, *render_pass_,
                             image_views_, color_attachment_counts_[i],
-                            ast_subpasses, i, *shared_image_views_);
+                            ast_subpasses, i, *shared_image_views_,
+                            *scene_primitives_);
   }
 }
 

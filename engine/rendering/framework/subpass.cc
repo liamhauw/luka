@@ -24,7 +24,8 @@ Subpass::Subpass(
     u32 color_attachment_count, const std::vector<ast::Subpass>& ast_subpasses,
     u32 subpass_index,
     std::vector<std::unordered_map<std::string, vk::ImageView>>&
-        shared_image_views)
+        shared_image_views,
+    const std::vector<ScenePrimitive>& scene_primitives)
     : gpu_{std::move(gpu)},
       asset_{std::move(asset)},
       camera_{std::move(camera)},
@@ -35,12 +36,13 @@ Subpass::Subpass(
       ast_subpasses_{&ast_subpasses},
       subpass_index_{subpass_index},
       shared_image_views_{&shared_image_views},
+      scene_primitives_{&scene_primitives},
       ast_subpass_{&(*ast_subpasses_)[subpass_index_]},
       name_{ast_subpass_->name},
-      scenes_{&(ast_subpass_->scenes)},
+      scene_{ast_subpass_->scene},
       lights_{&(ast_subpass_->lights)},
       shaders_{&(ast_subpass_->shaders)},
-      has_scene_{!scenes_->empty()},
+      has_scene_{!scene_.empty()},
       has_light_{!lights_->empty()},
       subpass_uniforms_(frame_count_),
       subpass_uniform_buffers_(frame_count_) {
@@ -134,71 +136,30 @@ void Subpass::CreateDrawElements() {
   if (!has_scene_) {
     draw_elements_.push_back(CreateDrawElement());
   } else {
-    for (u32 scene_index : *scenes_) {
-      const ast::sc::Scene* scene{asset_->GetScene(scene_index).GetScene()};
-      const std::vector<ast::sc::Node*>& nodes{scene->GetNodes()};
+    const std::string& scene_input{ast_subpass_->scene};
+    bool is_transparent{false};
 
-      std::queue<const ast::sc::Node*> all_nodes;
-      std::unordered_map<const ast::sc::Node*, glm::mat4> node_model_matrix;
+    if (scene_input == "transparency") {
+      is_transparent = true;
+    }
 
-      for (const ast::sc::Node* node : nodes) {
-        all_nodes.push(node);
-      }
-
-      while (!all_nodes.empty()) {
-        const ast::sc::Node* cur_node{all_nodes.front()};
-        all_nodes.pop();
-
-        const std::vector<ast::sc::Node*>& cur_node_children{
-            cur_node->GetChildren()};
-        for (const ast::sc::Node* cur_node_child : cur_node_children) {
-          all_nodes.push(cur_node_child);
+    for (const auto& scene_primitive : *scene_primitives_) {
+      if (!is_transparent) {
+        if (scene_primitive.primitive->material->GetAlphaMode() !=
+            ast::sc::AlphaMode::kBlend) {
+          draw_elements_.push_back(CreateDrawElement(scene_primitive));
         }
-
-        // Model matrix.
-        glm::mat4 model_matrix{cur_node->GetModelMarix()};
-        const ast::sc::Node* parent_node{cur_node->GetParent()};
-        while (parent_node) {
-          model_matrix *= parent_node->GetModelMarix();
-          parent_node = parent_node->GetParent();
-        }
-        glm::mat4 inverse_model_matrix{glm::inverse(model_matrix)};
-
-        // Primitives.
-        const ast::sc::Mesh* mesh{cur_node->GetMesh()};
-        if (!mesh) {
-          continue;
-        }
-        const std::vector<ast::sc::Primitive>& primitives{
-            mesh->GetPrimitives()};
-
-        // Draw elements.
-        for (u32 i{}; i < primitives.size(); ++i) {
-          DrawElement draw_element{CreateDrawElement(
-              model_matrix, inverse_model_matrix, primitives[i], i)};
-          draw_elements_.push_back(std::move(draw_element));
+      } else {
+        if (scene_primitive.primitive->material->GetAlphaMode() ==
+            ast::sc::AlphaMode::kBlend) {
+          draw_elements_.push_back(CreateDrawElement(scene_primitive));
         }
       }
     }
-    std::sort(draw_elements_.begin(), draw_elements_.end(),
-              [](const DrawElement& lhs, const DrawElement& rhs) {
-                u32 left_alpha_mode{};
-                u32 right_alpha_mode{};
-                if (!lhs.uniforms.empty()) {
-                  left_alpha_mode = lhs.uniforms[0].alpha_model;
-                }
-                if (!rhs.uniforms.empty()) {
-                  right_alpha_mode = rhs.uniforms[0].alpha_model;
-                }
-                return left_alpha_mode < right_alpha_mode;
-              });
   }
 }
 
-DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
-                                       const glm::mat4& inverse_model_matrix,
-                                       const ast::sc::Primitive& primitive,
-                                       u32 primitive_index) {
+DrawElement Subpass::CreateDrawElement(const ScenePrimitive& scene_primitivce) {
   DrawElement draw_element{};
   draw_element.has_scene = has_scene_;
 
@@ -208,17 +169,19 @@ DrawElement Subpass::CreateDrawElement(const glm::mat4& model_matrix,
   std::unordered_map<u32, std::vector<ShaderResource>> set_shader_resources;
   std::vector<u32> sorted_sets;
   std::vector<vk::PushConstantRange> push_constant_ranges;
-  ParseShaderResources(primitive, spirvs, name_shader_resources,
-                       set_shader_resources, sorted_sets, push_constant_ranges);
+  ParseShaderResources(*(scene_primitivce.primitive), spirvs,
+                       name_shader_resources, set_shader_resources, sorted_sets,
+                       push_constant_ranges);
 
   // Create pipeline resources.
-  CreatePipelineResources(model_matrix, inverse_model_matrix, primitive,
-                          primitive_index, name_shader_resources,
-                          set_shader_resources, sorted_sets,
-                          push_constant_ranges, draw_element);
+  CreatePipelineResources(
+      scene_primitivce.model, scene_primitivce.inverse_model,
+      *(scene_primitivce.primitive), name_shader_resources,
+      set_shader_resources, sorted_sets, push_constant_ranges, draw_element);
 
   // Pipeline.
-  CreatePipeline(primitive, spirvs, name_shader_resources, draw_element);
+  CreatePipeline(*(scene_primitivce.primitive), spirvs, name_shader_resources,
+                 draw_element);
 
   return draw_element;
 }
@@ -382,7 +345,7 @@ void Subpass::ParseShaderResources(
 
 void Subpass::CreatePipelineResources(
     const glm::mat4& model_matrix, const glm::mat4& inverse_model_matrix,
-    const ast::sc::Primitive& primitive, u32 primitive_index,
+    const ast::sc::Primitive& primitive,
     const std::unordered_map<std::string, ShaderResource>&
         name_shader_resources,
     const std::unordered_map<u32, std::vector<ShaderResource>>&
@@ -705,7 +668,7 @@ void Subpass::CreatePipelineResources(
         vk::raii::DescriptorSets draw_element_descriptor_sets{
             gpu_->AllocateNormalDescriptorSets(
                 draw_element_descriptor_set_allocate_info,
-                name_ + "_draw_element", static_cast<i32>(primitive_index))};
+                name_ + "_draw_element")};
 
         draw_element.descriptor_sets.push_back(
             std::move(draw_element_descriptor_sets));
@@ -738,9 +701,9 @@ void Subpass::CreatePipelineResources(
                   vk::BufferUsageFlagBits::eUniformBuffer,
                   vk::SharingMode::eExclusive};
 
-              gpu::Buffer draw_element_uniform_buffer{gpu_->CreateBuffer(
-                  uniform_buffer_ci, &draw_element_uniform, false,
-                  "draw_element_uniform", static_cast<i32>(primitive_index))};
+              gpu::Buffer draw_element_uniform_buffer{
+                  gpu_->CreateBuffer(uniform_buffer_ci, &draw_element_uniform,
+                                     false, "draw_element_uniform")};
 
               vk::DescriptorBufferInfo descriptor_buffer_info{
                   *draw_element_uniform_buffer, 0, sizeof(DrawElementUniform)};
@@ -954,6 +917,11 @@ void Subpass::CreatePipeline(
       {}, VK_TRUE, VK_TRUE, vk::CompareOp::eLess, VK_FALSE, VK_FALSE,
   };
 
+  u32 blend_enable{VK_FALSE};
+  if (scene_ == "transparency") {
+    blend_enable = VK_TRUE;
+  }
+
   vk::ColorComponentFlags color_component_flags{
       vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
       vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA};
@@ -961,7 +929,7 @@ void Subpass::CreatePipeline(
       color_blend_attachment_states(
           color_attachment_count_,
           vk::PipelineColorBlendAttachmentState{
-              VK_TRUE, vk::BlendFactor::eSrcAlpha,
+              blend_enable, vk::BlendFactor::eSrcAlpha,
               vk::BlendFactor::eOneMinusSrcAlpha, vk::BlendOp::eAdd,
               vk::BlendFactor::eOne, vk::BlendFactor::eZero, vk::BlendOp::eAdd,
               color_component_flags});
