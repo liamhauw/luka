@@ -149,21 +149,12 @@ void Framework::CreatePasses() {
     }
   }
 
-  std::sort(scene_primitives.begin(), scene_primitives.end(),
-            [](const fw::ScenePrimitive& lhs, const fw::ScenePrimitive& rhs) {
-              u32 left_alpha_mode{
-                  static_cast<u32>(lhs.primitive->material->GetAlphaMode())};
-              u32 right_alpha_mode{
-                  static_cast<u32>(rhs.primitive->material->GetAlphaMode())};
-              return left_alpha_mode < right_alpha_mode;
-            });
-
   const std::vector<ast::Pass>& ast_passes{frame_graph.GetPasses()};
   shared_image_views_.resize(frame_count_);
   for (u32 i{}; i < ast_passes.size(); ++i) {
     passes_.emplace_back(gpu_, asset_, camera_, function_ui_, frame_count_,
                          *swapchain_info_, swapchain_images_, ast_passes, i,
-                         shared_image_views_, scene_primitives);
+                         scene_primitives, shared_image_views_);
   }
 }
 

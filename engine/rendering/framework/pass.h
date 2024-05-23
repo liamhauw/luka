@@ -22,9 +22,9 @@ class Pass {
        u32 frame_count, const SwapchainInfo& swapchain_info,
        const std::vector<vk::Image>& swapchain_images,
        const std::vector<ast::Pass>& ast_passes, u32 pass_index,
+       const std::vector<ScenePrimitive>& scene_primitives,
        std::vector<std::unordered_map<std::string, vk::ImageView>>&
-           shared_image_views,
-       const std::vector<ScenePrimitive>& scene_primitives);
+           shared_image_views);
 
   void Resize(const SwapchainInfo& swapchain_info,
               const std::vector<vk::Image>& swapchain_images);
@@ -52,9 +52,9 @@ class Pass {
   std::vector<vk::Image> swapchain_images_;
   const std::vector<ast::Pass>* ast_passes_{};
   u32 pass_index_{};
+  const std::vector<ScenePrimitive>* scene_primitives_;
   std::vector<std::unordered_map<std::string, vk::ImageView>>*
       shared_image_views_;
-  const std::vector<ScenePrimitive>* scene_primitives_;
 
   const ast::Pass* ast_pass_{};
   std::string name_;

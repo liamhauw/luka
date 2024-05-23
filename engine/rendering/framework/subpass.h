@@ -80,9 +80,9 @@ class Subpass {
               attachment_image_views,
           u32 color_attachment_count,
           const std::vector<ast::Subpass>& ast_subpasses, u32 subpass_index,
+          const std::vector<ScenePrimitive>& scene_primitives,
           std::vector<std::unordered_map<std::string, vk::ImageView>>&
-              shared_image_views,
-          const std::vector<ScenePrimitive>& scene_primitives);
+              shared_image_views);
 
   void Resize(const std::vector<std::vector<vk::raii::ImageView>>&
                   attachment_image_views);
@@ -168,15 +168,15 @@ class Subpass {
   u32 color_attachment_count_{};
   const std::vector<ast::Subpass>* ast_subpasses_{};
   u32 subpass_index_{};
+  const std::vector<ScenePrimitive>* scene_primitives_;
   std::vector<std::unordered_map<std::string, vk::ImageView>>*
       shared_image_views_;
-  const std::vector<ScenePrimitive>* scene_primitives_;
 
   const ast::Subpass* ast_subpass_{};
   std::string name_;
+  const std::unordered_map<vk::ShaderStageFlagBits, u32>* shaders_{};
   std::string scene_;
   const std::vector<u32>* lights_{};
-  const std::unordered_map<vk::ShaderStageFlagBits, u32>* shaders_{};
   bool has_scene_{};
   bool has_light_{};
   std::vector<SubpassUniform> subpass_uniforms_;

@@ -7,7 +7,9 @@
 
 #include "rendering/framework/subpass.h"
 
+#ifdef _MSC_VER
 #undef MemoryBarrier
+#endif
 #include <utility>
 #include <vulkan/vulkan_hash.hpp>
 
@@ -22,10 +24,9 @@ Subpass::Subpass(
     std::shared_ptr<Camera> camera, u32 frame_count, vk::RenderPass render_pass,
     const std::vector<std::vector<vk::raii::ImageView>>& attachment_image_views,
     u32 color_attachment_count, const std::vector<ast::Subpass>& ast_subpasses,
-    u32 subpass_index,
+    u32 subpass_index, const std::vector<ScenePrimitive>& scene_primitives,
     std::vector<std::unordered_map<std::string, vk::ImageView>>&
-        shared_image_views,
-    const std::vector<ScenePrimitive>& scene_primitives)
+        shared_image_views)
     : gpu_{std::move(gpu)},
       asset_{std::move(asset)},
       camera_{std::move(camera)},
@@ -35,13 +36,13 @@ Subpass::Subpass(
       color_attachment_count_{color_attachment_count},
       ast_subpasses_{&ast_subpasses},
       subpass_index_{subpass_index},
-      shared_image_views_{&shared_image_views},
       scene_primitives_{&scene_primitives},
+      shared_image_views_{&shared_image_views},
       ast_subpass_{&(*ast_subpasses_)[subpass_index_]},
       name_{ast_subpass_->name},
+      shaders_{&(ast_subpass_->shaders)},
       scene_{ast_subpass_->scene},
       lights_{&(ast_subpass_->lights)},
-      shaders_{&(ast_subpass_->shaders)},
       has_scene_{!scene_.empty()},
       has_light_{!lights_->empty()},
       subpass_uniforms_(frame_count_),
@@ -54,10 +55,9 @@ void Subpass::Resize(const std::vector<std::vector<vk::raii::ImageView>>&
   if (!need_resize_) {
     return;
   }
+
   attachment_image_views_ = &attachment_image_views;
-
   punctual_lights_.clear();
-
   subpass_desciptor_set_updated_ = false;
   bindless_sampler_index_ = 0;
   bindless_image_index_ = 0;
@@ -136,24 +136,20 @@ void Subpass::CreateDrawElements() {
   if (!has_scene_) {
     draw_elements_.push_back(CreateDrawElement());
   } else {
-    const std::string& scene_input{ast_subpass_->scene};
+    const std::string& ast_subpass_scene{ast_subpass_->scene};
     bool is_transparent{false};
-
-    if (scene_input == "transparency") {
+    if (ast_subpass_scene == "transparency") {
       is_transparent = true;
     }
 
     for (const auto& scene_primitive : *scene_primitives_) {
-      if (!is_transparent) {
-        if (scene_primitive.primitive->material->GetAlphaMode() !=
-            ast::sc::AlphaMode::kBlend) {
-          draw_elements_.push_back(CreateDrawElement(scene_primitive));
-        }
-      } else {
-        if (scene_primitive.primitive->material->GetAlphaMode() ==
-            ast::sc::AlphaMode::kBlend) {
-          draw_elements_.push_back(CreateDrawElement(scene_primitive));
-        }
+      if ((!is_transparent &&
+           scene_primitive.primitive->material->GetAlphaMode() !=
+               ast::sc::AlphaMode::kBlend) ||
+          (is_transparent &&
+           scene_primitive.primitive->material->GetAlphaMode() ==
+               ast::sc::AlphaMode::kBlend)) {
+        draw_elements_.push_back(CreateDrawElement(scene_primitive));
       }
     }
   }

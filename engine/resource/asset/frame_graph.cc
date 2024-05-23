@@ -115,18 +115,6 @@ FrameGraph::FrameGraph(const std::filesystem::path& frame_graph_path) {
             }
           }
 
-          if (subpass_json.contains("scene")) {
-            subpass.scene = subpass_json["scene"].template get<std::string>();
-          }
-
-          if (subpass_json.contains("lights")) {
-            const json& lights_json{subpass_json["lights"]};
-            for (const auto& light_json : lights_json) {
-              u32 index{light_json.template get<u32>()};
-              subpass.lights.push_back(index);
-            }
-          }
-
           if (subpass_json.contains("shaders")) {
             const json& shaders_json{subpass_json["shaders"]};
             if (shaders_json.contains("vertex")) {
@@ -140,11 +128,16 @@ FrameGraph::FrameGraph(const std::filesystem::path& frame_graph_path) {
                                       index);
             }
           }
-          if (subpass_json.contains("inputs")) {
-            const json& inputs_json{subpass_json["inputs"]};
-            for (const auto& input_json : inputs_json) {
-              std::string name{input_json.template get<std::string>()};
-              subpass.inputs.push_back(name);
+
+          if (subpass_json.contains("scene")) {
+            subpass.scene = subpass_json["scene"].template get<std::string>();
+          }
+
+          if (subpass_json.contains("lights")) {
+            const json& lights_json{subpass_json["lights"]};
+            for (const auto& light_json : lights_json) {
+              u32 index{light_json.template get<u32>()};
+              subpass.lights.push_back(index);
             }
           }
 
