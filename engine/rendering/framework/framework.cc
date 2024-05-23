@@ -106,6 +106,8 @@ void Framework::CreatePasses() {
   std::vector<fw::ScenePrimitive> scene_primitives;
 
   for (u32 scene_index : scenes) {
+    std::vector<fw::ScenePrimitive> cur_primitives;
+
     const ast::sc::Scene* scene{asset_->GetScene(scene_index).GetScene()};
     const std::vector<ast::sc::Node*>& nodes{scene->GetNodes()};
 
@@ -143,10 +145,22 @@ void Framework::CreatePasses() {
       const std::vector<ast::sc::Primitive>& primitives{mesh->GetPrimitives()};
 
       for (const auto& primitive : primitives) {
-        scene_primitives.emplace_back(model_matrix, inverse_model_matrix,
-                                      &primitive);
+        cur_primitives.emplace_back(model_matrix, inverse_model_matrix,
+                                    &primitive);
       }
     }
+
+    std::sort(cur_primitives.begin(), cur_primitives.end(),
+              [](const fw::ScenePrimitive& lhs, const fw::ScenePrimitive& rhs) {
+                u32 left_alpha_mode{
+                    static_cast<u32>(lhs.primitive->material->GetAlphaMode())};
+                u32 right_alpha_mode{
+                    static_cast<u32>(rhs.primitive->material->GetAlphaMode())};
+                return left_alpha_mode < right_alpha_mode;
+              });
+
+    scene_primitives.insert(scene_primitives.end(), cur_primitives.begin(),
+                            cur_primitives.end());
   }
 
   const std::vector<ast::Pass>& ast_passes{frame_graph.GetPasses()};

@@ -3,6 +3,7 @@
 
 // clang-format off
 #include "platform/pch.h"
+#include "resource/asset/scene_component/material.h"
 // clang-format on
 
 #include "rendering/framework/subpass.h"
@@ -245,6 +246,10 @@ void Subpass::ParseShaderResources(
     }
     if (!has_position_buffer || !has_normal_buffer) {
       THROW("There is no position or/and normal buffer.");
+    }
+
+    if (primitive.material->GetAlphaMode() == ast::sc::AlphaMode::kMask) {
+      shader_processes.emplace_back("DHAS_MASK_ALPHA");
     }
   }
 
