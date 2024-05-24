@@ -1,10 +1,10 @@
 {
   "scenes": [
+    "sponza/Sponza.gltf",
     "box/Box.gltf",
-    "alpha/AlphaBlendModeTest.gltf",
     "scifihelmet/SciFiHelmet.gltf",
     "damaged/DamagedHelmet.gltf",
-    "sponza/Sponza.gltf"
+    "alpha/AlphaBlendModeTest.gltf"
   ],
   "lights": [
     "default/punctual_light.json"

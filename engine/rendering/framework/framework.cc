@@ -101,12 +101,17 @@ void Framework::CreatePasses() {
   u32 frame_graph_index{config_->GetFrameGraphIndex()};
   const ast::FrameGraph& frame_graph{asset_->GetFrameGraph(frame_graph_index)};
 
-  const std::vector<u32>& scenes{frame_graph.GetScenes()};
+  const std::vector<ast::EnabledScene>& enabled_scenes{
+      frame_graph.GetEnabledScenes()};
 
   std::vector<fw::ScenePrimitive> scene_primitives;
 
-  for (u32 scene_index : scenes) {
-    const ast::sc::Scene* scene{asset_->GetScene(scene_index).GetScene()};
+  for (const auto& enabled_scene : enabled_scenes) {
+    const ast::sc::Scene* scene{
+        asset_->GetScene(enabled_scene.index).GetScene()};
+
+    const glm::mat4& enabled_scene_model{enabled_scene.model};
+
     const std::vector<ast::sc::Node*>& nodes{scene->GetNodes()};
 
     std::queue<const ast::sc::Node*> all_nodes;
@@ -127,12 +132,16 @@ void Framework::CreatePasses() {
       }
 
       // Model matrix.
-      glm::mat4 model_matrix{cur_node->GetModelMarix()};
+      glm::mat4 model_matrix{enabled_scene_model};
+
+      model_matrix *= cur_node->GetModelMarix();
+
       const ast::sc::Node* parent_node{cur_node->GetParent()};
       while (parent_node) {
         model_matrix *= parent_node->GetModelMarix();
         parent_node = parent_node->GetParent();
       }
+
       glm::mat4 inverse_model_matrix{glm::inverse(model_matrix)};
 
       // Primitives.

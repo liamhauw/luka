@@ -18,7 +18,7 @@ constexpr u32 kSamplerInfoMaxCount{10};
 constexpr u32 kImageInfoMaxCount{20};
 constexpr u32 kBufferInfoMaxCount{10};
 constexpr u32 kBindlessSamplerMaxCount{8};
-constexpr u32 kBindlessImageMaxCount{80};
+constexpr u32 kBindlessImageMaxCount{128};
 
 struct SubpassUniform {
   glm::mat4 pv;

@@ -8,10 +8,16 @@
 // clang-format on
 
 #include "core/json.h"
+#include "core/math.h"
 
 namespace luka::ast {
 
 enum class AttachmentType { kNone, kInput, kColor, kResolve, kDepthStencil };
+
+struct EnabledScene {
+  u32 index;
+  glm::mat4 model;
+};
 
 struct Attachment {
   std::string name;
@@ -38,13 +44,13 @@ class FrameGraph {
   FrameGraph() = default;
   explicit FrameGraph(const std::filesystem::path& frame_graph_path);
 
-  const std::vector<u32>& GetScenes() const;
+  const std::vector<EnabledScene>& GetEnabledScenes() const;
   const std::vector<ast::Pass>& GetPasses() const;
 
  private:
   json json_;
 
-  std::vector<u32> scenes_;
+  std::vector<EnabledScene> enabled_scenes_;
   std::vector<Pass> passes_;
 };
 

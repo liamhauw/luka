@@ -18,11 +18,55 @@ FrameGraph::FrameGraph(const std::filesystem::path& frame_graph_path) {
   }
   json_ = json::parse(frame_graph_file);
 
-  if (json_.contains("scenes")) {
-    const json& scenes_json{json_["scenes"]};
-    for (const auto& scene_json : scenes_json) {
-      u32 scene_index{scene_json.template get<u32>()};
-      scenes_.push_back(scene_index);
+  if (json_.contains("enabled_scenes")) {
+    const json& enabled_scenes_json{json_["enabled_scenes"]};
+    for (const auto& enabled_scene_json : enabled_scenes_json) {
+      EnabledScene enabled_scene{};
+
+      if (enabled_scene_json.contains("index")) {
+        enabled_scene.index = enabled_scene_json["index"].template get<u32>();
+      }
+
+      glm::vec3 scale{1.0F, 1.0F, 1.0F};
+      glm::quat rotation{1.0F, 0.0F, 0.0F, 0.0F};
+      glm::vec3 translation{0.0F, 0.0F, 0.0F};
+      if (enabled_scene_json.contains("scale")) {
+        const json& scale_json{enabled_scene_json["scale"]};
+        std::vector<f32> scale_vector{
+            scale_json.template get<std::vector<f32>>()};
+        if (scale_vector.size() != 3) {
+          THROW("Unknown scale");
+        }
+        scale = glm::vec3{scale_vector[0], scale_vector[1], scale_vector[2]};
+      }
+
+      if (enabled_scene_json.contains("rotation")) {
+        const json& rotation_json{enabled_scene_json["rotation"]};
+        std::vector<f32> rotation_vector{
+            rotation_json.template get<std::vector<f32>>()};
+        if (rotation_vector.size() != 4) {
+          THROW("Unknown rotation");
+        }
+        rotation = glm::quat{rotation_vector[0], rotation_vector[1],
+                             rotation_vector[2], rotation_vector[3]};
+      }
+
+      if (enabled_scene_json.contains("translation")) {
+        const json& translation_json{enabled_scene_json["translation"]};
+        std::vector<f32> translation_vector{
+            translation_json.template get<std::vector<f32>>()};
+        if (translation_vector.size() != 3) {
+          THROW("Unknown translation");
+        }
+        translation = glm::vec3{translation_vector[0], translation_vector[1],
+                                translation_vector[2]};
+      }
+
+      enabled_scene.model = glm::translate(glm::mat4(1.0F), translation) *
+                            glm::mat4_cast(rotation) *
+                            glm::scale(glm::mat4(1.0F), scale);
+
+      enabled_scenes_.push_back(enabled_scene);
     }
   }
 
@@ -149,7 +193,9 @@ FrameGraph::FrameGraph(const std::filesystem::path& frame_graph_path) {
   }
 }
 
-const std::vector<u32>& FrameGraph::GetScenes() const { return scenes_; }
+const std::vector<EnabledScene>& FrameGraph::GetEnabledScenes() const {
+  return enabled_scenes_;
+}
 
 const std::vector<ast::Pass>& FrameGraph::GetPasses() const { return passes_; }
 
