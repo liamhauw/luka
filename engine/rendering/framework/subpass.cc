@@ -153,6 +153,19 @@ void Subpass::CreateDrawElements() {
         draw_elements_.push_back(CreateDrawElement(scene_primitive));
       }
     }
+
+    std::sort(draw_elements_.begin(), draw_elements_.end(),
+              [](const auto& lhs, const auto& rhs) {
+                if (lhs.pipeline != rhs.pipeline) {
+                  return lhs.pipeline < rhs.pipeline;
+                }
+
+                if (lhs.pipeline_layout != rhs.pipeline_layout) {
+                  return lhs.pipeline_layout < rhs.pipeline_layout;
+                }
+
+                return false;
+              });
   }
 }
 
