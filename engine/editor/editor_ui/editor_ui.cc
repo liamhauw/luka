@@ -34,7 +34,7 @@ void EditorUi::CreateUi() {
     delta_time_ = delta_time_sum_ / count_;
     fps_ = static_cast<u64>(1.0 / delta_time_);
     count_ = 0;
-    delta_time_sum_ = 0;
+    delta_time_sum_ = 0.0;
   }
 
   ImGui::SetNextWindowPos(ImVec2{0.0, 0.0});
@@ -43,7 +43,6 @@ void EditorUi::CreateUi() {
   ImGui::Text("Delta time: %f", delta_time_);
   ImGui::Text("FPS: %llu", fps_);
   ImGui::Text("Scenes:");
-
   std::vector<bool>& show_scenes{config_->GetGlobalContext().show_scenes};
   for (u32 i{}; i < show_scenes.size(); ++i) {
     if (i != 0) {
