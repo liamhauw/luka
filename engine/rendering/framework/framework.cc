@@ -101,13 +101,15 @@ void Framework::CreatePasses() {
   u32 frame_graph_index{config_->GetFrameGraphIndex()};
   const ast::FrameGraph& frame_graph{asset_->GetFrameGraph(frame_graph_index)};
 
+  const std::vector<ast::Pass>& ast_passes{frame_graph.GetPasses()};
+
+  std::vector<fw::ScenePrimitive> scene_primitives;
+
   const std::vector<ast::EnabledScene>& enabled_scenes{
       frame_graph.GetEnabledScenes()};
 
   config_->GetGlobalContext().show_scenes =
       std::vector<bool>(enabled_scenes.size(), true);
-
-  std::vector<fw::ScenePrimitive> scene_primitives;
 
   for (const auto& enabled_scene : enabled_scenes) {
     const ast::sc::Scene* scene{
@@ -161,7 +163,6 @@ void Framework::CreatePasses() {
     }
   }
 
-  const std::vector<ast::Pass>& ast_passes{frame_graph.GetPasses()};
   shared_image_views_.resize(frame_count_);
   for (u32 i{}; i < ast_passes.size(); ++i) {
     passes_.emplace_back(gpu_, asset_, camera_, function_ui_, frame_count_,
