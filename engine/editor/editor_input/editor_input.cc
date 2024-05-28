@@ -74,7 +74,7 @@ void EditorInput::Tick() {
 }
 
 void EditorInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mod*/) {
-  if (!config_->GetEditorMode()) {
+  if (!config_->GetGlobalContext().editor_mode) {
     return;
   }
 
@@ -85,7 +85,7 @@ void EditorInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mod*/) {
         break;
       case GLFW_KEY_1:
         LOGI("Change to function mode");
-        config_->SetEditorMode(false);
+        config_->GetGlobalContext().editor_mode = false;
         break;
       case GLFW_KEY_W:
         editor_command_ |= static_cast<u32>(EditorCommand::kFoward);
@@ -141,7 +141,7 @@ void EditorInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mod*/) {
 }
 
 void EditorInput::OnCursorPos(f64 xpos, f64 ypos) {
-  if (!config_->GetEditorMode()) {
+  if (!config_->GetGlobalContext().editor_mode) {
     return;
   }
 

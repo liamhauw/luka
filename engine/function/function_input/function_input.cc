@@ -29,7 +29,7 @@ FunctionInput::FunctionInput(std::shared_ptr<Config> config,
 void FunctionInput::Tick() {}
 
 void FunctionInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mods*/) {
-  if (config_->GetEditorMode()) {
+  if (config_->GetGlobalContext().editor_mode) {
     return;
   }
 
@@ -43,7 +43,7 @@ void FunctionInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mods*/) {
         break;
       case GLFW_KEY_2:
         LOGI("Change to eidtor mode");
-        config_->SetEditorMode(true);
+        config_->GetGlobalContext().editor_mode = true;
         break;
       case GLFW_KEY_W:
         function_command_ |= static_cast<u32>(FunctionCommand::kForward);
@@ -102,7 +102,7 @@ void FunctionInput::OnKey(i32 key, i32 /*scancode*/, i32 action, i32 /*mods*/) {
 }
 
 void FunctionInput::OnCursorPos(f64 /*xpos*/, f64 /*ypos*/) {
-  if (config_->GetEditorMode()) {
+  if (config_->GetGlobalContext().editor_mode) {
     return;
   }
 }

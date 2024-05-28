@@ -172,6 +172,9 @@ void Subpass::CreateDrawElements() {
 DrawElement Subpass::CreateDrawElement(const ScenePrimitive& scene_primitivce) {
   DrawElement draw_element{};
   draw_element.has_scene = has_scene_;
+  if (draw_element.has_scene) {
+    draw_element.scene_index = scene_primitivce.scence_index;
+  }
 
   // Parse shader resources.
   std::vector<const SPIRV*> spirvs;

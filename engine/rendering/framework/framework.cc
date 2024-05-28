@@ -104,6 +104,9 @@ void Framework::CreatePasses() {
   const std::vector<ast::EnabledScene>& enabled_scenes{
       frame_graph.GetEnabledScenes()};
 
+  config_->GetGlobalContext().show_scenes =
+      std::vector<bool>(enabled_scenes.size(), true);
+
   std::vector<fw::ScenePrimitive> scene_primitives;
 
   for (const auto& enabled_scene : enabled_scenes) {
@@ -152,8 +155,8 @@ void Framework::CreatePasses() {
       const std::vector<ast::sc::Primitive>& primitives{mesh->GetPrimitives()};
 
       for (const auto& primitive : primitives) {
-        scene_primitives.emplace_back(model_matrix, inverse_model_matrix,
-                                      &primitive);
+        scene_primitives.emplace_back(enabled_scene.index, model_matrix,
+                                      inverse_model_matrix, &primitive);
       }
     }
   }
@@ -273,6 +276,13 @@ void Framework::DrawPasses(const vk::raii::CommandBuffer& command_buffer) {
       const vk::raii::Pipeline* prev_pipeline{};
       const vk::raii::PipelineLayout* prev_pipeline_layout{};
       for (const fw::DrawElement& draw_element : draw_elements) {
+        // Show draw_element?
+        if (draw_element.has_scene &&
+            !(config_->GetGlobalContext()
+                  .show_scenes[draw_element.scene_index])) {
+          continue;
+        }
+
         // Bind pipeline.
         const vk::raii::Pipeline* pipeline{draw_element.pipeline};
         if (prev_pipeline != pipeline) {

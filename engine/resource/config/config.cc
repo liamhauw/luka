@@ -57,6 +57,8 @@ Config::Config() {
 
 void Config::Tick() {}
 
+GlobalContext& Config::GetGlobalContext() { return global_context_; }
+
 const std::vector<std::filesystem::path>& Config::GetScenePaths() const {
   return scene_paths_;
 }
@@ -74,9 +76,5 @@ const std::vector<std::filesystem::path>& Config::GetFrameGraphPaths() const {
 }
 
 u32 Config::GetFrameGraphIndex() const { return frame_graph_index_; }
-
-bool Config::GetEditorMode() const { return editor_mode_; }
-
-void Config::SetEditorMode(bool editor_mode) { editor_mode_ = editor_mode; }
 
 }  // namespace luka

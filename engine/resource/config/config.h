@@ -13,11 +13,18 @@
 
 namespace luka {
 
+struct GlobalContext {
+  bool editor_mode{true};
+  std::vector<bool> show_scenes;
+};
+
 class Config {
  public:
   Config();
 
   void Tick();
+
+  GlobalContext& GetGlobalContext();
 
   const std::vector<std::filesystem::path>& GetScenePaths() const;
   const std::vector<std::filesystem::path>& GetLightPaths() const;
@@ -25,10 +32,9 @@ class Config {
   const std::vector<std::filesystem::path>& GetFrameGraphPaths() const;
   u32 GetFrameGraphIndex() const;
 
-  bool GetEditorMode() const;
-  void SetEditorMode(bool editor_mode);
-
  private:
+  GlobalContext global_context_{};
+
   std::filesystem::path resource_path_{GetPath(LUKA_ROOT_PATH) / "resource"};
   std::filesystem::path config_path_{resource_path_ / "config" / "config.json"};
   std::filesystem::path asset_path_{resource_path_ / "asset"};
@@ -43,8 +49,6 @@ class Config {
   std::vector<std::filesystem::path> shader_paths_;
   std::vector<std::filesystem::path> frame_graph_paths_;
   u32 frame_graph_index_{};
-
-  bool editor_mode_{true};
 };
 
 }  // namespace luka

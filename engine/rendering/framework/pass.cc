@@ -276,8 +276,7 @@ void Pass::CreateClearValues() {
   const std::vector<ast::Attachment>& ast_attachments{ast_pass_->attachments};
   for (const auto& ast_attachment : ast_attachments) {
     if (ast_attachment.format != vk::Format::eD32Sfloat) {
-      clear_values_.emplace_back(
-          vk::ClearColorValue{0.145F, 0.588F, 0.745F, 1.0F});
+      clear_values_.emplace_back(vk::ClearColorValue{0.0F, 0.0F, 0.0F, 0.0F});
     } else {
       clear_values_.emplace_back(vk::ClearDepthStencilValue{1.0F, 0});
     }

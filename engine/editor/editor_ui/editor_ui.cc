@@ -20,7 +20,7 @@ void EditorUi::Tick() {
     return;
   }
 
-  if (!config_->GetEditorMode()) {
+  if (!config_->GetGlobalContext().editor_mode) {
     return;
   }
 
@@ -42,6 +42,18 @@ void EditorUi::CreateUi() {
                ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
   ImGui::Text("Delta time: %f", delta_time_);
   ImGui::Text("FPS: %llu", fps_);
+  ImGui::Text("Scenes:");
+
+  std::vector<bool>& show_scenes{config_->GetGlobalContext().show_scenes};
+  for (u32 i{}; i < show_scenes.size(); ++i) {
+    if (i != 0) {
+      ImGui::SameLine();
+    }
+    bool show_scene{show_scenes[i]};
+    ImGui::Checkbox(std::to_string(i).c_str(), &show_scene);
+    show_scenes[i] = show_scene;
+  }
+
   ImGui::End();
 }
 

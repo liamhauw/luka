@@ -51,6 +51,7 @@ struct DrawElmentVertexInfo {
 
 struct DrawElement {
   bool has_scene;
+  u32 scene_index;
   bool has_descriptor_set;
   const vk::raii::PipelineLayout* pipeline_layout;
   std::vector<vk::raii::DescriptorSets> descriptor_sets;
@@ -64,6 +65,7 @@ struct DrawElement {
 };
 
 struct ScenePrimitive {
+  u32 scence_index;
   glm::mat4 model;
   glm::mat4 inverse_model;
   const ast::sc::Primitive* primitive;
