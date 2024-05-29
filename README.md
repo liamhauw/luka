@@ -12,6 +12,7 @@ A graphics engine with modular components including platform, core, base, resour
 - Improving load time with spirv cache and pipeline cache
 - Automating pipeline layout generation with SPIRV-Cross
 - Bindless rendering with descriptor indexing
+- Recording commands on multiple threads
 - User interface using imgui
 
 ## Prerequisites
