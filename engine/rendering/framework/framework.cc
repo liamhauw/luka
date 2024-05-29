@@ -14,8 +14,8 @@ namespace luka {
 void RecordRenderingCommand(
     const vk::raii::CommandBuffer& command_buffer, const fw::Subpass& subpass,
     const fw::DrawElement& draw_element,
-    const vk::raii::Pipeline* prev_pipeline,
-    const vk::raii::PipelineLayout* prev_pipeline_layout, u32 frame_index) {
+    const vk::raii::Pipeline*& prev_pipeline,
+    const vk::raii::PipelineLayout*& prev_pipeline_layout, u32 frame_index) {
   // Bind pipeline.
   const vk::raii::Pipeline* pipeline{draw_element.pipeline};
   if (prev_pipeline != pipeline) {
