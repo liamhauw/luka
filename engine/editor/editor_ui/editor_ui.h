@@ -19,7 +19,7 @@ namespace luka {
 
 class EditorUi {
  public:
-  EditorUi(std::shared_ptr<Config> config, std::shared_ptr<Window> window,
+  EditorUi(std::shared_ptr<Window> window, std::shared_ptr<Config> config,
            std::shared_ptr<Time> time);
 
   void Tick();
@@ -27,8 +27,8 @@ class EditorUi {
  private:
   void CreateUi();
 
-  std::shared_ptr<Config> config_;
   std::shared_ptr<Window> window_;
+  std::shared_ptr<Config> config_;
   std::shared_ptr<Time> time_;
 
   u32 count_{};

@@ -11,12 +11,12 @@
 
 namespace luka {
 
-EditorInput::EditorInput(std::shared_ptr<Config> config,
-                         std::shared_ptr<Window> window,
+EditorInput::EditorInput(std::shared_ptr<Window> window,
+                         std::shared_ptr<Config> config,
                          std::shared_ptr<Time> time,
                          std::shared_ptr<Camera> camera)
-    : config_{std::move(config)},
-      window_{std::move(window)},
+    : window_{std::move(window)},
+      config_{std::move(config)},
       time_{std::move(time)},
       camera_{std::move(camera)} {
   window_->RegisterOnKeyFunc([this](auto&& ph1, auto&& ph2, auto&& ph3,

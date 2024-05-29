@@ -11,9 +11,9 @@
 
 namespace luka {
 
-FunctionInput::FunctionInput(std::shared_ptr<Config> config,
-                             std::shared_ptr<Window> window)
-    : config_{std::move(config)}, window_{std::move(window)} {
+FunctionInput::FunctionInput(std::shared_ptr<Window> window,
+                             std::shared_ptr<Config> config)
+    : window_{std::move(window)}, config_{std::move(config)} {
   window_->RegisterOnKeyFunc([this](auto&& ph1, auto&& ph2, auto&& ph3,
                                     auto&& ph4) {
     OnKey(std::forward<decltype(ph1)>(ph1), std::forward<decltype(ph2)>(ph2),

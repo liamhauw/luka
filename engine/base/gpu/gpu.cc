@@ -459,11 +459,10 @@ vk::raii::CommandBuffers Gpu::AllocateCommandBuffers(
 }
 
 vk::raii::DescriptorSets Gpu::AllocateNormalDescriptorSets(
-    vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
-    const std::string& name, i32 index) {
-  descriptor_set_allocate_info.descriptorPool = *normal_descriptor_pool_;
-  vk::raii::DescriptorSets descriptor_sets{device_,
-                                           descriptor_set_allocate_info};
+    vk::DescriptorSetAllocateInfo descriptor_set_ai, const std::string& name,
+    i32 index) {
+  descriptor_set_ai.descriptorPool = *normal_descriptor_pool_;
+  vk::raii::DescriptorSets descriptor_sets{device_, descriptor_set_ai};
 
 #ifndef NDEBUG
   for (u32 i{}; i < descriptor_sets.size(); ++i) {
@@ -480,14 +479,13 @@ vk::raii::DescriptorSets Gpu::AllocateNormalDescriptorSets(
 }
 
 vk::raii::DescriptorSet Gpu::AllocateBindlessDescriptorSet(
-    vk::DescriptorSetAllocateInfo descriptor_set_allocate_info,
-    const std::string& name, i32 index) {
-  if (descriptor_set_allocate_info.descriptorSetCount != 1) {
+    vk::DescriptorSetAllocateInfo descriptor_set_ai, const std::string& name,
+    i32 index) {
+  if (descriptor_set_ai.descriptorSetCount != 1) {
     LOGW("Descriptor set count is not 1");
   }
-  descriptor_set_allocate_info.descriptorPool = *bindless_descriptor_pool_;
-  vk::raii::DescriptorSets descriptor_sets{device_,
-                                           descriptor_set_allocate_info};
+  descriptor_set_ai.descriptorPool = *bindless_descriptor_pool_;
+  vk::raii::DescriptorSets descriptor_sets{device_, descriptor_set_ai};
 
 #ifndef NDEBUG
   SetObjectName(vk::ObjectType::eDescriptorSet,
@@ -566,7 +564,6 @@ void Gpu::CreateInstance() {
   std::vector<const char*> enabled_instance_layers;
   std::vector<const char*> enabled_instance_extensions;
 
-  enabled_instance_layers.reserve(required_instance_layers.size());
   for (const char* layer : required_instance_layers) {
     if (std::find_if(kLayerProperties.begin(), kLayerProperties.end(),
                      [layer](const vk::LayerProperties& lp) {
@@ -577,7 +574,6 @@ void Gpu::CreateInstance() {
     enabled_instance_layers.push_back(layer);
   }
 
-  enabled_instance_extensions.reserve(required_instance_extensions.size());
   for (const char* extension : required_instance_extensions) {
     if (std::find_if(kExtensionProperties.begin(), kExtensionProperties.end(),
                      [extension](const vk::ExtensionProperties& ep) {

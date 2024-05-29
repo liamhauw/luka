@@ -11,35 +11,118 @@
 
 namespace luka {
 
+void RecordRenderingCommand(
+    const vk::raii::CommandBuffer& command_buffer, const fw::Subpass& subpass,
+    const fw::DrawElement& draw_element,
+    const vk::raii::Pipeline* prev_pipeline,
+    const vk::raii::PipelineLayout* prev_pipeline_layout, u32 frame_index) {
+  // Bind pipeline.
+  const vk::raii::Pipeline* pipeline{draw_element.pipeline};
+  if (prev_pipeline != pipeline) {
+    command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, **pipeline);
+    prev_pipeline = pipeline;
+  }
+
+  // Push constants, subpass and bindless descriptor sets.
+  const vk::raii::PipelineLayout* pipeline_layout{draw_element.pipeline_layout};
+  if (prev_pipeline_layout != pipeline_layout) {
+    if (subpass.HasPushConstant()) {
+      subpass.PushConstants(command_buffer, **pipeline_layout);
+    }
+
+    if (subpass.HasSubpassDescriptorSet()) {
+      u32 subpass_descriptor_set_index{subpass.GetSubpassDescriptorSetIndex()};
+      const vk::raii::DescriptorSet& subpass_descriptor_set{
+          subpass.GetSubpassDescriptorSet(frame_index)};
+      command_buffer.bindDescriptorSets(
+          vk::PipelineBindPoint::eGraphics, **pipeline_layout,
+          subpass_descriptor_set_index, *subpass_descriptor_set, nullptr);
+    }
+
+    if (subpass.HasBindlessDescriptorSet()) {
+      u32 bindless_descriptor_set_index{
+          subpass.GetBindlessDescriptorSetIndex()};
+      const vk::raii::DescriptorSet& bindless_descriptor_set{
+          subpass.GetBindlessDescriptorSet()};
+      command_buffer.bindDescriptorSets(
+          vk::PipelineBindPoint::eGraphics, **pipeline_layout,
+          bindless_descriptor_set_index, *bindless_descriptor_set, nullptr);
+    }
+
+    prev_pipeline_layout = pipeline_layout;
+  }
+
+  // Bind draw element descriptor sets.
+  if (draw_element.has_descriptor_set) {
+    u32 draw_element_descriptor_set_index{
+        subpass.GetDrawElementDescriptorSetIndex()};
+
+    const vk::raii::DescriptorSets& descriptor_sets{
+        draw_element.descriptor_sets[frame_index]};
+
+    std::vector<vk::DescriptorSet> vk_descriptor_sets;
+    for (const auto& descriptor_set : descriptor_sets) {
+      vk_descriptor_sets.push_back(*(descriptor_set));
+    }
+    command_buffer.bindDescriptorSets(
+        vk::PipelineBindPoint::eGraphics, **pipeline_layout,
+        draw_element_descriptor_set_index, vk_descriptor_sets, nullptr);
+  }
+
+  // Draw.
+  if (draw_element.has_scene) {
+    const std::vector<fw::DrawElmentVertexInfo>& vertex_infos{
+        draw_element.vertex_infos};
+
+    for (const auto& vertex_info : vertex_infos) {
+      command_buffer.bindVertexBuffers(
+          vertex_info.location, vertex_info.buffers, vertex_info.offsets);
+    }
+
+    if (!draw_element.has_index) {
+      command_buffer.draw(draw_element.vertex_count, 1, 0, 0);
+    } else {
+      const ast::sc::IndexAttribute* index_attribute{
+          draw_element.index_attribute};
+
+      command_buffer.bindIndexBuffer(*(index_attribute->buffer),
+                                     index_attribute->offset,
+                                     index_attribute->index_type);
+
+      command_buffer.drawIndexed(index_attribute->count, 1, 0, 0, 0);
+    }
+  } else {
+    command_buffer.draw(3, 1, 0, 0);
+  }
+}
+
 CommandRecord::CommandRecord(
-    std::shared_ptr<Config> config, u32 thread_count, u32 frame_index,
+    std::shared_ptr<Config> config,
+    const std::vector<vk::raii::CommandBuffers>& secondary_buffers,
     const fw::Subpass& subpass,
     const std::vector<fw::DrawElement>& draw_elements,
-    const vk::Viewport& viewport, const vk::Rect2D& scissor,
-    const std::vector<std::vector<vk::raii::CommandBuffers>>& secondary_buffers,
-    u32 scm_index)
+    const vk::Viewport& viewport, const vk::Rect2D& scissor, u32 frame_index,
+    u32 thread_count, u32 scm_index)
     : config_{std::move(config)},
-      thread_count_{thread_count},
-      frame_index_{frame_index},
+      secondary_buffers_{&secondary_buffers},
       subpass_{&subpass},
       draw_elements_{&draw_elements},
-      draw_element_count_{static_cast<u32>((*draw_elements_).size())},
       viewport_{&viewport},
       scissor_{&scissor},
-      secondary_buffers_{&secondary_buffers},
+      frame_index_{frame_index},
+      thread_count_{thread_count},
       scm_index_{scm_index},
+      draw_element_count_{static_cast<u32>((*draw_elements_).size())},
       prev_pipeline_(thread_count_),
       prev_pipeline_layout_(thread_count_) {}
 
 void CommandRecord::Record(enki::TaskSetPartition range, u32 thread_num) {
   const vk::raii::CommandBuffer& command_buffer{
-      (*secondary_buffers_)[frame_index_][thread_num][scm_index_]};
+      (*secondary_buffers_)[thread_num][scm_index_]};
 
   for (u32 i{range.start}; i < range.end; ++i) {
-    // LOGI("Record command buffer in range {} thread {}", i, thread_num);
     const fw::DrawElement& draw_element{(*draw_elements_)[i]};
 
-    // Show scene?
     if (draw_element.has_scene &&
         !(config_->GetGlobalContext().show_scenes[draw_element.scene_index])) {
       continue;
@@ -48,86 +131,9 @@ void CommandRecord::Record(enki::TaskSetPartition range, u32 thread_num) {
     command_buffer.setViewport(0, *viewport_);
     command_buffer.setScissor(0, *scissor_);
 
-    // Bind pipeline.
-    const vk::raii::Pipeline* pipeline{draw_element.pipeline};
-    if (prev_pipeline_[thread_num] != pipeline) {
-      command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, **pipeline);
-      prev_pipeline_[thread_num] = pipeline;
-    }
-
-    // Push constants, subpass and bindless descriptor sets.
-    const vk::raii::PipelineLayout* pipeline_layout{
-        draw_element.pipeline_layout};
-    if (prev_pipeline_layout_[thread_num] != pipeline_layout) {
-      if (subpass_->HasPushConstant()) {
-        subpass_->PushConstants(command_buffer, **pipeline_layout);
-      }
-
-      if (subpass_->HasSubpassDescriptorSet()) {
-        u32 subpass_descriptor_set_index{
-            subpass_->GetSubpassDescriptorSetIndex()};
-        const vk::raii::DescriptorSet& subpass_descriptor_set{
-            subpass_->GetSubpassDescriptorSet(frame_index_)};
-        command_buffer.bindDescriptorSets(
-            vk::PipelineBindPoint::eGraphics, **pipeline_layout,
-            subpass_descriptor_set_index, *subpass_descriptor_set, nullptr);
-      }
-
-      if (subpass_->HasBindlessDescriptorSet()) {
-        u32 bindless_descriptor_set_index{
-            subpass_->GetBindlessDescriptorSetIndex()};
-        const vk::raii::DescriptorSet& bindless_descriptor_set{
-            subpass_->GetBindlessDescriptorSet()};
-        command_buffer.bindDescriptorSets(
-            vk::PipelineBindPoint::eGraphics, **pipeline_layout,
-            bindless_descriptor_set_index, *bindless_descriptor_set, nullptr);
-      }
-
-      prev_pipeline_layout_[thread_num] = pipeline_layout;
-    }
-
-    // Bind draw element descriptor sets.
-    if (draw_element.has_descriptor_set) {
-      u32 draw_element_descriptor_set_index{
-          subpass_->GetDrawElementDescriptorSetIndex()};
-
-      const vk::raii::DescriptorSets& descriptor_sets{
-          draw_element.descriptor_sets[frame_index_]};
-
-      std::vector<vk::DescriptorSet> vk_descriptor_sets;
-      for (const auto& descriptor_set : descriptor_sets) {
-        vk_descriptor_sets.push_back(*(descriptor_set));
-      }
-      command_buffer.bindDescriptorSets(
-          vk::PipelineBindPoint::eGraphics, **pipeline_layout,
-          draw_element_descriptor_set_index, vk_descriptor_sets, nullptr);
-    }
-
-    // Draw.
-    if (draw_element.has_scene) {
-      const std::vector<fw::DrawElmentVertexInfo>& vertex_infos{
-          draw_element.vertex_infos};
-
-      for (const auto& vertex_info : vertex_infos) {
-        command_buffer.bindVertexBuffers(
-            vertex_info.location, vertex_info.buffers, vertex_info.offsets);
-      }
-
-      if (!draw_element.has_index) {
-        command_buffer.draw(draw_element.vertex_count, 1, 0, 0);
-      } else {
-        const ast::sc::IndexAttribute* index_attribute{
-            draw_element.index_attribute};
-
-        command_buffer.bindIndexBuffer(*(index_attribute->buffer),
-                                       index_attribute->offset,
-                                       index_attribute->index_type);
-
-        command_buffer.drawIndexed(index_attribute->count, 1, 0, 0, 0);
-      }
-    } else {
-      command_buffer.draw(3, 1, 0, 0);
-    }
+    RecordRenderingCommand(command_buffer, *subpass_, draw_element,
+                           prev_pipeline_[thread_num],
+                           prev_pipeline_layout_[thread_num], frame_index_);
   }
 }
 
@@ -144,15 +150,15 @@ void CommandRecordTaskSet::ExecuteRange(enki::TaskSetPartition range,
 }
 
 Framework::Framework(std::shared_ptr<TaskScheduler> task_scheduler,
-                     std::shared_ptr<Config> config,
                      std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu,
+                     std::shared_ptr<Config> config,
                      std::shared_ptr<Asset> asset,
                      std::shared_ptr<Camera> camera,
                      std::shared_ptr<FunctionUi> function_ui)
     : task_scheduler_{std::move(task_scheduler)},
-      config_{std::move(config)},
       window_{std::move(window)},
       gpu_{std::move(gpu)},
+      config_{std::move(config)},
       asset_{std::move(asset)},
       camera_{std::move(camera)},
       function_ui_{std::move(function_ui)},
@@ -204,30 +210,33 @@ void Framework::CreateSyncObjects() {
 }
 
 void Framework::CreateCommandObjects() {
-  vk::CommandPoolCreateInfo command_pool_ci{
+  vk::CommandPoolCreateInfo primary_command_pool_ci{
       vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
       gpu_->GetGraphicsQueueIndex()};
-  vk::CommandBufferAllocateInfo command_buffer_ai{
+  vk::CommandBufferAllocateInfo primary_command_buffer_ai{
       nullptr, vk::CommandBufferLevel::ePrimary, 1};
 
-  secondary_pools_.resize(frame_count_);
-  secondary_buffers_.resize(frame_count_);
+  vk::CommandPoolCreateInfo secondary_command_pool_ci{
+      {}, gpu_->GetGraphicsQueueIndex()};
+  vk::CommandBufferAllocateInfo secondary_command_buffer_ai{
+      nullptr, vk::CommandBufferLevel::eSecondary,
+      kMaxSecondaryCommandBufferCount};
+
+  secondary_command_pools_.resize(frame_count_);
+  secondary_command_buffers_.resize(frame_count_);
   for (u32 i{}; i < frame_count_; ++i) {
-    command_pools_.push_back(
-        gpu_->CreateCommandPool(command_pool_ci, "graphics"));
-    command_buffer_ai.commandPool = *(command_pools_.back());
-    command_buffers_.push_back(
-        gpu_->AllocateCommandBuffers(command_buffer_ai, "graphics"));
+    primary_command_pools_.push_back(
+        gpu_->CreateCommandPool(primary_command_pool_ci, "primary"));
+    primary_command_buffer_ai.commandPool = *(primary_command_pools_.back());
+    primary_command_buffers_.push_back(
+        gpu_->AllocateCommandBuffers(primary_command_buffer_ai, "primary"));
 
     for (u32 j{}; j < thread_count_; ++j) {
-      vk::CommandPoolCreateInfo secondary_command_pool_ci{
-          {}, gpu_->GetGraphicsQueueIndex()};
-      vk::CommandBufferAllocateInfo secondary_command_buffer_ai{
-          nullptr, vk::CommandBufferLevel::eSecondary, 8};
-      secondary_pools_[i].push_back(
+      secondary_command_pools_[i].push_back(
           gpu_->CreateCommandPool(secondary_command_pool_ci, "secondary"));
-      secondary_command_buffer_ai.commandPool = *(secondary_pools_[i].back());
-      secondary_buffers_[i].push_back(gpu_->AllocateCommandBuffers(
+      secondary_command_buffer_ai.commandPool =
+          *(secondary_command_pools_[i].back());
+      secondary_command_buffers_[i].push_back(gpu_->AllocateCommandBuffers(
           secondary_command_buffer_ai, "secondary"));
     }
   }
@@ -330,13 +339,13 @@ void Framework::Resize() {
 }
 
 void Framework::Render() {
-  const vk::raii::CommandBuffer& command_buffer{Begin()};
+  Begin();
   UpdatePasses();
-  DrawPasses(command_buffer);
-  End(command_buffer);
+  DrawPasses();
+  End();
 }
 
-const vk::raii::CommandBuffer& Framework::Begin() {
+void Framework::Begin() {
   vk::Result result{};
   std::tie(result, frame_index_) = swapchain_->acquireNextImage(
       UINT64_MAX,
@@ -345,26 +354,23 @@ const vk::raii::CommandBuffer& Framework::Begin() {
   const vk::raii::Fence& command_finished_fence{
       command_finished_fences_[frame_index_]};
   gpu_->WaitForFence(command_finished_fence);
-
   gpu_->ResetFence(command_finished_fence);
 
-  const vk::raii::CommandBuffer& command_buffer{
-      command_buffers_[frame_index_][0]};
-  command_buffer.reset({});
+  const vk::raii::CommandBuffer& primary_command_buffer{
+      primary_command_buffers_[frame_index_][0]};
+  primary_command_buffer.reset({});
 
   for (u32 j{}; j < thread_count_; ++j) {
-    secondary_pools_[frame_index_][j].reset();
+    secondary_command_pools_[frame_index_][j].reset();
   }
-
-  return command_buffer;
 }
 
-void Framework::End(const vk::raii::CommandBuffer& command_buffer) {
+void Framework::End() {
   vk::PipelineStageFlags wait_pipeline_stage{
       vk::PipelineStageFlagBits::eColorAttachmentOutput};
   vk::SubmitInfo submit_info{
       *(image_acquired_semaphores_[image_acquired_semaphore_index_]),
-      wait_pipeline_stage, *command_buffer,
+      wait_pipeline_stage, *(primary_command_buffers_[frame_index_][0]),
       *(render_finished_semaphores_[frame_index_])};
 
   const vk::raii::Queue& graphics_queue{gpu_->GetGraphicsQueue()};
@@ -393,17 +399,20 @@ void Framework::UpdatePasses() {
   }
 }
 
-void Framework::DrawPasses(const vk::raii::CommandBuffer& command_buffer) {
-  command_buffer.begin({});
+void Framework::DrawPasses() {
+  const vk::raii::CommandBuffer& primary_command_buffer{
+      primary_command_buffers_[frame_index_][0]};
+
+  primary_command_buffer.begin({});
 
   u32 scm_index{};
   // Tarverse passes.
   for (const auto& pass : passes_) {
 #ifndef NDEBUG
-    gpu_->BeginLabel(command_buffer, "Pass " + pass.GetName(),
+    gpu_->BeginLabel(primary_command_buffer, "Pass " + pass.GetName(),
                      {0.549F, 0.478F, 0.663F, 1.0F});
 #endif
-    const vk::RenderPassBeginInfo& render_pass_begin_info{
+    const vk::RenderPassBeginInfo& render_pass_bi{
         pass.GetRenderPassBeginInfo(frame_index_)};
 
     // Tarverse subpasses.
@@ -411,7 +420,7 @@ void Framework::DrawPasses(const vk::raii::CommandBuffer& command_buffer) {
     for (u32 i{}; i < subpasses.size(); ++i) {
       const fw::Subpass& subpass{subpasses[i]};
 #ifndef NDEBUG
-      gpu_->BeginLabel(command_buffer, "Subpass " + subpass.GetName(),
+      gpu_->BeginLabel(primary_command_buffer, "Subpass " + subpass.GetName(),
                        {0.443F, 0.573F, 0.745F, 1.0F});
 #endif
 
@@ -426,165 +435,84 @@ void Framework::DrawPasses(const vk::raii::CommandBuffer& command_buffer) {
 
       // Next subpass.
       if (i == 0) {
-        command_buffer.beginRenderPass(render_pass_begin_info,
-                                       subpass_contents);
+        primary_command_buffer.beginRenderPass(render_pass_bi,
+                                               subpass_contents);
       } else {
-        command_buffer.nextSubpass(subpass_contents);
+        primary_command_buffer.nextSubpass(subpass_contents);
       }
 
       if (use_secondary_command_buffer) {
         vk::CommandBufferInheritanceInfo inheritance_info{
-            render_pass_begin_info.renderPass, i,
-            render_pass_begin_info.framebuffer};
+            render_pass_bi.renderPass, i, render_pass_bi.framebuffer};
 
         for (u32 j{}; j < thread_count_; ++j) {
-          vk::CommandBufferBeginInfo command_buffer_begin_info{
+          vk::CommandBufferBeginInfo command_buffer_bi{
               vk::CommandBufferUsageFlagBits::eRenderPassContinue,
               &inheritance_info};
-          secondary_buffers_[frame_index_][j][scm_index].begin(
-              command_buffer_begin_info);
+          secondary_command_buffers_[frame_index_][j][scm_index].begin(
+              command_buffer_bi);
         }
 
-        CommandRecord command_record{config_,  thread_count_,      frame_index_,
-                                     subpass,  draw_elements,      viewport_,
-                                     scissor_, secondary_buffers_, scm_index};
+        CommandRecord command_record{
+            config_,      secondary_command_buffers_[frame_index_],
+            subpass,      draw_elements,
+            viewport_,    scissor_,
+            frame_index_, thread_count_,
+            scm_index};
         CommandRecordTaskSet command_record_task_set{&command_record};
         task_scheduler_->AddTaskSetToPipe(&command_record_task_set);
 
         task_scheduler_->WaitforTask(&command_record_task_set);
 
         for (u32 j{}; j < thread_count_; ++j) {
-          secondary_buffers_[frame_index_][j][scm_index].end();
+          secondary_command_buffers_[frame_index_][j][scm_index].end();
         }
 
         std::vector<vk::CommandBuffer> command_buffers;
         for (u32 j{}; j < thread_count_; ++j) {
           command_buffers.push_back(
-              *(secondary_buffers_[frame_index_][j][scm_index]));
+              *(secondary_command_buffers_[frame_index_][j][scm_index]));
         }
 
-        ++scm_index;
+        primary_command_buffer.executeCommands(command_buffers);
 
-        command_buffer.executeCommands(command_buffers);
+        ++scm_index;
       } else {
-        command_buffer.setViewport(0, viewport_);
-        command_buffer.setScissor(0, scissor_);
+        primary_command_buffer.setViewport(0, viewport_);
+        primary_command_buffer.setScissor(0, scissor_);
 
         const vk::raii::Pipeline* prev_pipeline{};
         const vk::raii::PipelineLayout* prev_pipeline_layout{};
         for (const fw::DrawElement& draw_element : draw_elements) {
-          // Show draw_element?
           if (draw_element.has_scene &&
               !(config_->GetGlobalContext()
                     .show_scenes[draw_element.scene_index])) {
             continue;
           }
-
-          // Bind pipeline.
-          const vk::raii::Pipeline* pipeline{draw_element.pipeline};
-          if (prev_pipeline != pipeline) {
-            command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
-                                        **pipeline);
-            prev_pipeline = pipeline;
-          }
-
-          // Push constants, subpass and bindless descriptor sets.
-          const vk::raii::PipelineLayout* pipeline_layout{
-              draw_element.pipeline_layout};
-          if (prev_pipeline_layout != pipeline_layout) {
-            if (subpass.HasPushConstant()) {
-              subpass.PushConstants(command_buffer, **pipeline_layout);
-            }
-
-            if (subpass.HasSubpassDescriptorSet()) {
-              u32 subpass_descriptor_set_index{
-                  subpass.GetSubpassDescriptorSetIndex()};
-              const vk::raii::DescriptorSet& subpass_descriptor_set{
-                  subpass.GetSubpassDescriptorSet(frame_index_)};
-              command_buffer.bindDescriptorSets(
-                  vk::PipelineBindPoint::eGraphics, **pipeline_layout,
-                  subpass_descriptor_set_index, *subpass_descriptor_set,
-                  nullptr);
-            }
-
-            if (subpass.HasBindlessDescriptorSet()) {
-              u32 bindless_descriptor_set_index{
-                  subpass.GetBindlessDescriptorSetIndex()};
-              const vk::raii::DescriptorSet& bindless_descriptor_set{
-                  subpass.GetBindlessDescriptorSet()};
-              command_buffer.bindDescriptorSets(
-                  vk::PipelineBindPoint::eGraphics, **pipeline_layout,
-                  bindless_descriptor_set_index, *bindless_descriptor_set,
-                  nullptr);
-            }
-
-            prev_pipeline_layout = pipeline_layout;
-          }
-
-          // Bind draw element descriptor sets.
-          if (draw_element.has_descriptor_set) {
-            u32 draw_element_descriptor_set_index{
-                subpass.GetDrawElementDescriptorSetIndex()};
-
-            const vk::raii::DescriptorSets& descriptor_sets{
-                draw_element.descriptor_sets[frame_index_]};
-
-            std::vector<vk::DescriptorSet> vk_descriptor_sets;
-            for (const auto& descriptor_set : descriptor_sets) {
-              vk_descriptor_sets.push_back(*(descriptor_set));
-            }
-            command_buffer.bindDescriptorSets(
-                vk::PipelineBindPoint::eGraphics, **pipeline_layout,
-                draw_element_descriptor_set_index, vk_descriptor_sets, nullptr);
-          }
-
-          // Draw.
-          if (draw_element.has_scene) {
-            const std::vector<fw::DrawElmentVertexInfo>& vertex_infos{
-                draw_element.vertex_infos};
-
-            for (const auto& vertex_info : vertex_infos) {
-              command_buffer.bindVertexBuffers(vertex_info.location,
-                                               vertex_info.buffers,
-                                               vertex_info.offsets);
-            }
-
-            if (!draw_element.has_index) {
-              command_buffer.draw(draw_element.vertex_count, 1, 0, 0);
-            } else {
-              const ast::sc::IndexAttribute* index_attribute{
-                  draw_element.index_attribute};
-
-              command_buffer.bindIndexBuffer(*(index_attribute->buffer),
-                                             index_attribute->offset,
-                                             index_attribute->index_type);
-
-              command_buffer.drawIndexed(index_attribute->count, 1, 0, 0, 0);
-            }
-          } else {
-            command_buffer.draw(3, 1, 0, 0);
-          }
+          RecordRenderingCommand(primary_command_buffer, subpass, draw_element,
+                                 prev_pipeline, prev_pipeline_layout,
+                                 frame_index_);
         }
       }
 
       // Ui.
       if (pass.HasUi()) {
-        function_ui_->Render(command_buffer);
+        function_ui_->Render(primary_command_buffer);
       }
 
 #ifndef NDEBUG
-      gpu_->EndLabel(command_buffer);
+      gpu_->EndLabel(primary_command_buffer);
 #endif
     }
 
     // End render pass.
-    command_buffer.endRenderPass();
+    primary_command_buffer.endRenderPass();
 #ifndef NDEBUG
-    gpu_->EndLabel(command_buffer);
+    gpu_->EndLabel(primary_command_buffer);
 #endif
   }
 
-  command_buffer.end();
+  primary_command_buffer.end();
 }
 
 }  // namespace luka

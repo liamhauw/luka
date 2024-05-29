@@ -25,7 +25,7 @@ enum class FunctionCommand : u32 {
 
 class FunctionInput {
  public:
-  FunctionInput(std::shared_ptr<Config> config, std::shared_ptr<Window> window);
+  FunctionInput(std::shared_ptr<Window> window, std::shared_ptr<Config> config);
 
   void Tick();
 
@@ -33,8 +33,8 @@ class FunctionInput {
   void OnCursorPos(f64 xpos, f64 ypos);
 
  private:
-  std::shared_ptr<Config> config_;
   std::shared_ptr<Window> window_;
+  std::shared_ptr<Config> config_;
 
   u32 control_command_{0xFFFFFFFF};
   u32 function_command_{};

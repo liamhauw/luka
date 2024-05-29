@@ -439,10 +439,10 @@ void Subpass::CreatePipelineResources(
 
         std::vector<vk::DescriptorSetLayout> subpass_descriptor_set_layouts(
             frame_count_, **subpass_descriptor_set_layout_);
-        vk::DescriptorSetAllocateInfo subpass_descriptor_set_allocate_info{
+        vk::DescriptorSetAllocateInfo subpass_descriptor_set_ai{
             nullptr, subpass_descriptor_set_layouts};
         subpass_descriptor_sets_ = gpu_->AllocateNormalDescriptorSets(
-            subpass_descriptor_set_allocate_info, name_ + "_subpass");
+            subpass_descriptor_set_ai, name_ + "_subpass");
       }
 
       // Update descriptor sets.
@@ -531,10 +531,10 @@ void Subpass::CreatePipelineResources(
             bindless_descriptor_set_layout_ci, name_ + "_bindless"));
 
         // Allocate descriptor set.
-        vk::DescriptorSetAllocateInfo bindless_descriptor_set_allocate_info{
+        vk::DescriptorSetAllocateInfo bindless_descriptor_set_ai{
             nullptr, **bindless_descriptor_set_layout_};
         bindless_descriptor_set_ = gpu_->AllocateBindlessDescriptorSet(
-            bindless_descriptor_set_allocate_info, name_ + "_bindless");
+            bindless_descriptor_set_ai, name_ + "_bindless");
       }
 
       // Update descriptor set.
@@ -679,13 +679,12 @@ void Subpass::CreatePipelineResources(
       // Allocate descriptor sets.
       draw_element.has_descriptor_set = true;
       for (u32 i{}; i < frame_count_; ++i) {
-        vk::DescriptorSetAllocateInfo draw_element_descriptor_set_allocate_info{
+        vk::DescriptorSetAllocateInfo draw_element_descriptor_set_ai{
             nullptr, **draw_element_descriptor_set_layout};
 
         vk::raii::DescriptorSets draw_element_descriptor_sets{
-            gpu_->AllocateNormalDescriptorSets(
-                draw_element_descriptor_set_allocate_info,
-                name_ + "_draw_element")};
+            gpu_->AllocateNormalDescriptorSets(draw_element_descriptor_set_ai,
+                                               name_ + "_draw_element")};
 
         draw_element.descriptor_sets.push_back(
             std::move(draw_element_descriptor_sets));
@@ -875,7 +874,6 @@ void Subpass::CreatePipeline(
     }
 
     std::vector<u32> locations;
-    locations.reserve(vertex_location_attributes.size());
     for (const auto& vertex_location_attribute : vertex_location_attributes) {
       locations.push_back(vertex_location_attribute.first);
     }

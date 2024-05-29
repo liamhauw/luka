@@ -9,10 +9,10 @@
 
 namespace luka {
 
-EditorUi::EditorUi(std::shared_ptr<Config> config,
-                   std::shared_ptr<Window> window, std::shared_ptr<Time> time)
-    : config_{std::move(config)},
-      window_{std::move(window)},
+EditorUi::EditorUi(std::shared_ptr<Window> window,
+                   std::shared_ptr<Config> config, std::shared_ptr<Time> time)
+    : window_{std::move(window)},
+      config_{std::move(config)},
       time_{std::move(time)} {}
 
 void EditorUi::Tick() {

@@ -11,10 +11,10 @@
 
 namespace luka {
 
-AssetAsync::AssetAsync(std::shared_ptr<Config> config, std::shared_ptr<Gpu> gpu,
+AssetAsync::AssetAsync(std::shared_ptr<Gpu> gpu, std::shared_ptr<Config> config,
                        u32 thread_count)
-    : config_{std::move(config)},
-      gpu_{std::move(gpu)},
+    : gpu_{std::move(gpu)},
+      config_{std::move(config)},
       thread_count_{thread_count},
       cfg_scene_paths_{&(config_->GetScenePaths())},
       cfg_light_paths_{&(config_->GetLightPaths())},
@@ -34,18 +34,18 @@ AssetAsync::AssetAsync(std::shared_ptr<Config> config, std::shared_ptr<Gpu> gpu,
   vk::CommandPoolCreateInfo command_pool_ci{
       vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
       gpu_->GetTransferQueueIndex()};
-  vk::CommandBufferAllocateInfo command_buffer_allocate_info{
+  vk::CommandBufferAllocateInfo command_buffer_ai{
       nullptr, vk::CommandBufferLevel::ePrimary, 1};
-  vk::CommandBufferBeginInfo command_buffer_begin_info{
+  vk::CommandBufferBeginInfo command_buffer_bi{
       vk::CommandBufferUsageFlagBits::eOneTimeSubmit};
 
   for (u32 i{}; i < thread_count_; ++i) {
     transfer_command_pools_.push_back(
         std::move(gpu_->CreateCommandPool(command_pool_ci)));
-    command_buffer_allocate_info.commandPool = *(transfer_command_pools_[i]);
-    transfer_command_buffers_.push_back(std::move(
-        gpu_->AllocateCommandBuffers(command_buffer_allocate_info).front()));
-    transfer_command_buffers_[i].begin(command_buffer_begin_info);
+    command_buffer_ai.commandPool = *(transfer_command_pools_[i]);
+    transfer_command_buffers_.push_back(
+        std::move(gpu_->AllocateCommandBuffers(command_buffer_ai).front()));
+    transfer_command_buffers_[i].begin(command_buffer_bi);
   }
 }
 
@@ -153,13 +153,12 @@ void AssetAsyncLoadTaskSet::ExecuteRange(enki::TaskSetPartition range,
   asset_async_->Load(range, thread_num);
 }
 
-Asset::Asset(std::shared_ptr<Config> config,
-             std::shared_ptr<TaskScheduler> task_scheduler,
-             std::shared_ptr<Gpu> gpu)
-    : config_{std::move(config)},
-      task_scheduler_{std::move(task_scheduler)},
+Asset::Asset(std::shared_ptr<TaskScheduler> task_scheduler,
+             std::shared_ptr<Gpu> gpu, std::shared_ptr<Config> config)
+    : task_scheduler_{std::move(task_scheduler)},
       gpu_{std::move(gpu)},
-      asset_async_{config_, gpu_, task_scheduler_->GetThreadCount()},
+      config_{std::move(config)},
+      asset_async_{gpu_, config_, task_scheduler_->GetThreadCount()},
       asset_async_load_task_set_{&asset_async_} {
   task_scheduler_->AddTaskSetToPipe(&asset_async_load_task_set_);
 }

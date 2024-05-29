@@ -57,10 +57,10 @@ std::vector<Subpass>& Pass::GetSubpasses() { return subpasses_; }
 const std::string& Pass::GetName() const { return name_; }
 
 vk::RenderPassBeginInfo Pass::GetRenderPassBeginInfo(u32 frame_index) const {
-  vk::RenderPassBeginInfo render_pass_begin_info{*render_pass_,
-                                                 *(framebuffers_[frame_index]),
-                                                 render_area_, clear_values_};
-  return render_pass_begin_info;
+  vk::RenderPassBeginInfo render_pass_bi{*render_pass_,
+                                         *(framebuffers_[frame_index]),
+                                         render_area_, clear_values_};
+  return render_pass_bi;
 }
 
 const std::vector<Subpass>& Pass::GetSubpasses() const { return subpasses_; }
