@@ -116,7 +116,8 @@ class Gpu {
       const std::string& name = {}, i32 index = -1);
 
   void UpdateDescriptorSets(const std::vector<vk::WriteDescriptorSet>& writes);
-  vk::Result WaitForFence(const vk::raii::Fence& fence);
+  vk::Result WaitSemaphores(const vk::SemaphoreWaitInfo& semaphore_wi);
+  vk::Result WaitForFences(const vk::raii::Fence& fence);
   void ResetFence(const vk::raii::Fence& fence);
   void TransferQueueSubmit(const vk::SubmitInfo& submit_info);
   void WaitIdle();

@@ -7,8 +7,6 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include <TaskScheduler.h>
-
 #include "base/gpu/gpu.h"
 #include "base/task_scheduler//task_scheduler.h"
 #include "base/window/window.h"
@@ -106,8 +104,8 @@ class Framework {
   u32 frame_count_{};
 
   std::vector<vk::raii::Semaphore> image_acquired_semaphores_;
-  std::vector<vk::raii::Semaphore> render_finished_semaphores_;
-  std::vector<vk::raii::Fence> command_finished_fences_;
+  std::vector<vk::raii::Semaphore> graphics_finished_semaphores_;
+  vk::raii::Semaphore graphics_timeline_semaphore_{nullptr};
 
   std::vector<vk::raii::CommandPool> primary_command_pools_;
   std::vector<vk::raii::CommandBuffers> primary_command_buffers_;
@@ -122,6 +120,7 @@ class Framework {
       shared_image_views_;
   std::vector<fw::Pass> passes_;
 
+  u64 absolute_frame_{};
   u32 frame_index_{};
   u32 image_acquired_semaphore_index_{};
 };

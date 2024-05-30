@@ -503,7 +503,11 @@ void Gpu::UpdateDescriptorSets(
   device_.updateDescriptorSets(writes, nullptr);
 }
 
-vk::Result Gpu::WaitForFence(const vk::raii::Fence& fence) {
+vk::Result Gpu::WaitSemaphores(const vk::SemaphoreWaitInfo& semaphore_wi) {
+  return device_.waitSemaphores(semaphore_wi, UINT64_MAX);
+}
+
+vk::Result Gpu::WaitForFences(const vk::raii::Fence& fence) {
   return device_.waitForFences(*fence, VK_TRUE, UINT64_MAX);
 }
 
@@ -777,41 +781,35 @@ void Gpu::CreateDevice() {
 #endif
 
   // Features.
-  vk::PhysicalDeviceDescriptorIndexingFeatures indexing_features;
-  indexing_features.descriptorBindingPartiallyBound = VK_TRUE;
-  indexing_features.runtimeDescriptorArray = VK_TRUE;
-  indexing_features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+  vk::PhysicalDeviceFeatures features;
 
-  vk::PhysicalDeviceIndexTypeUint8FeaturesEXT index_type_uint8_features;
-  index_type_uint8_features.indexTypeUint8 = VK_TRUE;
-  index_type_uint8_features.pNext = &indexing_features;
+  vk::PhysicalDeviceFeatures2 features2;
+  features2.features = features;
 
-  vk::PhysicalDeviceFeatures physical_device_features;
+  vk::PhysicalDeviceVulkan12Features vulkan12_features;
+  vulkan12_features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+  vulkan12_features.descriptorBindingPartiallyBound = VK_TRUE;
+  vulkan12_features.runtimeDescriptorArray = VK_TRUE;
+  vulkan12_features.timelineSemaphore = VK_TRUE;
 
-  vk::PhysicalDeviceFeatures2 physical_device_features2;
-  physical_device_features2.features = physical_device_features;
-  physical_device_features2.pNext = &index_type_uint8_features;
+  vk::PhysicalDeviceVulkan13Features vulkan13_features;
+  vulkan13_features.synchronization2 = VK_TRUE;
 
-  // vk::PhysicalDeviceFeatures physical_device_features;
+  vk::PhysicalDeviceIndexTypeUint8FeaturesEXT index_type_uint8_features_ext;
+  index_type_uint8_features_ext.indexTypeUint8 = VK_TRUE;
 
-  // vk::PhysicalDeviceDescriptorIndexingFeatures indexing_features;
-  // indexing_features.descriptorBindingPartiallyBound = VK_TRUE;
-  // indexing_features.runtimeDescriptorArray = VK_TRUE;
-  // indexing_features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
-
-  // vk::PhysicalDeviceIndexTypeUint8FeaturesEXT index_type_uint8_features;
-  // index_type_uint8_features.indexTypeUint8 = VK_TRUE;
-
-  // vk::StructureChain<vk::PhysicalDeviceFeatures2,
-  //                    vk::PhysicalDeviceDescriptorIndexingFeatures,
-  //                    vk::PhysicalDeviceIndexTypeUint8FeaturesEXT>
-  //     physical_device_features2{physical_device_features, indexing_features,
-  //                               index_type_uint8_features};
+  vk::StructureChain<vk::PhysicalDeviceFeatures2,
+                     vk::PhysicalDeviceVulkan12Features,
+                     vk::PhysicalDeviceVulkan13Features,
+                     vk::PhysicalDeviceIndexTypeUint8FeaturesEXT>
+      features_chain{features2, vulkan12_features, vulkan13_features,
+                     index_type_uint8_features_ext};
 
   // Create device.
-  vk::DeviceCreateInfo device_ci{{},      device_queue_cis,
-                                 {},      enabled_device_extensions,
-                                 nullptr, &physical_device_features2};
+  vk::DeviceCreateInfo device_ci{
+      {},      device_queue_cis,
+      {},      enabled_device_extensions,
+      nullptr, &(features_chain.get<vk::PhysicalDeviceFeatures2>())};
 
   device_ = vk::raii::Device{physical_device_, device_ci};
 

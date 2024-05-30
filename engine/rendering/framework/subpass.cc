@@ -874,6 +874,7 @@ void Subpass::CreatePipeline(
     }
 
     std::vector<u32> locations;
+    locations.reserve(vertex_location_attributes.size());
     for (const auto& vertex_location_attribute : vertex_location_attributes) {
       locations.push_back(vertex_location_attribute.first);
     }
@@ -957,10 +958,9 @@ void Subpass::CreatePipeline(
 
   std::array<vk::DynamicState, 2> dynamic_states{vk::DynamicState::eViewport,
                                                  vk::DynamicState::eScissor};
-  vk::PipelineDynamicStateCreateInfo dynamic_state_create_info{{},
-                                                               dynamic_states};
+  vk::PipelineDynamicStateCreateInfo dynamic_state_ci{{}, dynamic_states};
 
-  vk::GraphicsPipelineCreateInfo graphics_pipeline_create_info{
+  vk::GraphicsPipelineCreateInfo graphics_pipeline_ci{
       {},
       shader_stage_cis,
       &vertex_input_state_ci,
@@ -971,13 +971,13 @@ void Subpass::CreatePipeline(
       &multisample_state_ci,
       &depth_stencil_state_ci,
       &color_blend_state_ci,
-      &dynamic_state_create_info,
+      &dynamic_state_ci,
       **(draw_element.pipeline_layout),
       render_pass_,
       subpass_index_};
 
-  const vk::raii::Pipeline& pipeline{RequestPipeline(
-      graphics_pipeline_create_info, pipeline_hash_value, name_)};
+  const vk::raii::Pipeline& pipeline{
+      RequestPipeline(graphics_pipeline_ci, pipeline_hash_value, name_)};
   draw_element.pipeline = &pipeline;
 }
 
