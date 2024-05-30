@@ -7,8 +7,6 @@
 #include "platform/pch.h"
 // clang-format on
 
-#include <TaskScheduler.h>
-
 #include "base/gpu/gpu.h"
 #include "base/task_scheduler/task_scheduler.h"
 #include "resource/asset/frame_graph.h"

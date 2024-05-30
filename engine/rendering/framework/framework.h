@@ -103,9 +103,9 @@ class Framework {
   std::vector<vk::Image> swapchain_images_;
   u32 frame_count_{};
 
+  vk::raii::Semaphore graphics_timeline_semaphore_{nullptr};
   std::vector<vk::raii::Semaphore> image_acquired_semaphores_;
   std::vector<vk::raii::Semaphore> graphics_finished_semaphores_;
-  vk::raii::Semaphore graphics_timeline_semaphore_{nullptr};
 
   std::vector<vk::raii::CommandPool> primary_command_pools_;
   std::vector<vk::raii::CommandBuffers> primary_command_buffers_;
