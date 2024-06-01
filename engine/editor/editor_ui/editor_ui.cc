@@ -2,6 +2,7 @@
 // Copyright (C) 2023-present Liam Hauw.
 
 // clang-format off
+#include "imgui.h"
 #include "platform/pch.h"
 // clang-format on
 
@@ -42,15 +43,16 @@ void EditorUi::CreateUi() {
                ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
   ImGui::Text("Delta time: %f", delta_time_);
   ImGui::Text("FPS: %llu", fps_);
+
   ImGui::Text("Scenes:");
-  std::vector<bool>& show_scenes{config_->GetGlobalContext().show_scenes};
-  for (u32 i{}; i < show_scenes.size(); ++i) {
-    if (i != 0) {
-      ImGui::SameLine();
-    }
-    bool show_scene{show_scenes[i]};
-    ImGui::Checkbox(std::to_string(i).c_str(), &show_scene);
-    show_scenes[i] = show_scene;
+  ImGui::NewLine();
+  std::unordered_map<u32, bool>& show_scenes{
+      config_->GetGlobalContext().show_scenes};
+  for (auto& show_scene : show_scenes) {
+    ImGui::SameLine();
+    bool ss{show_scene.second};
+    ImGui::Checkbox(std::to_string(show_scene.first).c_str(), &ss);
+    show_scene.second = ss;
   }
 
   ImGui::End();

@@ -15,7 +15,7 @@ namespace luka {
 
 struct GlobalContext {
   bool editor_mode{true};
-  std::vector<bool> show_scenes;
+  std::unordered_map<u32, bool> show_scenes;
 };
 
 class Config {

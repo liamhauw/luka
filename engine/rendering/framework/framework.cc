@@ -272,8 +272,9 @@ void Framework::CreatePasses() {
   const std::vector<ast::EnabledScene>& enabled_scenes{
       frame_graph.GetEnabledScenes()};
 
-  config_->GetGlobalContext().show_scenes =
-      std::vector<bool>(enabled_scenes.size(), true);
+  for (const auto& enabled_scene : enabled_scenes) {
+    config_->GetGlobalContext().show_scenes.emplace(enabled_scene.index, true);
+  }
 
   for (const auto& enabled_scene : enabled_scenes) {
     const ast::sc::Scene* scene{
