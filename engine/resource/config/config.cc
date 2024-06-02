@@ -22,6 +22,7 @@ Config::Config() {
     const json& scenes_json{config_json_["scenes"]};
     for (const json& scene_json : scenes_json) {
       std::string uri{scene_json.template get<std::string>()};
+      scene_uris_.push_back(uri);
       scene_paths_.push_back(scene_path_ / GetPath(uri));
     }
   }
@@ -58,6 +59,10 @@ Config::Config() {
 void Config::Tick() {}
 
 GlobalContext& Config::GetGlobalContext() { return global_context_; }
+
+const std::vector<std::string>& Config::GetSceneUris() const {
+  return scene_uris_;
+}
 
 const std::vector<std::filesystem::path>& Config::GetScenePaths() const {
   return scene_paths_;

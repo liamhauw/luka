@@ -808,16 +808,16 @@ void Gpu::CreateDevice() {
   vk::PhysicalDeviceSynchronization2FeaturesKHR sync2_features;
   sync2_features.synchronization2 = VK_TRUE;
 
-  vk::StructureChain<vk::PhysicalDeviceFeatures2,
-                     vk::PhysicalDeviceVulkan12Features,
-                     vk::PhysicalDeviceSynchronization2FeaturesKHR>
-      features_chain{features2, vulkan12_features, sync2_features};
-
   vk::PhysicalDeviceIndexTypeUint8FeaturesEXT index_type_uint8_features;
   index_type_uint8_features.indexTypeUint8 = VK_TRUE;
   if (has_index_type_uint8_) {
     sync2_features.pNext = &index_type_uint8_features;
   }
+
+  vk::StructureChain<vk::PhysicalDeviceFeatures2,
+                     vk::PhysicalDeviceVulkan12Features,
+                     vk::PhysicalDeviceSynchronization2FeaturesKHR>
+      features_chain{features2, vulkan12_features, sync2_features};
 
   // Create device.
   vk::DeviceCreateInfo device_ci{

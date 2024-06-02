@@ -26,6 +26,7 @@ class Config {
 
   GlobalContext& GetGlobalContext();
 
+  const std::vector<std::string>& GetSceneUris() const;
   const std::vector<std::filesystem::path>& GetScenePaths() const;
   const std::vector<std::filesystem::path>& GetLightPaths() const;
   const std::vector<std::filesystem::path>& GetShaderPaths() const;
@@ -44,6 +45,7 @@ class Config {
   std::filesystem::path frame_graph_path_{asset_path_ / "frame_graph"};
 
   json config_json_;
+  std::vector<std::string> scene_uris_;
   std::vector<std::filesystem::path> scene_paths_;
   std::vector<std::filesystem::path> light_paths_;
   std::vector<std::filesystem::path> shader_paths_;

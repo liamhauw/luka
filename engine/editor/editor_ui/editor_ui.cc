@@ -45,13 +45,12 @@ void EditorUi::CreateUi() {
   ImGui::Text("FPS: %llu", fps_);
 
   ImGui::Text("Scenes:");
-  ImGui::NewLine();
   std::unordered_map<u32, bool>& show_scenes{
       config_->GetGlobalContext().show_scenes};
+  const std::vector<std::string>& scene_uris{config_->GetSceneUris()};
   for (auto& show_scene : show_scenes) {
-    ImGui::SameLine();
     bool ss{show_scene.second};
-    ImGui::Checkbox(std::to_string(show_scene.first).c_str(), &ss);
+    ImGui::Checkbox(scene_uris[show_scene.first].c_str(), &ss);
     show_scene.second = ss;
   }
 

@@ -7,8 +7,6 @@
 
 #include "function/function_ui/function_ui.h"
 
-#include <vector>
-
 namespace luka {
 
 FunctionUi::FunctionUi(std::shared_ptr<Window> window, std::shared_ptr<Gpu> gpu)
