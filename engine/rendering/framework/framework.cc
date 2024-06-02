@@ -322,8 +322,12 @@ void Framework::CreatePasses() {
       const std::vector<ast::sc::Primitive>& primitives{mesh->GetPrimitives()};
 
       for (const auto& primitive : primitives) {
-        scene_primitives.emplace_back(enabled_scene.index, model_matrix,
-                                      inverse_model_matrix, &primitive);
+        if (!primitive.index_support) {
+          continue;
+        }
+        scene_primitives.push_back(
+            fw::ScenePrimitive{enabled_scene.index, model_matrix,
+                               inverse_model_matrix, &primitive});
       }
     }
   }
@@ -413,6 +417,7 @@ void Framework::DrawPasses() {
           subpass.GetDrawElements()};
 
       bool use_secondary_command_buffer{draw_elements.size() > 10};
+
       vk::SubpassContents subpass_contents{
           use_secondary_command_buffer
               ? vk::SubpassContents::eSecondaryCommandBuffers

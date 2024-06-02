@@ -42,6 +42,8 @@ std::vector<vk::PresentModeKHR> Gpu::GetSurfacePresentModes() const {
   return physical_device_.getSurfacePresentModesKHR(*surface_);
 }
 
+bool Gpu::HasIndexTypeUint8() const { return has_index_type_uint8_; }
+
 u32 Gpu::GetGraphicsQueueIndex() const { return graphics_queue_index_.value(); }
 
 u32 Gpu::GetComputeQueueIndex() const { return compute_queue_index_.value(); }
@@ -541,7 +543,7 @@ void Gpu::CreateInstance() {
 
   vk::ApplicationInfo application_info{"luka", VK_MAKE_VERSION(1, 0, 0), "luka",
                                        VK_MAKE_VERSION(1, 0, 0),
-                                       VK_API_VERSION_1_3};
+                                       VK_API_VERSION_1_2};
 
   std::vector<const char*> required_instance_layers;
   std::vector<const char*> required_instance_extensions;
@@ -763,7 +765,7 @@ void Gpu::CreateDevice() {
       physical_device_.enumerateDeviceExtensionProperties()};
 
   std::vector<const char*> required_device_extensions{
-      VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME};
+      VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME};
 
   std::vector<const char*> enabled_device_extensions;
   for (auto& extension : required_device_extensions) {
@@ -780,6 +782,17 @@ void Gpu::CreateDevice() {
   enabled_device_extensions.push_back("VK_KHR_portability_subset");
 #endif
 
+  if (std::find_if(extension_properties.begin(), extension_properties.end(),
+                   [](const vk::ExtensionProperties& ep) {
+                     return (strcmp(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME,
+                                    ep.extensionName) == 0);
+                   }) != extension_properties.end()) {
+    has_index_type_uint8_ = true;
+    enabled_device_extensions.push_back(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME);
+  } else {
+    LOGW("Unsupport index type uint8");
+  }
+
   // Features.
   vk::PhysicalDeviceFeatures features;
 
@@ -792,18 +805,19 @@ void Gpu::CreateDevice() {
   vulkan12_features.runtimeDescriptorArray = VK_TRUE;
   vulkan12_features.timelineSemaphore = VK_TRUE;
 
-  vk::PhysicalDeviceVulkan13Features vulkan13_features;
-  vulkan13_features.synchronization2 = VK_TRUE;
-
-  vk::PhysicalDeviceIndexTypeUint8FeaturesEXT index_type_uint8_features_ext;
-  index_type_uint8_features_ext.indexTypeUint8 = VK_TRUE;
+  vk::PhysicalDeviceSynchronization2FeaturesKHR sync2_features;
+  sync2_features.synchronization2 = VK_TRUE;
 
   vk::StructureChain<vk::PhysicalDeviceFeatures2,
                      vk::PhysicalDeviceVulkan12Features,
-                     vk::PhysicalDeviceVulkan13Features,
-                     vk::PhysicalDeviceIndexTypeUint8FeaturesEXT>
-      features_chain{features2, vulkan12_features, vulkan13_features,
-                     index_type_uint8_features_ext};
+                     vk::PhysicalDeviceSynchronization2FeaturesKHR>
+      features_chain{features2, vulkan12_features, sync2_features};
+
+  vk::PhysicalDeviceIndexTypeUint8FeaturesEXT index_type_uint8_features;
+  index_type_uint8_features.indexTypeUint8 = VK_TRUE;
+  if (has_index_type_uint8_) {
+    sync2_features.pNext = &index_type_uint8_features;
+  }
 
   // Create device.
   vk::DeviceCreateInfo device_ci{
@@ -851,7 +865,7 @@ void Gpu::CreateVmaAllocator() {
       .physicalDevice = static_cast<VkPhysicalDevice>(*physical_device_),
       .device = static_cast<VkDevice>(*device_),
       .instance = static_cast<VkInstance>(*instance_),
-      .vulkanApiVersion = VK_API_VERSION_1_3,
+      .vulkanApiVersion = VK_API_VERSION_1_2,
   };
   vmaCreateAllocator(&allocator_ci, &allocator_);
 }

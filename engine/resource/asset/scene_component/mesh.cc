@@ -89,6 +89,9 @@ Mesh::Mesh(const std::shared_ptr<Gpu>& gpu,
       switch (format) {
         case vk::Format::eR8Uint:
           index_type = vk::IndexType::eUint8EXT;
+          if (!gpu->HasIndexTypeUint8()) {
+            primitive.index_support = false;
+          }
           break;
         case vk::Format::eR16Uint:
           index_type = vk::IndexType::eUint16;

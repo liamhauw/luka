@@ -49,6 +49,7 @@ class Primitive {
   IndexAttribute index_attribute;
   bool has_index{};
   const Material* material{};
+  bool index_support{true};
 };
 
 class Mesh : public Component {

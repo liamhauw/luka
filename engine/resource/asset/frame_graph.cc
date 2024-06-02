@@ -114,7 +114,7 @@ FrameGraph::FrameGraph(const std::filesystem::path& frame_graph_path) {
           if (attachment_json.contains("output")) {
             output = attachment_json["output"].template get<bool>();
           }
-          pass.attachments.emplace_back(name, format, output);
+          pass.attachments.push_back(Attachment{name, format, output});
         }
       }
 

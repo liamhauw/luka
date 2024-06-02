@@ -34,6 +34,8 @@ class Gpu {
   std::vector<vk::PresentModeKHR> GetSurfacePresentModes() const;
   vk::PhysicalDeviceProperties GetPhysicalDeviceProperties() const;
 
+  bool HasIndexTypeUint8() const;
+
   u32 GetGraphicsQueueIndex() const;
   u32 GetComputeQueueIndex() const;
   u32 GetTransferQueueIndex() const;
@@ -161,6 +163,7 @@ class Gpu {
 
   vk::raii::PhysicalDevice physical_device_{nullptr};
 
+  bool has_index_type_uint8_{};
   vk::SampleCountFlagBits sample_count_{vk::SampleCountFlagBits::e1};
   f32 max_anisotropy_{};
   std::optional<u32> graphics_queue_index_;

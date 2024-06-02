@@ -34,7 +34,7 @@ Then you only need to install VSCode extensions and Visual Studio.
 
 On macOS if you have [Homebrew](https://brew.sh/) installed, you can easily install some prerequisites using the following command:
 ```shell
-brew install vscode git cmake ninja llvm
+brew install visual-studio-code git cmake ninja llvm
 ```
 Then you only need to install VSCode extensions, Xcode and Vulkan SDK.
 
