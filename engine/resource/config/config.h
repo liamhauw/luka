@@ -26,12 +26,13 @@ class Config {
 
   GlobalContext& GetGlobalContext();
 
-  const std::vector<std::string>& GetSceneUris() const;
   const std::vector<std::filesystem::path>& GetScenePaths() const;
   const std::vector<std::filesystem::path>& GetLightPaths() const;
   const std::vector<std::filesystem::path>& GetShaderPaths() const;
   const std::vector<std::filesystem::path>& GetFrameGraphPaths() const;
   u32 GetFrameGraphIndex() const;
+
+  const std::vector<std::string>& GetSceneNames() const;
 
  private:
   GlobalContext global_context_{};
@@ -45,12 +46,13 @@ class Config {
   std::filesystem::path frame_graph_path_{asset_path_ / "frame_graph"};
 
   json config_json_;
-  std::vector<std::string> scene_uris_;
   std::vector<std::filesystem::path> scene_paths_;
   std::vector<std::filesystem::path> light_paths_;
   std::vector<std::filesystem::path> shader_paths_;
   std::vector<std::filesystem::path> frame_graph_paths_;
   u32 frame_graph_index_{};
+
+  std::vector<std::string> scene_names_;
 };
 
 }  // namespace luka

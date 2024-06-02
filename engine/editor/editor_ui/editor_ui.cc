@@ -47,7 +47,7 @@ void EditorUi::CreateUi() {
   ImGui::Text("Scenes:");
   std::unordered_map<u32, bool>& show_scenes{
       config_->GetGlobalContext().show_scenes};
-  const std::vector<std::string>& scene_uris{config_->GetSceneUris()};
+  const std::vector<std::string>& scene_uris{config_->GetSceneNames()};
   for (auto& show_scene : show_scenes) {
     bool ss{show_scene.second};
     ImGui::Checkbox(scene_uris[show_scene.first].c_str(), &ss);

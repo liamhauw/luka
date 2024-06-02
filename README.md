@@ -60,9 +60,7 @@ Click Run and Debug in the sidebar, and select Windows/macOS Debug/RelWithDebInf
 
 ### Update submodule
 ```shell
-git submodule sync
 git pull --recurse-submodules
-
 git submodule update --remote
 ```
 
