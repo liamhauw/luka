@@ -545,75 +545,81 @@ void Gpu::CreateInstance() {
                                        VK_MAKE_VERSION(1, 0, 0),
                                        VK_API_VERSION_1_2};
 
-  std::vector<const char*> required_instance_layers;
-  std::vector<const char*> required_instance_extensions;
+  std::unordered_map<std::string, bool> requested_instance_layers;
+  std::unordered_map<std::string, bool> requested_instance_extensions;
 
   std::vector<const char*> window_required_instance_extensions{
       window_->GetRequiredInstanceExtensions()};
-  required_instance_extensions.insert(
-      required_instance_extensions.end(),
-      window_required_instance_extensions.begin(),
-      window_required_instance_extensions.end());
+
+  for (const char* wrie : window_required_instance_extensions) {
+    requested_instance_extensions.emplace(wrie, true);
+  }
 
 #ifdef __APPLE__
-  required_instance_extensions.push_back(
-      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-  required_instance_extensions.push_back(
-      VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+  requested_instance_extensions.emplace(
+      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, true);
+  requested_instance_extensions.emplace(
+      VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME, true);
 #endif
-
-  const std::vector<vk::LayerProperties> kLayerProperties{
-      context_.enumerateInstanceLayerProperties()};
-  const std::vector<vk::ExtensionProperties> kExtensionProperties{
-      context_.enumerateInstanceExtensionProperties()};
-
-  std::vector<const char*> enabled_instance_layers;
-  std::vector<const char*> enabled_instance_extensions;
-
-  for (const char* layer : required_instance_layers) {
-    if (std::find_if(kLayerProperties.begin(), kLayerProperties.end(),
-                     [layer](const vk::LayerProperties& lp) {
-                       return (strcmp(layer, lp.layerName) == 0);
-                     }) == kLayerProperties.end()) {
-      THROW("Fail to find {}.", layer);
-    }
-    enabled_instance_layers.push_back(layer);
-  }
-
-  for (const char* extension : required_instance_extensions) {
-    if (std::find_if(kExtensionProperties.begin(), kExtensionProperties.end(),
-                     [extension](const vk::ExtensionProperties& ep) {
-                       return (strcmp(extension, ep.extensionName) == 0);
-                     }) == kExtensionProperties.end()) {
-      THROW("Fail to find {}.", extension);
-    }
-    enabled_instance_extensions.push_back(extension);
-  }
 
 #ifndef NDEBUG
-  if (std::find(
-          required_instance_layers.begin(), required_instance_layers.end(),
-          "VK_LAYER_KHRONOS_validation") == required_instance_layers.end() &&
-      std::find_if(kLayerProperties.begin(), kLayerProperties.end(),
-                   [](const vk::LayerProperties& lp) {
-                     return (strcmp("VK_LAYER_KHRONOS_validation",
-                                    lp.layerName) == 0);
-                   }) != kLayerProperties.end()) {
-    enabled_instance_layers.push_back("VK_LAYER_KHRONOS_validation");
+  requested_instance_layers.emplace("VK_LAYER_KHRONOS_validation", false);
+  requested_instance_extensions.emplace(VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
+                                        false);
+#endif
+
+  std::vector<vk::LayerProperties> instance_layer_properties{
+      context_.enumerateInstanceLayerProperties()};
+  std::vector<vk::ExtensionProperties> instance_extension_properties{
+      context_.enumerateInstanceExtensionProperties()};
+
+  for (const vk::LayerProperties& ilp : instance_layer_properties) {
+    if (requested_instance_layers.find(ilp.layerName) !=
+        requested_instance_layers.end()) {
+      enabled_instance_layers_.insert(ilp.layerName);
+    }
   }
 
-  if (std::find(required_instance_extensions.begin(),
-                required_instance_extensions.end(),
-                VK_EXT_DEBUG_UTILS_EXTENSION_NAME) ==
-          required_instance_extensions.end() &&
-      std::find_if(kExtensionProperties.begin(), kExtensionProperties.end(),
-                   [](const vk::ExtensionProperties& ep) {
-                     return (strcmp(VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
-                                    ep.extensionName) == 0);
-                   }) != kExtensionProperties.end()) {
-    enabled_instance_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+  for (const vk::ExtensionProperties& iep : instance_extension_properties) {
+    if (requested_instance_extensions.find(iep.extensionName) !=
+        requested_instance_extensions.end()) {
+      enabled_instance_extensions_.insert(iep.extensionName);
+    }
   }
-#endif
+
+  for (const auto& ril : requested_instance_layers) {
+    if (enabled_instance_layers_.find(ril.first) ==
+        enabled_instance_layers_.end()) {
+      if (ril.second) {
+        THROW("Fail to find required instance layer: {}", ril.first);
+      }
+      LOGI("Not find optional instance layer: {}", ril.first);
+    }
+  }
+
+  for (const auto& rie : requested_instance_extensions) {
+    if (enabled_instance_extensions_.find(rie.first) ==
+        enabled_instance_extensions_.end()) {
+      if (rie.second) {
+        THROW("Fail to find required instance extenion: {}", rie.first);
+      }
+      LOGI("Not find optional instance extenion: {}", rie.first);
+    }
+  }
+
+  std::vector<const char*> enabled_layers;
+  std::vector<const char*> enabled_extensions;
+  enabled_layers.reserve(enabled_instance_layers_.size());
+  enabled_extensions.reserve(enabled_instance_extensions_.size());
+  for (const std::string& eil : enabled_instance_layers_) {
+    enabled_layers.push_back(eil.c_str());
+  }
+  for (const std::string& eie : enabled_instance_extensions_) {
+    enabled_extensions.push_back(eie.c_str());
+  }
+
+  vk::InstanceCreateInfo instance_ci{flags, &application_info, enabled_layers,
+                                     enabled_extensions};
 
 #ifndef NDEBUG
   vk::DebugUtilsMessageSeverityFlagsEXT message_severity_flags{
@@ -633,21 +639,15 @@ void Gpu::CreateInstance() {
 
   vk::StructureChain<vk::InstanceCreateInfo,
                      vk::DebugUtilsMessengerCreateInfoEXT>
-      instance_ci{{flags, &application_info, enabled_instance_layers,
-                   enabled_instance_extensions},
-                  debug_utils_messenger_ci};
-#else
-  vk::StructureChain<vk::InstanceCreateInfo> instance_ci{
-      {flags, &application_info, enabled_instance_layers,
-       enabled_instance_extensions}};
-#endif
+      instance_chain{instance_ci, debug_utils_messenger_ci};
 
-  instance_ =
-      vk::raii::Instance{context_, instance_ci.get<vk::InstanceCreateInfo>()};
+  instance_ = vk::raii::Instance{context_,
+                                 instance_chain.get<vk::InstanceCreateInfo>()};
 
-#ifndef NDEBUG
   debug_utils_messenger_ = vk::raii::DebugUtilsMessengerEXT{
-      instance_, instance_ci.get<vk::DebugUtilsMessengerCreateInfoEXT>()};
+      instance_, instance_chain.get<vk::DebugUtilsMessengerCreateInfoEXT>()};
+#else
+  instance_ = vk::raii::Instance{context_, instance_ci};
 #endif
 }
 
@@ -695,10 +695,6 @@ void Gpu::CreatePhysicalDevice() {
 }
 
 void Gpu::CreateDevice() {
-  // Properties.
-  vk::PhysicalDeviceProperties physical_device_properties{
-      physical_device_.getProperties()};
-
   // Queue famliy properties.
   std::vector<vk::QueueFamilyProperties> queue_family_properties{
       physical_device_.getQueueFamilyProperties()};
@@ -761,69 +757,109 @@ void Gpu::CreateDevice() {
   }
 
   // Extensions.
-  std::vector<vk::ExtensionProperties> extension_properties{
+  std::vector<vk::ExtensionProperties> device_extension_properties{
       physical_device_.enumerateDeviceExtensionProperties()};
 
-  std::vector<const char*> required_device_extensions{
-      VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME};
-
-  std::vector<const char*> enabled_device_extensions;
-  for (auto& extension : required_device_extensions) {
-    if (std::find_if(extension_properties.begin(), extension_properties.end(),
-                     [extension](const vk::ExtensionProperties& ep) {
-                       return (strcmp(extension, ep.extensionName) == 0);
-                     }) == extension_properties.end()) {
-      THROW("Don't find {}", extension);
-    }
-    enabled_device_extensions.push_back(extension);
-  }
+  std::unordered_map<std::string, bool> requested_device_extensions{
+      {VK_KHR_SWAPCHAIN_EXTENSION_NAME, true},
+      {VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME, true},
+      {VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME, false}};
 
 #ifdef __APPLE__
-  enabled_device_extensions.push_back("VK_KHR_portability_subset");
+  requested_device_extensions.emplace("VK_KHR_portability_subset", true);
 #endif
 
-  if (std::find_if(extension_properties.begin(), extension_properties.end(),
-                   [](const vk::ExtensionProperties& ep) {
-                     return (strcmp(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME,
-                                    ep.extensionName) == 0);
-                   }) != extension_properties.end()) {
-    has_index_type_uint8_ = true;
-    enabled_device_extensions.push_back(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME);
-  } else {
-    LOGW("Unsupport index type uint8");
+  for (const vk::ExtensionProperties& dep : device_extension_properties) {
+    if (requested_device_extensions.find(dep.extensionName) !=
+        requested_device_extensions.end()) {
+      enabled_device_extensions_.insert(dep.extensionName);
+    }
+  }
+
+  for (const auto& rde : requested_device_extensions) {
+    if (enabled_device_extensions_.find(rde.first) ==
+        enabled_device_extensions_.end()) {
+      if (rde.second) {
+        THROW("Fail to find required device extenion: {}", rde.first);
+      }
+      LOGI("Not find optional device extenion: {}", rde.first);
+    }
+  }
+
+  std::vector<const char*> enabled_extensions;
+  enabled_extensions.reserve(enabled_device_extensions_.size());
+  for (const std::string& ede : enabled_device_extensions_) {
+    enabled_extensions.push_back(ede.c_str());
   }
 
   // Features.
-  vk::PhysicalDeviceFeatures features;
+  void* next_feature{};
 
-  vk::PhysicalDeviceFeatures2 features2;
-  features2.features = features;
+  auto features_chain{physical_device_.getFeatures2<
+      vk::PhysicalDeviceFeatures2, vk::PhysicalDeviceVulkan12Features,
+      vk::PhysicalDeviceSynchronization2FeaturesKHR,
+      vk::PhysicalDeviceIndexTypeUint8FeaturesEXT>()};
 
-  vk::PhysicalDeviceVulkan12Features vulkan12_features;
-  vulkan12_features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
-  vulkan12_features.descriptorBindingPartiallyBound = VK_TRUE;
-  vulkan12_features.runtimeDescriptorArray = VK_TRUE;
-  vulkan12_features.timelineSemaphore = VK_TRUE;
+  vk::PhysicalDeviceVulkan12Features enabled_vulkan12_features;
+  const auto& vulkan12_features{
+      features_chain.get<vk::PhysicalDeviceVulkan12Features>()};
+  if (vulkan12_features.shaderSampledImageArrayNonUniformIndexing &&
+      vulkan12_features.descriptorBindingPartiallyBound &&
+      vulkan12_features.runtimeDescriptorArray &&
+      vulkan12_features.timelineSemaphore) {
+    enabled_vulkan12_features.pNext = next_feature;
+    next_feature = &enabled_vulkan12_features;
 
-  vk::PhysicalDeviceSynchronization2FeaturesKHR sync2_features;
-  sync2_features.synchronization2 = VK_TRUE;
-
-  vk::PhysicalDeviceIndexTypeUint8FeaturesEXT index_type_uint8_features;
-  index_type_uint8_features.indexTypeUint8 = VK_TRUE;
-  if (has_index_type_uint8_) {
-    sync2_features.pNext = &index_type_uint8_features;
+    enabled_vulkan12_features.shaderSampledImageArrayNonUniformIndexing =
+        VK_TRUE;
+    enabled_vulkan12_features.descriptorBindingPartiallyBound = VK_TRUE;
+    enabled_vulkan12_features.runtimeDescriptorArray = VK_TRUE;
+    enabled_vulkan12_features.timelineSemaphore = VK_TRUE;
+  } else {
+    THROW("Fail to enable required vulkan12 features");
   }
 
-  vk::StructureChain<vk::PhysicalDeviceFeatures2,
-                     vk::PhysicalDeviceVulkan12Features,
-                     vk::PhysicalDeviceSynchronization2FeaturesKHR>
-      features_chain{features2, vulkan12_features, sync2_features};
+  vk::PhysicalDeviceSynchronization2FeaturesKHR
+      enabled_synchronization2_features;
+  const auto& synchronization2_features{
+      features_chain.get<vk::PhysicalDeviceSynchronization2FeaturesKHR>()};
+  if (synchronization2_features.synchronization2) {
+    enabled_synchronization2_features.pNext = next_feature;
+    next_feature = &enabled_synchronization2_features;
+
+    enabled_synchronization2_features.synchronization2 = VK_TRUE;
+  } else {
+    THROW("Fail to enable required synchronization2 features");
+  }
+
+  vk::PhysicalDeviceIndexTypeUint8FeaturesEXT enabled_index_type_uint8_features;
+  if (enabled_device_extensions_.find(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME) !=
+      enabled_device_extensions_.end()) {
+    const auto& index_type_uint8_features{
+        features_chain.get<vk::PhysicalDeviceIndexTypeUint8FeaturesEXT>()};
+    if (index_type_uint8_features.indexTypeUint8) {
+      enabled_index_type_uint8_features.pNext = next_feature;
+      next_feature = &enabled_index_type_uint8_features;
+
+      enabled_index_type_uint8_features.indexTypeUint8 = VK_TRUE;
+
+      has_index_type_uint8_ = true;
+    } else {
+      has_index_type_uint8_ = false;
+      LOGI("Not support optional index type uint8 features");
+    }
+  }
+
+  vk::PhysicalDeviceFeatures enabled_features;
+  const auto& features{
+      features_chain.get<vk::PhysicalDeviceFeatures2>().features};
+
+  vk::PhysicalDeviceFeatures2 enabled_features2{enabled_features, next_feature};
 
   // Create device.
-  vk::DeviceCreateInfo device_ci{
-      {},      device_queue_cis,
-      {},      enabled_device_extensions,
-      nullptr, &(features_chain.get<vk::PhysicalDeviceFeatures2>())};
+  vk::DeviceCreateInfo device_ci{{},      device_queue_cis,
+                                 {},      enabled_extensions,
+                                 nullptr, &enabled_features2};
 
   device_ = vk::raii::Device{physical_device_, device_ci};
 

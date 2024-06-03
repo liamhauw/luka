@@ -154,6 +154,8 @@ class Gpu {
   std::shared_ptr<Window> window_;
 
   vk::raii::Context context_;
+  std::unordered_set<std::string> enabled_instance_layers_;
+  std::unordered_set<std::string> enabled_instance_extensions_;
   vk::raii::Instance instance_{nullptr};
 #ifndef NDEBUG
   vk::raii::DebugUtilsMessengerEXT debug_utils_messenger_{nullptr};
@@ -163,13 +165,12 @@ class Gpu {
 
   vk::raii::PhysicalDevice physical_device_{nullptr};
 
-  bool has_index_type_uint8_{};
-  vk::SampleCountFlagBits sample_count_{vk::SampleCountFlagBits::e1};
-  f32 max_anisotropy_{};
   std::optional<u32> graphics_queue_index_;
   std::optional<u32> compute_queue_index_;
   std::optional<u32> transfer_queue_index_;
   std::optional<u32> present_queue_index_;
+  std::unordered_set<std::string> enabled_device_extensions_;
+  bool has_index_type_uint8_{};
   vk::raii::Device device_{nullptr};
   vk::raii::Queue graphics_queue_{nullptr};
   vk::raii::Queue compute_queue_{nullptr};

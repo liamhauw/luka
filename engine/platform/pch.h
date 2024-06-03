@@ -20,6 +20,7 @@
 #include <thread>
 #include <typeindex>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 #include <vulkan/vulkan_raii.hpp>
