@@ -7,20 +7,20 @@
     "alpha/AlphaBlendModeTest.gltf"
   ],
   "lights": [
-    "default/punctual_light.json"
+    "punctual_light.json"
   ],
   "shaders": [
-    "default/geometry.vert",
-    "default/geometry.frag",
-    "default/lighting.vert",
-    "default/lighting.frag",
-    "default/transparency.vert",
-    "default/transparency.frag",
-    "default/ui.vert",
-    "default/ui.frag"
+    "deferred/geometry.vert",
+    "deferred/geometry.frag",
+    "deferred/lighting.vert",
+    "deferred/lighting.frag",
+    "deferred/transparency.vert",
+    "deferred/transparency.frag",
+    "deferred/ui.vert",
+    "deferred/ui.frag"
   ],
   "frame_graphs": [
-    "default/deferred_rendering.json"
+    "deferred.json"
   ],
   "frame_graph": 0
 }

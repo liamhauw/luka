@@ -58,7 +58,7 @@
   ],
   "passes": [
     {
-      "name": "deferred",
+      "name": "scene",
       "attachments": [
         {
           "name": "base_color",
