@@ -270,29 +270,32 @@ void Subpass::ParseShaderResources(
   }
 
   // Light.
+  std::string directional_light{
+      std::to_string(static_cast<u32>(ast::PunctualLightType::kDirectional))};
+  directional_light = "DDIRECTIONAL_LIGHT " + directional_light;
+  shader_processes.push_back(directional_light);
+
+  std::string point_light{
+      std::to_string(static_cast<u32>(ast::PunctualLightType::kPoint))};
+  point_light = "DPOINT_LIGHT " + point_light;
+  shader_processes.push_back(point_light);
+
+  std::string spot_light{
+      std::to_string(static_cast<u32>(ast::PunctualLightType::kSpot))};
+  spot_light = "DSPOT_LIGHT " + spot_light;
+  shader_processes.push_back(spot_light);
+
   if (has_light_) {
-    std::string directional_light{
-        std::to_string(static_cast<u32>(ast::PunctualLightType::kDirectional))};
-    directional_light = "DDIRECTIONAL_LIGHT " + directional_light;
-    shader_processes.push_back(directional_light);
-
-    std::string point_light{
-        std::to_string(static_cast<u32>(ast::PunctualLightType::kPoint))};
-    point_light = "DPOINT_LIGHT " + point_light;
-    shader_processes.push_back(point_light);
-
-    std::string spot_light{
-        std::to_string(static_cast<u32>(ast::PunctualLightType::kSpot))};
-    spot_light = "DSPOT_LIGHT " + spot_light;
-    shader_processes.push_back(spot_light);
-
-    for (const auto& light : *lights_) {
-      const auto& pls{asset_->GetLight(light).GetPunctualLights()};
-      for (const auto& pl : pls) {
-        punctual_lights_.push_back(pl);
-      }
-      if (punctual_lights_.size() == ast::kPunctualLightMaxCount) {
-        break;
+    if (!light_once_) {
+      light_once_ = true;
+      for (const auto& light : *lights_) {
+        const auto& pls{asset_->GetLight(light).GetPunctualLights()};
+        for (const auto& pl : pls) {
+          punctual_lights_.push_back(pl);
+        }
+        if (punctual_lights_.size() == ast::kPunctualLightMaxCount) {
+          break;
+        }
       }
     }
     std::string punctual_light_count{std::to_string(punctual_lights_.size())};

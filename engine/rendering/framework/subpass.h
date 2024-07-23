@@ -184,6 +184,7 @@ class Subpass {
 
   bool need_resize_{};
 
+  bool light_once_{};
   std::vector<ast::PunctualLight> punctual_lights_;
 
   bool has_subpass_descriptor_set_{};

@@ -1,0 +1,130 @@
+{
+    "enabled_scenes": [
+      {
+        "index": 0
+      },
+      {
+        "index": 1,
+        "scale": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "translation": [
+          -3.0,
+          0.5,
+          0.0
+        ]
+      },
+      {
+        "index": 2,
+        "scale": [
+          0.25,
+          0.25,
+          0.25
+        ],
+        "translation": [
+          -1.5,
+          0.5,
+          0.0
+        ]
+      },
+      {
+        "index": 3,
+        "scale": [
+          0.25,
+          0.25,
+          0.25
+        ],
+        "translation": [
+          0.0,
+          0.5,
+          0.0
+        ]
+      },
+      {
+        "index": 4,
+        "scale": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "translation": [
+          3.0,
+          0.05,
+          0.0
+        ]
+      }
+    ],
+    "passes": [
+      {
+        "name": "simple_forward",
+        "attachments": [
+          {
+            "name": "depth",
+            "format": "D32Sfloat"
+          },
+          {
+            "name": "color",
+            "format": "R8G8B8A8Unorm",
+            "output": true
+          }
+        ],
+        "subpasses": [
+          {
+            "name": "opaque",
+            "attachments": {
+              "colors": [
+                1
+              ],
+              "depth_stencil": 0
+            },
+            "scene": "opaque",
+            "lights": [
+              0
+            ],
+            "shaders": {
+              "vertex": 0,
+              "fragment": 4
+            }
+          },
+          {
+            "name": "transparency",
+            "attachments": {
+              "colors": [
+                1
+              ],
+              "depth_stencil": 0
+            },
+            "scene": "transparency",
+            "shaders": {
+              "vertex": 0,
+              "fragment": 3
+            }
+          }
+        ]
+      },
+      {
+        "name": "ui",
+        "attachments": [
+          {
+            "name": "swapchain"
+          }
+        ],
+        "subpasses": [
+          {
+            "name": "ui",
+            "attachments": {
+              "colors": [
+                0
+              ]
+            },
+            "shaders": {
+              "vertex": 1,
+              "fragment": 2
+            }
+          }
+        ]
+      }
+    ]
+  }

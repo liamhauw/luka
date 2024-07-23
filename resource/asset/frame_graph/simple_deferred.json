@@ -58,7 +58,7 @@
   ],
   "passes": [
     {
-      "name": "deferred",
+      "name": "simple_deferred",
       "attachments": [
         {
           "name": "base_color",
@@ -92,7 +92,7 @@
       ],
       "subpasses": [
         {
-          "name": "opaque_geometry",
+          "name": "geometry",
           "attachments": {
             "colors": [
               0,
@@ -105,12 +105,12 @@
           },
           "shaders": {
             "vertex": 0,
-            "fragment": 1
+            "fragment": 5
           },
           "scene": "opaque"
         },
         {
-          "name": "opaque_lighting",
+          "name": "lighting",
           "attachments": {
             "inputs": [
               0,
@@ -125,8 +125,8 @@
             ]
           },
           "shaders": {
-            "vertex": 2,
-            "fragment": 3
+            "vertex": 1,
+            "fragment": 6
           },
           "lights": [
             0
@@ -141,8 +141,8 @@
             "depth_stencil": 5
           },
           "shaders": {
-            "vertex": 4,
-            "fragment": 5
+            "vertex": 0,
+            "fragment": 3
           },
           "scene": "transparency"
         }
@@ -164,8 +164,8 @@
             ]
           },
           "shaders": {
-            "vertex": 6,
-            "fragment": 7
+            "vertex": 1,
+            "fragment": 2
           }
         }
       ]

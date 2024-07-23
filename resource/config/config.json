@@ -10,17 +10,19 @@
     "punctual_light.json"
   ],
   "shaders": [
-    "deferred/geometry.vert",
-    "deferred/geometry.frag",
-    "deferred/lighting.vert",
-    "deferred/lighting.frag",
-    "deferred/transparency.vert",
-    "deferred/transparency.frag",
-    "deferred/ui.vert",
-    "deferred/ui.frag"
+    "common/geometry.vert",
+    "common/screen.vert",
+    "common/screen.frag",
+    "common/transparency.frag",
+
+    "simple_forward/opaque.frag",
+
+    "simple_deferred/geometry.frag",
+    "simple_deferred/lighting.frag"
   ],
   "frame_graphs": [
-    "deferred.json"
+    "simple_forward.json",
+    "simple_deferred.json"
   ],
   "frame_graph": 0
 }
