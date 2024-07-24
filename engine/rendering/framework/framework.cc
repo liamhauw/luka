@@ -505,8 +505,6 @@ void Framework::DrawPasses() {
 
 void Framework::End() {
   // Submit.
-  const vk::raii::Queue& graphics_queue{gpu_->GetGraphicsQueue()};
-
   std::vector<vk::SemaphoreSubmitInfo> wait_semaphore_sis{
       {*(image_acquired_semaphores_[image_acquired_semaphore_index_]), 0,
        vk::PipelineStageFlagBits2::eColorAttachmentOutput}};
@@ -523,16 +521,14 @@ void Framework::End() {
   vk::SubmitInfo2 si2{
       {}, wait_semaphore_sis, command_buffer_si, signal_semaphore_sis};
 
-  graphics_queue.submit2(si2);
+  gpu_->GraphicsQueueSubmit2(si2);
 
   // Present.
-  const vk::raii::Queue& present_queue{gpu_->GetPresentQueue()};
-
   vk::PresentInfoKHR present_info{
       *(graphics_finished_semaphores_[frame_index_]), **swapchain_,
       frame_index_};
 
-  vk::Result result{present_queue.presentKHR(present_info)};
+  vk::Result result{gpu_->PresentQueuePresent(present_info)};
   if (result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR) {
     THROW("Fail to present.");
   }

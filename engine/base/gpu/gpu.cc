@@ -52,14 +52,6 @@ u32 Gpu::GetTransferQueueIndex() const { return transfer_queue_index_.value(); }
 
 u32 Gpu::GetPresentQueueIndex() const { return present_queue_index_.value(); }
 
-const vk::raii::Queue& Gpu::GetGraphicsQueue() const { return graphics_queue_; }
-
-const vk::raii::Queue& Gpu::GetComputeQueue() const { return compute_queue_; }
-
-const vk::raii::Queue& Gpu::GetTransferQueue() const { return transfer_queue_; }
-
-const vk::raii::Queue& Gpu::GetPresentQueue() const { return present_queue_; }
-
 ImGui_ImplVulkan_InitInfo Gpu::GetImguiVulkanInitInfo() const {
   ImGui_ImplVulkan_InitInfo init_info{
       .Instance = static_cast<VkInstance>(*instance_),
@@ -517,12 +509,24 @@ void Gpu::ResetFence(const vk::raii::Fence& fence) {
   device_.resetFences(*fence);
 }
 
+void Gpu::WaitIdle() { device_.waitIdle(); }
+
+void Gpu::GraphicsQueueSubmit2(const vk::SubmitInfo2& submit_info) {
+  graphics_queue_.submit2(submit_info);
+}
+
+void Gpu::ComputeQueueSubmit(const vk::SubmitInfo& submit_info) {
+  compute_queue_.submit(submit_info);
+}
+
 void Gpu::TransferQueueSubmit(const vk::SubmitInfo& submit_info) {
-  transfer_queue_.submit(submit_info, nullptr);
+  transfer_queue_.submit(submit_info);
   transfer_queue_.waitIdle();
 }
 
-void Gpu::WaitIdle() { device_.waitIdle(); }
+vk::Result Gpu::PresentQueuePresent(const vk::PresentInfoKHR& present_info) {
+  return present_queue_.presentKHR(present_info);
+}
 
 void Gpu::BeginLabel(const vk::raii::CommandBuffer& command_buffer,
                      const std::string& label,

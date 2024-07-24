@@ -231,6 +231,21 @@ void Subpass::ParseShaderResources(
       "DPUNCTUAL_LIGHT_MAX_COUNT " + punctual_light_max_count;
   shader_processes.push_back(punctual_light_max_count);
 
+  std::string directional_light{
+      std::to_string(static_cast<u32>(ast::PunctualLightType::kDirectional))};
+  directional_light = "DDIRECTIONAL_LIGHT " + directional_light;
+  shader_processes.push_back(directional_light);
+
+  std::string point_light{
+      std::to_string(static_cast<u32>(ast::PunctualLightType::kPoint))};
+  point_light = "DPOINT_LIGHT " + point_light;
+  shader_processes.push_back(point_light);
+
+  std::string spot_light{
+      std::to_string(static_cast<u32>(ast::PunctualLightType::kSpot))};
+  spot_light = "DSPOT_LIGHT " + spot_light;
+  shader_processes.push_back(spot_light);
+
   // Scene.
   if (has_scene_) {
     const std::map<std::string, ast::sc::Texture*>& textures{
@@ -270,21 +285,6 @@ void Subpass::ParseShaderResources(
   }
 
   // Light.
-  std::string directional_light{
-      std::to_string(static_cast<u32>(ast::PunctualLightType::kDirectional))};
-  directional_light = "DDIRECTIONAL_LIGHT " + directional_light;
-  shader_processes.push_back(directional_light);
-
-  std::string point_light{
-      std::to_string(static_cast<u32>(ast::PunctualLightType::kPoint))};
-  point_light = "DPOINT_LIGHT " + point_light;
-  shader_processes.push_back(point_light);
-
-  std::string spot_light{
-      std::to_string(static_cast<u32>(ast::PunctualLightType::kSpot))};
-  spot_light = "DSPOT_LIGHT " + spot_light;
-  shader_processes.push_back(spot_light);
-
   if (has_light_) {
     if (!light_once_) {
       light_once_ = true;

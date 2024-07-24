@@ -41,11 +41,6 @@ class Gpu {
   u32 GetTransferQueueIndex() const;
   u32 GetPresentQueueIndex() const;
 
-  const vk::raii::Queue& GetGraphicsQueue() const;
-  const vk::raii::Queue& GetComputeQueue() const;
-  const vk::raii::Queue& GetTransferQueue() const;
-  const vk::raii::Queue& GetPresentQueue() const;
-
   ImGui_ImplVulkan_InitInfo GetImguiVulkanInitInfo() const;
 
   const vk::raii::Sampler& GetSampler() const;
@@ -121,8 +116,12 @@ class Gpu {
   vk::Result WaitSemaphores(const vk::SemaphoreWaitInfo& semaphore_wi);
   vk::Result WaitForFences(const vk::raii::Fence& fence);
   void ResetFence(const vk::raii::Fence& fence);
-  void TransferQueueSubmit(const vk::SubmitInfo& submit_info);
   void WaitIdle();
+
+  void GraphicsQueueSubmit2(const vk::SubmitInfo2& submit_info2);
+  void ComputeQueueSubmit(const vk::SubmitInfo& submit_info);
+  void TransferQueueSubmit(const vk::SubmitInfo& submit_info);
+  vk::Result PresentQueuePresent(const vk::PresentInfoKHR& present_info);
 
   static void BeginLabel(const vk::raii::CommandBuffer& command_buffer,
                          const std::string& label,
