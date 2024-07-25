@@ -15,6 +15,7 @@
 
 #include "core/log.h"
 #include "core/util.h"
+#include "resource/config/generated/root_path.h"
 
 namespace luka::ast {
 
@@ -39,6 +40,19 @@ Shader::Shader(const std::filesystem::path& cfg_shader_path)
     source_text_ = std::regex_replace(
         source_text_, std::regex("#include\\s*\"" + filename + "\""), text);
   }
+
+#ifndef NDEBUG
+  std::filesystem::path cache_path{GetPath(LUKA_ROOT_PATH) / ".cache" /
+                                   "shader"};
+  if (!std::filesystem::exists(cache_path)) {
+    std::filesystem::create_directories(cache_path);
+  }
+  cache_path = cache_path / cfg_shader_path.filename();
+
+  SaveText(cache_path, source_text_);
+
+  path_ = cache_path.string();
+#endif
 }
 
 u64 Shader::GetHashValue(const std::vector<std::string>& processes) const {

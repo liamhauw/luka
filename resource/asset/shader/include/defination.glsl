@@ -1,4 +1,3 @@
-// These structures also need to be defined in the engine source code
 struct PunctualLight {
   vec3 position;
   uint type;

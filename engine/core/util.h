@@ -37,6 +37,8 @@ void SaveBinaryU32(const std::vector<u32>& binary_data,
                    const std::filesystem::path& binary_path);
 
 std::string LoadText(const std::filesystem::path& text_path);
+void SaveText(const std::filesystem::path& text_path,
+              const std::string& text_data);
 
 std::vector<f32> D2FVector(const std::vector<f64>& dvector);
 

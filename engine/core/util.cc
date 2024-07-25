@@ -104,6 +104,18 @@ std::string LoadText(const std::filesystem::path& text_path) {
   return text_data;
 }
 
+void SaveText(const std::filesystem::path& text_path,
+              const std::string& text_data) {
+  std::ofstream text_file{text_path.string(), std::ios::out};
+
+  if (!text_file) {
+    THROW("Fail to open " + text_path.string());
+  }
+
+  text_file << text_data;
+  text_file.close();
+}
+
 std::vector<f32> D2FVector(const std::vector<f64>& dvector) {
   std::vector<f32> fvector{dvector.begin(), dvector.end()};
   return fvector;
