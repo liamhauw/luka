@@ -198,20 +198,18 @@ void Framework::CreateSyncObjects() {
   vk::SemaphoreCreateInfo timeline_semaphore_ci{{},
                                                 &timeline_semaphore_type_ci};
 
+  compute_timeline_semaphore_ =
+      gpu_->CreateSemaphoreLuka(timeline_semaphore_ci, "compute_timeline");
   graphics_timeline_semaphore_ =
-      gpu_->CreateSemaphoreLuka(timeline_semaphore_ci, "timeline");
+      gpu_->CreateSemaphoreLuka(timeline_semaphore_ci, "graphics_timeline");
 
   vk::SemaphoreCreateInfo semaphore_ci;
   for (u32 i{}; i < frame_count_; ++i) {
     image_acquired_semaphores_.push_back(
         gpu_->CreateSemaphoreLuka(semaphore_ci, "image_acquired"));
-    graphics_finished_semaphores_.push_back(
+    rendering_finished_semaphores_.push_back(
         gpu_->CreateSemaphoreLuka(semaphore_ci, "graphics_finished"));
   }
-
-  // https://github.com/ocornut/imgui/issues/7236
-  image_acquired_semaphores_.push_back(
-      gpu_->CreateSemaphoreLuka(semaphore_ci, "image_acquired"));
 }
 
 void Framework::CreateCommandObjects() {
@@ -365,11 +363,6 @@ void Framework::Begin() {
     gpu_->WaitSemaphores(semaphore_wi);
   }
 
-  vk::Result result{};
-  std::tie(result, frame_index_) = swapchain_->acquireNextImage(
-      UINT64_MAX,
-      *(image_acquired_semaphores_[image_acquired_semaphore_index_]), nullptr);
-
   const vk::raii::CommandBuffer& primary_command_buffer{
       primary_command_buffers_[frame_index_][0]};
   primary_command_buffer.reset({});
@@ -505,15 +498,20 @@ void Framework::DrawPasses() {
 
 void Framework::End() {
   // Submit.
+  vk::Result acquire_next_image_result{};
+  std::tie(acquire_next_image_result, swapchain_image_index_) =
+      swapchain_->acquireNextImage(UINT64_MAX,
+                                   *(image_acquired_semaphores_[frame_index_]));
+
   std::vector<vk::SemaphoreSubmitInfo> wait_semaphore_sis{
-      {*(image_acquired_semaphores_[image_acquired_semaphore_index_]), 0,
+      {*(image_acquired_semaphores_[frame_index_]), 0,
        vk::PipelineStageFlagBits2::eColorAttachmentOutput}};
 
   vk::CommandBufferSubmitInfo command_buffer_si{
       *(primary_command_buffers_[frame_index_][0])};
 
   std::vector<vk::SemaphoreSubmitInfo> signal_semaphore_sis{
-      {*(graphics_finished_semaphores_[frame_index_]), 0,
+      {*(rendering_finished_semaphores_[frame_index_]), 0,
        vk::PipelineStageFlagBits2::eColorAttachmentOutput},
       {*graphics_timeline_semaphore_, absolute_frame_ + 1,
        vk::PipelineStageFlagBits2::eColorAttachmentOutput}};
@@ -525,17 +523,17 @@ void Framework::End() {
 
   // Present.
   vk::PresentInfoKHR present_info{
-      *(graphics_finished_semaphores_[frame_index_]), **swapchain_,
-      frame_index_};
+      *(rendering_finished_semaphores_[frame_index_]), **swapchain_,
+      swapchain_image_index_};
 
-  vk::Result result{gpu_->PresentQueuePresent(present_info)};
-  if (result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR) {
+  vk::Result present_result{gpu_->PresentQueuePresent(present_info)};
+  if (present_result != vk::Result::eSuccess &&
+      present_result != vk::Result::eSuboptimalKHR) {
     THROW("Fail to present.");
   }
 
   ++absolute_frame_;
-  image_acquired_semaphore_index_ =
-      (image_acquired_semaphore_index_ + 1) % (frame_count_ + 1);
+  frame_index_ = (frame_index_ + 1) % frame_count_;
 }
 
 }  // namespace luka
