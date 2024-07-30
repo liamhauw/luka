@@ -33,6 +33,7 @@ Pass::Pass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
       shared_image_views_{&shared_image_views},
       ast_pass_{&(*ast_passes_)[pass_index_]},
       name_{ast_pass_->name},
+      type_{ast_pass_->type},
       has_ui_{name_ == "ui"} {
   CreateRenderPass();
   CreateFramebuffers();
@@ -55,6 +56,8 @@ void Pass::Resize(const SwapchainInfo& swapchain_info,
 std::vector<Subpass>& Pass::GetSubpasses() { return subpasses_; }
 
 const std::string& Pass::GetName() const { return name_; }
+
+ast::PassType Pass::GetType() const { return type_; }
 
 vk::RenderPassBeginInfo Pass::GetRenderPassBeginInfo(u32 frame_index) const {
   vk::RenderPassBeginInfo render_pass_bi{*render_pass_,

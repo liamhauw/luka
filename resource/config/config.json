@@ -18,7 +18,9 @@
     "simple_forward/opaque.frag",
 
     "simple_deferred/geometry.frag",
-    "simple_deferred/lighting.frag"
+    "simple_deferred/lighting.frag",
+
+    "common/edge_detect.comp"
   ],
   "frame_graphs": [
     "simple_forward.json",

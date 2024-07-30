@@ -353,6 +353,23 @@ void Framework::Render() {
   End();
 }
 
+void Framework::Render1() {
+  ast::PassType prev_pass_type{ast::PassType::kCompute};
+  for (auto& pass : passes_) {
+    if (pass.GetType() != prev_pass_type) {
+      
+    }
+
+
+    std::vector<fw::Subpass>& subpasses{pass.GetSubpasses()};
+    for (auto& subpass : subpasses) {
+      subpass.Update(frame_index_);
+    }
+
+    
+  }
+}
+
 void Framework::Begin() {
   if (absolute_frame_ >= frame_count_) {
     u64 graphics_timeline_value{absolute_frame_ - (frame_count_ - 1)};
@@ -533,7 +550,7 @@ void Framework::End() {
   }
 
   ++absolute_frame_;
-  frame_index_ = (frame_index_ + 1) % frame_count_;
+  frame_index_ = absolute_frame_ % frame_count_;
 }
 
 }  // namespace luka

@@ -12,6 +12,8 @@
 
 namespace luka::ast {
 
+enum class PassType { kGraphics, kCompute };
+
 enum class AttachmentType { kNone, kInput, kColor, kResolve, kDepthStencil };
 
 struct EnabledScene {
@@ -35,6 +37,7 @@ struct Subpass {
 
 struct Pass {
   std::string name;
+  PassType type;
   std::vector<Attachment> attachments;
   std::vector<Subpass> subpasses;
 };

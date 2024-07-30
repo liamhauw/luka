@@ -29,11 +29,12 @@ class Pass {
   void Resize(const SwapchainInfo& swapchain_info,
               const std::vector<vk::Image>& swapchain_images);
 
-  std::vector<Subpass>& GetSubpasses();
   const std::string& GetName() const;
+  ast::PassType GetType() const;
+  bool HasUi() const;
   vk::RenderPassBeginInfo GetRenderPassBeginInfo(u32 frame_index) const;
   const std::vector<Subpass>& GetSubpasses() const;
-  bool HasUi() const;
+  std::vector<Subpass>& GetSubpasses();
 
  protected:
   void CreateRenderPass();
@@ -58,6 +59,7 @@ class Pass {
 
   const ast::Pass* ast_pass_{};
   std::string name_;
+  ast::PassType type_;
   bool has_ui_{};
 
   std::vector<u32> color_attachment_counts_;

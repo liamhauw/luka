@@ -82,6 +82,7 @@ class Framework {
 
   void Resize();
   void Render();
+  void Render1();
 
   void Begin();
   void End();
