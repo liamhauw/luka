@@ -81,13 +81,27 @@ class Framework {
   void CreatePasses();
 
   void Resize();
-  void Render();
-  void Render1();
 
-  void Begin();
-  void End();
-  void UpdatePasses();
-  void DrawPasses();
+  void Render();
+
+  void BeginFrame();
+  void RenderFrame();
+  void EndFrame();
+
+  const vk::raii::CommandBuffer& BeginGraphics();
+  void RenderGraphics(const vk::raii::CommandBuffer& primary_command_buffer,
+                      const fw::Pass& pass);
+  void EndGraphics(const vk::raii::CommandBuffer& primary_command_buffer,
+                   bool last_pass = false);
+
+  const vk::raii::CommandBuffer& BeginCompute();
+  void RenderCompute(const vk::raii::CommandBuffer& compute_command_buffer,
+                     const fw::Pass& pass);
+  void EndCompute(const vk::raii::CommandBuffer& compute_command_buffer,
+                  bool last_pass = false);
+
+  const vk::raii::CommandBuffer& RequestPrimaryCommandBuffer();
+  void WaitSemaphore();
 
   std::shared_ptr<TaskScheduler> task_scheduler_;
   std::shared_ptr<Window> window_;
@@ -104,16 +118,24 @@ class Framework {
   std::vector<vk::Image> swapchain_images_;
   u32 frame_count_{};
 
-  vk::raii::Semaphore compute_timeline_semaphore_{nullptr};
   vk::raii::Semaphore graphics_timeline_semaphore_{nullptr};
+
+  std::vector<vk::raii::Semaphore> timeline_semaphores_;
+  std::vector<u64> timeline_values_;
+
   std::vector<vk::raii::Semaphore> image_acquired_semaphores_;
   std::vector<vk::raii::Semaphore> rendering_finished_semaphores_;
 
+  const u32 kGraphicsCommandBufferCount{4};
+  const u32 kComputeCommandBufferCount{4};
   std::vector<vk::raii::CommandPool> primary_command_pools_;
   std::vector<vk::raii::CommandBuffers> primary_command_buffers_;
   std::vector<std::vector<vk::raii::CommandPool>> secondary_command_pools_;
   std::vector<std::vector<vk::raii::CommandBuffers>> secondary_command_buffers_;
-  const u32 kMaxSecondaryCommandBufferCount{4};
+  std::vector<vk::raii::CommandPool> compute_command_pools_;
+  std::vector<vk::raii::CommandBuffers> compute_command_buffers_;
+  std::vector<u32> primary_command_buffer_indices_;
+  std::vector<u32> compute_command_buffer_indices_;
 
   vk::Viewport viewport_;
   vk::Rect2D scissor_;
@@ -125,6 +147,7 @@ class Framework {
   u64 absolute_frame_{};
   u32 frame_index_{};
   u32 swapchain_image_index_{};
+  u32 scm_index_{};
 };
 
 }  // namespace luka

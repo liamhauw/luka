@@ -12,7 +12,7 @@
 
 namespace luka::ast {
 
-enum class PassType { kGraphics, kCompute };
+enum class PassType { kNone, kGraphics, kCompute };
 
 enum class AttachmentType { kNone, kInput, kColor, kResolve, kDepthStencil };
 

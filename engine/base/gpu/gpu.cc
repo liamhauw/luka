@@ -515,8 +515,8 @@ void Gpu::GraphicsQueueSubmit2(const vk::SubmitInfo2& submit_info) {
   graphics_queue_.submit2(submit_info);
 }
 
-void Gpu::ComputeQueueSubmit(const vk::SubmitInfo& submit_info) {
-  compute_queue_.submit(submit_info);
+void Gpu::ComputeQueueSubmit2(const vk::SubmitInfo2& submit_info) {
+  compute_queue_.submit2(submit_info);
 }
 
 void Gpu::TransferQueueSubmit(const vk::SubmitInfo& submit_info) {

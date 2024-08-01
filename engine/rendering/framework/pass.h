@@ -43,6 +43,8 @@ class Pass {
   void CreateClearValues();
   void CreateSubpasses();
 
+  void CreateComputeJob();
+
   std::shared_ptr<Gpu> gpu_;
   std::shared_ptr<Asset> asset_;
   std::shared_ptr<Camera> camera_;

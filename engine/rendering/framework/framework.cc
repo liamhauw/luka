@@ -197,14 +197,16 @@ void Framework::CreateSyncObjects() {
       vk::SemaphoreType::eTimeline};
   vk::SemaphoreCreateInfo timeline_semaphore_ci{{},
                                                 &timeline_semaphore_type_ci};
+  vk::SemaphoreCreateInfo semaphore_ci;
 
-  compute_timeline_semaphore_ =
-      gpu_->CreateSemaphoreLuka(timeline_semaphore_ci, "compute_timeline");
   graphics_timeline_semaphore_ =
       gpu_->CreateSemaphoreLuka(timeline_semaphore_ci, "graphics_timeline");
 
-  vk::SemaphoreCreateInfo semaphore_ci;
   for (u32 i{}; i < frame_count_; ++i) {
+    timeline_semaphores_.push_back(
+        gpu_->CreateSemaphoreLuka(timeline_semaphore_ci, "timeline"));
+    timeline_values_.push_back(frame_count_);
+
     image_acquired_semaphores_.push_back(
         gpu_->CreateSemaphoreLuka(semaphore_ci, "image_acquired"));
     rendering_finished_semaphores_.push_back(
@@ -217,13 +219,18 @@ void Framework::CreateCommandObjects() {
       vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
       gpu_->GetGraphicsQueueIndex()};
   vk::CommandBufferAllocateInfo primary_command_buffer_ai{
-      nullptr, vk::CommandBufferLevel::ePrimary, 1};
+      nullptr, vk::CommandBufferLevel::ePrimary, kGraphicsCommandBufferCount};
 
   vk::CommandPoolCreateInfo secondary_command_pool_ci{
       {}, gpu_->GetGraphicsQueueIndex()};
   vk::CommandBufferAllocateInfo secondary_command_buffer_ai{
-      nullptr, vk::CommandBufferLevel::eSecondary,
-      kMaxSecondaryCommandBufferCount};
+      nullptr, vk::CommandBufferLevel::eSecondary, kGraphicsCommandBufferCount};
+
+  vk::CommandPoolCreateInfo compute_command_pool_ci{
+      vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+      gpu_->GetComputeQueueIndex()};
+  vk::CommandBufferAllocateInfo compute_command_buffer_ai{
+      nullptr, vk::CommandBufferLevel::ePrimary, kComputeCommandBufferCount};
 
   secondary_command_pools_.resize(frame_count_);
   secondary_command_buffers_.resize(frame_count_);
@@ -233,6 +240,7 @@ void Framework::CreateCommandObjects() {
     primary_command_buffer_ai.commandPool = *(primary_command_pools_.back());
     primary_command_buffers_.push_back(
         gpu_->AllocateCommandBuffers(primary_command_buffer_ai, "primary"));
+    primary_command_buffer_indices_.push_back(0);
 
     for (u32 j{}; j < thread_count_; ++j) {
       secondary_command_pools_[i].push_back(
@@ -242,6 +250,13 @@ void Framework::CreateCommandObjects() {
       secondary_command_buffers_[i].push_back(gpu_->AllocateCommandBuffers(
           secondary_command_buffer_ai, "secondary"));
     }
+
+    compute_command_pools_.push_back(
+        gpu_->CreateCommandPool(compute_command_pool_ci, "compute"));
+    compute_command_buffer_ai.commandPool = *(compute_command_pools_.back());
+    compute_command_buffers_.push_back(
+        gpu_->AllocateCommandBuffers(compute_command_buffer_ai, "compute"));
+    compute_command_buffer_indices_.push_back(0);
   }
 }
 
@@ -347,198 +362,62 @@ void Framework::Resize() {
 }
 
 void Framework::Render() {
-  Begin();
-  UpdatePasses();
-  DrawPasses();
-  End();
+  BeginFrame();
+  RenderFrame();
+  EndFrame();
 }
 
-void Framework::Render1() {
-  ast::PassType prev_pass_type{ast::PassType::kCompute};
-  for (auto& pass : passes_) {
-    if (pass.GetType() != prev_pass_type) {
-      
-    }
-
-
-    std::vector<fw::Subpass>& subpasses{pass.GetSubpasses()};
-    for (auto& subpass : subpasses) {
-      subpass.Update(frame_index_);
-    }
-
-    
-  }
-}
-
-void Framework::Begin() {
-  if (absolute_frame_ >= frame_count_) {
-    u64 graphics_timeline_value{absolute_frame_ - (frame_count_ - 1)};
-
-    vk::SemaphoreWaitInfo semaphore_wi{
-        {}, *graphics_timeline_semaphore_, graphics_timeline_value};
-
-    gpu_->WaitSemaphores(semaphore_wi);
-  }
-
-  const vk::raii::CommandBuffer& primary_command_buffer{
-      primary_command_buffers_[frame_index_][0]};
-  primary_command_buffer.reset({});
+void Framework::BeginFrame() {
+  WaitSemaphore();
 
   for (u32 j{}; j < thread_count_; ++j) {
     secondary_command_pools_[frame_index_][j].reset();
   }
 }
 
-void Framework::UpdatePasses() {
-  for (auto& pass : passes_) {
-    std::vector<fw::Subpass>& subpasses{pass.GetSubpasses()};
-    for (auto& subpass : subpasses) {
-      subpass.Update(frame_index_);
+void Framework::RenderFrame() {
+  ast::PassType prev_pass_type{ast::PassType::kNone};
+  const vk::raii::CommandBuffer* command_buffer{};
+  for (u32 i{}; i < passes_.size(); ++i) {
+    auto& pass{passes_[i]};
+    bool last_pass{i == passes_.size() - 1};
+
+    ast::PassType cur_pass_type{pass.GetType()};
+    ast::PassType next_pass_type{ast::PassType::kNone};
+    if (i + 1 < passes_.size()) {
+      next_pass_type = passes_[i + 1].GetType();
+    }
+
+    if (cur_pass_type == ast::PassType::kGraphics) {
+      std::vector<fw::Subpass>& subpasses{pass.GetSubpasses()};
+      for (auto& subpass : subpasses) {
+        subpass.Update(frame_index_);
+      }
+
+      if (prev_pass_type != ast::PassType::kGraphics) {
+        command_buffer = &BeginGraphics();
+      }
+
+      RenderGraphics(*command_buffer, pass);
+
+      if (next_pass_type != ast::PassType::kGraphics) {
+        EndGraphics(*command_buffer, last_pass);
+      }
+    } else if (cur_pass_type == ast::PassType::kCompute) {
+      if (prev_pass_type != ast::PassType::kCompute) {
+        command_buffer = &BeginCompute();
+      }
+
+      RenderCompute(*command_buffer, pass);
+
+      if (next_pass_type != ast::PassType::kCompute) {
+        EndCompute(*command_buffer, last_pass);
+      }
     }
   }
 }
 
-void Framework::DrawPasses() {
-  const vk::raii::CommandBuffer& primary_command_buffer{
-      primary_command_buffers_[frame_index_][0]};
-
-  primary_command_buffer.begin({});
-
-  u32 scm_index{};
-  // Tarverse passes.
-  for (const auto& pass : passes_) {
-#ifndef NDEBUG
-    gpu_->BeginLabel(primary_command_buffer, "Pass " + pass.GetName(),
-                     {0.549F, 0.478F, 0.663F, 1.0F});
-#endif
-    const vk::RenderPassBeginInfo& render_pass_bi{
-        pass.GetRenderPassBeginInfo(frame_index_)};
-
-    // Tarverse subpasses.
-    const std::vector<fw::Subpass>& subpasses{pass.GetSubpasses()};
-    for (u32 i{}; i < subpasses.size(); ++i) {
-      const fw::Subpass& subpass{subpasses[i]};
-#ifndef NDEBUG
-      gpu_->BeginLabel(primary_command_buffer, "Subpass " + subpass.GetName(),
-                       {0.443F, 0.573F, 0.745F, 1.0F});
-#endif
-
-      const std::vector<fw::DrawElement>& draw_elements{
-          subpass.GetDrawElements()};
-
-      bool use_secondary_command_buffer{draw_elements.size() > 10};
-
-      vk::SubpassContents subpass_contents{
-          use_secondary_command_buffer
-              ? vk::SubpassContents::eSecondaryCommandBuffers
-              : vk::SubpassContents::eInline};
-
-      if (i == 0) {
-        primary_command_buffer.beginRenderPass(render_pass_bi,
-                                               subpass_contents);
-      } else {
-        primary_command_buffer.nextSubpass(subpass_contents);
-      }
-
-      if (use_secondary_command_buffer) {
-        vk::CommandBufferInheritanceInfo inheritance_info{
-            render_pass_bi.renderPass, i, render_pass_bi.framebuffer};
-
-        for (u32 j{}; j < thread_count_; ++j) {
-          vk::CommandBufferBeginInfo command_buffer_bi{
-              vk::CommandBufferUsageFlagBits::eRenderPassContinue,
-              &inheritance_info};
-          secondary_command_buffers_[frame_index_][j][scm_index].begin(
-              command_buffer_bi);
-        }
-
-        CommandRecord command_record{
-            config_,      secondary_command_buffers_[frame_index_],
-            subpass,      draw_elements,
-            viewport_,    scissor_,
-            frame_index_, thread_count_,
-            scm_index};
-        CommandRecordTaskSet command_record_task_set{&command_record};
-        task_scheduler_->AddTaskSetToPipe(&command_record_task_set);
-
-        task_scheduler_->WaitforTask(&command_record_task_set);
-
-        for (u32 j{}; j < thread_count_; ++j) {
-          secondary_command_buffers_[frame_index_][j][scm_index].end();
-        }
-
-        std::vector<vk::CommandBuffer> command_buffers;
-        for (u32 j{}; j < thread_count_; ++j) {
-          command_buffers.push_back(
-              *(secondary_command_buffers_[frame_index_][j][scm_index]));
-        }
-
-        primary_command_buffer.executeCommands(command_buffers);
-
-        ++scm_index;
-      } else {
-        primary_command_buffer.setViewport(0, viewport_);
-        primary_command_buffer.setScissor(0, scissor_);
-
-        const vk::raii::Pipeline* prev_pipeline{};
-        const vk::raii::PipelineLayout* prev_pipeline_layout{};
-        for (const fw::DrawElement& draw_element : draw_elements) {
-          if (draw_element.has_scene &&
-              !(config_->GetGlobalContext()
-                    .show_scenes[draw_element.scene_index])) {
-            continue;
-          }
-          RecordGraphicsCommand(primary_command_buffer, subpass, draw_element,
-                                prev_pipeline, prev_pipeline_layout,
-                                frame_index_);
-        }
-      }
-
-      // Ui.
-      if (pass.HasUi()) {
-        function_ui_->Render(primary_command_buffer);
-      }
-
-#ifndef NDEBUG
-      gpu_->EndLabel(primary_command_buffer);
-#endif
-    }
-
-    primary_command_buffer.endRenderPass();
-#ifndef NDEBUG
-    gpu_->EndLabel(primary_command_buffer);
-#endif
-  }
-
-  primary_command_buffer.end();
-}
-
-void Framework::End() {
-  // Submit.
-  vk::Result acquire_next_image_result{};
-  std::tie(acquire_next_image_result, swapchain_image_index_) =
-      swapchain_->acquireNextImage(UINT64_MAX,
-                                   *(image_acquired_semaphores_[frame_index_]));
-
-  std::vector<vk::SemaphoreSubmitInfo> wait_semaphore_sis{
-      {*(image_acquired_semaphores_[frame_index_]), 0,
-       vk::PipelineStageFlagBits2::eColorAttachmentOutput}};
-
-  vk::CommandBufferSubmitInfo command_buffer_si{
-      *(primary_command_buffers_[frame_index_][0])};
-
-  std::vector<vk::SemaphoreSubmitInfo> signal_semaphore_sis{
-      {*(rendering_finished_semaphores_[frame_index_]), 0,
-       vk::PipelineStageFlagBits2::eColorAttachmentOutput},
-      {*graphics_timeline_semaphore_, absolute_frame_ + 1,
-       vk::PipelineStageFlagBits2::eColorAttachmentOutput}};
-
-  vk::SubmitInfo2 si2{
-      {}, wait_semaphore_sis, command_buffer_si, signal_semaphore_sis};
-
-  gpu_->GraphicsQueueSubmit2(si2);
-
-  // Present.
+void Framework::EndFrame() {
   vk::PresentInfoKHR present_info{
       *(rendering_finished_semaphores_[frame_index_]), **swapchain_,
       swapchain_image_index_};
@@ -551,6 +430,240 @@ void Framework::End() {
 
   ++absolute_frame_;
   frame_index_ = absolute_frame_ % frame_count_;
+  scm_index_ = 0;
+}
+
+const vk::raii::CommandBuffer& Framework::BeginGraphics() {
+  WaitSemaphore();
+  const vk::raii::CommandBuffer& primary_command_buffer{
+      RequestPrimaryCommandBuffer()};
+  primary_command_buffer.reset();
+  primary_command_buffer.begin({});
+  return primary_command_buffer;
+}
+
+void Framework::RenderGraphics(
+    const vk::raii::CommandBuffer& primary_command_buffer,
+    const fw::Pass& pass) {
+#ifndef NDEBUG
+  gpu_->BeginLabel(primary_command_buffer, "Pass " + pass.GetName(),
+                   {0.549F, 0.478F, 0.663F, 1.0F});
+#endif
+  const vk::RenderPassBeginInfo& render_pass_bi{
+      pass.GetRenderPassBeginInfo(frame_index_)};
+
+  // Tarverse subpasses.
+  const std::vector<fw::Subpass>& subpasses{pass.GetSubpasses()};
+  for (u32 i{}; i < subpasses.size(); ++i) {
+    const fw::Subpass& subpass{subpasses[i]};
+#ifndef NDEBUG
+    gpu_->BeginLabel(primary_command_buffer, "Subpass " + subpass.GetName(),
+                     {0.443F, 0.573F, 0.745F, 1.0F});
+#endif
+
+    const std::vector<fw::DrawElement>& draw_elements{
+        subpass.GetDrawElements()};
+
+    bool use_secondary_command_buffer{draw_elements.size() > 10};
+
+    vk::SubpassContents subpass_contents{
+        use_secondary_command_buffer
+            ? vk::SubpassContents::eSecondaryCommandBuffers
+            : vk::SubpassContents::eInline};
+
+    if (i == 0) {
+      primary_command_buffer.beginRenderPass(render_pass_bi, subpass_contents);
+    } else {
+      primary_command_buffer.nextSubpass(subpass_contents);
+    }
+
+    if (use_secondary_command_buffer) {
+      vk::CommandBufferInheritanceInfo inheritance_info{
+          render_pass_bi.renderPass, i, render_pass_bi.framebuffer};
+
+      for (u32 j{}; j < thread_count_; ++j) {
+        vk::CommandBufferBeginInfo command_buffer_bi{
+            vk::CommandBufferUsageFlagBits::eRenderPassContinue,
+            &inheritance_info};
+        secondary_command_buffers_[frame_index_][j][scm_index_].begin(
+            command_buffer_bi);
+      }
+
+      CommandRecord command_record{
+          config_,      secondary_command_buffers_[frame_index_],
+          subpass,      draw_elements,
+          viewport_,    scissor_,
+          frame_index_, thread_count_,
+          scm_index_};
+      CommandRecordTaskSet command_record_task_set{&command_record};
+      task_scheduler_->AddTaskSetToPipe(&command_record_task_set);
+
+      task_scheduler_->WaitforTask(&command_record_task_set);
+
+      for (u32 j{}; j < thread_count_; ++j) {
+        secondary_command_buffers_[frame_index_][j][scm_index_].end();
+      }
+
+      std::vector<vk::CommandBuffer> command_buffers;
+      for (u32 j{}; j < thread_count_; ++j) {
+        command_buffers.push_back(
+            *(secondary_command_buffers_[frame_index_][j][scm_index_]));
+      }
+
+      primary_command_buffer.executeCommands(command_buffers);
+
+      ++scm_index_;
+    } else {
+      primary_command_buffer.setViewport(0, viewport_);
+      primary_command_buffer.setScissor(0, scissor_);
+
+      const vk::raii::Pipeline* prev_pipeline{};
+      const vk::raii::PipelineLayout* prev_pipeline_layout{};
+      for (const fw::DrawElement& draw_element : draw_elements) {
+        if (draw_element.has_scene &&
+            !(config_->GetGlobalContext()
+                  .show_scenes[draw_element.scene_index])) {
+          continue;
+        }
+        RecordGraphicsCommand(primary_command_buffer, subpass, draw_element,
+                              prev_pipeline, prev_pipeline_layout,
+                              frame_index_);
+      }
+    }
+
+    // Ui.
+    if (pass.HasUi()) {
+      function_ui_->Render(primary_command_buffer);
+    }
+
+#ifndef NDEBUG
+    gpu_->EndLabel(primary_command_buffer);
+#endif
+  }
+
+  primary_command_buffer.endRenderPass();
+#ifndef NDEBUG
+  gpu_->EndLabel(primary_command_buffer);
+#endif
+}
+
+void Framework::EndGraphics(
+    const vk::raii::CommandBuffer& primary_command_buffer, bool last_pass) {
+  primary_command_buffer.end();
+
+  std::vector<vk::SemaphoreSubmitInfo> wait_semaphore_sis;
+  std::vector<vk::CommandBufferSubmitInfo> command_buffer_sis{
+      *primary_command_buffer};
+  std::vector<vk::SemaphoreSubmitInfo> signal_semaphore_sis{
+      {*timeline_semaphores_[frame_index_], timeline_values_[frame_index_]++,
+       vk::PipelineStageFlagBits2::eColorAttachmentOutput}};
+
+  if (last_pass) {
+    vk::Result acquire_next_image_result{};
+    std::tie(acquire_next_image_result, swapchain_image_index_) =
+        swapchain_->acquireNextImage(
+            UINT64_MAX, *(image_acquired_semaphores_[frame_index_]));
+
+    wait_semaphore_sis.emplace_back(
+        *(image_acquired_semaphores_[frame_index_]), 0,
+        vk::PipelineStageFlagBits2::eColorAttachmentOutput);
+
+    signal_semaphore_sis.emplace_back(
+        *(rendering_finished_semaphores_[frame_index_]), 0,
+        vk::PipelineStageFlagBits2::eColorAttachmentOutput);
+  }
+
+  vk::SubmitInfo2 si2{
+      {}, wait_semaphore_sis, command_buffer_sis, signal_semaphore_sis};
+
+  gpu_->GraphicsQueueSubmit2(si2);
+}
+
+const vk::raii::CommandBuffer& Framework::BeginCompute() {
+  WaitSemaphore();
+  const vk::raii::CommandBuffer& compute_command_buffer{
+      RequestPrimaryCommandBuffer()};
+  compute_command_buffer.reset();
+  compute_command_buffer.begin({});
+  return compute_command_buffer;
+}
+
+void Framework::RenderCompute(
+    const vk::raii::CommandBuffer& compute_command_buffer,
+    const fw::Pass& pass) {
+#ifndef NDEBUG
+  gpu_->BeginLabel(compute_command_buffer, "Pass " + pass.GetName(),
+                   {0.549F, 0.478F, 0.663F, 1.0F});
+#endif
+  const vk::raii::Pipeline& pipeline{pass.pipeline};
+  compute_command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute,
+                                      *pipeline);
+
+  const vk::raii::PipelineLayout& pipeline_layout{pass.pipeline_layout};
+  const vk::raii::DescriptorSets& descriptor_sets{
+      pass.descriptor_sets[frame_index]};
+  std::vector<vk::DescriptorSet> vk_descriptor_sets;
+  for (const auto& descriptor_set : descriptor_sets) {
+    vk_descriptor_sets.push_back(*(descriptor_set));
+  }
+  compute_command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute,
+                                            *pipeline_layout, 0,
+                                            vk_descriptor_sets, nullptr);
+
+  u32 group_count_x{pass.group_count_x};
+  u32 group_count_y{pass.group_count_y};
+  u32 group_count_z{pass.group_count_z};
+  compute_command_buffer.dispatch(group_count_x, group_count_y, group_count_z);
+
+#ifndef NDEBUG
+  gpu_->EndLabel(compute_command_buffer);
+#endif
+}
+
+void Framework::EndCompute(
+    const vk::raii::CommandBuffer& compute_command_buffer, bool last_pass) {
+  compute_command_buffer.end();
+
+  std::vector<vk::SemaphoreSubmitInfo> wait_semaphore_sis;
+  std::vector<vk::CommandBufferSubmitInfo> command_buffer_sis{
+      *compute_command_buffer};
+  std::vector<vk::SemaphoreSubmitInfo> signal_semaphore_sis{
+      {*timeline_semaphores_[frame_index_], timeline_values_[frame_index_]++,
+       vk::PipelineStageFlagBits2::eComputeShader}};
+
+  if (last_pass) {
+    vk::Result acquire_next_image_result{};
+    std::tie(acquire_next_image_result, swapchain_image_index_) =
+        swapchain_->acquireNextImage(
+            UINT64_MAX, *(image_acquired_semaphores_[frame_index_]));
+
+    wait_semaphore_sis.emplace_back(*(image_acquired_semaphores_[frame_index_]),
+                                    0,
+                                    vk::PipelineStageFlagBits2::eComputeShader);
+
+    signal_semaphore_sis.emplace_back(
+        *(rendering_finished_semaphores_[frame_index_]), 0,
+        vk::PipelineStageFlagBits2::eComputeShader);
+  }
+
+  vk::SubmitInfo2 si2{
+      {}, wait_semaphore_sis, command_buffer_sis, signal_semaphore_sis};
+
+  gpu_->ComputeQueueSubmit2(si2);
+}
+
+const vk::raii::CommandBuffer& Framework::RequestPrimaryCommandBuffer() {
+  u32 index{primary_command_buffer_indices_[frame_index_]++};
+  return primary_command_buffers_[frame_index_][index];
+}
+
+void Framework::WaitSemaphore() {
+  u64 value{timeline_values_[frame_index_] - 1};
+  if (value > 0) {
+    const vk::raii::Semaphore& semaphore{timeline_semaphores_[frame_index_]};
+    vk::SemaphoreWaitInfo semaphore_wi{{}, *semaphore, value};
+    gpu_->WaitSemaphores(semaphore_wi);
+  }
 }
 
 }  // namespace luka

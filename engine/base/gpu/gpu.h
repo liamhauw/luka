@@ -119,7 +119,7 @@ class Gpu {
   void WaitIdle();
 
   void GraphicsQueueSubmit2(const vk::SubmitInfo2& submit_info2);
-  void ComputeQueueSubmit(const vk::SubmitInfo& submit_info);
+  void ComputeQueueSubmit2(const vk::SubmitInfo2& submit_info);
   void TransferQueueSubmit(const vk::SubmitInfo& submit_info);
   vk::Result PresentQueuePresent(const vk::PresentInfoKHR& present_info);
 
