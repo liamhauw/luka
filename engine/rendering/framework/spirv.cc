@@ -12,9 +12,7 @@ namespace luka::fw {
 SPIRV::SPIRV(const ast::Shader& shader,
              const std::vector<std::string>& processes,
              vk::ShaderStageFlagBits stage, u64 hash_value)
-    : shader_{shader},
-      processes_{processes},
-      spirv_{shader_.CompileToSpirv(processes_)},
+    : spirv_{shader.CompileToSpirv(processes)},
       stage_{stage},
       hash_value_{hash_value} {
   spirv_cross::CompilerGLSL compiler{spirv_};
@@ -86,6 +84,20 @@ void SPIRV::ParseShaderResource(const spirv_cross::CompilerGLSL& compiler) {
     shader_resource.set = ParseSet(compiler, sampled_image);
     shader_resource.binding = ParseBinding(compiler, sampled_image);
     shader_resource.array_size = ParseArraySize(compiler, sampled_image);
+
+    shader_resources_.push_back(std::move(shader_resource));
+  }
+
+  // Storage images.
+  const auto& storage_images{resources.storage_images};
+  for (const auto& storage_image : storage_images) {
+    ShaderResource shader_resource{};
+    shader_resource.name = storage_image.name;
+    shader_resource.type = ShaderResourceType::kStorageImage;
+    shader_resource.stage = stage_;
+    shader_resource.set = ParseSet(compiler, storage_image);
+    shader_resource.binding = ParseBinding(compiler, storage_image);
+    shader_resource.array_size = ParseArraySize(compiler, storage_image);
 
     shader_resources_.push_back(std::move(shader_resource));
   }

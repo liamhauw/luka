@@ -27,7 +27,7 @@ void main() {
 	kernel[3] = -1.0/8.0; kernel[4] =  1.0;     kernel[5] = -1.0/8.0;
 	kernel[6] = -1.0/8.0; kernel[7] = -1.0/8.0; kernel[8] = -1.0/8.0;
 
-  vec4 res = vec4(vec3(conv(kernel, avg, 0.1, 0l.0)), 1.0);
+  vec4 res = vec4(vec3(conv(kernel, avg, 0.1, 0.0)), 1.0);
 
   imageStore(color_result, ivec2(gl_GlobalInvocationID.xy), res);
 }

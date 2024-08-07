@@ -460,8 +460,7 @@ void Subpass::CreatePipelineResources(
                 vk::BufferCreateInfo uniform_buffer_ci{
                     {},
                     sizeof(SubpassUniform),
-                    vk::BufferUsageFlagBits::eUniformBuffer,
-                    vk::SharingMode::eExclusive};
+                    vk::BufferUsageFlagBits::eUniformBuffer};
 
                 gpu::Buffer subpass_uniform_buffer{
                     gpu_->CreateBuffer(uniform_buffer_ci, &subpass_uniform,
@@ -716,8 +715,7 @@ void Subpass::CreatePipelineResources(
               vk::BufferCreateInfo uniform_buffer_ci{
                   {},
                   sizeof(DrawElementUniform),
-                  vk::BufferUsageFlagBits::eUniformBuffer,
-                  vk::SharingMode::eExclusive};
+                  vk::BufferUsageFlagBits::eUniformBuffer};
 
               gpu::Buffer draw_element_uniform_buffer{
                   gpu_->CreateBuffer(uniform_buffer_ci, &draw_element_uniform,

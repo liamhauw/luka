@@ -18,7 +18,9 @@ enum class ShaderResourceType {
   kSampler,
   kCombinedImageSampler,
   kSampledImage,
+  kStorageImage,
   kUniformBuffer,
+  kStorageBuffer,
   kInputAttachment,
   kPushConstantBuffer,
   kStageInput
@@ -76,8 +78,6 @@ class SPIRV {
   static u32 ParseLocation(const spirv_cross::CompilerGLSL& compiler,
                            const spirv_cross::Resource& resource);
 
-  ast::Shader shader_;
-  std::vector<std::string> processes_;
   std::vector<u32> spirv_;
   vk::ShaderStageFlagBits stage_{};
   u64 hash_value_{};

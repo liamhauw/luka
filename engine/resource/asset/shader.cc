@@ -26,6 +26,8 @@ Shader::Shader(const std::filesystem::path& cfg_shader_path)
     language_ = EShLangVertex;
   } else if (extension == ".frag") {
     language_ = EShLangFragment;
+  } else if (extension == ".comp") {
+    language_ = EShLangCompute;
   } else {
     THROW("Unsupport shader extension");
   }

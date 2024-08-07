@@ -118,13 +118,10 @@ class Framework {
   std::vector<vk::Image> swapchain_images_;
   u32 frame_count_{};
 
-  vk::raii::Semaphore graphics_timeline_semaphore_{nullptr};
-
-  std::vector<vk::raii::Semaphore> timeline_semaphores_;
-  std::vector<u64> timeline_values_;
-
   std::vector<vk::raii::Semaphore> image_acquired_semaphores_;
   std::vector<vk::raii::Semaphore> rendering_finished_semaphores_;
+  std::vector<vk::raii::Semaphore> timeline_semaphores_;
+  std::vector<u64> timeline_values_;
 
   const u32 kGraphicsCommandBufferCount{4};
   const u32 kComputeCommandBufferCount{4};
@@ -144,10 +141,10 @@ class Framework {
       shared_image_views_;
   std::vector<fw::Pass> passes_;
 
-  u64 absolute_frame_{};
   u32 frame_index_{};
-  u32 swapchain_image_index_{};
+  u64 absolute_frame_{};
   u32 scm_index_{};
+  u32 swapchain_image_index_{};
 };
 
 }  // namespace luka

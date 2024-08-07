@@ -35,11 +35,16 @@ struct Subpass {
   std::vector<u32> lights;
 };
 
+struct ComputeJob {
+  u32 shader;
+};
+
 struct Pass {
   std::string name;
   PassType type;
   std::vector<Attachment> attachments;
   std::vector<Subpass> subpasses;
+  ComputeJob compute_job;
 };
 
 class FrameGraph {

@@ -115,7 +115,9 @@
           "output": true
         }
       ],
-      "shader": 4
+      "compute_job": {
+        "shader": 7
+      }
     },
     {
       "name": "ui",

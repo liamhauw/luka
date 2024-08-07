@@ -45,8 +45,7 @@ Mesh::Mesh(const std::shared_ptr<Gpu>& gpu,
       vk::BufferCreateInfo buffer_ci{{},
                                      buffer_size,
                                      vk::BufferUsageFlagBits::eVertexBuffer |
-                                         vk::BufferUsageFlagBits::eTransferDst,
-                                     vk::SharingMode::eExclusive};
+                                         vk::BufferUsageFlagBits::eTransferDst};
 
       gpu::Buffer staging_buffer{
           gpu->CreateBuffer(staging_buffer_ci, buffer_data)};
@@ -110,8 +109,7 @@ Mesh::Mesh(const std::shared_ptr<Gpu>& gpu,
       vk::BufferCreateInfo buffer_ci{{},
                                      buffer_size,
                                      vk::BufferUsageFlagBits::eIndexBuffer |
-                                         vk::BufferUsageFlagBits::eTransferDst,
-                                     vk::SharingMode::eExclusive};
+                                         vk::BufferUsageFlagBits::eTransferDst};
 
       gpu::Buffer staging_buffer{
           gpu->CreateBuffer(staging_buffer_ci, buffer_data)};

@@ -199,18 +199,14 @@ void Framework::CreateSyncObjects() {
                                                 &timeline_semaphore_type_ci};
   vk::SemaphoreCreateInfo semaphore_ci;
 
-  graphics_timeline_semaphore_ =
-      gpu_->CreateSemaphoreLuka(timeline_semaphore_ci, "graphics_timeline");
-
   for (u32 i{}; i < frame_count_; ++i) {
-    timeline_semaphores_.push_back(
-        gpu_->CreateSemaphoreLuka(timeline_semaphore_ci, "timeline"));
-    timeline_values_.push_back(frame_count_);
-
     image_acquired_semaphores_.push_back(
         gpu_->CreateSemaphoreLuka(semaphore_ci, "image_acquired"));
     rendering_finished_semaphores_.push_back(
         gpu_->CreateSemaphoreLuka(semaphore_ci, "graphics_finished"));
+    timeline_semaphores_.push_back(
+        gpu_->CreateSemaphoreLuka(timeline_semaphore_ci, "timeline"));
+    timeline_values_.push_back(frame_count_);
   }
 }
 
@@ -595,25 +591,26 @@ void Framework::RenderCompute(
   gpu_->BeginLabel(compute_command_buffer, "Pass " + pass.GetName(),
                    {0.549F, 0.478F, 0.663F, 1.0F});
 #endif
-  const vk::raii::Pipeline& pipeline{pass.pipeline};
-  compute_command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute,
-                                      *pipeline);
+  // const vk::raii::Pipeline& pipeline{pass.pipeline};
+  // compute_command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute,
+  //                                     *pipeline);
 
-  const vk::raii::PipelineLayout& pipeline_layout{pass.pipeline_layout};
-  const vk::raii::DescriptorSets& descriptor_sets{
-      pass.descriptor_sets[frame_index]};
-  std::vector<vk::DescriptorSet> vk_descriptor_sets;
-  for (const auto& descriptor_set : descriptor_sets) {
-    vk_descriptor_sets.push_back(*(descriptor_set));
-  }
-  compute_command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute,
-                                            *pipeline_layout, 0,
-                                            vk_descriptor_sets, nullptr);
+  // const vk::raii::PipelineLayout& pipeline_layout{pass.pipeline_layout};
+  // const vk::raii::DescriptorSets& descriptor_sets{
+  //     pass.descriptor_sets[frame_index]};
+  // std::vector<vk::DescriptorSet> vk_descriptor_sets;
+  // for (const auto& descriptor_set : descriptor_sets) {
+  //   vk_descriptor_sets.push_back(*(descriptor_set));
+  // }
+  // compute_command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute,
+  //                                           *pipeline_layout, 0,
+  //                                           vk_descriptor_sets, nullptr);
 
-  u32 group_count_x{pass.group_count_x};
-  u32 group_count_y{pass.group_count_y};
-  u32 group_count_z{pass.group_count_z};
-  compute_command_buffer.dispatch(group_count_x, group_count_y, group_count_z);
+  // u32 group_count_x{pass.group_count_x};
+  // u32 group_count_y{pass.group_count_y};
+  // u32 group_count_z{pass.group_count_z};
+  // compute_command_buffer.dispatch(group_count_x, group_count_y,
+  // group_count_z);
 
 #ifndef NDEBUG
   gpu_->EndLabel(compute_command_buffer);

@@ -79,6 +79,18 @@ FrameGraph::FrameGraph(const std::filesystem::path& frame_graph_path) {
         pass.name = pass_json["name"].template get<std::string>();
       }
 
+      // Pass type.
+      if (pass_json.contains("type")) {
+        std::string type{pass_json["type"].template get<std::string>()};
+        if (type == "graphics") {
+          pass.type = PassType::kGraphics;
+        } else if (type == "compute") {
+          pass.type = PassType::kCompute;
+        } else {
+          THROW("Unkonwn pass type");
+        }
+      }
+
       // Pass attachments.
       if (pass_json.contains("attachments")) {
         const json& attachments_json{pass_json["attachments"]};
@@ -119,7 +131,7 @@ FrameGraph::FrameGraph(const std::filesystem::path& frame_graph_path) {
       }
 
       // Pase subpasses.
-      if (pass_json.contains("subpasses")) {
+      if (pass.type == PassType::kGraphics && pass_json.contains("subpasses")) {
         const json& subpasses_json{pass_json["subpasses"]};
         for (const json& subpass_json : subpasses_json) {
           ast::Subpass subpass{};
@@ -188,6 +200,19 @@ FrameGraph::FrameGraph(const std::filesystem::path& frame_graph_path) {
           pass.subpasses.push_back(std::move(subpass));
         }
       }
+
+      // Pass compute job
+      if (pass.type == PassType::kCompute &&
+          pass_json.contains("compute_job")) {
+        ComputeJob compute_job{};
+        const json& compute_job_json{pass_json["compute_job"]};
+        if (compute_job_json.contains("shader")) {
+          u32 shader{compute_job_json["shader"].template get<u32>()};
+          compute_job.shader = shader;
+        }
+        pass.compute_job = compute_job;
+      }
+
       passes_.push_back(pass);
     }
   }

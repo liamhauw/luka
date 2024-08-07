@@ -10,6 +10,7 @@
 #include "base/gpu/gpu.h"
 #include "function/camera/camera.h"
 #include "function/function_ui/function_ui.h"
+#include "rendering/framework/compute_job.h"
 #include "rendering/framework/subpass.h"
 #include "resource/asset/asset.h"
 
@@ -43,6 +44,7 @@ class Pass {
   void CreateClearValues();
   void CreateSubpasses();
 
+  void CreateResources();
   void CreateComputeJob();
 
   std::shared_ptr<Gpu> gpu_;
@@ -76,6 +78,8 @@ class Pass {
   std::vector<vk::ClearValue> clear_values_;
 
   std::vector<Subpass> subpasses_;
+
+  ComputeJob compute_job_;
 };
 
 }  // namespace luka::fw
