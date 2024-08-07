@@ -35,10 +35,10 @@ class ComputeJob {
   u32 GetGroupCountY() const;
   u32 GetGroupCountZ() const;
 
-  void PreTransferResources(
-      const vk::raii::CommandBuffer& command_buffer) const;
-  void PostTransferResources(
-      const vk::raii::CommandBuffer& command_buffer) const;
+  void PreTransferResources(const vk::raii::CommandBuffer& command_buffer,
+                            u32 frame_index) const;
+  void PostTransferResources(const vk::raii::CommandBuffer& command_buffer,
+                             u32 frame_index) const;
 
  private:
   void ParseShaderResources(
@@ -111,7 +111,7 @@ class ComputeJob {
   std::unordered_map<u64, vk::raii::ShaderModule> shader_modules_;
   std::unordered_map<u64, vk::raii::Pipeline> pipelines_;
 
-  std::map<vk::Image, std::pair<vk::ImageLayout, vk::ImageLayout>>
+  std::vector<std::map<vk::Image, std::pair<vk::ImageLayout, vk::ImageLayout>>>
       image_layout_trans_;
 };
 

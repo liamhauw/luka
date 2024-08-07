@@ -426,6 +426,7 @@ void Framework::EndFrame() {
   }
 
   ++absolute_frame_;
+  primary_command_buffer_indices_[frame_index_] = 0;
   frame_index_ = absolute_frame_ % frame_count_;
   scm_index_ = 0;
 }
@@ -595,7 +596,7 @@ void Framework::RenderCompute(
 
   const fw::ComputeJob& compute_job{pass.GetComputeJob()};
 
-  compute_job.PreTransferResources(compute_command_buffer);
+  compute_job.PreTransferResources(compute_command_buffer, frame_index_);
 
   const vk::raii::Pipeline* pipeline{compute_job.GetPipeline()};
   compute_command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute,
@@ -619,7 +620,7 @@ void Framework::RenderCompute(
   u32 group_count_z{compute_job.GetGroupCountZ()};
   compute_command_buffer.dispatch(group_count_x, group_count_y, group_count_z);
 
-  compute_job.PostTransferResources(compute_command_buffer);
+  compute_job.PostTransferResources(compute_command_buffer, frame_index_);
 
 #ifndef NDEBUG
   gpu_->EndLabel(compute_command_buffer);

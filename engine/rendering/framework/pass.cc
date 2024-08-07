@@ -119,7 +119,7 @@ void Pass::CreateRenderPass() {
         vk::AttachmentDescriptionFlags{}, format, vk::SampleCountFlagBits::e1,
         vk::AttachmentLoadOp::eClear, store_op, vk::AttachmentLoadOp::eDontCare,
         vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined,
-        vk::ImageLayout::eGeneral);
+        vk::ImageLayout::eShaderReadOnlyOptimal);
   }
 
   const std::vector<ast::Subpass>& ast_subpasses{ast_pass_->subpasses};
@@ -339,7 +339,8 @@ void Pass::CreateResources() {
     const std::vector<ast::Attachment>& ast_attachments{ast_pass_->attachments};
     for (const auto& ast_attachment : ast_attachments) {
       vk::Format format{ast_attachment.format};
-      vk::ImageUsageFlags usage{vk::ImageUsageFlagBits::eStorage};
+      vk::ImageUsageFlags usage{vk::ImageUsageFlagBits::eStorage |
+                                vk::ImageUsageFlagBits::eSampled};
 
       vk::ImageCreateInfo image_ci{
           {},
@@ -351,8 +352,9 @@ void Pass::CreateResources() {
           vk::SampleCountFlagBits::e1,
           vk::ImageTiling::eOptimal,
           usage};
-      gpu::Image image{gpu_->CreateImage(image_ci, vk::ImageLayout::eUndefined,
-                                         nullptr, ast_attachment.name)};
+      gpu::Image image{
+          gpu_->CreateImage(image_ci, vk::ImageLayout::eShaderReadOnlyOptimal,
+                            transfer_command_buffer_, ast_attachment.name)};
 
       // Image view.
       vk::ImageAspectFlags aspect{vk::ImageAspectFlagBits::eColor};

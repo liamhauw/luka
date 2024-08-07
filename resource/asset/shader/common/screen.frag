@@ -3,11 +3,11 @@
 
 #version 450
 
-layout(set = 0, binding = 0) uniform sampler2D color;
+layout(set = 0, binding = 0) uniform sampler2D color_result;
 
 layout(location = 0) in vec2 i_texcoord_0;
 layout(location = 0) out vec4 o_color;
 
 void main() {
-  o_color = texture(color, i_texcoord_0);
+  o_color = texture(color_result, i_texcoord_0);
 }

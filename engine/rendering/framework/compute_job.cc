@@ -31,6 +31,8 @@ ComputeJob::ComputeJob(
       shared_images_{&shared_images},
       shared_image_views_{&shared_image_views},
       shader_{ast_compute_job_->shader} {
+  image_layout_trans_.resize(frame_count_);
+
   const SPIRV* spirv{};
   std::unordered_map<std::string, ShaderResource> name_shader_resources;
   std::unordered_map<u32, std::vector<ShaderResource>> set_shader_resources;
@@ -62,8 +64,8 @@ u32 ComputeJob::GetGroupCountY() const { return group_count_y_; }
 u32 ComputeJob::GetGroupCountZ() const { return group_count_z_; }
 
 void ComputeJob::PreTransferResources(
-    const vk::raii::CommandBuffer& command_buffer) const {
-  for (auto tr : image_layout_trans_) {
+    const vk::raii::CommandBuffer& command_buffer, u32 frame_index) const {
+  for (auto tr : image_layout_trans_[frame_index]) {
     vk::Image image{tr.first};
     const auto& layout{tr.second};
     vk::ImageLayout ext{layout.first};
@@ -85,8 +87,8 @@ void ComputeJob::PreTransferResources(
 }
 
 void ComputeJob::PostTransferResources(
-    const vk::raii::CommandBuffer& command_buffer) const {
-  for (auto tr : image_layout_trans_) {
+    const vk::raii::CommandBuffer& command_buffer, u32 frame_index) const {
+  for (auto tr : image_layout_trans_[frame_index]) {
     vk::Image image{tr.first};
     const auto& layout{tr.second};
     vk::ImageLayout ext{layout.first};
@@ -221,17 +223,10 @@ void ComputeJob::CreatePipelineResources(
           auto image_it{(*shared_images_)[i].find(shader_resource.name)};
           if (image_it != (*shared_images_)[i].end()) {
             image = image_it->second;
-            if (shader_resource.name != "color_result") {
-              image_layout_trans_.insert(
-                  {image, std::pair<vk::ImageLayout, vk::ImageLayout>{
-                              vk::ImageLayout::eColorAttachmentOptimal,
-                              vk::ImageLayout::eGeneral}});
-            } else {
-              image_layout_trans_.insert(
-                  {image, std::pair<vk::ImageLayout, vk::ImageLayout>{
-                              vk::ImageLayout::eGeneral,
-                              vk::ImageLayout::eShaderReadOnlyOptimal}});
-            }
+            image_layout_trans_[i].insert(
+                {image, std::pair<vk::ImageLayout, vk::ImageLayout>{
+                            vk::ImageLayout::eShaderReadOnlyOptimal,
+                            vk::ImageLayout::eGeneral}});
           } else {
             THROW("Image is nullptr");
           }
