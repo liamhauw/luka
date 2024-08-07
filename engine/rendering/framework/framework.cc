@@ -206,7 +206,7 @@ void Framework::CreateSyncObjects() {
         gpu_->CreateSemaphoreLuka(semaphore_ci, "graphics_finished"));
     timeline_semaphores_.push_back(
         gpu_->CreateSemaphoreLuka(timeline_semaphore_ci, "timeline"));
-    timeline_values_.push_back(frame_count_);
+    timeline_values_.push_back(1);
   }
 }
 
@@ -341,11 +341,12 @@ void Framework::CreatePasses() {
     }
   }
 
+  shared_images_.resize(frame_count_);
   shared_image_views_.resize(frame_count_);
   for (u32 i{}; i < ast_passes.size(); ++i) {
     passes_.emplace_back(gpu_, asset_, camera_, function_ui_, frame_count_,
                          *swapchain_info_, swapchain_images_, ast_passes, i,
-                         scene_primitives, shared_image_views_);
+                         scene_primitives, shared_images_, shared_image_views_);
   }
 }
 
@@ -591,26 +592,34 @@ void Framework::RenderCompute(
   gpu_->BeginLabel(compute_command_buffer, "Pass " + pass.GetName(),
                    {0.549F, 0.478F, 0.663F, 1.0F});
 #endif
-  // const vk::raii::Pipeline& pipeline{pass.pipeline};
-  // compute_command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute,
-  //                                     *pipeline);
 
-  // const vk::raii::PipelineLayout& pipeline_layout{pass.pipeline_layout};
-  // const vk::raii::DescriptorSets& descriptor_sets{
-  //     pass.descriptor_sets[frame_index]};
-  // std::vector<vk::DescriptorSet> vk_descriptor_sets;
-  // for (const auto& descriptor_set : descriptor_sets) {
-  //   vk_descriptor_sets.push_back(*(descriptor_set));
-  // }
-  // compute_command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute,
-  //                                           *pipeline_layout, 0,
-  //                                           vk_descriptor_sets, nullptr);
+  const fw::ComputeJob& compute_job{pass.GetComputeJob()};
 
-  // u32 group_count_x{pass.group_count_x};
-  // u32 group_count_y{pass.group_count_y};
-  // u32 group_count_z{pass.group_count_z};
-  // compute_command_buffer.dispatch(group_count_x, group_count_y,
-  // group_count_z);
+  compute_job.PreTransferResources(compute_command_buffer);
+
+  const vk::raii::Pipeline* pipeline{compute_job.GetPipeline()};
+  compute_command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute,
+                                      *pipeline);
+
+  const vk::raii::PipelineLayout* pipeline_layout{
+      compute_job.GetPipelineLayout()};
+  const vk::raii::DescriptorSets& descriptor_sets{
+      compute_job.GetDescriptorSets(frame_index_)};
+
+  std::vector<vk::DescriptorSet> vk_descriptor_sets;
+  for (const auto& descriptor_set : descriptor_sets) {
+    vk_descriptor_sets.push_back(*(descriptor_set));
+  }
+  compute_command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute,
+                                            *pipeline_layout, 0,
+                                            vk_descriptor_sets, nullptr);
+
+  u32 group_count_x{compute_job.GetGroupCountX()};
+  u32 group_count_y{compute_job.GetGroupCountY()};
+  u32 group_count_z{compute_job.GetGroupCountZ()};
+  compute_command_buffer.dispatch(group_count_x, group_count_y, group_count_z);
+
+  compute_job.PostTransferResources(compute_command_buffer);
 
 #ifndef NDEBUG
   gpu_->EndLabel(compute_command_buffer);

@@ -26,6 +26,7 @@ Subpass::Subpass(
     const std::vector<std::vector<vk::raii::ImageView>>& attachment_image_views,
     u32 color_attachment_count, const std::vector<ast::Subpass>& ast_subpasses,
     u32 subpass_index, const std::vector<ScenePrimitive>& scene_primitives,
+    std::vector<std::unordered_map<std::string, vk::Image>>& shared_images,
     std::vector<std::unordered_map<std::string, vk::ImageView>>&
         shared_image_views)
     : gpu_{std::move(gpu)},
@@ -38,6 +39,7 @@ Subpass::Subpass(
       ast_subpasses_{&ast_subpasses},
       subpass_index_{subpass_index},
       scene_primitives_{&scene_primitives},
+      shared_images_{&shared_images},
       shared_image_views_{&shared_image_views},
       ast_subpass_{&(*ast_subpasses_)[subpass_index_]},
       name_{ast_subpass_->name},

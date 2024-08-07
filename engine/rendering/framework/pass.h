@@ -24,6 +24,7 @@ class Pass {
        const std::vector<vk::Image>& swapchain_images,
        const std::vector<ast::Pass>& ast_passes, u32 pass_index,
        const std::vector<ScenePrimitive>& scene_primitives,
+       std::vector<std::unordered_map<std::string, vk::Image>>& shared_images,
        std::vector<std::unordered_map<std::string, vk::ImageView>>&
            shared_image_views);
 
@@ -36,6 +37,8 @@ class Pass {
   vk::RenderPassBeginInfo GetRenderPassBeginInfo(u32 frame_index) const;
   const std::vector<Subpass>& GetSubpasses() const;
   std::vector<Subpass>& GetSubpasses();
+
+  const ComputeJob& GetComputeJob() const;
 
  protected:
   void CreateRenderPass();
@@ -58,6 +61,7 @@ class Pass {
   const std::vector<ast::Pass>* ast_passes_{};
   u32 pass_index_{};
   const std::vector<ScenePrimitive>* scene_primitives_;
+  std::vector<std::unordered_map<std::string, vk::Image>>* shared_images_;
   std::vector<std::unordered_map<std::string, vk::ImageView>>*
       shared_image_views_;
 
@@ -80,6 +84,9 @@ class Pass {
   std::vector<Subpass> subpasses_;
 
   ComputeJob compute_job_;
+
+  vk::raii::CommandPool transfer_command_pool_{nullptr};
+  vk::raii::CommandBuffer transfer_command_buffer_{nullptr};
 };
 
 }  // namespace luka::fw

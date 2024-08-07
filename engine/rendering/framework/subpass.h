@@ -73,16 +73,18 @@ struct ScenePrimitive {
 
 class Subpass {
  public:
-  Subpass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
-          std::shared_ptr<Camera> camera, u32 frame_count,
-          vk::RenderPass render_pass,
-          const std::vector<std::vector<vk::raii::ImageView>>&
-              attachment_image_views,
-          u32 color_attachment_count,
-          const std::vector<ast::Subpass>& ast_subpasses, u32 subpass_index,
-          const std::vector<ScenePrimitive>& scene_primitives,
-          std::vector<std::unordered_map<std::string, vk::ImageView>>&
-              shared_image_views);
+  Subpass(
+      std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
+      std::shared_ptr<Camera> camera, u32 frame_count,
+      vk::RenderPass render_pass,
+      const std::vector<std::vector<vk::raii::ImageView>>&
+          attachment_image_views,
+      u32 color_attachment_count,
+      const std::vector<ast::Subpass>& ast_subpasses, u32 subpass_index,
+      const std::vector<ScenePrimitive>& scene_primitives,
+      std::vector<std::unordered_map<std::string, vk::Image>>& shared_images,
+      std::vector<std::unordered_map<std::string, vk::ImageView>>&
+          shared_image_views);
 
   void Resize(const std::vector<std::vector<vk::raii::ImageView>>&
                   attachment_image_views);
@@ -169,6 +171,7 @@ class Subpass {
   const std::vector<ast::Subpass>* ast_subpasses_{};
   u32 subpass_index_{};
   const std::vector<ScenePrimitive>* scene_primitives_;
+  std::vector<std::unordered_map<std::string, vk::Image>>* shared_images_;
   std::vector<std::unordered_map<std::string, vk::ImageView>>*
       shared_image_views_;
 

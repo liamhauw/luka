@@ -52,8 +52,11 @@ class Gpu {
                            const gpu::Buffer& staging_buffer,
                            const vk::raii::CommandBuffer& command_buffer,
                            const std::string& name = {}, i32 index = -1);
-  gpu::Image CreateImage(const vk::ImageCreateInfo& image_ci,
-                         const std::string& name = {}, i32 index = -1);
+  gpu::Image CreateImage(
+      const vk::ImageCreateInfo& image_ci,
+      const vk::ImageLayout& new_layout = vk::ImageLayout::eUndefined,
+      const vk::raii::CommandBuffer& command_buffer = nullptr,
+      const std::string& name = {}, i32 index = -1);
   gpu::Image CreateImage(const vk::ImageCreateInfo& image_ci,
                          const vk::ImageLayout& new_layout,
                          const gpu::Buffer& staging_buffer,
@@ -99,6 +102,10 @@ class Gpu {
       const std::string& name = {}, i32 index = -1);
   vk::raii::Pipeline CreatePipeline(
       const vk::GraphicsPipelineCreateInfo& graphics_pipeline_ci,
+      const vk::raii::PipelineCache& pipeline_cache = nullptr,
+      const std::string& name = {}, i32 index = -1);
+  vk::raii::Pipeline CreatePipeline(
+      const vk::ComputePipelineCreateInfo& compute_pipeline_ci,
       const vk::raii::PipelineCache& pipeline_cache = nullptr,
       const std::string& name = {}, i32 index = -1);
 

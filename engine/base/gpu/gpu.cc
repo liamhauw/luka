@@ -113,6 +113,8 @@ gpu::Buffer Gpu::CreateBuffer(const vk::BufferCreateInfo& buffer_ci,
 }
 
 gpu::Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
+                            const vk::ImageLayout& new_layout,
+                            const vk::raii::CommandBuffer& command_buffer,
                             const std::string& name, i32 index) {
   gpu::Image image{allocator_, image_ci};
 
@@ -130,6 +132,22 @@ gpu::Image Gpu::CreateImage(const vk::ImageCreateInfo& image_ci,
                 reinterpret_cast<u64>(static_cast<VkImage>(*image)), name,
                 prefix, index == -1 ? "" : std::to_string(index));
 #endif
+
+  if (new_layout != vk::ImageLayout::eUndefined) {
+    vk::ImageMemoryBarrier barrier{
+        {},
+        vk::AccessFlagBits::eShaderWrite,
+        image_ci.initialLayout,
+        new_layout,
+        VK_QUEUE_FAMILY_IGNORED,
+        VK_QUEUE_FAMILY_IGNORED,
+        *image,
+        {vk::ImageAspectFlagBits::eColor, 0, VK_REMAINING_MIP_LEVELS, 0,
+         VK_REMAINING_ARRAY_LAYERS}};
+    command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe,
+                                   vk::PipelineStageFlagBits::eAllCommands, {},
+                                   {}, {}, barrier);
+  }
 
   return image;
 }
@@ -423,6 +441,22 @@ vk::raii::Pipeline Gpu::CreatePipeline(
     const vk::raii::PipelineCache& pipeline_cache, const std::string& name,
     i32 index) {
   vk::raii::Pipeline pipeline{device_, pipeline_cache, graphics_pipeline_ci};
+
+#ifndef NDEBUG
+  SetObjectName(vk::ObjectType::ePipeline,
+                reinterpret_cast<uint64_t>(static_cast<VkPipeline>(*pipeline)),
+                name, "Graphics Pipeline",
+                index == -1 ? "" : std::to_string(index));
+#endif
+
+  return pipeline;
+}
+
+vk::raii::Pipeline Gpu::CreatePipeline(
+    const vk::ComputePipelineCreateInfo& compute_pipeline_ci,
+    const vk::raii::PipelineCache& pipeline_cache, const std::string& name,
+    i32 index) {
+  vk::raii::Pipeline pipeline{device_, pipeline_cache, compute_pipeline_ci};
 
 #ifndef NDEBUG
   SetObjectName(vk::ObjectType::ePipeline,

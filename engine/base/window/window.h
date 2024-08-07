@@ -40,7 +40,7 @@ class Window {
 
   DELETE_SPECIAL_MEMBER_FUNCTIONS(Window);
 
-  explicit Window(const WindowInfo& window_info = {800, 600, "luka"});
+  explicit Window(const WindowInfo& window_info = {640, 640, "luka"});
 
   ~Window();
 

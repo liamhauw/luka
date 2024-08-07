@@ -11,15 +11,16 @@
 
 namespace luka::fw {
 
-Pass::Pass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
-           std::shared_ptr<Camera> camera,
-           std::shared_ptr<FunctionUi> function_ui, u32 frame_count,
-           const SwapchainInfo& swapchain_info,
-           const std::vector<vk::Image>& swapchain_images,
-           const std::vector<ast::Pass>& ast_passes, u32 pass_index,
-           const std::vector<ScenePrimitive>& scene_primitives,
-           std::vector<std::unordered_map<std::string, vk::ImageView>>&
-               shared_image_views)
+Pass::Pass(
+    std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
+    std::shared_ptr<Camera> camera, std::shared_ptr<FunctionUi> function_ui,
+    u32 frame_count, const SwapchainInfo& swapchain_info,
+    const std::vector<vk::Image>& swapchain_images,
+    const std::vector<ast::Pass>& ast_passes, u32 pass_index,
+    const std::vector<ScenePrimitive>& scene_primitives,
+    std::vector<std::unordered_map<std::string, vk::Image>>& shared_images,
+    std::vector<std::unordered_map<std::string, vk::ImageView>>&
+        shared_image_views)
     : gpu_{std::move(gpu)},
       asset_{std::move(asset)},
       camera_{std::move(camera)},
@@ -30,11 +31,26 @@ Pass::Pass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
       ast_passes_{&ast_passes},
       pass_index_{pass_index},
       scene_primitives_{&scene_primitives},
+      shared_images_{&shared_images},
       shared_image_views_{&shared_image_views},
       ast_pass_{&(*ast_passes_)[pass_index_]},
       name_{ast_pass_->name},
       type_{ast_pass_->type},
       has_ui_{name_ == "ui"} {
+  vk::CommandPoolCreateInfo command_pool_ci{
+      vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+      gpu_->GetTransferQueueIndex()};
+  vk::CommandBufferAllocateInfo command_buffer_ai{
+      nullptr, vk::CommandBufferLevel::ePrimary, 1};
+  vk::CommandBufferBeginInfo command_buffer_bi{
+      vk::CommandBufferUsageFlagBits::eOneTimeSubmit};
+
+  transfer_command_pool_ = gpu_->CreateCommandPool(command_pool_ci);
+  command_buffer_ai.commandPool = *transfer_command_pool_;
+  transfer_command_buffer_ =
+      std::move(gpu_->AllocateCommandBuffers(command_buffer_ai).front());
+  transfer_command_buffer_.begin(command_buffer_bi);
+
   if (type_ == ast::PassType::kGraphics) {
     CreateRenderPass();
     CreateFramebuffers();
@@ -45,6 +61,10 @@ Pass::Pass(std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset,
     CreateResources();
     CreateComputeJob();
   }
+
+  transfer_command_buffer_.end();
+  vk::SubmitInfo submit_info{nullptr, nullptr, *transfer_command_buffer_};
+  gpu_->TransferQueueSubmit(submit_info);
 }
 
 void Pass::Resize(const SwapchainInfo& swapchain_info,
@@ -73,6 +93,8 @@ vk::RenderPassBeginInfo Pass::GetRenderPassBeginInfo(u32 frame_index) const {
 
 const std::vector<Subpass>& Pass::GetSubpasses() const { return subpasses_; }
 
+const ComputeJob& Pass::GetComputeJob() const { return compute_job_; }
+
 bool Pass::HasUi() const { return has_ui_; }
 
 void Pass::CreateRenderPass() {
@@ -97,7 +119,7 @@ void Pass::CreateRenderPass() {
         vk::AttachmentDescriptionFlags{}, format, vk::SampleCountFlagBits::e1,
         vk::AttachmentLoadOp::eClear, store_op, vk::AttachmentLoadOp::eDontCare,
         vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined,
-        vk::ImageLayout::eShaderReadOnlyOptimal);
+        vk::ImageLayout::eGeneral);
   }
 
   const std::vector<ast::Subpass>& ast_subpasses{ast_pass_->subpasses};
@@ -222,7 +244,8 @@ void Pass::CreateFramebuffers() {
           aspect = vk::ImageAspectFlagBits::eDepth;
         }
         if (ast_attachment.output) {
-          usage |= vk::ImageUsageFlagBits::eSampled;
+          usage |= vk::ImageUsageFlagBits::eSampled |
+                   vk::ImageUsageFlagBits::eStorage;
         }
         format = ast_attachment.format;
         vk::ImageCreateInfo image_ci{
@@ -235,7 +258,8 @@ void Pass::CreateFramebuffers() {
             vk::SampleCountFlagBits::e1,
             vk::ImageTiling::eOptimal,
             usage};
-        image = gpu_->CreateImage(image_ci, ast_attachment.name);
+        image = gpu_->CreateImage(image_ci, vk::ImageLayout::eUndefined,
+                                  nullptr, ast_attachment.name);
       }
 
       // Image view.
@@ -250,6 +274,12 @@ void Pass::CreateFramebuffers() {
       image_views_[i].push_back(std::move(image_view));
 
       if (ast_attachment.output) {
+        auto image_it{(*shared_images_)[i].find(ast_attachment.name)};
+        if (image_it != (*shared_images_)[i].end()) {
+          (*shared_images_)[i].erase(image_it);
+        }
+        (*shared_images_)[i].emplace(ast_attachment.name, *(images_[i].back()));
+
         auto it{(*shared_image_views_)[i].find(ast_attachment.name)};
         if (it != (*shared_image_views_)[i].end()) {
           (*shared_image_views_)[i].erase(it);
@@ -294,7 +324,7 @@ void Pass::CreateSubpasses() {
     subpasses_.emplace_back(gpu_, asset_, camera_, frame_count_, *render_pass_,
                             image_views_, color_attachment_counts_[i],
                             ast_subpasses, i, *scene_primitives_,
-                            *shared_image_views_);
+                            *shared_images_, *shared_image_views_);
   }
 }
 
@@ -321,7 +351,8 @@ void Pass::CreateResources() {
           vk::SampleCountFlagBits::e1,
           vk::ImageTiling::eOptimal,
           usage};
-      gpu::Image image{gpu_->CreateImage(image_ci, ast_attachment.name)};
+      gpu::Image image{gpu_->CreateImage(image_ci, vk::ImageLayout::eUndefined,
+                                         nullptr, ast_attachment.name)};
 
       // Image view.
       vk::ImageAspectFlags aspect{vk::ImageAspectFlagBits::eColor};
@@ -334,6 +365,12 @@ void Pass::CreateResources() {
       image_views_[i].push_back(std::move(image_view));
 
       if (ast_attachment.output) {
+        auto image_it{(*shared_images_)[i].find(ast_attachment.name)};
+        if (image_it != (*shared_images_)[i].end()) {
+          (*shared_images_)[i].erase(image_it);
+        }
+        (*shared_images_)[i].emplace(ast_attachment.name, *(images_[i].back()));
+
         auto it{(*shared_image_views_)[i].find(ast_attachment.name)};
         if (it != (*shared_image_views_)[i].end()) {
           (*shared_image_views_)[i].erase(it);
@@ -347,9 +384,13 @@ void Pass::CreateResources() {
 
 void Pass::CreateComputeJob() {
   const ast::ComputeJob& ast_compute_job{ast_pass_->compute_job};
-  compute_job_ =
-      ComputeJob{gpu_,         asset_,          frame_count_,
-                 image_views_, ast_compute_job, *shared_image_views_};
+  compute_job_ = ComputeJob{gpu_,
+                            asset_,
+                            frame_count_,
+                            image_views_,
+                            ast_compute_job,
+                            *shared_images_,
+                            *shared_image_views_};
 }
 
 }  // namespace luka::fw

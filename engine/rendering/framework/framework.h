@@ -137,6 +137,7 @@ class Framework {
   vk::Viewport viewport_;
   vk::Rect2D scissor_;
 
+  std::vector<std::unordered_map<std::string, vk::Image>> shared_images_;
   std::vector<std::unordered_map<std::string, vk::ImageView>>
       shared_image_views_;
   std::vector<fw::Pass> passes_;
