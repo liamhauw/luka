@@ -39,6 +39,7 @@ class Pass {
   std::vector<Subpass>& GetSubpasses();
 
   const ComputeJob& GetComputeJob() const;
+  ComputeJob& GetComputeJob();
 
  protected:
   void CreateRenderPass();
@@ -56,8 +57,8 @@ class Pass {
   std::shared_ptr<FunctionUi> function_ui_;
 
   u32 frame_count_{};
-  SwapchainInfo swapchain_info_{};
-  std::vector<vk::Image> swapchain_images_;
+  const SwapchainInfo* swapchain_info_{};
+  const std::vector<vk::Image>* swapchain_images_;
   const std::vector<ast::Pass>* ast_passes_{};
   u32 pass_index_{};
   const std::vector<ScenePrimitive>* scene_primitives_;

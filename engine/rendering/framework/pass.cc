@@ -26,8 +26,8 @@ Pass::Pass(
       camera_{std::move(camera)},
       function_ui_{std::move(function_ui)},
       frame_count_{frame_count},
-      swapchain_info_{swapchain_info},
-      swapchain_images_{swapchain_images},
+      swapchain_info_{&swapchain_info},
+      swapchain_images_{&swapchain_images},
       ast_passes_{&ast_passes},
       pass_index_{pass_index},
       scene_primitives_{&scene_primitives},
@@ -69,12 +69,23 @@ Pass::Pass(
 
 void Pass::Resize(const SwapchainInfo& swapchain_info,
                   const std::vector<vk::Image>& swapchain_images) {
-  swapchain_info_ = swapchain_info;
-  swapchain_images_ = swapchain_images;
-  CreateFramebuffers();
-  CreateRenderArea();
-  for (u32 i{}; i < subpasses_.size(); ++i) {
-    subpasses_[i].Resize(image_views_);
+  swapchain_info_ = &swapchain_info;
+  swapchain_images_ = &swapchain_images;
+  if (type_ == ast::PassType::kGraphics) {
+    CreateFramebuffers();
+    CreateRenderArea();
+    for (u32 i{}; i < subpasses_.size(); ++i) {
+      subpasses_[i].Resize(image_views_);
+    }
+  } else {
+    vk::CommandBufferBeginInfo command_buffer_bi{
+        vk::CommandBufferUsageFlagBits::eOneTimeSubmit};
+    transfer_command_buffer_.begin(command_buffer_bi);
+    CreateResources();
+    compute_job_.Resize(*swapchain_info_, shared_images_, shared_image_views_);
+    transfer_command_buffer_.end();
+    vk::SubmitInfo submit_info{nullptr, nullptr, *transfer_command_buffer_};
+    gpu_->TransferQueueSubmit(submit_info);
   }
 }
 
@@ -94,6 +105,8 @@ vk::RenderPassBeginInfo Pass::GetRenderPassBeginInfo(u32 frame_index) const {
 const std::vector<Subpass>& Pass::GetSubpasses() const { return subpasses_; }
 
 const ComputeJob& Pass::GetComputeJob() const { return compute_job_; }
+
+ComputeJob& Pass::GetComputeJob() { return compute_job_; }
 
 bool Pass::HasUi() const { return has_ui_; }
 
@@ -231,9 +244,9 @@ void Pass::CreateFramebuffers() {
       vk::ImageAspectFlags aspect;
       vk::Format format{};
       if (is_swapchain) {
-        image = gpu::Image{swapchain_images_[i]};
+        image = gpu::Image{(*swapchain_images_)[i]};
         aspect = vk::ImageAspectFlagBits::eColor;
-        format = swapchain_info_.color_format;
+        format = (*swapchain_info_).color_format;
       } else {
         vk::ImageUsageFlags usage{vk::ImageUsageFlagBits::eInputAttachment};
         if (ast_attachment.format != vk::Format::eD32Sfloat) {
@@ -248,16 +261,16 @@ void Pass::CreateFramebuffers() {
                    vk::ImageUsageFlagBits::eStorage;
         }
         format = ast_attachment.format;
-        vk::ImageCreateInfo image_ci{
-            {},
-            vk::ImageType::e2D,
-            format,
-            {swapchain_info_.extent.width, swapchain_info_.extent.height, 1},
-            1,
-            1,
-            vk::SampleCountFlagBits::e1,
-            vk::ImageTiling::eOptimal,
-            usage};
+        vk::ImageCreateInfo image_ci{{},
+                                     vk::ImageType::e2D,
+                                     format,
+                                     {(*swapchain_info_).extent.width,
+                                      (*swapchain_info_).extent.height, 1},
+                                     1,
+                                     1,
+                                     vk::SampleCountFlagBits::e1,
+                                     vk::ImageTiling::eOptimal,
+                                     usage};
         image = gpu_->CreateImage(image_ci, vk::ImageLayout::eUndefined,
                                   nullptr, ast_attachment.name);
       }
@@ -292,8 +305,8 @@ void Pass::CreateFramebuffers() {
     vk::FramebufferCreateInfo framebuffer_ci{{},
                                              *render_pass_,
                                              framebuffer_image_views,
-                                             swapchain_info_.extent.width,
-                                             swapchain_info_.extent.height,
+                                             (*swapchain_info_).extent.width,
+                                             (*swapchain_info_).extent.height,
                                              1};
 
     vk::raii::Framebuffer framebuffer{
@@ -304,7 +317,7 @@ void Pass::CreateFramebuffers() {
 }
 
 void Pass::CreateRenderArea() {
-  render_area_ = vk::Rect2D{vk::Offset2D{0, 0}, swapchain_info_.extent};
+  render_area_ = vk::Rect2D{vk::Offset2D{0, 0}, (*swapchain_info_).extent};
 }
 
 void Pass::CreateClearValues() {
@@ -342,16 +355,16 @@ void Pass::CreateResources() {
       vk::ImageUsageFlags usage{vk::ImageUsageFlagBits::eStorage |
                                 vk::ImageUsageFlagBits::eSampled};
 
-      vk::ImageCreateInfo image_ci{
-          {},
-          vk::ImageType::e2D,
-          format,
-          {swapchain_info_.extent.width, swapchain_info_.extent.height, 1},
-          1,
-          1,
-          vk::SampleCountFlagBits::e1,
-          vk::ImageTiling::eOptimal,
-          usage};
+      vk::ImageCreateInfo image_ci{{},
+                                   vk::ImageType::e2D,
+                                   format,
+                                   {(*swapchain_info_).extent.width,
+                                    (*swapchain_info_).extent.height, 1},
+                                   1,
+                                   1,
+                                   vk::SampleCountFlagBits::e1,
+                                   vk::ImageTiling::eOptimal,
+                                   usage};
       gpu::Image image{
           gpu_->CreateImage(image_ci, vk::ImageLayout::eShaderReadOnlyOptimal,
                             transfer_command_buffer_, ast_attachment.name)};
@@ -391,8 +404,9 @@ void Pass::CreateComputeJob() {
                             frame_count_,
                             image_views_,
                             ast_compute_job,
-                            *shared_images_,
-                            *shared_image_views_};
+                            shared_images_,
+                            shared_image_views_,
+                            *swapchain_info_};
 }
 
 }  // namespace luka::fw

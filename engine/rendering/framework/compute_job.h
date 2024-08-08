@@ -8,12 +8,19 @@
 // clang-format on
 
 #include "base/gpu/gpu.h"
+#include "core/math.h"
+#include "function/function_ui/function_ui.h"
 #include "rendering/framework/spirv.h"
 #include "resource/asset/asset.h"
 
 namespace luka::fw {
 
 constexpr u32 kComputeImageInfoMaxCount{20};
+constexpr u32 kComputeBufferInfoMaxCount{10};
+
+struct ComputeJobUniform {
+  glm::uvec2 image_size;
+};
 
 class ComputeJob {
  public:
@@ -24,9 +31,18 @@ class ComputeJob {
       const std::vector<std::vector<vk::raii::ImageView>>&
           attachment_image_views,
       const ast::ComputeJob& ast_compute_job,
-      std::vector<std::unordered_map<std::string, vk::Image>>& shared_images,
-      std::vector<std::unordered_map<std::string, vk::ImageView>>&
+      std::vector<std::unordered_map<std::string, vk::Image>>* shared_images,
+      std::vector<std::unordered_map<std::string, vk::ImageView>>*
+          shared_image_views,
+      const SwapchainInfo& swapchain_info);
+
+  void Resize(
+      const SwapchainInfo& swapchain_info,
+      std::vector<std::unordered_map<std::string, vk::Image>>* shared_images,
+      std::vector<std::unordered_map<std::string, vk::ImageView>>*
           shared_image_views);
+
+  void Update(u32 frame_index);
 
   const vk::raii::Pipeline* GetPipeline() const;
   const vk::raii::PipelineLayout* GetPipelineLayout() const;
@@ -98,9 +114,10 @@ class ComputeJob {
   bool has_push_constant_{};
   const vk::raii::Pipeline* pipeline_{};
 
+  const SwapchainInfo* swapchain_info_{};
   u32 group_count_x_{40};
   u32 group_count_y_{40};
-  u32 group_count_z_{40};
+  u32 group_count_z_{1};
 
   u32 descriptor_set_index_{UINT32_MAX};
 
@@ -113,6 +130,13 @@ class ComputeJob {
 
   std::vector<std::map<vk::Image, std::pair<vk::ImageLayout, vk::ImageLayout>>>
       image_layout_trans_;
+
+  std::vector<ComputeJobUniform> uniforms_;
+  std::vector<gpu::Buffer> uniform_buffers_;
+
+  std::unordered_map<u32, std::vector<ShaderResource>> set_shader_resources_;
+  std::vector<u32> sorted_sets_;
+  std::vector<vk::PushConstantRange> push_constant_ranges_;
 };
 
 }  // namespace luka::fw

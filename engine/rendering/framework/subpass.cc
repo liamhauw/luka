@@ -784,11 +784,11 @@ void Subpass::CreatePipelineResources(
           sampler_infos.size(), kSamplerInfoMaxCount);
   }
   if (image_infos.size() >= kImageInfoMaxCount) {
-    THROW("The size of sampler_infos ({}) exceeds kSamplerInfoMaxCount ({})",
+    THROW("The size of image_infos ({}) exceeds kImageInfoMaxCount ({})",
           image_infos.size(), kImageInfoMaxCount);
   }
   if (buffer_infos.size() >= kBufferInfoMaxCount) {
-    THROW("The size of sampler_infos ({}) exceeds kSamplerInfoMaxCount ({})",
+    THROW("The size of buffer_infos ({}) exceeds kBufferInfoMaxCount ({})",
           buffer_infos.size(), kBufferInfoMaxCount);
   }
 

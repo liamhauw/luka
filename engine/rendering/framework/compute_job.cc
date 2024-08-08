@@ -20,30 +20,57 @@ ComputeJob::ComputeJob(
     std::shared_ptr<Gpu> gpu, std::shared_ptr<Asset> asset, u32 frame_count,
     const std::vector<std::vector<vk::raii::ImageView>>& attachment_image_views,
     const ast::ComputeJob& ast_compute_job,
-    std::vector<std::unordered_map<std::string, vk::Image>>& shared_images,
-    std::vector<std::unordered_map<std::string, vk::ImageView>>&
-        shared_image_views)
+    std::vector<std::unordered_map<std::string, vk::Image>>* shared_images,
+    std::vector<std::unordered_map<std::string, vk::ImageView>>*
+        shared_image_views,
+    const SwapchainInfo& swapchain_info)
     : gpu_{std::move(gpu)},
       asset_{std::move(asset)},
       frame_count_{frame_count},
       attachment_image_views_{&attachment_image_views},
       ast_compute_job_{&ast_compute_job},
-      shared_images_{&shared_images},
-      shared_image_views_{&shared_image_views},
-      shader_{ast_compute_job_->shader} {
-  image_layout_trans_.resize(frame_count_);
-
+      shared_images_{shared_images},
+      shared_image_views_{shared_image_views},
+      shader_{ast_compute_job_->shader},
+      swapchain_info_{&swapchain_info},
+      group_count_x_{swapchain_info_->extent.width / 16},
+      group_count_y_{swapchain_info_->extent.height / 16} {
   const SPIRV* spirv{};
   std::unordered_map<std::string, ShaderResource> name_shader_resources;
-  std::unordered_map<u32, std::vector<ShaderResource>> set_shader_resources;
-  std::vector<u32> sorted_sets;
-  std::vector<vk::PushConstantRange> push_constant_ranges;
 
-  ParseShaderResources(spirv, name_shader_resources, set_shader_resources,
-                       sorted_sets, push_constant_ranges);
-  CreatePipelineResources(set_shader_resources, sorted_sets,
-                          push_constant_ranges);
+  ParseShaderResources(spirv, name_shader_resources, set_shader_resources_,
+                       sorted_sets_, push_constant_ranges_);
+  CreatePipelineResources(set_shader_resources_, sorted_sets_,
+                          push_constant_ranges_);
   CreatePipeline(spirv);
+}
+
+void ComputeJob::Resize(
+    const SwapchainInfo& swapchain_info,
+    std::vector<std::unordered_map<std::string, vk::Image>>* shared_images,
+    std::vector<std::unordered_map<std::string, vk::ImageView>>*
+        shared_image_views) {
+  swapchain_info_ = &swapchain_info;
+  shared_images_ = shared_images;
+  shared_image_views_ = shared_image_views;
+  uniforms_.clear();
+  uniform_buffers_.clear();
+
+  CreatePipelineResources(set_shader_resources_, sorted_sets_,
+                          push_constant_ranges_);
+}
+
+void ComputeJob::Update(u32 frame_index) {
+  group_count_x_ =
+      static_cast<u32>(std::ceil(swapchain_info_->extent.width / 16.0));
+  group_count_y_ =
+      static_cast<u32>(std::ceil(swapchain_info_->extent.height / 16.0));
+
+  uniforms_[frame_index] = ComputeJobUniform{glm::uvec2{
+      swapchain_info_->extent.width, swapchain_info_->extent.height}};
+  void* mapped{uniform_buffers_[frame_index].Map()};
+  memcpy(mapped, reinterpret_cast<const void*>(&(uniforms_[frame_index])),
+         sizeof(ComputeJobUniform));
 }
 
 const vk::raii::Pipeline* ComputeJob::GetPipeline() const { return pipeline_; }
@@ -164,9 +191,15 @@ void ComputeJob::CreatePipelineResources(
         set_shader_resources,
     const std::vector<u32>& sorted_sets,
     const std::vector<vk::PushConstantRange>& push_constant_ranges) {
+  image_layout_trans_.clear();
+  image_layout_trans_.resize(frame_count_);
+
   std::vector<vk::WriteDescriptorSet> write_descriptor_sets;
   std::vector<vk::DescriptorImageInfo> image_infos;
+  std::vector<vk::DescriptorBufferInfo> buffer_infos;
+
   image_infos.reserve(kComputeImageInfoMaxCount);
+  buffer_infos.reserve(kComputeBufferInfoMaxCount);
 
   std::vector<vk::DescriptorSetLayout> set_layouts;
 
@@ -180,7 +213,9 @@ void ComputeJob::CreatePipelineResources(
     for (const auto& shader_resource : shader_resources) {
       vk::DescriptorType descriptor_type{};
 
-      if (shader_resource.type == ShaderResourceType::kStorageImage) {
+      if (shader_resource.type == ShaderResourceType::kUniformBuffer) {
+        descriptor_type = vk::DescriptorType::eUniformBuffer;
+      } else if (shader_resource.type == ShaderResourceType::kStorageImage) {
         descriptor_type = vk::DescriptorType::eStorageImage;
       } else {
         THROW("Unsupport descriptor type");
@@ -215,7 +250,41 @@ void ComputeJob::CreatePipelineResources(
 
     // Update descriptor sets.
     for (const auto& shader_resource : shader_resources) {
-      if (shader_resource.type == ShaderResourceType::kStorageImage) {
+      if (shader_resource.type == ShaderResourceType::kUniformBuffer) {
+        if (shader_resource.name == "ComputeJob") {
+          for (u32 i{}; i < frame_count_; ++i) {
+            ComputeJobUniform compute_job_uniform{
+                glm::uvec2{(*swapchain_info_).extent.width,
+                           (*swapchain_info_).extent.height}};
+            vk::BufferCreateInfo uniform_buffer_ci{
+                {},
+                sizeof(ComputeJobUniform),
+                vk::BufferUsageFlagBits::eUniformBuffer};
+
+            gpu::Buffer compute_job_uniform_buffer{
+                gpu_->CreateBuffer(uniform_buffer_ci, &uniform_buffer_ci, false,
+                                   "compute_job_buffer")};
+
+            vk::DescriptorBufferInfo descriptor_buffer_info{
+                *compute_job_uniform_buffer, 0, sizeof(ComputeJobUniform)};
+            buffer_infos.push_back(descriptor_buffer_info);
+
+            vk::WriteDescriptorSet write_descriptor_set{
+                *descriptor_sets_[i]
+                                 [shader_resource.set - descriptor_set_index_],
+                shader_resource.binding,
+                0,
+                vk::DescriptorType::eUniformBuffer,
+                nullptr,
+                buffer_infos.back()};
+
+            uniforms_.push_back(compute_job_uniform);
+            uniform_buffers_.push_back(std::move(compute_job_uniform_buffer));
+
+            write_descriptor_sets.push_back(write_descriptor_set);
+          }
+        }
+      } else if (shader_resource.type == ShaderResourceType::kStorageImage) {
         need_resize_ = true;
         for (u32 i{}; i < frame_count_; ++i) {
           vk::Image image{nullptr};
@@ -259,8 +328,13 @@ void ComputeJob::CreatePipelineResources(
   }
 
   if (image_infos.size() >= kComputeImageInfoMaxCount) {
-    THROW("The size of sampler_infos ({}) exceeds kSamplerInfoMaxCount ({})",
+    THROW("The size of image_infos ({}) exceeds kComputeImageInfoMaxCount ({})",
           image_infos.size(), kComputeImageInfoMaxCount);
+  }
+  if (buffer_infos.size() >= kComputeBufferInfoMaxCount) {
+    THROW(
+        "The size of buffer_infos ({}) exceeds kComputeBufferInfoMaxCount ({})",
+        buffer_infos.size(), kComputeBufferInfoMaxCount);
   }
 
   gpu_->UpdateDescriptorSets(write_descriptor_sets);

@@ -351,6 +351,10 @@ void Framework::CreatePasses() {
 }
 
 void Framework::Resize() {
+  gpu_->WaitIdle();
+  frame_index_ = 0;
+  absolute_frame_ = 0;
+
   GetSwapchain();
   CreateViewportAndScissor();
   for (auto& pass : passes_) {
@@ -401,6 +405,8 @@ void Framework::RenderFrame() {
         EndGraphics(*command_buffer, last_pass);
       }
     } else if (cur_pass_type == ast::PassType::kCompute) {
+      pass.GetComputeJob().Update(frame_index_);
+
       if (prev_pass_type != ast::PassType::kCompute) {
         command_buffer = &BeginCompute();
       }
